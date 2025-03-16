@@ -20,9 +20,14 @@ function jacobian_vector_product_impl(f::F, backend::AbstractADType, x, u, y) wh
 end
 
 function CRC.rrule(
-        cfg::RuleConfig{>:HasReverseMode}, ::typeof(jacobian_vector_product_impl),
-        f::F, backend::AbstractADType, x, u, y
-    ) where {F}
+    cfg::RuleConfig{>:HasReverseMode},
+    ::typeof(jacobian_vector_product_impl),
+    f::F,
+    backend::AbstractADType,
+    x,
+    u,
+    y,
+) where {F}
     res = jacobian_vector_product_impl(f, backend, x, u, y)
 
     pullback_fn = let cfg = cfg

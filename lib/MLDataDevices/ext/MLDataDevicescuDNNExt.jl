@@ -6,10 +6,10 @@ using MLDataDevices: MLDataDevices, CUDADevice, reset_gpu_device!
 
 __init__() = reset_gpu_device!()
 
-const USE_CUDA_GPU = Ref{Union{Nothing, Bool}}(nothing)
+const USE_CUDA_GPU = Ref{Union{Nothing,Bool}}(nothing)
 
 function _check_use_cuda!()
-    USE_CUDA_GPU[] === nothing || return
+    USE_CUDA_GPU[] === nothing || return nothing
 
     USE_CUDA_GPU[] = CUDA.functional()
     if USE_CUDA_GPU[]
@@ -23,12 +23,12 @@ function _check_use_cuda!()
             USE_CUDA_GPU[] = false
         end
     end
-    return
+    return nothing
 end
 
-MLDataDevices.loaded(::Union{CUDADevice, Type{<:CUDADevice}}) = true
+MLDataDevices.loaded(::Union{CUDADevice,Type{<:CUDADevice}}) = true
 
-function MLDataDevices.functional(::Union{CUDADevice, Type{<:CUDADevice}})::Bool
+function MLDataDevices.functional(::Union{CUDADevice,Type{<:CUDADevice}})::Bool
     _check_use_cuda!()
     return USE_CUDA_GPU[]
 end

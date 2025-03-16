@@ -1,7 +1,6 @@
 function init_linear_bias(
-        rng::AbstractRNG, init_bias::F, fan_in::IntegerType,
-        bias_len::IntegerType
-    ) where {F}
+    rng::AbstractRNG, init_bias::F, fan_in::IntegerType, bias_len::IntegerType
+) where {F}
     if init_bias === nothing # Default from PyTorch
         bound = inv(sqrt(fan_in))
         y = rand32(rng, bias_len)
@@ -46,7 +45,7 @@ julia> y, st_new = model(x, ps, st);
 ```
 """
 struct ReshapeLayer{N} <: AbstractLuxLayer
-    dims::NTuple{N, Int}
+    dims::NTuple{N,Int}
 end
 
 outputsize(r::ReshapeLayer, _, ::AbstractRNG) = r.dims
@@ -95,14 +94,14 @@ julia> y, st_new = model(x, ps, st)
 ```
 """
 @concrete struct ReverseSequence <: AbstractLuxLayer
-    dim <: Union{Nothing, StaticInt}
+    dim <: Union{Nothing,StaticInt}
 end
 
 ReverseSequence(dim) = ReverseSequence(static(dim))
-ReverseSequence(; dim = nothing) = ReverseSequence(static(dim))
+ReverseSequence(; dim=nothing) = ReverseSequence(static(dim))
 
 function (r::ReverseSequence{Nothing})(x::AbstractArray, _, st::NamedTuple)
-    return safe_reverse(x; dims = max(ndims(x) - 1, 1)), st
+    return safe_reverse(x; dims=max(ndims(x) - 1, 1)), st
 end
 
 function (r::ReverseSequence{StaticInt{1}})(x::AbstractVector, _, st::NamedTuple)
@@ -114,7 +113,7 @@ function (r::ReverseSequence{StaticInt{N}})(::AbstractVector, _, st::NamedTuple)
 end
 
 function (r::ReverseSequence{StaticInt{N}})(x::AbstractArray, _, st::NamedTuple) where {N}
-    return safe_reverse(x; dims = N), st
+    return safe_reverse(x; dims=N), st
 end
 
 """
@@ -155,17 +154,17 @@ julia> y, st_new = model(x, ps, st);
 ```
 """
 @concrete struct FlattenLayer <: AbstractLuxLayer
-    N <: Union{Nothing, StaticInt}
+    N <: Union{Nothing,StaticInt}
 end
 
 FlattenLayer(N) = FlattenLayer(static(N))
-FlattenLayer(; N = nothing) = FlattenLayer(static(N))
+FlattenLayer(; N=nothing) = FlattenLayer(static(N))
 
-function (::FlattenLayer{Nothing})(x::AbstractArray{T, N}, _, st::NamedTuple) where {T, N}
+function (::FlattenLayer{Nothing})(x::AbstractArray{T,N}, _, st::NamedTuple) where {T,N}
     return reshape(x, :, size(x, N)), st
 end
 
-function (f::FlattenLayer)(x::AbstractArray{T, N}, _, st::NamedTuple) where {T, N}
+function (f::FlattenLayer)(x::AbstractArray{T,N}, _, st::NamedTuple) where {T,N}
     @argcheck f.N < N
     return reshape(x, :, size(x)[(f.N + 1):end]...), st
 end
@@ -313,28 +312,35 @@ function Base.show(io::IO, d::Dense)
     return print(io, ")")
 end
 
-function Dense(mapping::Pair{<:IntegerType, <:IntegerType}, activation = identity; kwargs...)
+function Dense(mapping::Pair{<:IntegerType,<:IntegerType}, activation=identity; kwargs...)
     return Dense(first(mapping), last(mapping), activation; kwargs...)
 end
 
 function Dense(
-        in_dims::IntegerType, out_dims::IntegerType, activation = identity;
-        init_weight = nothing, init_bias = nothing, use_bias::BoolType = True()
-    )
+    in_dims::IntegerType,
+    out_dims::IntegerType,
+    activation=identity;
+    init_weight=nothing,
+    init_bias=nothing,
+    use_bias::BoolType=True(),
+)
     return Dense(activation, in_dims, out_dims, init_weight, init_bias, static(use_bias))
 end
 
 function initialparameters(rng::AbstractRNG, d::Dense)
     weight = if d.init_weight === nothing
         kaiming_uniform(
-            rng, Float32, d.out_dims, d.in_dims;
-            gain = Utils.calculate_gain(d.activation, √5.0f0)
+            rng,
+            Float32,
+            d.out_dims,
+            d.in_dims;
+            gain=Utils.calculate_gain(d.activation, √5.0f0),
         )
     else
         d.init_weight(rng, d.out_dims, d.in_dims)
     end
     has_bias(d) || return (; weight)
-    return (; weight, bias = init_linear_bias(rng, d.init_bias, d.in_dims, d.out_dims))
+    return (; weight, bias=init_linear_bias(rng, d.init_bias, d.in_dims, d.out_dims))
 end
 
 parameterlength(d::Dense) = d.out_dims * d.in_dims + has_bias(d) * d.out_dims
@@ -385,7 +391,7 @@ Elements are non-zero). The forward pass is given by: `y = activation.(weight .*
   - `weight`: Weight Array of size `(dims...)`
   - `bias`: Bias of size `(dims...)`
 """
-@concrete struct Scale{UB <: StaticBool} <: AbstractLuxLayer
+@concrete struct Scale{UB<:StaticBool} <: AbstractLuxLayer
     activation
     dims <: Tuple{Vararg{IntegerType}}
     init_weight
@@ -401,24 +407,27 @@ function Base.show(io::IO, d::Scale)
 end
 
 function Scale(
-        dims::Tuple{Vararg{IntegerType}}, activation = identity;
-        init_weight = glorot_uniform, init_bias = zeros32, use_bias::BoolType = True()
-    )
+    dims::Tuple{Vararg{IntegerType}},
+    activation=identity;
+    init_weight=glorot_uniform,
+    init_bias=zeros32,
+    use_bias::BoolType=True(),
+)
     return Scale(activation, dims, init_weight, init_bias, static(use_bias))
 end
 
-function Scale(s1::IntegerType, s23::IntegerType...; _act = identity, kwargs...)
+function Scale(s1::IntegerType, s23::IntegerType...; _act=identity, kwargs...)
     return Scale(tuple(s1, s23...), _act; kwargs...)
 end
 function Scale(size_act...; kwargs...)
-    return Scale(size_act[1:(end - 1)]...; _act = size_act[end], kwargs...)
+    return Scale(size_act[1:(end - 1)]...; _act=size_act[end], kwargs...)
 end
 
 function initialparameters(rng::AbstractRNG, d::Scale)
     if has_bias(d)
-        return (; weight = d.init_weight(rng, d.dims...), bias = d.init_bias(rng, d.dims...))
+        return (; weight=d.init_weight(rng, d.dims...), bias=d.init_bias(rng, d.dims...))
     end
-    return (; weight = d.init_weight(rng, d.dims...))
+    return (; weight=d.init_weight(rng, d.dims...))
 end
 
 parameterlength(d::Scale) = (1 + has_bias(d)) * prod(d.dims)
@@ -508,16 +517,18 @@ function Base.show(io::IO, b::Bilinear)
 end
 
 function Bilinear(
-        (in12_dims, out)::Pair{<:IntegerType, <:IntegerType},
-        activation = identity; kwargs...
-    )
+    (in12_dims, out)::Pair{<:IntegerType,<:IntegerType}, activation=identity; kwargs...
+)
     return Bilinear((in12_dims, in12_dims) => out, activation; kwargs...)
 end
 
 function Bilinear(
-        ((in1_dims, in2_dims), out)::Pair{<:Tuple, <:IntegerType}, activation = identity;
-        init_weight = nothing, init_bias = nothing, use_bias::BoolType = True()
-    )
+    ((in1_dims, in2_dims), out)::Pair{<:Tuple,<:IntegerType},
+    activation=identity;
+    init_weight=nothing,
+    init_bias=nothing,
+    use_bias::BoolType=True(),
+)
     return Bilinear(
         activation, in1_dims, in2_dims, out, init_weight, init_bias, static(use_bias)
     )
@@ -533,7 +544,7 @@ function initialparameters(rng::AbstractRNG, b::Bilinear)
         b.init_weight(rng, b.out_dims, b.in1_dims, b.in2_dims)
     end
     has_bias(b) || return (; weight)
-    return (; weight, bias = init_linear_bias(rng, b.init_bias, b.in1_dims, b.out_dims))
+    return (; weight, bias=init_linear_bias(rng, b.init_bias, b.in1_dims, b.out_dims))
 end
 
 function parameterlength(b::Bilinear)
@@ -544,8 +555,8 @@ statelength(b::Bilinear) = 0
 outputsize(b::Bilinear, _, ::AbstractRNG) = (b.out_dims,)
 
 function (b::Bilinear)(
-        (x, y)::Tuple{<:AbstractVecOrMat, <:AbstractVecOrMat}, ps, st::NamedTuple
-    )
+    (x, y)::Tuple{<:AbstractVecOrMat,<:AbstractVecOrMat}, ps, st::NamedTuple
+)
     s₁, s₂, s₃ = size(ps.weight)
     @argcheck s₂ == size(x, 1) && s₃ == size(y, 1)
     @argcheck size(x, 2) == size(y, 2)
@@ -557,7 +568,7 @@ function (b::Bilinear)(
     return bias_activation!!(σ, Wyx, safe_getproperty(ps, Val(:bias))), st
 end
 
-function (b::Bilinear)((x, y)::Tuple{<:AbstractArray, <:AbstractArray}, ps, st::NamedTuple)
+function (b::Bilinear)((x, y)::Tuple{<:AbstractArray,<:AbstractArray}, ps, st::NamedTuple)
     @argcheck size(x)[2:end] == size(y)[2:end]
 
     s₁, s₂, s₃ = size(ps.weight)

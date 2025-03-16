@@ -8,24 +8,42 @@ end
 dropout(rng::AbstractRNG, x::AbstractArray, ::T, ::False, ::T, dims) where {T} = (x, x, rng)
 
 function dropout(
-        rng::AbstractRNG, x::AbstractArray, ::AbstractArray, p::T,
-        training::StaticBool, ::True, invp::T, dims
-    ) where {T}
+    rng::AbstractRNG,
+    x::AbstractArray,
+    ::AbstractArray,
+    p::T,
+    training::StaticBool,
+    ::True,
+    invp::T,
+    dims,
+) where {T}
     return dropout(rng, x, p, training, invp, dims)
 end
 
 function dropout(
-        rng::AbstractRNG, x::AbstractArray, mask::AbstractArray,
-        ::T, ::True, ::False, invp::T, dims
-    ) where {T}
+    rng::AbstractRNG,
+    x::AbstractArray,
+    mask::AbstractArray,
+    ::T,
+    ::True,
+    ::False,
+    invp::T,
+    dims,
+) where {T}
     check_dropout_mask_shape_mismatch(x, mask, dims)
     return dropout_dot_mul(x, mask), mask, rng
 end
 
 function dropout(
-        rng::AbstractRNG, x::AbstractArray, mask::AbstractArray,
-        ::T, ::False, ::False, invp::T, dims
-    ) where {T}
+    rng::AbstractRNG,
+    x::AbstractArray,
+    mask::AbstractArray,
+    ::T,
+    ::False,
+    ::False,
+    invp::T,
+    dims,
+) where {T}
     return x, mask, rng
 end
 
@@ -68,26 +86,30 @@ function alpha_dropout(noise::AbstractArray, p, x::AbstractArray, α, A, B)
 end
 
 @stable default_mode = "disable" function alpha_dropout(
-        ::AbstractInternalArrayOpMode, noise::AbstractArray, p,
-        x::AbstractArray{T}, α, A, B
-    ) where {T}
+    ::AbstractInternalArrayOpMode, noise::AbstractArray, p, x::AbstractArray{T}, α, A, B
+) where {T}
     A′, B′, α = T(A), T(B), T(α)
     return @. muladd(ifelse(noise > p, x, α), A′, B′)
 end
 
 @stable default_mode = "disable" function alpha_dropout(
-        opmode::LoopedArrayOp, noise::AbstractArray, p,
-        x::AbstractArray, α, A, B
-    )
+    opmode::LoopedArrayOp, noise::AbstractArray, p, x::AbstractArray, α, A, B
+)
     res = similar(x, promote_type(typeof(p), typeof(α)))
     alpha_dropout!(res, opmode, noise, p, x, α, A, B)
     return res
 end
 
 function CRC.rrule(
-        ::typeof(alpha_dropout), ::LoopedArrayOp, noise::AbstractArray,
-        p, x::AbstractArray, α, A, B
-    )
+    ::typeof(alpha_dropout),
+    ::LoopedArrayOp,
+    noise::AbstractArray,
+    p,
+    x::AbstractArray,
+    α,
+    A,
+    B,
+)
     cond = similar(noise, Bool)
     y = similar(x, promote_type(typeof(p), typeof(α), typeof(A), typeof(B), eltype(x)))
     @simd ivdep for I in eachindex(noise, x, y, cond)
@@ -113,9 +135,15 @@ function CRC.rrule(
 end
 
 function CRC.rrule(
-        ::typeof(alpha_dropout), ::AbstractInternalArrayOpMode,
-        noise::AbstractArray, p, x::AbstractArray, α, A, B
-    )
+    ::typeof(alpha_dropout),
+    ::AbstractInternalArrayOpMode,
+    noise::AbstractArray,
+    p,
+    x::AbstractArray,
+    α,
+    A,
+    B,
+)
     cond = noise .> p
     y = @. ifelse(cond, x, α) * A + B
 
@@ -129,9 +157,15 @@ function CRC.rrule(
 end
 
 function alpha_dropout!(
-        res::AbstractArray{T}, ::LoopedArrayOp, noise::AbstractArray{T},
-        p, x::AbstractArray{T}, α, A, B
-    ) where {T}
+    res::AbstractArray{T},
+    ::LoopedArrayOp,
+    noise::AbstractArray{T},
+    p,
+    x::AbstractArray{T},
+    α,
+    A,
+    B,
+) where {T}
     return @simd ivdep for I in eachindex(noise, x, res)
         res[I] = ifelse(noise[I] > p, x[I], α) * A + B
     end
@@ -151,8 +185,8 @@ end
 CRC.@non_differentiable generate_alpha_dropout_noise(::Any...)
 
 @stable default_mode = "disable" function generate_dropout_mask(
-        rng::AbstractRNG, x, p, invp, dims
-    )
+    rng::AbstractRNG, x, p, invp, dims
+)
     rng = LuxCore.replicate(rng)
     y = similar(remove_tracking(x), dropout_fptype(x), dropout_shape(x, dims))
     rand!(rng, y)
@@ -164,7 +198,7 @@ CRC.@non_differentiable generate_dropout_mask(::Any...)
 
 function generate_dropout_mask!(y::AbstractArray, ::LoopedArrayOp, p, invp)
     generate_dropout_mask_loop!(y, p, invp)
-    return
+    return nothing
 end
 
 function generate_dropout_mask_loop!(y::AbstractArray{T}, p, invp) where {T}
@@ -175,11 +209,11 @@ function generate_dropout_mask_loop!(y::AbstractArray{T}, p, invp) where {T}
 end
 
 function generate_dropout_mask!(
-        y::AbstractArray{T}, ::AbstractInternalArrayOpMode, p, invp
-    ) where {T}
+    y::AbstractArray{T}, ::AbstractInternalArrayOpMode, p, invp
+) where {T}
     p, invp = T(p), T(invp)
     @. y = (y > p) * invp
-    return
+    return nothing
 end
 
 dropout_dot_mul(x::AbstractArray, mask::AbstractArray) = x .* mask

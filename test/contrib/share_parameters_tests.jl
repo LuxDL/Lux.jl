@@ -3,11 +3,12 @@
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         model = Chain(;
-            d1 = Dense(2 => 4, tanh),
-            d2 = Chain(; l1 = Dense(4 => 2), l2 = Dense(2 => 4)), d3 = Dense(4 => 2)
+            d1=Dense(2 => 4, tanh),
+            d2=Chain(; l1=Dense(4 => 2), l2=Dense(2 => 4)),
+            d3=Dense(4 => 2),
         )
 
-        ps, st = Lux.setup(rng, model) .|> dev
+        ps, st = dev.(Lux.setup(rng, model))
 
         sharing = (("d2.l2", "d1"), ("d3", "d2.l1"))
 
@@ -18,8 +19,8 @@
         @test ps_1.d3.weight == ps_1.d2.l1.weight
         @test ps_1.d3.bias == ps_1.d2.l1.bias
 
-        ps_new_1 = (; weight = randn(rng, Float32, 4, 2), bias = randn(rng, Float32, 4)) |> dev
-        ps_new_2 = (; weight = randn(rng, Float32, 2, 4), bias = randn(rng, Float32, 2)) |> dev
+        ps_new_1 = dev((; weight=randn(rng, Float32, 4, 2), bias=randn(rng, Float32, 4)))
+        ps_new_2 = dev((; weight=randn(rng, Float32, 2, 4), bias=randn(rng, Float32, 2)))
 
         ps_2 = Lux.Experimental.share_parameters(ps, sharing, (ps_new_1, ps_new_2))
 
@@ -29,7 +30,7 @@
         @test ps_2.d3.bias == ps_new_2.bias == ps_2.d2.l1.bias
 
         # Mix in ComponentArray
-        ps_new_ca_1 = ComponentArray(ps_new_1 |> CPUDevice()) |> dev
+        ps_new_ca_1 = dev(ComponentArray(CPUDevice()(ps_new_1)))
 
         ps_3 = Lux.Experimental.share_parameters(ps, sharing, (ps_new_ca_1, ps_new_2))
 
@@ -48,14 +49,14 @@
         )
 
         # Parameter Structure Mismatch
-        ps_new_1 = (; weight = randn(rng, Float32, 2, 4), bias = randn(rng, Float32, 4)) |> dev
-        ps_new_2 = (; weight = randn(rng, Float32, 2, 4), bias = randn(rng, Float32, 2)) |> dev
+        ps_new_1 = dev((; weight=randn(rng, Float32, 2, 4), bias=randn(rng, Float32, 4)))
+        ps_new_2 = dev((; weight=randn(rng, Float32, 2, 4), bias=randn(rng, Float32, 2)))
 
         @test_throws ArgumentError Lux.Experimental.share_parameters(
             ps, sharing, (ps_new_1, ps_new_2)
         )
 
-        ps_new_ca_1 = ComponentArray(ps_new_1 |> CPUDevice()) |> dev
+        ps_new_ca_1 = dev(ComponentArray(CPUDevice()(ps_new_1)))
 
         @test_throws ArgumentError Lux.Experimental.share_parameters(
             ps, sharing, (ps_new_ca_1, ps_new_2)

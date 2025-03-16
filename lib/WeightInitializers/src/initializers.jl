@@ -26,8 +26,8 @@ feedforward neural networks." _Proceedings of the thirteenth international confe
 artificial intelligence and statistics_. 2010.
 """
 function glorot_uniform(
-        rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number = 1
-    ) where {T <: Number}
+    rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=1
+) where {T<:Number}
     scale = T(gain) * sqrt(T(24) / sum(Utils.nfan(dims...)))
     x = DeviceAgnostic.rand(rng, T, dims...)
     half = T(0.5)
@@ -50,8 +50,8 @@ feedforward neural networks." _Proceedings of the thirteenth international confe
 artificial intelligence and statistics_. 2010.
 """
 function glorot_normal(
-        rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number = 1
-    ) where {T <: Number}
+    rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=1
+) where {T<:Number}
     std = T(gain) * sqrt(T(2) / sum(Utils.nfan(dims...)))
     x = DeviceAgnostic.randn(rng, T, dims...)
     x .*= std
@@ -72,9 +72,8 @@ imagenet classification." _Proceedings of the IEEE international conference on c
 vision_. 2015.
 """
 function kaiming_uniform(
-        rng::AbstractRNG, ::Type{T}, dims::Integer...;
-        gain::Number = √T(2)
-    ) where {T <: Number}
+    rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=√T(2)
+) where {T<:Number}
     bound = √T(3) * T(gain) / sqrt(T(first(Utils.nfan(dims...))))
     x = DeviceAgnostic.rand(rng, T, dims...)
     half = T(0.5)
@@ -96,9 +95,8 @@ imagenet classification." _Proceedings of the IEEE international conference on c
 vision_. 2015.
 """
 function kaiming_normal(
-        rng::AbstractRNG, ::Type{T}, dims::Integer...;
-        gain::Number = √T(2)
-    ) where {T <: Number}
+    rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=√T(2)
+) where {T<:Number}
     std = T(gain) / sqrt(T(first(Utils.nfan(dims...))))
     x = DeviceAgnostic.randn(rng, T, dims...)
     x .*= std
@@ -114,9 +112,8 @@ truncated normal distribution. The numbers are distributed like
 `filter(x -> lo ≤ x ≤ hi, mean .+ std .* randn(100))`.
 """
 function truncated_normal(
-        rng::AbstractRNG, ::Type{T}, dims::Integer...; mean = T(0),
-        std = T(1), lo = -T(2), hi = T(2)
-    ) where {T <: Real}
+    rng::AbstractRNG, ::Type{T}, dims::Integer...; mean=T(0), std=T(1), lo=-T(2), hi=T(2)
+) where {T<:Real}
     if (mean < lo - 2 * std) || (mean > hi + 2 * std)
         @warn "Mean is more than 2 std outside the limits in truncated_normal, so the \
                distribution of values may be inaccurate."
@@ -159,13 +156,12 @@ Cannot construct a vector, i.e., `length(dims) == 1` is forbidden.
 deep linear neural networks", ICLR 2014, https://arxiv.org/abs/1312.6120
 """
 function orthogonal(
-        rng::AbstractRNG, ::Type{T}, dims::Integer...;
-        gain::Number = T(1.0)
-    ) where {T <: Number}
+    rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=T(1.0)
+) where {T<:Number}
     @argcheck length(dims) > 1 "Creating vectors (length(dims) == 1) is not allowed"
 
     rows, cols = length(dims) == 2 ? dims : (prod(dims[1:(end - 1)]), dims[end])
-    rows < cols && return permutedims(orthogonal(rng, T, cols, rows; gain = T(gain)))
+    rows < cols && return permutedims(orthogonal(rng, T, cols, rows; gain=T(gain)))
 
     mat = DeviceAgnostic.randn(rng, T, rows, cols)
     Q, R = qr(mat)
@@ -221,9 +217,8 @@ true
 International Conference on International Conference on Machine Learning. 2010.
 """
 function sparse_init(
-        rng::AbstractRNG, ::Type{T}, dims::Integer...;
-        sparsity::Number, std::Number = T(0.01)
-    ) where {T <: Number}
+    rng::AbstractRNG, ::Type{T}, dims::Integer...; sparsity::Number, std::Number=T(0.01)
+) where {T<:Number}
     if length(dims) != 2
         throw(ArgumentError("Only 2-dimensional outputs are supported for sparse \
                              initialization."))
@@ -315,9 +310,8 @@ julia> identity_init(Xoshiro(123), Float32, 3, 3, 1, 1; gain=1.5)
 ```
 """
 function identity_init(
-        rng::AbstractRNG, ::Type{T}, dims::Integer...;
-        gain::Number = 1, shift::Integer = 0
-    ) where {T <: Number}
+    rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=1, shift::Integer=0
+) where {T<:Number}
     length(dims) == 1 && return DeviceAgnostic.zeros(rng, T, dims...)  # Bias initialization
 
     if length(dims) == 2
@@ -341,9 +335,15 @@ end
 
 # Default Fallbacks for all functions
 for initializer in (
-        :glorot_uniform, :glorot_normal, :kaiming_uniform, :kaiming_normal,
-        :truncated_normal, :orthogonal, :sparse_init, :identity_init,
-    )
+    :glorot_uniform,
+    :glorot_normal,
+    :kaiming_uniform,
+    :kaiming_normal,
+    :truncated_normal,
+    :orthogonal,
+    :sparse_init,
+    :identity_init,
+)
     NType = ifelse(initializer === :truncated_normal, Real, Number)
     @eval begin
         function ($initializer)(dims::Integer...; kwargs...)
@@ -352,7 +352,7 @@ for initializer in (
         function ($initializer)(rng::AbstractRNG, dims::Integer...; kwargs...)
             return $initializer(rng, Float32, dims...; kwargs...)
         end
-        function ($initializer)(::Type{T}, dims::Integer...; kwargs...) where {T <: $NType}
+        function ($initializer)(::Type{T}, dims::Integer...; kwargs...) where {T<:$NType}
             return $initializer(Utils.default_rng(), T, dims...; kwargs...)
         end
 
@@ -360,10 +360,10 @@ for initializer in (
         function ($initializer)(rng::AbstractRNG; kwargs...)
             return PartialFunction.Partial{Nothing}($initializer, rng, kwargs)
         end
-        function ($initializer)(::Type{T}; kwargs...) where {T <: $NType}
+        function ($initializer)(::Type{T}; kwargs...) where {T<:$NType}
             return PartialFunction.Partial{T}($initializer, nothing, kwargs)
         end
-        function ($initializer)(rng::AbstractRNG, ::Type{T}; kwargs...) where {T <: $NType}
+        function ($initializer)(rng::AbstractRNG, ::Type{T}; kwargs...) where {T<:$NType}
             return PartialFunction.Partial{T}($initializer, rng, kwargs)
         end
         function ($initializer)(; kwargs...)
@@ -382,8 +382,8 @@ for tp in ("16", "32", "64", "C16", "C32", "C64"), func in (:zeros, :ones, :rand
             throw(ArgumentError(string($initializer) * " doesn't accept a type argument."))
         end
         function ($initializer)(
-                ::AbstractRNG, ::Type{T}, dims::Integer...; kwargs...
-            ) where {T}
+            ::AbstractRNG, ::Type{T}, dims::Integer...; kwargs...
+        ) where {T}
             throw(ArgumentError(string($initializer) * " doesn't accept a type argument."))
         end
 

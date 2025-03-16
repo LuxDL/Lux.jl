@@ -51,7 +51,7 @@ else
                 layer, recursive_eltype((ps, st), Val(true)), Utils.eltype(arr), arr
             )
         end
-        return fmap(fn, x; exclude = MLDataDevices.isleaf)
+        return fmap(fn, x; exclude=MLDataDevices.isleaf)
     end
     function match_eltype(layer, ps, st, x, args...)
         fn = let layer = layer
@@ -60,16 +60,20 @@ else
             )
         end
         return (
-            fmap(fn, x; exclude = MLDataDevices.isleaf),
-            fmap(fn, args; exclude = MLDataDevices.isleaf)...,
+            fmap(fn, x; exclude=MLDataDevices.isleaf),
+            fmap(fn, args; exclude=MLDataDevices.isleaf)...,
         )
     end
 end
 
 for (T1, T2) in (
-        (:Float64, :Integer), (:Float32, :Float64), (:Float32, :Integer),
-        (:Float16, :Float64), (:Float16, :Float32), (:Float16, :Integer),
-    )
+    (:Float64, :Integer),
+    (:Float32, :Float64),
+    (:Float32, :Integer),
+    (:Float16, :Float64),
+    (:Float16, :Float32),
+    (:Float16, :Integer),
+)
     warn_msg = "Layer with `$(T1)` parameters and states received `$(T2)` input."
     convert_msg = "Layer with `$(T1)` parameters and states received `$(T2)` input. \
                    Converting to `$(T1)`."

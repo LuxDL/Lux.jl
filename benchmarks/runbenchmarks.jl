@@ -45,35 +45,35 @@ end
 
 if BENCHMARK_GROUP == "AMDGPU"
     using AMDGPU # ] add AMDGPU to benchmarks/Project.toml
-    @info "Running AMDGPU benchmarks" maxlog = 1
+    @info "Running AMDGPU benchmarks" maxlog=1
     AMDGPU.versioninfo()
 elseif BENCHMARK_GROUP == "CUDA"
     using LuxCUDA # ] add LuxCUDA to benchmarks/Project.toml
-    @info "Running CUDA benchmarks" maxlog = 1
+    @info "Running CUDA benchmarks" maxlog=1
     CUDA.versioninfo()
 elseif BENCHMARK_GROUP == "Metal"
     using Metal # ] add Metal to benchmarks/Project.toml
-    @info "Running Metal benchmarks" maxlog = 1
+    @info "Running Metal benchmarks" maxlog=1
     Metal.versioninfo()
 elseif BENCHMARK_GROUP == "oneAPI"
     using oneAPI # ] add oneAPI to benchmarks/Project.toml
-    @info "Running oneAPI benchmarks" maxlog = 1
+    @info "Running oneAPI benchmarks" maxlog=1
     oneAPI.versioninfo()
 else
-    @info "Running CPU benchmarks with $(BENCHMARK_CPU_THREADS) thread(s)" maxlog = 1
+    @info "Running CPU benchmarks with $(BENCHMARK_CPU_THREADS) thread(s)" maxlog=1
 end
 
 # Main benchmark files
 include("setup.jl")
 setup_benchmarks!(SUITE, BENCHMARK_GROUP, BENCHMARK_CPU_THREADS)
 
-results = BenchmarkTools.run(SUITE; verbose = true)
+results = BenchmarkTools.run(SUITE; verbose=true)
 
 filepath = joinpath(dirname(@__FILE__), "results")
 mkpath(filepath)
 filename = BENCHMARK_GROUP == "CPU" ?
-    string("CPUbenchmarks", BENCHMARK_CPU_THREADS, "threads.json") :
-    string(BENCHMARK_GROUP, "benchmarks.json")
+           string("CPUbenchmarks", BENCHMARK_CPU_THREADS, "threads.json") :
+           string(BENCHMARK_GROUP, "benchmarks.json")
 BenchmarkTools.save(joinpath(filepath, filename), median(results))
 
 @info "Saved results to $(joinpath(filepath, filename))"

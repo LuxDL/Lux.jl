@@ -29,10 +29,13 @@ The normalized array is returned.
     on computer vision (ECCV). 2018.
 """
 function groupnorm(
-        x::AbstractArray{<:Number, N}, scale::Optional{<:AbstractVector},
-        bias::Optional{<:AbstractVector}, groups::Int, σ::F = identity,
-        epsilon = default_epsilon(x)
-    ) where {F, N}
+    x::AbstractArray{<:Number,N},
+    scale::Optional{<:AbstractVector},
+    bias::Optional{<:AbstractVector},
+    groups::Int,
+    σ::F=identity,
+    epsilon=default_epsilon(x),
+) where {F,N}
     assert_valid_groupnorm_arguments(x, scale, bias, groups)
     return groupnorm_impl(
         x, scale, bias, groups, select_fastest_activation(σ, x, scale, bias), epsilon
@@ -40,8 +43,8 @@ function groupnorm(
 end
 
 function assert_valid_groupnorm_arguments(
-        x::AbstractArray{T, N}, scale, bias, groups
-    ) where {T, N}
+    x::AbstractArray{T,N}, scale, bias, groups
+) where {T,N}
     @assert length(scale) == length(bias) == size(x, N - 1) "Length of `scale` and `bias` must \
                                                          be equal to the number of \
                                                          channels ((N - 1) dim of the \
@@ -51,8 +54,8 @@ function assert_valid_groupnorm_arguments(
 end
 
 function assert_valid_groupnorm_arguments(
-        x::AbstractArray{T, N}, ::Nothing, ::Nothing, groups::Int
-    ) where {T, N}
+    x::AbstractArray{T,N}, ::Nothing, ::Nothing, groups::Int
+) where {T,N}
     @assert size(x, N - 1) % groups == 0 "Number of channels $(size(x, N - 1)) must be \
                                         divisible by the number of groups $groups."
     return nothing

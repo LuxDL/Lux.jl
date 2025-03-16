@@ -21,8 +21,9 @@ make_reactant_compatible(opt::ReactantCompatibleOptimisersRule) = opt
 function setfield_if_present(opt, field::Symbol, nt::NamedTuple)
     if hasfield(typeof(nt), field)
         return Setfield.set(
-            opt, Setfield.PropertyLens{field}(),
-            convert(typeof(getproperty(opt, field)), getproperty(nt, field))
+            opt,
+            Setfield.PropertyLens{field}(),
+            convert(typeof(getproperty(opt, field)), getproperty(nt, field)),
         )
     end
     return opt
@@ -46,7 +47,7 @@ end
 end
 
 function make_reactant_compatible(opt::Optimisers.Descent)
-    return ReactantDescent(Utils.to_rarray(opt.eta; track_numbers = true))
+    return ReactantDescent(Utils.to_rarray(opt.eta; track_numbers=true))
 end
 
 Optimisers.init(::ReactantDescent, ::AbstractArray) = nothing
@@ -64,8 +65,8 @@ end
 
 function make_reactant_compatible(opt::Optimisers.Momentum)
     return ReactantMomentum(
-        Utils.to_rarray(opt.eta; track_numbers = true),
-        Utils.to_rarray(opt.rho; track_numbers = true)
+        Utils.to_rarray(opt.eta; track_numbers=true),
+        Utils.to_rarray(opt.rho; track_numbers=true),
     )
 end
 
@@ -88,9 +89,9 @@ end
 
 function make_reactant_compatible(opt::Optimisers.Adam)
     return ReactantAdam(
-        Utils.to_rarray(opt.eta; track_numbers = true),
-        Utils.to_rarray(opt.beta; track_numbers = true),
-        Utils.to_rarray(opt.epsilon; track_numbers = true)
+        Utils.to_rarray(opt.eta; track_numbers=true),
+        Utils.to_rarray(opt.beta; track_numbers=true),
+        Utils.to_rarray(opt.epsilon; track_numbers=true),
     )
 end
 
@@ -124,11 +125,11 @@ end
 
 function make_reactant_compatible(opt::Optimisers.AdamW)
     return ReactantAdamW(
-        Utils.to_rarray(opt.eta; track_numbers = true),
-        Utils.to_rarray(opt.beta; track_numbers = true),
-        Utils.to_rarray(opt.lambda; track_numbers = true),
-        Utils.to_rarray(opt.epsilon; track_numbers = true),
-        opt.couple
+        Utils.to_rarray(opt.eta; track_numbers=true),
+        Utils.to_rarray(opt.beta; track_numbers=true),
+        Utils.to_rarray(opt.lambda; track_numbers=true),
+        Utils.to_rarray(opt.epsilon; track_numbers=true),
+        opt.couple,
     )
 end
 

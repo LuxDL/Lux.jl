@@ -1,6 +1,6 @@
 function Lux.Training.compute_gradients_impl(
-        ::AutoZygote, objective_function::F, data, ts::Lux.Training.TrainState
-    ) where {F}
+    ::AutoZygote, objective_function::F, data, ts::Lux.Training.TrainState
+) where {F}
     @static if pkgversion(Zygote) ≥ v"0.7-"
         # Zygote 0.7 doesn't aggressively unthunk everything, so it is better to use a
         # closure here

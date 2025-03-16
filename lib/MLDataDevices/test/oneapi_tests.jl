@@ -5,7 +5,7 @@ using ArrayInterface: parameterless_type
     @test !MLDataDevices.functional(oneAPIDevice)
     @test cpu_device() isa CPUDevice
     @test gpu_device() isa CPUDevice
-    @test_throws MLDataDevices.Internal.DeviceSelectionException gpu_device(; force = true)
+    @test_throws MLDataDevices.Internal.DeviceSelectionException gpu_device(; force=true)
     @test_throws Exception default_device_rng(oneAPIDevice())
 end
 
@@ -17,12 +17,12 @@ using oneAPI
     if MLDataDevices.functional(oneAPIDevice)
         @info "oneAPI is functional"
         @test gpu_device() isa oneAPIDevice
-        @test gpu_device(; force = true) isa oneAPIDevice
+        @test gpu_device(; force=true) isa oneAPIDevice
     else
         @info "oneAPI is NOT functional"
         @test gpu_device() isa oneAPIDevice
         @test_throws MLDataDevices.Internal.DeviceSelectionException gpu_device(;
-            force = true
+            force=true
         )
     end
     @test MLDataDevices.GPU_DEVICE[] !== nothing
@@ -32,19 +32,24 @@ using FillArrays, Zygote  # Extensions
 
 @testset "Data Transfer" begin
     ps = (
-        a = (c = zeros(10, 1), d = 1), b = ones(10, 1), e = :c,
-        d = "string", mixed = [2.0f0, 3.0, ones(2, 3)],  # mixed array types
-        range = 1:10,
-        rng_default = Random.default_rng(), rng = MersenneTwister(),
-        one_elem = Zygote.OneElement(2.0f0, (2, 3), (1:3, 1:4)), farray = Fill(1.0f0, (2, 3)),
+        a=(c=zeros(10, 1), d=1),
+        b=ones(10, 1),
+        e=:c,
+        d="string",
+        mixed=[2.0f0, 3.0, ones(2, 3)],  # mixed array types
+        range=1:10,
+        rng_default=Random.default_rng(),
+        rng=MersenneTwister(),
+        one_elem=Zygote.OneElement(2.0f0, (2, 3), (1:3, 1:4)),
+        farray=Fill(1.0f0, (2, 3)),
     )
 
     device = gpu_device()
     aType = MLDataDevices.functional(oneAPIDevice) ? oneArray : Array
-    rngType = MLDataDevices.functional(oneAPIDevice) ? oneAPI.GPUArrays.RNG :
-        Random.AbstractRNG
+    rngType =
+        MLDataDevices.functional(oneAPIDevice) ? oneAPI.GPUArrays.RNG : Random.AbstractRNG
 
-    ps_xpu = ps |> device
+    ps_xpu = device(ps)
     @test get_device(ps_xpu) isa oneAPIDevice
     @test get_device_type(ps_xpu) <: oneAPIDevice
     @test ps_xpu.a.c isa aType
@@ -72,7 +77,7 @@ using FillArrays, Zygote  # Extensions
         @test ps_xpu.farray isa Fill
     end
 
-    ps_cpu = ps_xpu |> cpu_device()
+    ps_cpu = cpu_device()(ps_xpu)
     @test get_device(ps_cpu) isa CPUDevice
     @test get_device_type(ps_cpu) <: CPUDevice
     @test ps_cpu.a.c isa Array
@@ -102,13 +107,13 @@ using FillArrays, Zygote  # Extensions
         @test ps_cpu.farray isa Fill
     end
 
-    ps_mixed = (; a = rand(2), b = device(rand(2)))
+    ps_mixed = (; a=rand(2), b=device(rand(2)))
     @test_throws ArgumentError get_device(ps_mixed)
     @test_throws ArgumentError get_device_type(ps_mixed)
 
     @testset "get_device_type compile constant" begin
-        x = rand(10, 10) |> device
-        ps = (; weight = x, bias = x, d = (x, x))
+        x = device(rand(10, 10))
+        ps = (; weight=x, bias=x, d=(x, x))
 
         return_val(x) = Val(get_device_type(x))  # If it is a compile time constant then type inference will work
         @test @inferred(return_val(ps)) isa Val{parameterless_type(typeof(device))}
@@ -118,8 +123,8 @@ using FillArrays, Zygote  # Extensions
     end
 
     @testset "Issue #1129: no new object" begin
-        x = rand(Float32, 10, 10) |> device
-        y = x |> device
+        x = device(rand(Float32, 10, 10))
+        y = device(x)
         @test x === y
     end
 end
@@ -135,11 +140,11 @@ end
         @test get_device(ff) isa CPUDevice
         @test get_device_type(ff) <: CPUDevice
 
-        ff_xpu = ff |> oneAPIDevice()
+        ff_xpu = oneAPIDevice()(ff)
         @test get_device(ff_xpu) isa oneAPIDevice
         @test get_device_type(ff_xpu) <: oneAPIDevice
 
-        ff_cpu = ff_xpu |> cpu_device()
+        ff_cpu = cpu_device()(ff_xpu)
         @test get_device(ff_cpu) isa CPUDevice
         @test get_device_type(ff_cpu) <: CPUDevice
     end
@@ -147,7 +152,7 @@ end
 
 @testset "Wrapper Arrays" begin
     if MLDataDevices.functional(oneAPIDevice)
-        x = rand(10, 10) |> oneAPIDevice()
+        x = oneAPIDevice()(rand(10, 10))
         @test get_device(x) isa oneAPIDevice
         @test get_device_type(x) <: oneAPIDevice
         x_view = view(x, 1:5, 1:5)
@@ -161,8 +166,6 @@ end
         @test_logs (
             :warn,
             "Support for Multi Device oneAPI hasn't been implemented yet. Ignoring the device setting.",
-        ) MLDataDevices.set_device!(
-            oneAPIDevice, nothing, 1
-        )
+        ) MLDataDevices.set_device!(oneAPIDevice, nothing, 1)
     end
 end

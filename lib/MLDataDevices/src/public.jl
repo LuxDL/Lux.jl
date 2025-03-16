@@ -9,7 +9,7 @@ end
 struct MetalDevice <: AbstractGPUDevice end
 struct oneAPIDevice <: AbstractGPUDevice end
 
-@kwdef struct ReactantDevice{C, D, S} <: AbstractAcceleratorDevice
+@kwdef struct ReactantDevice{C,D,S} <: AbstractAcceleratorDevice
     client::C = missing
     device::D = missing
     sharding::S = missing
@@ -48,7 +48,7 @@ computation. Note that even if the backend is loaded (as checked via
 Note that while this function is not exported, it is considered part of the public API.
 """
 functional(x) = false
-functional(::Union{CPUDevice, Type{<:CPUDevice}}) = true
+functional(::Union{CPUDevice,Type{<:CPUDevice}}) = true
 
 """
     loaded(x::AbstractDevice) -> Bool
@@ -62,12 +62,12 @@ Checks if the trigger package for the device is loaded. Trigger packages are as 
   - `oneAPI.jl` for Intel oneAPI GPU Support.
 """
 loaded(x) = false
-loaded(::Union{CPUDevice, Type{<:CPUDevice}}) = true
+loaded(::Union{CPUDevice,Type{<:CPUDevice}}) = true
 
 # Order is important here
 const GPU_DEVICES = (CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice)
 
-const GPU_DEVICE = Ref{Union{Nothing, AbstractDevice}}(nothing)
+const GPU_DEVICE = Ref{Union{Nothing,AbstractDevice}}(nothing)
 
 """
     reset_gpu_device!()
@@ -131,13 +131,15 @@ Selects GPU device based on the following criteria:
     device is found.
 """
 function gpu_device(
-        device_id::Union{Nothing, <:Integer} = nothing; force::Bool = false,
-        force_gpu_usage::Union{Missing, Bool} = missing
-    )::AbstractDevice
+    device_id::Union{Nothing,<:Integer}=nothing;
+    force::Bool=false,
+    force_gpu_usage::Union{Missing,Bool}=missing,
+)::AbstractDevice
     if force_gpu_usage !== missing
         Base.depwarn(
             "`force_gpu_usage` is deprecated and will be removed in v2. Use \
-             `force` instead.", :gpu_device
+             `force` instead.",
+            :gpu_device,
         )
         force = force_gpu_usage
     end
@@ -186,7 +188,7 @@ function gpu_backend!(backend::String)
         @delete_preferences!("gpu_backend")
         @info "Deleted the local preference for `gpu_backend`. Restart Julia to use the \
                new backend."
-        return
+        return nothing
     end
 
     allowed_backends = supported_gpu_backends()
@@ -194,16 +196,20 @@ function gpu_backend!(backend::String)
     set_backend = @load_preference("gpu_backend", nothing)
     if set_backend == backend
         @info "GPU backend is already set to $backend. No action is required."
-        return
+        return nothing
     end
 
     if backend ∉ allowed_backends
-        throw(ArgumentError("Invalid backend: $backend. Valid backends are $allowed_backends."))
+        throw(
+            ArgumentError(
+                "Invalid backend: $backend. Valid backends are $allowed_backends."
+            ),
+        )
     end
 
     @set_preferences!("gpu_backend" => backend)
     @info "GPU backend has been set to $backend. Restart Julia to use the new backend."
-    return
+    return nothing
 end
 
 """
@@ -229,8 +235,8 @@ specified, then the default client and index are used.
 arrays. Alternatively, pass in a `IdDict` to specify the sharding for specific leaves.
 """
 function reactant_device(;
-        force::Bool = false, client = missing, device = missing, sharding = missing
-    )
+    force::Bool=false, client=missing, device=missing, sharding=missing
+)
     msg = "`ReactantDevice` is not loaded or not functional. Load `Reactant.jl` before \
            calling this function. Defaulting to CPU."
     if loaded(ReactantDevice)
@@ -338,7 +344,7 @@ $SET_DEVICE_DOCS
 
 $SET_DEVICE_DANGER
 """
-function set_device!(::Type{T}, dev_or_id) where {T <: AbstractDevice}
+function set_device!(::Type{T}, dev_or_id) where {T<:AbstractDevice}
     T === CUDADevice && @warn "`CUDA.jl` hasn't been loaded. Ignoring the device setting."
     T === AMDGPUDevice &&
         @warn "`AMDGPU.jl` hasn't been loaded. Ignoring the device setting."
@@ -350,7 +356,7 @@ function set_device!(::Type{T}, dev_or_id) where {T <: AbstractDevice}
         @warn "Setting device for `CPUDevice` doesn't make sense. Ignoring the device setting."
     T === ReactantDevice &&
         @warn "Setting device for `ReactantDevice` hasn't been implemented yet. Ignoring the device setting."
-    return
+    return nothing
 end
 
 """
@@ -366,18 +372,18 @@ $SET_DEVICE_DOCS
 
 $SET_DEVICE_DANGER
 """
-function set_device!(::Type{T}, ::Nothing, rank::Integer) where {T <: AbstractDevice}
+function set_device!(::Type{T}, ::Nothing, rank::Integer) where {T<:AbstractDevice}
     return set_device!(T, rank)
 end
 
 # Dispatches for Different Data Structures
-(D::AbstractDevice)(x) = Functors.fmap(Base.Fix1(Adapt.adapt, D), x; exclude = isleaf)
+(D::AbstractDevice)(x) = Functors.fmap(Base.Fix1(Adapt.adapt, D), x; exclude=isleaf)
 
 for op in (:get_device, :get_device_type)
     @eval function $(op)(x)
         Internal.fast_structure(x) && return Internal.$(op)(x)
         return mapreduce(
-            Internal.$(op), Internal.combine_devices, fleaves(x; exclude = isleaf)
+            Internal.$(op), Internal.combine_devices, fleaves(x; exclude=isleaf)
         )
     end
 end

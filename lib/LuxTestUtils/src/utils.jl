@@ -1,18 +1,20 @@
 # Taken from https://github.com/JuliaLang/julia/pull/54653
-struct Fix{N, F, T} <: Function
+struct Fix{N,F,T} <: Function
     f::F
     x::T
 
-    Fix{N}(f::F, x::Constant) where {N, F} = Fix{N}(f, x.val)
-    function Fix{N}(f::F, x) where {N, F}
+    Fix{N}(f::F, x::Constant) where {N,F} = Fix{N}(f, x.val)
+    function Fix{N}(f::F, x) where {N,F}
         if N isa Int && N < 1
             throw(ArgumentError("expected `N` in `Fix{N}` to be integer greater than 0, \
                                  but got $N"))
-        elseif !(N isa Union{Int, Symbol})
-            throw(ArgumentError("expected type parameter in `Fix` to be `Int` or `Symbol`, \
-                                 but got `$N::$(typeof(N))`"))
+        elseif !(N isa Union{Int,Symbol})
+            throw(
+                ArgumentError("expected type parameter in `Fix` to be `Int` or `Symbol`, \
+                               but got `$N::$(typeof(N))`")
+            )
         end
-        return new{N, Base._stable_typeof(f), Base._stable_typeof(x)}(f, x)
+        return new{N,Base._stable_typeof(f),Base._stable_typeof(x)}(f, x)
     end
 end
 function Fix(f::F; kws...) where {F}
@@ -22,7 +24,7 @@ function Fix(f::F; kws...) where {F}
     return Fix{only(keys(kws))}(f, only(values(kws)))
 end
 
-function (f::Fix{N})(args::Vararg{Any, M}; kws...) where {N, M}
+function (f::Fix{N})(args::Vararg{Any,M}; kws...) where {N,M}
     if N isa Symbol
         N in keys(kws) &&
             throw(ArgumentError("found duplicate keyword argument `$N` passed to a `Fix` \
@@ -30,8 +32,11 @@ function (f::Fix{N})(args::Vararg{Any, M}; kws...) where {N, M}
         f_kws = NamedTuple{(N,)}((f.x,))
         return f.f(args...; f_kws..., kws...)
     else # Int
-        M < N - 1 &&
-            throw(ArgumentError("expected at least $(N - 1) arguments to a `Fix` function with `N=$(N)`, but got $M"))
+        M < N - 1 && throw(
+            ArgumentError(
+                "expected at least $(N - 1) arguments to a `Fix` function with `N=$(N)`, but got $M",
+            ),
+        )
         return f.f(
             args[begin:(begin + (N - 2))]..., f.x, args[(begin + (N - 1)):end]...; kws...
         )
@@ -75,7 +80,7 @@ __length(::Number) = 1
 # Equality Checks
 struct GradientComputationSkipped end
 
-@generated function check_approx(x::X, y::Y; kwargs...) where {X, Y}
+@generated function check_approx(x::X, y::Y; kwargs...) where {X,Y}
     device = cpu_device()
     (X == GradientComputationSkipped || Y == GradientComputationSkipped) && return :(true)
     hasmethod(isapprox, (X, Y)) && return :(isapprox($(device)(x), $(device)(y); kwargs...))
@@ -85,16 +90,16 @@ end
 check_approx(x::Tuple, y::Tuple; kwargs...) = all(check_approx.(x, y; kwargs...))
 
 function check_approx(
-        nt1::NamedTuple{fields}, nt2::NamedTuple{fields}; kwargs...
-    ) where {fields}
+    nt1::NamedTuple{fields}, nt2::NamedTuple{fields}; kwargs...
+) where {fields}
     _check_approx(xy) = check_approx(xy[1], xy[2]; kwargs...)
-    _check_approx(t::Tuple{Nothing, Nothing}) = true
+    _check_approx(t::Tuple{Nothing,Nothing}) = true
     return all(_check_approx, zip(values(nt1), values(nt2)))
 end
 
-function check_approx(t1::NTuple{N, T}, t2::NTuple{N, T}; kwargs...) where {N, T}
+function check_approx(t1::NTuple{N,T}, t2::NTuple{N,T}; kwargs...) where {N,T}
     _check_approx(xy) = check_approx(xy[1], xy[2]; kwargs...)
-    _check_approx(t::Tuple{Nothing, Nothing}) = true
+    _check_approx(t::Tuple{Nothing,Nothing}) = true
     return all(_check_approx, zip(t1, t2))
 end
 

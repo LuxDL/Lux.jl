@@ -1,8 +1,15 @@
 module MLDataDevicesOneHotArraysExt
 
 using Adapt: Adapt
-using MLDataDevices: MLDataDevices, Internal, ReactantDevice, CPUDevice, CUDADevice,
-    AMDGPUDevice, MetalDevice, oneAPIDevice
+using MLDataDevices:
+    MLDataDevices,
+    Internal,
+    ReactantDevice,
+    CPUDevice,
+    CUDADevice,
+    AMDGPUDevice,
+    MetalDevice,
+    oneAPIDevice
 using OneHotArrays: OneHotArray
 
 for op in (:get_device, :get_device_type)

@@ -4,10 +4,10 @@ using Reexport
 
 @reexport using CUDA, CUDA.CUDAKernels, cuDNN
 
-const USE_CUDA_GPU = Ref{Union{Nothing, Bool}}(nothing)
+const USE_CUDA_GPU = Ref{Union{Nothing,Bool}}(nothing)
 
 function _check_use_cuda!()
-    USE_CUDA_GPU[] === nothing || return
+    USE_CUDA_GPU[] === nothing || return nothing
 
     USE_CUDA_GPU[] = CUDA.functional()
     if USE_CUDA_GPU[]
@@ -20,7 +20,7 @@ function _check_use_cuda!()
         @warn "LuxCUDA is loaded but the CUDA GPU is not functional." maxlog = 1
     end
 
-    return
+    return nothing
 end
 
 """

@@ -1,7 +1,14 @@
 module LuxLibReactantExt
 
-using Reactant: Reactant, MLIR, Ops, TracedUtils, TracedRArray, AnyTracedRArray,
-    AnyTracedRVector, TracedRNumber
+using Reactant:
+    Reactant,
+    MLIR,
+    Ops,
+    TracedUtils,
+    TracedRArray,
+    AnyTracedRArray,
+    AnyTracedRVector,
+    TracedRNumber
 using Static: False
 
 using LuxLib: LuxLib, Impl, Optional, Utils
@@ -10,11 +17,16 @@ using LuxLib: LuxLib, Impl, Optional, Utils
 # NNlib doesn't have certain ops implemented. In those cases we can emit more optimized
 # StableHLO
 function Impl.batchnorm(
-        x::AnyTracedRArray{T},
-        γ::Optional{<:AnyTracedRVector}, β::Optional{<:AnyTracedRVector},
-        rμ::Optional{<:AnyTracedRVector}, rσ²::Optional{<:AnyTracedRVector},
-        ::False, act::F, momentum, ϵ
-    ) where {T, F}
+    x::AnyTracedRArray{T},
+    γ::Optional{<:AnyTracedRVector},
+    β::Optional{<:AnyTracedRVector},
+    rμ::Optional{<:AnyTracedRVector},
+    rσ²::Optional{<:AnyTracedRVector},
+    ::False,
+    act::F,
+    momentum,
+    ϵ,
+) where {T,F}
     x = TracedUtils.materialize_traced_array(x)
 
     γ = if γ === nothing
@@ -30,7 +42,7 @@ function Impl.batchnorm(
 
     if rμ === nothing && rσ² === nothing
         μ, σ² = Impl.mean_var(
-            x; dims = Utils.unsafe_known(Impl.batchnorm_reduce_dims(x)), corrected = false
+            x; dims=Utils.unsafe_known(Impl.batchnorm_reduce_dims(x)), corrected=false
         )
         μ = TracedUtils.materialize_traced_array(vec(μ))
         σ² = TracedUtils.materialize_traced_array(vec(σ²))
@@ -47,13 +59,13 @@ function Impl.batchnorm(
             TracedUtils.get_mlir_data(β),
             TracedUtils.get_mlir_data(μ),
             TracedUtils.get_mlir_data(σ²);
-            epsilon = Float32(ϵ),
-            feature_index = Int64(ndims(x) - 2)
+            epsilon=Float32(ϵ),
+            feature_index=Int64(ndims(x) - 2),
         ),
-        1
+        1,
     )
 
-    return act.(TracedRArray{T, ndims(x)}((), res, size(x))), rμ, rσ²
+    return act.(TracedRArray{T,ndims(x)}((), res, size(x))), rμ, rσ²
 end
 
 # The following code is commented out since we don't have Batchnorm Op Adjoint registered

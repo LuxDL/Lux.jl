@@ -24,12 +24,13 @@
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         c = Parallel(
-            +; chain = Chain(; dense_1 = Dense(2 => 3), bn = BatchNorm(3), dense_2 = Dense(3 => 5)),
-            dense_3 = Dense(5 => 1)
+            +;
+            chain=Chain(; dense_1=Dense(2 => 3), bn=BatchNorm(3), dense_2=Dense(3 => 5)),
+            dense_3=Dense(5 => 1),
         )
 
         rng = StableRNG(12345)
-        ps, st = Lux.setup(rng, c) |> dev
+        ps, st = dev(Lux.setup(rng, c))
 
         c_, ps_, st_ = Lux.Experimental.layer_map(zero_dense_params_1, c, ps, st)
 
@@ -41,14 +42,14 @@
         @test !all(iszero, ps_.dense_3.bias)
 
         # Custom Layers -- See https://github.com/LuxDL/Lux.jl/issues/187
-        struct SimpleCustom{L1, L2} <: Lux.AbstractLuxContainerLayer{(:dense, :conv)}
+        struct SimpleCustom{L1,L2} <: Lux.AbstractLuxContainerLayer{(:dense, :conv)}
             dense::L1
             conv::L2
         end
 
         l = SimpleCustom(Dense(3 => 2), Conv((3,), 3 => 2))
 
-        ps, st = Lux.setup(rng, l) |> dev
+        ps, st = dev(Lux.setup(rng, l))
 
         l_, ps_, st_ = Lux.Experimental.layer_map(zero_dense_params_2, l, ps, st)
 
@@ -64,7 +65,7 @@
 
         l = SimpleWrapper(SimpleCustom(Dense(3 => 2), Conv((3,), 3 => 2)))
 
-        ps, st = Lux.setup(rng, l) |> dev
+        ps, st = dev(Lux.setup(rng, l))
 
         l_, ps_, st_ = Lux.Experimental.layer_map(zero_dense_params_2, l, ps, st)
 

@@ -11,8 +11,8 @@ include("setup_modes.jl")
     rng = StableRNG(123)
 
     model = Chain(Dense(2 => 3, tanh), Dense(3 => 2))
-    x = rand(2, 3) |> aType
-    ps, st = Lux.setup(rng, model) |> dev
+    x = aType(rand(2, 3))
+    ps, st = dev(Lux.setup(rng, model))
 
     x_ad_arrs = Any[ForwardDiff.Dual.(x), Tracker.param(x)]
     if !ongpu
@@ -23,7 +23,7 @@ include("setup_modes.jl")
 
     # We only log once so can't really check the warning
     if Lux.LuxPreferences.ELTYPE_MISMATCH_HANDLING == "none" ||
-            Lux.LuxPreferences.ELTYPE_MISMATCH_HANDLING == "warn"
+        Lux.LuxPreferences.ELTYPE_MISMATCH_HANDLING == "warn"
         y, st_ = model(x, ps, st)
         @test eltype(y) == Float64  # We don't change the eltype
 

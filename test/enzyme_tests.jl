@@ -12,8 +12,12 @@ function compute_enzyme_gradient(model, x, ps, st)
     dps = Enzyme.make_zero(ps)
     Enzyme.autodiff(
         Enzyme.set_runtime_activity(Reverse),
-        generic_loss_function, Active, Const(model),
-        Duplicated(x, dx), Duplicated(ps, dps), Const(st)
+        generic_loss_function,
+        Active,
+        Const(model),
+        Duplicated(x, dx),
+        Duplicated(ps, dps),
+        Const(st),
     )
     return dx, dps
 end
@@ -26,8 +30,8 @@ end
 function test_enzyme_gradients(model, x, ps, st)
     dx, dps = compute_enzyme_gradient(model, x, ps, st)
     dx_zygote, dps_zygote = compute_zygote_gradient(model, x, ps, st)
-    @test check_approx(dx, dx_zygote; atol = 1.0f-3, rtol = 1.0f-3)
-    @test check_approx(dps, dps_zygote; atol = 1.0f-3, rtol = 1.0f-3)
+    @test check_approx(dx, dx_zygote; atol=1.0f-3, rtol=1.0f-3)
+    @test check_approx(dps, dps_zygote; atol=1.0f-3, rtol=1.0f-3)
 end
 
 #! format: off
@@ -78,23 +82,24 @@ if VERSION < v"1.11-"
 end
 #! format: on
 
-export generic_loss_function, compute_enzyme_gradient, compute_zygote_gradient,
-    test_enzyme_gradients, MODELS_LIST
+export generic_loss_function,
+    compute_enzyme_gradient, compute_zygote_gradient, test_enzyme_gradients, MODELS_LIST
 end
 
 @testitem "Enzyme Integration" setup = [EnzymeTestSetup, SharedTestSetup] tags = [
-    :autodiff, :enzyme,
+    :autodiff, :enzyme
 ] timeout = 3600 begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         ongpu && continue
 
-        @testset "[$(i)] $(nameof(typeof(model)))" for (i, (model, x)) in enumerate(MODELS_LIST)
+        @testset "[$(i)] $(nameof(typeof(model)))" for (i, (model, x)) in
+                                                       enumerate(MODELS_LIST)
             display(model)
 
-            ps, st = Lux.setup(rng, model) |> dev
-            x = x |> aType
+            ps, st = dev(Lux.setup(rng, model))
+            x = aType(x)
 
             if LuxTestUtils.ENZYME_TESTING_ENABLED
                 test_enzyme_gradients(model, x, ps, st)
@@ -105,9 +110,8 @@ end
     end
 end
 
-@testitem "Enzyme Integration ComponentArray" setup = [EnzymeTestSetup, SharedTestSetup] timeout = 3600 tags = [
-    :autodiff, :enzyme,
-] begin
+@testitem "Enzyme Integration ComponentArray" setup = [EnzymeTestSetup, SharedTestSetup] timeout =
+    3600 tags = [:autodiff, :enzyme] begin
     using ComponentArrays
 
     rng = StableRNG(12345)
@@ -115,13 +119,14 @@ end
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         ongpu && continue
 
-        @testset "[$(i)] $(nameof(typeof(model)))" for (i, (model, x)) in enumerate(MODELS_LIST)
+        @testset "[$(i)] $(nameof(typeof(model)))" for (i, (model, x)) in
+                                                       enumerate(MODELS_LIST)
             display(model)
 
             ps, st = Lux.setup(rng, model)
             ps = ComponentArray(ps)
-            st = st |> dev
-            x = x |> aType
+            st = dev(st)
+            x = aType(x)
 
             if LuxTestUtils.ENZYME_TESTING_ENABLED
                 test_enzyme_gradients(model, x, ps, st)

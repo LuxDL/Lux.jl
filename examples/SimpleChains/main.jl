@@ -17,7 +17,7 @@ Reactant.set_default_backend("cpu")
 function loadmnist(batchsize, train_split)
     ## Load MNIST
     N = parse(Bool, get(ENV, "CI", "false")) ? 1500 : nothing
-    dataset = MNIST(; split = :train)
+    dataset = MNIST(; split=:train)
     if N !== nothing
         imgs = dataset.features[:, :, 1:N]
         labels_raw = dataset.targets[1:N]
@@ -29,13 +29,13 @@ function loadmnist(batchsize, train_split)
     ## Process images into (H, W, C, BS) batches
     x_data = Float32.(reshape(imgs, size(imgs, 1), size(imgs, 2), 1, size(imgs, 3)))
     y_data = onehotbatch(labels_raw, 0:9)
-    (x_train, y_train), (x_test, y_test) = splitobs((x_data, y_data); at = train_split)
+    (x_train, y_train), (x_test, y_test) = splitobs((x_data, y_data); at=train_split)
 
     return (
         ## Use DataLoader to automatically minibatch and shuffle the data
-        DataLoader(collect.((x_train, y_train)); batchsize, shuffle = true, partial = false),
+        DataLoader(collect.((x_train, y_train)); batchsize, shuffle=true, partial=false),
         ## Don't shuffle the test data
-        DataLoader(collect.((x_test, y_test)); batchsize, shuffle = false, partial = false),
+        DataLoader(collect.((x_test, y_test)); batchsize, shuffle=false, partial=false),
     )
 end
 
@@ -47,11 +47,7 @@ lux_model = Chain(
     Conv((5, 5), 6 => 16, relu),
     MaxPool((2, 2)),
     FlattenLayer(3),
-    Chain(
-        Dense(256 => 128, relu),
-        Dense(128 => 84, relu),
-        Dense(84 => 10)
-    )
+    Chain(Dense(256 => 128, relu), Dense(128 => 84, relu), Dense(84 => 10)),
 )
 
 # We now need to convert the lux_model to SimpleChains.jl. We need to do this by defining
@@ -61,7 +57,7 @@ adaptor = ToSimpleChainsAdaptor((28, 28, 1))
 simple_chains_model = adaptor(lux_model)
 
 # ## Helper Functions
-const lossfn = CrossEntropyLoss(; logits = Val(true))
+const lossfn = CrossEntropyLoss(; logits=Val(true))
 
 function accuracy(model, ps, st, dataloader)
     total_correct, total = 0, 0
@@ -76,9 +72,9 @@ function accuracy(model, ps, st, dataloader)
 end
 
 # ## Define the Training Loop
-function train(model, dev = cpu_device(); rng = Random.default_rng(), kwargs...)
-    train_dataloader, test_dataloader = loadmnist(128, 0.9) |> dev
-    ps, st = Lux.setup(rng, model) |> dev
+function train(model, dev=cpu_device(); rng=Random.default_rng(), kwargs...)
+    train_dataloader, test_dataloader = dev(loadmnist(128, 0.9))
+    ps, st = dev(Lux.setup(rng, model))
 
     vjp = dev isa ReactantDevice ? AutoEnzyme() : AutoZygote()
 
@@ -103,14 +99,14 @@ function train(model, dev = cpu_device(); rng = Random.default_rng(), kwargs...)
         end
         ttime = time() - stime
 
-        tr_acc = accuracy(
-            model_compiled, train_state.parameters, train_state.states, train_dataloader
-        ) *
-            100
-        te_acc = accuracy(
-            model_compiled, train_state.parameters, train_state.states, test_dataloader
-        ) *
-            100
+        tr_acc =
+            accuracy(
+                model_compiled, train_state.parameters, train_state.states, train_dataloader
+            ) * 100
+        te_acc =
+            accuracy(
+                model_compiled, train_state.parameters, train_state.states, test_dataloader
+            ) * 100
 
         @printf "[%2d/%2d] \t Time %.2fs \t Training Accuracy: %.2f%% \t Test Accuracy: \
                  %.2f%%\n" epoch nepochs ttime tr_acc te_acc

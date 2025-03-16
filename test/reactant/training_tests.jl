@@ -1,4 +1,5 @@
-@testitem "Reactant: Training API" tags = [:reactant] setup = [SharedTestSetup] skip = :(Sys.iswindows()) begin
+@testitem "Reactant: Training API" tags = [:reactant] setup = [SharedTestSetup] skip =
+    :(Sys.iswindows()) begin
     using Reactant, Optimisers
 
     @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
@@ -13,7 +14,7 @@
             Reactant.set_default_backend("cpu")
         end
 
-        xdev = reactant_device(; force = true)
+        xdev = reactant_device(; force=true)
 
         @testset "MLP Training: $(version)" for version in (:iip, :oop)
             model = Chain(
@@ -21,17 +22,18 @@
                 BatchNorm(32),
                 Dense(32 => 32, gelu),
                 BatchNorm(32),
-                Dense(32 => 2)
+                Dense(32 => 2),
             )
-            ps, st = Lux.setup(StableRNG(1234), model) |> xdev
+            ps, st = xdev(Lux.setup(StableRNG(1234), model))
 
-            x_ra = randn(Float32, 2, 32) |> xdev
-            y_ra = rand(Float32, 2, 32) |> xdev
+            x_ra = xdev(randn(Float32, 2, 32))
+            y_ra = xdev(rand(Float32, 2, 32))
 
-            inference_loss_fn = (xᵢ, yᵢ, mode, ps, st) -> begin
-                ŷᵢ, _ = model(xᵢ, ps, Lux.testmode(st))
-                return MSELoss()(ŷᵢ, yᵢ)
-            end
+            inference_loss_fn =
+                (xᵢ, yᵢ, mode, ps, st) -> begin
+                    ŷᵢ, _ = model(xᵢ, ps, Lux.testmode(st))
+                    return MSELoss()(ŷᵢ, yᵢ)
+                end
             inference_loss_fn_compiled = @compile inference_loss_fn(
                 x_ra, y_ra, model, ps, st
             )
@@ -45,9 +47,8 @@
                 inference_loss_fn_compiled(xᵢ, yᵢ, model, ps, st)
             end
 
-            @testset for opt in (
-                    Descent(0.01f0), Momentum(0.01f0), Adam(0.01f0), AdamW(0.01f0),
-                )
+            @testset for opt in
+                         (Descent(0.01f0), Momentum(0.01f0), Adam(0.01f0), AdamW(0.01f0))
                 train_state = Training.TrainState(model, ps, st, opt)
 
                 for epoch in 1:100, (xᵢ, yᵢ) in dataloader

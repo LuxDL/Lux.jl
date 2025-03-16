@@ -41,14 +41,14 @@ recursive_eltype(x::Number, ::False) = eltype(x)
 recursive_eltype(x::Number, ::True) = Utils.eltype(x)
 recursive_eltype(::CRC.ZeroTangent, ::StaticBool) = Bool
 recursive_eltype(::CRC.NoTangent, ::StaticBool) = Bool
-recursive_eltype(::Union{Nothing, Missing, Val}, ::StaticBool) = Bool
-function recursive_eltype(x::Union{Tuple, NamedTuple}, val::StaticBool)
+recursive_eltype(::Union{Nothing,Missing,Val}, ::StaticBool) = Bool
+function recursive_eltype(x::Union{Tuple,NamedTuple}, val::StaticBool)
     leaves = x isa Tuple ? x : values(x)
-    return mapreduce(Base.Fix2(recursive_eltype, val), promote_type, leaves; init = Bool)
+    return mapreduce(Base.Fix2(recursive_eltype, val), promote_type, leaves; init=Bool)
 end
 function recursive_eltype(x, val::StaticBool)
-    leaves = Functors.fleaves(x; exclude = MLDataDevices.isleaf)
-    return mapreduce(Base.Fix2(recursive_eltype, val), promote_type, leaves; init = Bool)
+    leaves = Functors.fleaves(x; exclude=MLDataDevices.isleaf)
+    return mapreduce(Base.Fix2(recursive_eltype, val), promote_type, leaves; init=Bool)
 end
 
 """

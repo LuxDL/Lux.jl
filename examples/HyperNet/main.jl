@@ -2,14 +2,13 @@
 
 # ## Package Imports
 
-using Lux, ComponentArrays, MLDatasets, MLUtils, OneHotArrays, Optimisers, Printf, Random,
-    Reactant
+using Lux,
+    ComponentArrays, MLDatasets, MLUtils, OneHotArrays, Optimisers, Printf, Random, Reactant
 
 # ## Loading Datasets
 function load_dataset(
-        ::Type{dset}, n_train::Union{Nothing, Int},
-        n_eval::Union{Nothing, Int}, batchsize::Int
-    ) where {dset}
+    ::Type{dset}, n_train::Union{Nothing,Int}, n_eval::Union{Nothing,Int}, batchsize::Int
+) where {dset}
     (; features, targets) = if n_train === nothing
         tmp = dset(:train)
         tmp[1:length(tmp)]
@@ -29,28 +28,31 @@ function load_dataset(
     return (
         DataLoader(
             (x_train, y_train);
-            batchsize = min(batchsize, size(x_train, 4)), shuffle = true, partial = false
+            batchsize=min(batchsize, size(x_train, 4)),
+            shuffle=true,
+            partial=false,
         ),
         DataLoader(
             (x_test, y_test);
-            batchsize = min(batchsize, size(x_test, 4)), shuffle = false, partial = false
+            batchsize=min(batchsize, size(x_test, 4)),
+            shuffle=false,
+            partial=false,
         ),
     )
 end
 
-function load_datasets(batchsize = 32)
+function load_datasets(batchsize=32)
     n_train = parse(Bool, get(ENV, "CI", "false")) ? 1024 : nothing
     n_eval = parse(Bool, get(ENV, "CI", "false")) ? 32 : nothing
     return load_dataset.((MNIST, FashionMNIST), n_train, n_eval, batchsize)
 end
 
 # ## Implement a HyperNet Layer
-function HyperNet(
-        weight_generator::AbstractLuxLayer, core_network::AbstractLuxLayer
+function HyperNet(weight_generator::AbstractLuxLayer, core_network::AbstractLuxLayer)
+    ca_axes = getaxes(
+        ComponentArray(Lux.initialparameters(Random.default_rng(), core_network))
     )
-    ca_axes = Lux.initialparameters(Random.default_rng(), core_network) |>
-        ComponentArray |> getaxes
-    return @compact(; ca_axes, weight_generator, core_network, dispatch = :HyperNet) do (x, y)
+    return @compact(; ca_axes, weight_generator, core_network, dispatch=:HyperNet) do (x, y)
         ## Generate the weights
         ps_new = ComponentArray(vec(weight_generator(x)), ca_axes)
         @return core_network(y, ps_new)
@@ -63,26 +65,26 @@ end
 # `core_network` parameters.
 
 function Lux.initialparameters(rng::AbstractRNG, hn::CompactLuxLayer{:HyperNet})
-    return (; weight_generator = Lux.initialparameters(rng, hn.layers.weight_generator))
+    return (; weight_generator=Lux.initialparameters(rng, hn.layers.weight_generator))
 end
 
 # ## Create and Initialize the HyperNet
 function create_model()
     core_network = Chain(
-        Conv((3, 3), 1 => 16, relu; stride = 2),
-        Conv((3, 3), 16 => 32, relu; stride = 2),
-        Conv((3, 3), 32 => 64, relu; stride = 2),
+        Conv((3, 3), 1 => 16, relu; stride=2),
+        Conv((3, 3), 16 => 32, relu; stride=2),
+        Conv((3, 3), 32 => 64, relu; stride=2),
         GlobalMeanPool(),
         FlattenLayer(),
-        Dense(64, 10)
+        Dense(64, 10),
     )
     return HyperNet(
         Chain(
             Embedding(2 => 32),
             Dense(32, 64, relu),
-            Dense(64, Lux.parameterlength(core_network))
+            Dense(64, Lux.parameterlength(core_network)),
         ),
-        core_network
+        core_network,
     )
 end
 
@@ -102,13 +104,13 @@ end
 
 # ## Training
 function train()
-    dev = reactant_device(; force = true)
+    dev = reactant_device(; force=true)
 
     model = create_model()
-    dataloaders = load_datasets() |> dev
+    dataloaders = dev(load_datasets())
 
     Random.seed!(1234)
-    ps, st = Lux.setup(Random.default_rng(), model) |> dev
+    ps, st = dev(Lux.setup(Random.default_rng(), model))
 
     train_state = Training.TrainState(model, ps, st, Adam(0.0003f0))
 
@@ -119,7 +121,7 @@ function train()
     ### Lets train the model
     nepochs = 50
     for epoch in 1:nepochs, data_idx in 1:2
-        train_dataloader, test_dataloader = dataloaders[data_idx] .|> dev
+        train_dataloader, test_dataloader = dev.(dataloaders[data_idx])
 
         ### This allows us to trace the data index, else it will be embedded as a constant
         ### in the IR
@@ -128,25 +130,34 @@ function train()
         stime = time()
         for (x, y) in train_dataloader
             (_, _, _, train_state) = Training.single_train_step!(
-                AutoEnzyme(), CrossEntropyLoss(; logits = Val(true)),
-                ((concrete_data_idx, x), y), train_state; return_gradients = Val(false)
+                AutoEnzyme(),
+                CrossEntropyLoss(; logits=Val(true)),
+                ((concrete_data_idx, x), y),
+                train_state;
+                return_gradients=Val(false),
             )
         end
         ttime = time() - stime
 
         train_acc = round(
             accuracy(
-                model_compiled, train_state.parameters,
-                train_state.states, train_dataloader, concrete_data_idx
+                model_compiled,
+                train_state.parameters,
+                train_state.states,
+                train_dataloader,
+                concrete_data_idx,
             ) * 100;
-            digits = 2
+            digits=2,
         )
         test_acc = round(
             accuracy(
-                model_compiled, train_state.parameters,
-                train_state.states, test_dataloader, concrete_data_idx
+                model_compiled,
+                train_state.parameters,
+                train_state.states,
+                test_dataloader,
+                concrete_data_idx,
             ) * 100;
-            digits = 2
+            digits=2,
         )
 
         data_name = data_idx == 1 ? "MNIST" : "FashionMNIST"
@@ -159,22 +170,28 @@ function train()
 
     test_acc_list = [0.0, 0.0]
     for data_idx in 1:2
-        train_dataloader, test_dataloader = dataloaders[data_idx] .|> dev
+        train_dataloader, test_dataloader = dev.(dataloaders[data_idx])
 
         concrete_data_idx = ConcreteRNumber(data_idx)
         train_acc = round(
             accuracy(
-                model_compiled, train_state.parameters,
-                train_state.states, train_dataloader, concrete_data_idx
+                model_compiled,
+                train_state.parameters,
+                train_state.states,
+                train_dataloader,
+                concrete_data_idx,
             ) * 100;
-            digits = 2
+            digits=2,
         )
         test_acc = round(
             accuracy(
-                model_compiled, train_state.parameters,
-                train_state.states, test_dataloader, concrete_data_idx
+                model_compiled,
+                train_state.parameters,
+                train_state.states,
+                test_dataloader,
+                concrete_data_idx,
             ) * 100;
-            digits = 2
+            digits=2,
         )
 
         data_name = data_idx == 1 ? "MNIST" : "FashionMNIST"

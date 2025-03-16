@@ -89,7 +89,7 @@ function assert_disjoint_sharing_list(sharing)
                                   ($(sharing[j])) must be disjoint"))
         end
     end
-    return
+    return nothing
 end
 
 construct_property_lens(x) = construct_property_lens.(x)

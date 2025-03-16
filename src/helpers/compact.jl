@@ -293,12 +293,12 @@ macro non_trainable(x)
     return esc(:($(CompactMacroImpl.NonTrainable)($(x))))
 end
 
-struct CompactLuxLayer{dispatch, F, N, L, V, SK} <:
-    AbstractLuxContainerLayer{(:layers, :value_storage)}
+struct CompactLuxLayer{dispatch,F,N,L,V,SK} <:
+       AbstractLuxContainerLayer{(:layers, :value_storage)}
     d::StaticSymbol{dispatch}
     f::F
     name::N
-    strings::NTuple{3, String}
+    strings::NTuple{3,String}
     setup_strings::Any
     layers::L
     value_storage::V
@@ -307,29 +307,28 @@ end
 
 function initialparameters(rng::AbstractRNG, m::CompactLuxLayer)
     return (;
-        initialparameters(rng, m.layers)..., initialparameters(rng, m.value_storage)...,
+        initialparameters(rng, m.layers)..., initialparameters(rng, m.value_storage)...
     )
 end
 
 function initialstates(rng::AbstractRNG, m::CompactLuxLayer)
     base_states = (;
-        initialstates(rng, m.layers)..., initialstates(rng, m.value_storage)...,
+        initialstates(rng, m.layers)..., initialstates(rng, m.value_storage)...
     )
     length(first(m.stored_kwargs)) == 0 && return base_states
     return merge(
         base_states,
         (;
-            ₋₋₋kwargs₋₋₋ = CompactMacroImpl.KwargsStorage(
+            ₋₋₋kwargs₋₋₋=CompactMacroImpl.KwargsStorage(
                 NamedTuple{m.stored_kwargs[1]}(m.stored_kwargs[2])
             ),
-        )
+        ),
     )
 end
 
 function CompactLuxLayer(
-        dispatch::StaticSymbol, f::F, name::NAME_TYPE,
-        str::Tuple, splatted_kwargs; kws...
-    ) where {F}
+    dispatch::StaticSymbol, f::F, name::NAME_TYPE, str::Tuple, splatted_kwargs; kws...
+) where {F}
     layers, others = [], []
     setup_strings = NamedTuple()
     for (name, val) in pairs(kws)
@@ -357,21 +356,25 @@ function CompactLuxLayer(
             setup_strings = merge(setup_strings, NamedTuple((name => val,)))
         else
             setup_strings = merge(
-                setup_strings,
-                NamedTuple((name => CompactMacroImpl.kwarg_descriptor(val),))
+                setup_strings, NamedTuple((name => CompactMacroImpl.kwarg_descriptor(val),))
             )
         end
     end
     return CompactLuxLayer(
-        dispatch, f, name, str, setup_strings, NamedTuple((; layers...)),
-        CompactMacroImpl.ValueStorage(; others...), splatted_kwargs
+        dispatch,
+        f,
+        name,
+        str,
+        setup_strings,
+        NamedTuple((; layers...)),
+        CompactMacroImpl.ValueStorage(; others...),
+        splatted_kwargs,
     )
 end
 
 @generated function (m::CompactLuxLayer)(x, ps, st::NamedTuple{fields}) where {fields}
     st_expr = [
-        :($(get_state)(st_new.$(field)))
-            for field in fields if field != :₋₋₋kwargs₋₋₋
+        :($(get_state)(st_new.$(field))) for field in fields if field != :₋₋₋kwargs₋₋₋
     ]
     st_expr = :(NamedTuple{$(filter(f -> f != :₋₋₋kwargs₋₋₋, fields))}(($(st_expr...),)))
     st_expr = :(merge(st, $st_expr))
@@ -388,7 +391,7 @@ function (m::CompactLuxLayer)(x, ps, st::NamedTuple{()})
 end
 
 # Pretty printing the layer code
-function PrettyPrinting.big_show(io::IO, obj::CompactLuxLayer, indent::Int = 0, name = nothing)
+function PrettyPrinting.big_show(io::IO, obj::CompactLuxLayer, indent::Int=0, name=nothing)
     setup_strings = obj.setup_strings
     local_name = obj.name
     if local_name !== nothing && local_name != ""
@@ -397,7 +400,7 @@ function PrettyPrinting.big_show(io::IO, obj::CompactLuxLayer, indent::Int = 0, 
         print(io, " "^indent, str, indent == 0 ? "" : ",")
         PrettyPrinting.show_parameters_count(io, obj, indent, str)
         indent == 0 || println(io)
-        return
+        return nothing
     end
     layer, input, block = obj.strings
     pre, post = ("(", ")")
@@ -427,306 +430,305 @@ function PrettyPrinting.big_show(io::IO, obj::CompactLuxLayer, indent::Int = 0, 
     else
         println(io, ",")
     end
-    return
+    return nothing
 end
 
 module CompactMacroImpl
 
-    using ChainRulesCore: @non_differentiable
-    using ConcreteStructs: @concrete
-    using MacroTools: MacroTools, @capture, combinedef, splitdef
-    using Functors: Functors
-    using Random: AbstractRNG
-    using Static: static
+using ChainRulesCore: @non_differentiable
+using ConcreteStructs: @concrete
+using MacroTools: MacroTools, @capture, combinedef, splitdef
+using Functors: Functors
+using Random: AbstractRNG
+using Static: static
 
-    using LuxCore: LuxCore, AbstractLuxLayer
-    using ..Lux: Lux, CompactLuxLayer, LuxCompactModelParsingException, StatefulLuxLayer,
-        safe_getproperty
+using LuxCore: LuxCore, AbstractLuxLayer
+using ..Lux:
+    Lux,
+    CompactLuxLayer,
+    LuxCompactModelParsingException,
+    StatefulLuxLayer,
+    safe_getproperty
 
-    function compact_macro_impl(__source__, __module__, _exs...)
-        # check inputs, extracting function expression fex and unprocessed keyword arguments _kwexs
-        if isempty(_exs)
-            msg = "expects at least two expressions: a function and at least one keyword"
-            throw(LuxCompactModelParsingException(msg))
-        end
-        if Meta.isexpr(first(_exs), :parameters)
-            if length(_exs) < 2
-                throw(LuxCompactModelParsingException("expects an anonymous function"))
-            end
-            fex = _exs[2]
-            _kwexs = (_exs[1], _exs[3:end]...)
-        else
-            fex = first(_exs)
-            _kwexs = _exs[2:end]
-        end
-        if !Meta.isexpr(fex, :(->))
+function compact_macro_impl(__source__, __module__, _exs...)
+    # check inputs, extracting function expression fex and unprocessed keyword arguments _kwexs
+    if isempty(_exs)
+        msg = "expects at least two expressions: a function and at least one keyword"
+        throw(LuxCompactModelParsingException(msg))
+    end
+    if Meta.isexpr(first(_exs), :parameters)
+        if length(_exs) < 2
             throw(LuxCompactModelParsingException("expects an anonymous function"))
         end
-        isempty(_kwexs) && throw(LuxCompactModelParsingException("expects keyword arguments"))
-        if any(ex -> !Meta.isexpr(ex, (:kw, :(=), :parameters)), _kwexs)
-            throw(LuxCompactModelParsingException("expects only keyword arguments"))
-        end
+        fex = _exs[2]
+        _kwexs = (_exs[1], _exs[3:end]...)
+    else
+        fex = first(_exs)
+        _kwexs = _exs[2:end]
+    end
+    if !Meta.isexpr(fex, :(->))
+        throw(LuxCompactModelParsingException("expects an anonymous function"))
+    end
+    isempty(_kwexs) && throw(LuxCompactModelParsingException("expects keyword arguments"))
+    if any(ex -> !Meta.isexpr(ex, (:kw, :(=), :parameters)), _kwexs)
+        throw(LuxCompactModelParsingException("expects only keyword arguments"))
+    end
 
-        # process keyword arguments
-        if Meta.isexpr(first(_kwexs), :parameters) # handle keyword arguments provided after semicolon
-            kwexs1 = map(ex -> ex isa Symbol ? Expr(:kw, ex, ex) : ex, first(_kwexs).args)
-            _kwexs = _kwexs[2:end]
-        else
-            kwexs1 = ()
-        end
-        kwexs2 = map(ex -> Expr(:kw, ex.args...), _kwexs) # handle keyword arguments provided before semicolon
-        kwexs = (kwexs1..., kwexs2...)
+    # process keyword arguments
+    if Meta.isexpr(first(_kwexs), :parameters) # handle keyword arguments provided after semicolon
+        kwexs1 = map(ex -> ex isa Symbol ? Expr(:kw, ex, ex) : ex, first(_kwexs).args)
+        _kwexs = _kwexs[2:end]
+    else
+        kwexs1 = ()
+    end
+    kwexs2 = map(ex -> Expr(:kw, ex.args...), _kwexs) # handle keyword arguments provided before semicolon
+    kwexs = (kwexs1..., kwexs2...)
 
-        # check if user has named layer
-        name, kwexs = extract_reserved_kwarg(kwexs, :name)
+    # check if user has named layer
+    name, kwexs = extract_reserved_kwarg(kwexs, :name)
 
-        # check if user has provided a custom dispatch
-        dispatch, kwexs = extract_reserved_kwarg(kwexs, :dispatch)
-        dispatch === nothing && (dispatch = QuoteNode(:₋₋₋no_special_dispatch₋₋₋))
+    # check if user has provided a custom dispatch
+    dispatch, kwexs = extract_reserved_kwarg(kwexs, :dispatch)
+    dispatch === nothing && (dispatch = QuoteNode(:₋₋₋no_special_dispatch₋₋₋))
 
-        # Extract splatted kwargs
-        splat_idxs = findall(ex -> ex.head == :..., kwexs)
-        splatted_kwargs = map(first ∘ Base.Fix2(getproperty, :args), kwexs[splat_idxs])
-        kwexs = filter(ex -> ex.head != :..., kwexs)
+    # Extract splatted kwargs
+    splat_idxs = findall(ex -> ex.head == :..., kwexs)
+    splatted_kwargs = map(first ∘ Base.Fix2(getproperty, :args), kwexs[splat_idxs])
+    kwexs = filter(ex -> ex.head != :..., kwexs)
 
-        # make strings
-        layer = "@compact"
-        input = try
-            fex_args = fex.args[1]
-            isa(fex_args, Symbol) ? string(fex_args) : join(fex_args.args, ", ")
-        catch e
-            @warn "Function stringifying does not yet handle all cases. Falling back to empty \
-               string for input arguments"
-        end
+    # make strings
+    layer = "@compact"
+    input = try
+        fex_args = fex.args[1]
+        isa(fex_args, Symbol) ? string(fex_args) : join(fex_args.args, ", ")
+    catch e
+        @warn "Function stringifying does not yet handle all cases. Falling back to empty \
+       string for input arguments"
+    end
 
-        # Remove compact specific macros
-        fex_clean = MacroTools.postwalk(MacroTools.striplines(Base.remove_linenums!(fex).args[2])) do x
+    # Remove compact specific macros
+    fex_clean =
+        MacroTools.postwalk(MacroTools.striplines(Base.remove_linenums!(fex).args[2])) do x
             MacroTools.@capture(x, @return val_) && return :(return $val)
             return x
         end
-        block = string(fex_clean)
+    block = string(fex_clean)
 
-        # edit expressions
-        vars = map(first ∘ Base.Fix2(getproperty, :args), kwexs)
-        fex = supportself(fex, vars, splatted_kwargs, __source__)
+    # edit expressions
+    vars = map(first ∘ Base.Fix2(getproperty, :args), kwexs)
+    fex = supportself(fex, vars, splatted_kwargs, __source__)
 
-        # assemble
-        return esc(
+    # assemble
+    return esc(
+        :($CompactLuxLayer(
+            $(static)($(dispatch)),
+            $(fex),
+            $(name),
+            ($layer, $input, $block),
+            (($(Meta.quot.(splatted_kwargs)...),), ($(splatted_kwargs...),));
+            $(kwexs...),
+        )),
+    )
+end
+
+function supportself(fex::Expr, vars, splatted_kwargs, __source__)
+    @gensym self ps st curried_f res
+    # To avoid having to manipulate fex's arguments and body explicitly, we split the input
+    # function body and add the required arguments to the function definition.
+    sdef = splitdef(fex)
+    custom_param = length(sdef[:args]) == 2
+    length(sdef[:args]) > 2 &&
+        throw(LuxCompactModelParsingException("expects at most 2 arguments"))
+    args = [self, sdef[:args][1], ps, st]
+    calls = []
+    for var in vars
+        push!(
+            calls,
             :(
-                $CompactLuxLayer(
-                    $(static)($(dispatch)), $(fex), $(name), ($layer, $input, $block),
-                    (($(Meta.quot.(splatted_kwargs)...),), ($(splatted_kwargs...),)); $(kwexs...)
+                $var = $(maybe_make_stateful)(
+                    $(safe_getproperty)($self, $(Val(var))),
+                    $(safe_getproperty)($ps, $(Val(var))),
+                    $(safe_getproperty)($st, $(Val(var))),
                 )
-            )
+            ),
         )
     end
-
-    function supportself(fex::Expr, vars, splatted_kwargs, __source__)
-        @gensym self ps st curried_f res
-        # To avoid having to manipulate fex's arguments and body explicitly, we split the input
-        # function body and add the required arguments to the function definition.
-        sdef = splitdef(fex)
-        custom_param = length(sdef[:args]) == 2
-        length(sdef[:args]) > 2 &&
-            throw(LuxCompactModelParsingException("expects at most 2 arguments"))
-        args = [self, sdef[:args][1], ps, st]
-        calls = []
-        for var in vars
-            push!(
-                calls,
-                :(
-                    $var = $(maybe_make_stateful)(
-                        $(safe_getproperty)($self, $(Val(var))),
-                        $(safe_getproperty)($ps, $(Val(var))),
-                        $(safe_getproperty)($st, $(Val(var)))
-                    )
+    for var in splatted_kwargs
+        push!(
+            calls,
+            :(
+                $var = $(safe_getproperty)(
+                    getproperty(getproperty($st, :₋₋₋kwargs₋₋₋), :kws), $(Val(var))
                 )
-            )
-        end
-        for var in splatted_kwargs
-            push!(
-                calls,
-                :(
-                    $var = $(safe_getproperty)(
-                        getproperty(getproperty($st, :₋₋₋kwargs₋₋₋), :kws), $(Val(var))
-                    )
-                )
-            )
-        end
-        custom_param && push!(calls, :($(sdef[:args][2]) = $ps))
-
-        # Try to generate efficient code for the function body
-        has_return_macro = false
-        flattened_expr = MacroTools.postwalk(sdef[:body]) do x
-            if MacroTools.@capture(x, @return val_)
-                @gensym result
-                has_return_macro = true
-                return quote
-                    $(result) = $(val)
-                    return $(result), (; $(vars...))
-                end
-            end
-            if has_return_macro && MacroTools.@capture(x, return val_)
-                throw(LuxCompactModelParsingException("Encountered a return statement \
-                                                   after the last @return statement. \
-                                                   This is not supported."))
-            end
-            return x
-        end
-
-        if !has_return_macro
-            @gensym fname
-            @warn "No @return macro found in the function body. This will lead to the \
-               generation of inefficient code."
-            modified_body = quote
-                $fname = () -> $(sdef[:body])
-                $res = $(fname)()
-                return $(res), (; $(vars...))
-            end
-        else
-            modified_body = flattened_expr
-        end
-
-        modified_body = MacroTools.to_line(
-            __source__, MacroTools.to_flag(modified_body)
+            ),
         )
-
-        sdef[:body] = Expr(:let, Expr(:block, calls...), modified_body)
-        sdef[:args] = args
-        return combinedef(sdef)
     end
+    custom_param && push!(calls, :($(sdef[:args][2]) = $ps))
 
-    function extract_reserved_kwarg(kwexs, sym::Symbol)
-        idx = findfirst(ex -> ex.args[1] == sym, kwexs)
-        val = nothing
-        if idx !== nothing && kwexs[idx].args[2] !== nothing
-            length(kwexs) == 1 &&
-                throw(LuxCompactModelParsingException("expects keyword arguments"))
-            val = kwexs[idx].args[2]
-            kwexs = (kwexs[1:(idx - 1)]..., kwexs[(idx + 1):end]...)
+    # Try to generate efficient code for the function body
+    has_return_macro = false
+    flattened_expr = MacroTools.postwalk(sdef[:body]) do x
+        if MacroTools.@capture(x, @return val_)
+            @gensym result
+            has_return_macro = true
+            return quote
+                $(result) = $(val)
+                return $(result), (; $(vars...))
+            end
         end
-        return val, kwexs
+        if has_return_macro && MacroTools.@capture(x, return val_)
+            throw(LuxCompactModelParsingException("Encountered a return statement \
+                                           after the last @return statement. \
+                                           This is not supported."))
+        end
+        return x
     end
 
-    Lux.get_state(st_new::AbstractArray{<:Number}) = st_new
-    function Lux.get_state(st_new::Union{AbstractArray, Tuple, NamedTuple})
-        return map(Lux.get_state, st_new)
-    end
-    Lux.get_state(st_new) = st_new
-
-    @concrete struct NonTrainable
-        value
-    end
-
-    @concrete struct InitFn{kind} <: Function
-        f <: Function
-    end
-
-    (f::InitFn)(args...) = f.f(args...)
-
-    @concrete struct ValueStorage <: AbstractLuxLayer
-        ps_init_fns
-        st_init_fns
+    if !has_return_macro
+        @gensym fname
+        @warn "No @return macro found in the function body. This will lead to the \
+       generation of inefficient code."
+        modified_body = quote
+            $fname = () -> $(sdef[:body])
+            $res = $(fname)()
+            return $(res), (; $(vars...))
+        end
+    else
+        modified_body = flattened_expr
     end
 
-    function ValueStorage(; kwargs...)
-        ps_init_fns, st_init_fns = [], []
-        for (key, val) in pairs(kwargs)
-            list, store_val = if val isa NonTrainable
-                st_init_fns, Returns(val.value)
-            elseif val isa AbstractVector{<:AbstractArray{<:Number}}
+    modified_body = MacroTools.to_line(__source__, MacroTools.to_flag(modified_body))
+
+    sdef[:body] = Expr(:let, Expr(:block, calls...), modified_body)
+    sdef[:args] = args
+    return combinedef(sdef)
+end
+
+function extract_reserved_kwarg(kwexs, sym::Symbol)
+    idx = findfirst(ex -> ex.args[1] == sym, kwexs)
+    val = nothing
+    if idx !== nothing && kwexs[idx].args[2] !== nothing
+        length(kwexs) == 1 &&
+            throw(LuxCompactModelParsingException("expects keyword arguments"))
+        val = kwexs[idx].args[2]
+        kwexs = (kwexs[1:(idx - 1)]..., kwexs[(idx + 1):end]...)
+    end
+    return val, kwexs
+end
+
+Lux.get_state(st_new::AbstractArray{<:Number}) = st_new
+function Lux.get_state(st_new::Union{AbstractArray,Tuple,NamedTuple})
+    return map(Lux.get_state, st_new)
+end
+Lux.get_state(st_new) = st_new
+
+@concrete struct NonTrainable
+    value
+end
+
+@concrete struct InitFn{kind} <: Function
+    f <: Function
+end
+
+(f::InitFn)(args...) = f.f(args...)
+
+@concrete struct ValueStorage <: AbstractLuxLayer
+    ps_init_fns
+    st_init_fns
+end
+
+function ValueStorage(; kwargs...)
+    ps_init_fns, st_init_fns = [], []
+    for (key, val) in pairs(kwargs)
+        list, store_val = if val isa NonTrainable
+            st_init_fns, Returns(val.value)
+        elseif val isa AbstractVector{<:AbstractArray{<:Number}}
+            ps_init_fns, Returns(val)
+        elseif val isa AbstractArray
+            if (isbitstype(eltype(val)) || eltype(val) <: Number)
                 ps_init_fns, Returns(val)
-            elseif val isa AbstractArray
-                if (isbitstype(eltype(val)) || eltype(val) <: Number)
-                    ps_init_fns, Returns(val)
-                else
-                    st_init_fns, Returns(val)
-                end
-            elseif val isa NTuple{N, <:AbstractArray{<:Number}} where {N}
-                ps_init_fns, Returns(val)
-            elseif val isa InitFn{:state}
-                st_init_fns, val
-            elseif val isa InitFn{:parameter}
-                ps_init_fns, val
             else
                 st_init_fns, Returns(val)
             end
-            push!(list, key => store_val)
+        elseif val isa NTuple{N,<:AbstractArray{<:Number}} where {N}
+            ps_init_fns, Returns(val)
+        elseif val isa InitFn{:state}
+            st_init_fns, val
+        elseif val isa InitFn{:parameter}
+            ps_init_fns, val
+        else
+            st_init_fns, Returns(val)
         end
-        return ValueStorage(NamedTuple(ps_init_fns), NamedTuple(st_init_fns))
+        push!(list, key => store_val)
     end
+    return ValueStorage(NamedTuple(ps_init_fns), NamedTuple(st_init_fns))
+end
 
-    function (v::ValueStorage)(x, ps, st)
-        throw(ArgumentError("`ValueStorage` isn't meant to be used as a layer!!!"))
-    end
+function (v::ValueStorage)(x, ps, st)
+    throw(ArgumentError("`ValueStorage` isn't meant to be used as a layer!!!"))
+end
 
-    function LuxCore.initialparameters(rng::AbstractRNG, v::ValueStorage)
-        return NamedTuple(
-            [
-                n => (fn isa InitFn ? fn(rng) : fn())
-                    for (n, fn) in pairs(v.ps_init_fns)
-            ]
-        )
-    end
+function LuxCore.initialparameters(rng::AbstractRNG, v::ValueStorage)
+    return NamedTuple([
+        n => (fn isa InitFn ? fn(rng) : fn()) for (n, fn) in pairs(v.ps_init_fns)
+    ])
+end
 
-    function LuxCore.initialstates(rng::AbstractRNG, v::ValueStorage)
-        return NamedTuple(
-            [
-                n => (fn isa InitFn ? fn(rng) : fn())
-                    for (n, fn) in pairs(v.st_init_fns)
-            ]
-        )
-    end
+function LuxCore.initialstates(rng::AbstractRNG, v::ValueStorage)
+    return NamedTuple([
+        n => (fn isa InitFn ? fn(rng) : fn()) for (n, fn) in pairs(v.st_init_fns)
+    ])
+end
 
-    @concrete struct KwargsStorage
-        kws <: NamedTuple
-    end
+@concrete struct KwargsStorage
+    kws <: NamedTuple
+end
 
-    Functors.@leaf KwargsStorage
+Functors.@leaf KwargsStorage
 
-    function kwarg_descriptor(val)
-        val isa NonTrainable && return "@non_trainable($(kwarg_descriptor(val.value)))"
-        val isa Number && return string(val)
-        val isa AbstractArray && return sprint(Base.array_summary, val, axes(val))
-        val isa Tuple && return "(" * join(map(kwarg_descriptor, val), ", ") * ")"
-        val isa InitFn{:parameter} && return "@init_fn($(kwarg_descriptor(val.f)), parameter)"
-        val isa InitFn{:state} && return "@init_fn($(kwarg_descriptor(val.f)), state)"
-        val isa Nothing && return "nothing"
-        if val isa NamedTuple
-            fields = fieldnames(typeof(val))
-            strs = []
-            for fname in fields[1:min(length(fields), 3)]
-                internal_val = getfield(val, fname)
-                push!(strs, "$fname = $(kwarg_descriptor(internal_val))")
-            end
-            return "@NamedTuple{$(join(strs, ", "))" * (length(fields) > 3 ? ", ..." : "") * "}"
+function kwarg_descriptor(val)
+    val isa NonTrainable && return "@non_trainable($(kwarg_descriptor(val.value)))"
+    val isa Number && return string(val)
+    val isa AbstractArray && return sprint(Base.array_summary, val, axes(val))
+    val isa Tuple && return "(" * join(map(kwarg_descriptor, val), ", ") * ")"
+    val isa InitFn{:parameter} && return "@init_fn($(kwarg_descriptor(val.f)), parameter)"
+    val isa InitFn{:state} && return "@init_fn($(kwarg_descriptor(val.f)), state)"
+    val isa Nothing && return "nothing"
+    if val isa NamedTuple
+        fields = fieldnames(typeof(val))
+        strs = []
+        for fname in fields[1:min(length(fields), 3)]
+            internal_val = getfield(val, fname)
+            push!(strs, "$fname = $(kwarg_descriptor(internal_val))")
         end
-        val isa Function && return sprint(show, val; context = (:compact => true, :limit => true))
-        return "$(nameof(typeof(val)))(...)"
+        return "@NamedTuple{$(join(strs, ", "))" * (length(fields) > 3 ? ", ..." : "") * "}"
     end
+    val isa Function && return sprint(show, val; context=(:compact => true, :limit => true))
+    return "$(nameof(typeof(val)))(...)"
+end
 
-    function try_make_lux_layer(x::Union{AbstractVector, Tuple})
-        return try_make_lux_layer(NamedTuple{Tuple(Symbol.(1:length(x)))}(x))
-    end
-    try_make_lux_layer(x) = x
+function try_make_lux_layer(x::Union{AbstractVector,Tuple})
+    return try_make_lux_layer(NamedTuple{Tuple(Symbol.(1:length(x)))}(x))
+end
+try_make_lux_layer(x) = x
 
-    function maybe_make_stateful(layer::AbstractLuxLayer, ps, st)
-        return StatefulLuxLayer{true}(layer, ps, st)
-    end
-    maybe_make_stateful(::Nothing, ::Nothing, st) = st
-    maybe_make_stateful(::Nothing, ps, st) = ps
-    function maybe_make_stateful(model::Union{AbstractVector, Tuple}, ps, st)
-        return map(i -> maybe_make_stateful(model[i], ps[i], st[i]), eachindex(model))
-    end
-    function maybe_make_stateful(model::NamedTuple{fields}, ps, st) where {fields}
-        return NamedTuple{fields}(
-            map(
-                f -> maybe_make_stateful(
-                    getproperty(model, f), getproperty(ps, f), getproperty(st, f)
-                ),
-                fields
-            )
-        )
-    end
+function maybe_make_stateful(layer::AbstractLuxLayer, ps, st)
+    return StatefulLuxLayer{true}(layer, ps, st)
+end
+maybe_make_stateful(::Nothing, ::Nothing, st) = st
+maybe_make_stateful(::Nothing, ps, st) = ps
+function maybe_make_stateful(model::Union{AbstractVector,Tuple}, ps, st)
+    return map(i -> maybe_make_stateful(model[i], ps[i], st[i]), eachindex(model))
+end
+function maybe_make_stateful(model::NamedTuple{fields}, ps, st) where {fields}
+    return NamedTuple{fields}(
+        map(
+            f -> maybe_make_stateful(
+                getproperty(model, f), getproperty(ps, f), getproperty(st, f)
+            ),
+            fields,
+        ),
+    )
+end
 
 end

@@ -31,8 +31,7 @@ multiple operations.
     input sizes.
 """
 function fused_dense_bias_activation(
-        σ::F, weight::AbstractMatrix, x::AbstractMatrix,
-        b::Optional{<:AbstractVector}
-    ) where {F}
+    σ::F, weight::AbstractMatrix, x::AbstractMatrix, b::Optional{<:AbstractVector}
+) where {F}
     return fused_dense_impl(select_fastest_activation(σ, weight, x, b), weight, x, b)
 end

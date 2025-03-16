@@ -3,21 +3,21 @@
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         m = BatchNorm(2)
-        x = [
+        x = aType([
             1.0f0 3.0f0 5.0f0
             2.0f0 4.0f0 6.0f0
-        ] |> aType
+        ])
         display(m)
-        ps, st = Lux.setup(rng, m) |> dev
+        ps, st = dev(Lux.setup(rng, m))
 
         @test Lux.parameterlength(m) == Lux.parameterlength(ps)
         @test Lux.statelength(m) == Lux.statelength(st)
 
-        @test ps.bias == [0, 0] |> aType  # init_bias(2)
-        @test ps.scale == [1, 1] |> aType  # init_scale(2)
+        @test ps.bias == aType([0, 0])  # init_bias(2)
+        @test ps.scale == aType([1, 1])  # init_scale(2)
 
         y, st_ = pullback(m, x, ps, st)[1]
-        st_ = st_ |> CPUDevice()
+        st_ = CPUDevice()(st_)
         @test Array(y) ≈ [-1.22474 0 1.22474; -1.22474 0 1.22474] atol = 1.0e-5
         # julia> x
         #  2×3 Array{Float64,2}:
@@ -38,52 +38,50 @@
         #  1.3
         #  1.3
         @test st_.running_var ≈
-            0.1 .* var(Array(x); dims = 2, corrected = false) .* (3 / 2) .+ 0.9 .* [1.0, 1.0]
+            0.1 .* var(Array(x); dims=2, corrected=false) .* (3 / 2) .+ 0.9 .* [1.0, 1.0]
 
-        st_ = Lux.testmode(st_) |> dev
-        x_ = m(x, ps, st_)[1] |> CPUDevice()
+        st_ = dev(Lux.testmode(st_))
+        x_ = CPUDevice()(m(x, ps, st_)[1])
         @test x_[1] ≈ (1 .- 0.3) / sqrt(1.3) atol = 1.0e-5
 
         skip_backends = VERSION ≥ v"1.11-" ? [AutoEnzyme()] : []
         skip_backends = vcat(skip_backends, [AutoFiniteDiff()])
 
         @jet m(x, ps, st)
-        @test_gradients(
-            sumabs2first, m, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3, skip_backends
-        )
+        @test_gradients(sumabs2first, m, x, ps, st; atol=1.0f-3, rtol=1.0f-3, skip_backends)
 
         @testset for affine in (true, false)
-            m = BatchNorm(2; affine, track_stats = false)
-            x = [1.0f0 3.0f0 5.0f0; 2.0f0 4.0f0 6.0f0] |> aType
+            m = BatchNorm(2; affine, track_stats=false)
+            x = aType([1.0f0 3.0f0 5.0f0; 2.0f0 4.0f0 6.0f0])
             display(m)
-            ps, st = Lux.setup(rng, m) |> dev
+            ps, st = dev(Lux.setup(rng, m))
 
             @jet m(x, ps, Lux.testmode(st))
             @test_gradients(
-                sumabs2first, m, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3, skip_backends
+                sumabs2first, m, x, ps, st; atol=1.0f-3, rtol=1.0f-3, skip_backends
             )
 
             # with activation function
             m = BatchNorm(2, sigmoid; affine)
-            x = [
+            x = aType([
                 1.0f0 3.0f0 5.0f0
                 2.0f0 4.0f0 6.0f0
-            ] |> aType
+            ])
             display(m)
-            ps, st = Lux.setup(rng, m) |> dev
+            ps, st = dev(Lux.setup(rng, m))
 
             y, st_ = m(x, ps, Lux.testmode(st))
             @test y ≈
                 sigmoid.((x .- st_.running_mean) ./ sqrt.(st_.running_var .+ m.epsilon))
             @jet m(x, ps, Lux.testmode(st))
             @test_gradients(
-                sumabs2first, m, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3, skip_backends
+                sumabs2first, m, x, ps, st; atol=1.0f-3, rtol=1.0f-3, skip_backends
             )
 
             m = BatchNorm(32; affine)
-            x = randn(Float32, 416, 416, 32, 1) |> aType
+            x = aType(randn(Float32, 416, 416, 32, 1))
             display(m)
-            ps, st = Lux.setup(rng, m) |> dev
+            ps, st = dev(Lux.setup(rng, m))
             m(x, ps, Lux.testmode(st))
             @jet m(x, ps, Lux.testmode(st))
         end
@@ -94,54 +92,72 @@ end
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        squeeze(x) = dropdims(x; dims = tuple(findall(size(x) .== 1)...)) # To remove all singular dimensions
+        squeeze(x) = dropdims(x; dims=tuple(findall(size(x) .== 1)...)) # To remove all singular dimensions
 
         m = GroupNorm(4, 2)
         sizes = (3, 4, 2)
-        x = reshape(collect(1:prod(sizes)), sizes) |> aType
+        x = aType(reshape(collect(1:prod(sizes)), sizes))
 
         display(m)
         x = Float32.(x)
-        ps, st = Lux.setup(rng, m) |> dev
+        ps, st = dev(Lux.setup(rng, m))
         @test Lux.parameterlength(m) == Lux.parameterlength(ps)
         @test Lux.statelength(m) == Lux.statelength(st)
-        @test ps.bias == [0, 0, 0, 0] |> aType  # init_bias(32)
-        @test ps.scale == [1, 1, 1, 1] |> aType # init_scale(32)
+        @test ps.bias == aType([0, 0, 0, 0])  # init_bias(32)
+        @test ps.scale == aType([1, 1, 1, 1]) # init_scale(32)
 
         @jet m(x, ps, st)
         @test_gradients(
-            sumabs2first, m, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3,
-            enzyme_set_runtime_activity = true
+            sumabs2first,
+            m,
+            x,
+            ps,
+            st;
+            atol=1.0f-3,
+            rtol=1.0f-3,
+            enzyme_set_runtime_activity=true
         )
 
         @testset for affine in (true, false)
             m = GroupNorm(2, 2; affine)
-            x = rand(rng, Float32, 3, 2, 1) |> aType
+            x = aType(rand(rng, Float32, 3, 2, 1))
             display(m)
-            ps, st = Lux.setup(rng, m) |> dev
+            ps, st = dev(Lux.setup(rng, m))
 
             @jet m(x, ps, Lux.testmode(st))
             @test_gradients(
-                sumabs2first, m, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3,
-                skip_backends = [AutoFiniteDiff()]
+                sumabs2first,
+                m,
+                x,
+                ps,
+                st;
+                atol=1.0f-3,
+                rtol=1.0f-3,
+                skip_backends=[AutoFiniteDiff()]
             )
 
             # with activation function
             m = GroupNorm(2, 2, sigmoid; affine)
-            x = randn(rng, Float32, 3, 2, 1) |> aType
+            x = aType(randn(rng, Float32, 3, 2, 1))
             display(m)
-            ps, st = Lux.setup(rng, m) |> dev
+            ps, st = dev(Lux.setup(rng, m))
             y, st_ = m(x, ps, Lux.testmode(st))
             @jet m(x, ps, Lux.testmode(st))
             @test_gradients(
-                sumabs2first, m, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3,
-                skip_backends = [AutoFiniteDiff()]
+                sumabs2first,
+                m,
+                x,
+                ps,
+                st;
+                atol=1.0f-3,
+                rtol=1.0f-3,
+                skip_backends=[AutoFiniteDiff()]
             )
 
             m = GroupNorm(32, 16; affine)
-            x = randn(rng, Float32, 416, 416, 32, 1) |> aType
+            x = aType(randn(rng, Float32, 416, 416, 32, 1))
             display(m)
-            ps, st = Lux.setup(rng, m) |> dev
+            ps, st = dev(Lux.setup(rng, m))
             m(x, ps, Lux.testmode(st))
             @jet m(x, ps, Lux.testmode(st))
         end
@@ -155,94 +171,94 @@ end
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "Utils.norm_except" begin
-            z = randn(rng, Float32, 3, 3, 4, 2) |> aType
+            z = aType(randn(rng, Float32, 3, 3, 4, 2))
 
-            @test size(Lux.Utils.norm(z; dims = (1, 2))) == (1, 1, 4, 2)
-            @test size(Lux.Utils.norm_except(z; dims = 1)) == (3, 1, 1, 1)
-            @test Lux.Utils.norm_except(z; dims = 2) == Lux.Utils.norm(z; dims = (1, 3, 4))
-            @test size(Lux.Utils.norm_except(z; dims = (1, 2))) == (3, 3, 1, 1)
-            @test Lux.Utils.norm_except(z; dims = (1, 2)) == Lux.Utils.norm(z; dims = (3, 4))
+            @test size(Lux.Utils.norm(z; dims=(1, 2))) == (1, 1, 4, 2)
+            @test size(Lux.Utils.norm_except(z; dims=1)) == (3, 1, 1, 1)
+            @test Lux.Utils.norm_except(z; dims=2) == Lux.Utils.norm(z; dims=(1, 3, 4))
+            @test size(Lux.Utils.norm_except(z; dims=(1, 2))) == (3, 3, 1, 1)
+            @test Lux.Utils.norm_except(z; dims=(1, 2)) == Lux.Utils.norm(z; dims=(3, 4))
 
             @jet Lux.Utils.norm_except(z)
-            __f = z -> sum(Lux.Utils.norm_except(z; dims = (3, 4)))
+            __f = z -> sum(Lux.Utils.norm_except(z; dims=(3, 4)))
             @jet __f(z)
         end
 
         @testset "Conv" begin
-            c = Conv((3, 3), 3 => 3; init_bias = Lux.ones32)
+            c = Conv((3, 3), 3 => 3; init_bias=Lux.ones32)
 
             wn = WeightNorm(c, (:weight, :bias))
             display(wn)
-            ps, st = Lux.setup(rng, wn) |> dev
-            x = randn(rng, Float32, 3, 3, 3, 1) |> aType
+            ps, st = dev(Lux.setup(rng, wn))
+            x = aType(randn(rng, Float32, 3, 3, 3, 1))
 
             @jet wn(x, ps, st)
-            @test_gradients(sumabs2first, wn, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
+            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             wn = WeightNorm(c, (:weight,))
             display(wn)
-            ps, st = Lux.setup(rng, wn) |> dev
-            x = randn(rng, Float32, 3, 3, 3, 1) |> aType
+            ps, st = dev(Lux.setup(rng, wn))
+            x = aType(randn(rng, Float32, 3, 3, 3, 1))
 
             @jet wn(x, ps, st)
-            @test_gradients(sumabs2first, wn, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
+            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             wn = WeightNorm(c, (:weight, :bias), (2, 2))
             display(wn)
-            ps, st = Lux.setup(rng, wn) |> dev
-            x = randn(rng, Float32, 3, 3, 3, 1) |> aType
+            ps, st = dev(Lux.setup(rng, wn))
+            x = aType(randn(rng, Float32, 3, 3, 3, 1))
 
             @jet wn(x, ps, st)
-            @test_gradients(sumabs2first, wn, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
+            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             wn = WeightNorm(c, (:weight,), (2,))
             display(wn)
-            ps, st = Lux.setup(rng, wn) |> dev
-            x = randn(rng, Float32, 3, 3, 3, 1) |> aType
+            ps, st = dev(Lux.setup(rng, wn))
+            x = aType(randn(rng, Float32, 3, 3, 3, 1))
 
             @jet wn(x, ps, st)
-            @test_gradients(sumabs2first, wn, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
+            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "Dense" begin
-            d = Dense(3 => 3; init_bias = Lux.ones32)
+            d = Dense(3 => 3; init_bias=Lux.ones32)
 
             wn = WeightNorm(d, (:weight, :bias))
             display(wn)
-            ps, st = Lux.setup(rng, wn) |> dev
-            x = randn(rng, Float32, 3, 1) |> aType
+            ps, st = dev(Lux.setup(rng, wn))
+            x = aType(randn(rng, Float32, 3, 1))
 
             @jet wn(x, ps, st)
-            @test_gradients(sumabs2first, wn, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
+            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             wn = WeightNorm(d, (:weight,))
             display(wn)
-            ps, st = Lux.setup(rng, wn) |> dev
-            x = randn(rng, Float32, 3, 1) |> aType
+            ps, st = dev(Lux.setup(rng, wn))
+            x = aType(randn(rng, Float32, 3, 1))
 
             @jet wn(x, ps, st)
-            @test_gradients(sumabs2first, wn, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
+            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             wn = WeightNorm(d, (:weight, :bias), (2, 2))
             display(wn)
-            ps, st = Lux.setup(rng, wn) |> dev
-            x = randn(rng, Float32, 3, 1) |> aType
+            ps, st = dev(Lux.setup(rng, wn))
+            x = aType(randn(rng, Float32, 3, 1))
 
             @jet wn(x, ps, st)
-            @test_gradients(sumabs2first, wn, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
+            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             wn = WeightNorm(d, (:weight,), (2,))
             display(wn)
-            ps, st = Lux.setup(rng, wn) |> dev
-            x = randn(rng, Float32, 3, 1) |> aType
+            ps, st = dev(Lux.setup(rng, wn))
+            x = aType(randn(rng, Float32, 3, 1))
 
             @jet wn(x, ps, st)
-            @test_gradients(sumabs2first, wn, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
+            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         # See https://github.com/LuxDL/Lux.jl/issues/95
         @testset "Normalizing Zero Parameters" begin
-            c = Conv((3, 3), 3 => 3; init_bias = zeros32)
+            c = Conv((3, 3), 3 => 3; init_bias=zeros32)
 
             wn = WeightNorm(c, (:weight, :bias))
             @test_throws ArgumentError Lux.setup(rng, wn)
@@ -250,7 +266,7 @@ end
             wn = WeightNorm(c, (:weight,))
             @test Lux.setup(rng, wn) isa Any
 
-            c = Conv((3, 3), 3 => 3; init_bias = Lux.ones32)
+            c = Conv((3, 3), 3 => 3; init_bias=Lux.ones32)
 
             wn = WeightNorm(c, (:weight, :bias))
             @test Lux.setup(rng, wn) isa Any
@@ -265,13 +281,13 @@ end
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        x = randn(rng, Float32, 3, 3, 3, 2) |> aType
+        x = aType(randn(rng, Float32, 3, 3, 3, 2))
 
         @testset for bshape in ((3, 3, 3), (1, 3, 1), (3, 1, 3))
             @testset for affine in (true, false)
                 ln = LayerNorm(bshape; affine)
                 display(ln)
-                ps, st = Lux.setup(rng, ln) |> dev
+                ps, st = dev(Lux.setup(rng, ln))
 
                 y, st_ = ln(x, ps, Lux.testmode(st))
 
@@ -280,21 +296,33 @@ end
 
                 @jet ln(x, ps, Lux.testmode(st))
                 @test_gradients(
-                    sumabs2first, ln, x, ps, st; atol = 1.0f-3,
-                    rtol = 1.0f-3, skip_backends = [AutoFiniteDiff()]
+                    sumabs2first,
+                    ln,
+                    x,
+                    ps,
+                    st;
+                    atol=1.0f-3,
+                    rtol=1.0f-3,
+                    skip_backends=[AutoFiniteDiff()]
                 )
 
                 @testset for act in (sigmoid, tanh)
                     ln = LayerNorm(bshape, act; affine)
                     display(ln)
-                    ps, st = Lux.setup(rng, ln) |> dev
+                    ps, st = dev(Lux.setup(rng, ln))
 
                     y, st_ = ln(x, ps, Lux.testmode(st))
 
                     @jet ln(x, ps, Lux.testmode(st))
                     @test_gradients(
-                        sumabs2first, ln, x, ps, st; atol = 1.0f-3,
-                        rtol = 1.0f-3, skip_backends = [AutoFiniteDiff()]
+                        sumabs2first,
+                        ln,
+                        x,
+                        ps,
+                        st;
+                        atol=1.0f-3,
+                        rtol=1.0f-3,
+                        skip_backends=[AutoFiniteDiff()]
                     )
                 end
             end
@@ -307,34 +335,47 @@ end
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "ndims(x) = $(ndims(x))" for x in (
-                randn(rng, Float32, 3, 3, 3, 2), randn(rng, Float32, 3, 3, 2),
-                randn(rng, Float32, 3, 3, 3, 3, 2),
-            )
-            x = x |> aType
+            randn(rng, Float32, 3, 3, 3, 2),
+            randn(rng, Float32, 3, 3, 2),
+            randn(rng, Float32, 3, 3, 3, 3, 2),
+        )
+            x = aType(x)
             @testset for affine in (true, false), track_stats in (true, false)
                 layer = InstanceNorm(3; affine, track_stats)
                 display(layer)
-                ps, st = Lux.setup(rng, layer) |> dev
+                ps, st = dev(Lux.setup(rng, layer))
 
                 y, st_ = layer(x, ps, Lux.testmode(st))
                 @jet layer(x, ps, Lux.testmode(st))
                 @test_gradients(
-                    sumabs2first, layer, x, ps, st; atol = 1.0f-3,
-                    rtol = 1.0f-3, enzyme_set_runtime_activity = true,
-                    skip_backends = [AutoFiniteDiff()]
+                    sumabs2first,
+                    layer,
+                    x,
+                    ps,
+                    st;
+                    atol=1.0f-3,
+                    rtol=1.0f-3,
+                    enzyme_set_runtime_activity=true,
+                    skip_backends=[AutoFiniteDiff()]
                 )
 
                 @testset for act in (sigmoid, tanh)
                     layer = InstanceNorm(3, act; affine, track_stats)
                     display(layer)
-                    ps, st = Lux.setup(rng, layer) |> dev
+                    ps, st = dev(Lux.setup(rng, layer))
 
                     y, st_ = layer(x, ps, Lux.testmode(st))
                     @jet layer(x, ps, Lux.testmode(st))
                     @test_gradients(
-                        sumabs2first, layer, x, ps, st; atol = 1.0f-3,
-                        rtol = 1.0f-3, enzyme_set_runtime_activity = true,
-                        skip_backends = [AutoFiniteDiff()]
+                        sumabs2first,
+                        layer,
+                        x,
+                        ps,
+                        st;
+                        atol=1.0f-3,
+                        rtol=1.0f-3,
+                        enzyme_set_runtime_activity=true,
+                        skip_backends=[AutoFiniteDiff()]
                     )
                 end
             end

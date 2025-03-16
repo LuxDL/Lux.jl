@@ -36,7 +36,7 @@ function FluxLayer(l)
     return FluxLayer(l, re, Returns(copy(p)))
 end
 
-initialparameters(::AbstractRNG, l::FluxLayer) = (p = l.init_parameters(),)
+initialparameters(::AbstractRNG, l::FluxLayer) = (p=l.init_parameters(),)
 
 function (l::FluxLayer)(x, ps, st)
     y = match_eltype(l, ps, st, x)
@@ -64,11 +64,11 @@ regular `Array` or not. Default is `false`.
 """
 @concrete struct SimpleChainsLayer <: AbstractLuxLayer
     layer
-    lux_layer <: Union{Nothing, AbstractLuxLayer}
+    lux_layer <: Union{Nothing,AbstractLuxLayer}
     to_array <: StaticBool
 end
 
-function SimpleChainsLayer(layer, to_array::BoolType = False())
+function SimpleChainsLayer(layer, to_array::BoolType=False())
     return SimpleChainsLayer(layer, nothing, static(to_array))
 end
 
@@ -81,7 +81,7 @@ function (sc::SimpleChainsLayer)(x, ps, st)
     return (
         to_array(
             sc.to_array,
-            apply_simple_chain(sc.layer, y, ps.params, MLDataDevices.get_device(x))
+            apply_simple_chain(sc.layer, y, ps.params, MLDataDevices.get_device(x)),
         ),
         st,
     )

@@ -5,20 +5,20 @@ using GPUArrays: GPUArrays
 using MLDataDevices: MLDataDevices, Internal, oneAPIDevice, reset_gpu_device!
 using oneAPI: oneAPI, oneArray, oneL0
 
-const SUPPORTS_FP64 = Dict{oneL0.ZeDevice, Bool}()
+const SUPPORTS_FP64 = Dict{oneL0.ZeDevice,Bool}()
 
 function __init__()
     reset_gpu_device!()
     for dev in oneAPI.devices()
-        SUPPORTS_FP64[dev] = oneL0.module_properties(dev).fp64flags &
-            oneL0.ZE_DEVICE_MODULE_FLAG_FP64 ==
+        SUPPORTS_FP64[dev] =
+            oneL0.module_properties(dev).fp64flags & oneL0.ZE_DEVICE_MODULE_FLAG_FP64 ==
             oneL0.ZE_DEVICE_MODULE_FLAG_FP64
     end
-    return
+    return nothing
 end
 
-MLDataDevices.loaded(::Union{oneAPIDevice, Type{<:oneAPIDevice}}) = true
-function MLDataDevices.functional(::Union{oneAPIDevice, Type{<:oneAPIDevice}})
+MLDataDevices.loaded(::Union{oneAPIDevice,Type{<:oneAPIDevice}}) = true
+function MLDataDevices.functional(::Union{oneAPIDevice,Type{<:oneAPIDevice}})
     return oneAPI.functional()
 end
 
@@ -37,7 +37,7 @@ function Internal.unsafe_free_internal!(::Type{oneAPIDevice}, x::AbstractArray)
     else
         @warn "oneAPI.unsafe_free! is not defined for $(typeof(x))." maxlog = 1
     end
-    return
+    return nothing
 end
 
 # Device Transfer

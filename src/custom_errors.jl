@@ -1,6 +1,6 @@
 abstract type AbstractLuxException <: Exception end
 
-function Base.showerror(io::IO, e::Err) where {Err <: AbstractLuxException}
+function Base.showerror(io::IO, e::Err) where {Err<:AbstractLuxException}
     return print(io, string(nameof(Err)) * "(" * (hasfield(Err, :msg) ? e.msg : "") * ")")
 end
 

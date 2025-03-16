@@ -6,10 +6,7 @@
 
     rbf(x) = exp.(-(x .^ 2))
 
-    U = Lux.Chain(
-        Lux.Dense(1, 10, rbf),
-        Lux.Dense(10, 3, rbf)
-    )
+    U = Lux.Chain(Lux.Dense(1, 10, rbf), Lux.Dense(10, 3, rbf))
 
     θ, st = Lux.setup(rng, U)
 

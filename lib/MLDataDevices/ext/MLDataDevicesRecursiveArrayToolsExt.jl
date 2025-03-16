@@ -18,7 +18,7 @@ function Adapt.adapt_structure(to::AbstractDevice, x::DiffEqArray)
 end
 
 for op in (:get_device, :get_device_type)
-    @eval function Internal.$(op)(x::Union{VectorOfArray, DiffEqArray})
+    @eval function Internal.$(op)(x::Union{VectorOfArray,DiffEqArray})
         length(x.u) == 0 && return $(op == :get_device ? nothing : Nothing)
         return mapreduce(Internal.$(op), Internal.combine_devices, x.u)
     end

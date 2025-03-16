@@ -11,8 +11,8 @@ using LuxCore: LuxCore
 using MLDataDevices: get_device_type, AbstractGPUDevice, ReactantDevice
 using NNlib: NNlib
 
-const Optional{T} = Union{Nothing, T}
-const Numeric = Union{AbstractArray{<:T}, T} where {T <: Number}
+const Optional{T} = Union{Nothing,T}
+const Numeric = Union{AbstractArray{<:T},T} where {T<:Number}
 const ∂∅ = NoTangent()
 const CRC = ChainRulesCore
 
@@ -24,8 +24,7 @@ include("impl/Impl.jl")
 include("api/API.jl")
 
 @compat(
-    public,
-    (internal_operation_mode, GenericBroadcastOp, GPUBroadcastOp, LoopedArrayOp)
+    public, (internal_operation_mode, GenericBroadcastOp, GPUBroadcastOp, LoopedArrayOp)
 )
 
 end

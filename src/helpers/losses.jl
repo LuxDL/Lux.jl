@@ -4,177 +4,183 @@ DocTestFilters = r"[0-9\.]+f0"
 ```
 module LossFunctionImpl
 
-    using ArrayInterface: fast_scalar_indexing
-    using ChainRulesCore: ChainRulesCore, NoTangent, @non_differentiable, @thunk
-    using FastClosures: @closure
-    using ForwardDiff: ForwardDiff, Dual, Partials
-    using Statistics: mean
+using ArrayInterface: fast_scalar_indexing
+using ChainRulesCore: ChainRulesCore, NoTangent, @non_differentiable, @thunk
+using FastClosures: @closure
+using ForwardDiff: ForwardDiff, Dual, Partials
+using Statistics: mean
 
-    using ..Utils: Utils
-    using ..LuxOps: xlogy
+using ..Utils: Utils
+using ..LuxOps: xlogy
 
-    const CRC = ChainRulesCore
+const CRC = ChainRulesCore
 
-    # Match the sizes of the inputs to the loss function
-    function check_sizes(ŷ::AbstractArray, y::AbstractArray)
-        for d in 1:max(ndims(ŷ), ndims(y))
-            if size(ŷ, d) != size(y, d)
-                throw(DimensionMismatch("loss function expects size(ŷ) = $(size(ŷ)) to match \
-                                     size(y) = $(size(y))"))
-            end
+# Match the sizes of the inputs to the loss function
+function check_sizes(ŷ::AbstractArray, y::AbstractArray)
+    for d in 1:max(ndims(ŷ), ndims(y))
+        if size(ŷ, d) != size(y, d)
+            throw(
+                DimensionMismatch("loss function expects size(ŷ) = $(size(ŷ)) to match \
+                           size(y) = $(size(y))")
+            )
         end
-        return
     end
-    check_sizes(_, __) = nothing
+    return nothing
+end
+check_sizes(_, __) = nothing
 
-    @non_differentiable check_sizes(::Any, ::Any)
+@non_differentiable check_sizes(::Any, ::Any)
 
-    # Aggregation. We are able to define custom aggregation fast paths
-    fused_agg(::typeof(mean), op::OP, x) where {OP} = fused_agg(sum, op, x) / length(x)
+# Aggregation. We are able to define custom aggregation fast paths
+fused_agg(::typeof(mean), op::OP, x) where {OP} = fused_agg(sum, op, x) / length(x)
 
-    fused_agg(::typeof(sum), op::OP, x::Number) where {OP} = op(x)
-    fused_agg(::typeof(sum), op::OP, x) where {OP} = sum(op, x)
+fused_agg(::typeof(sum), op::OP, x::Number) where {OP} = op(x)
+fused_agg(::typeof(sum), op::OP, x) where {OP} = sum(op, x)
 
-    fused_agg(::typeof(mean), op::OP, x::Number, y::Number) where {OP} = op(x, y)
-    function fused_agg(::typeof(mean), op::OP, x::AbstractArray, y::AbstractArray) where {OP}
-        return fused_agg(sum, op, x, y) / length(x)
-    end
+fused_agg(::typeof(mean), op::OP, x::Number, y::Number) where {OP} = op(x, y)
+function fused_agg(::typeof(mean), op::OP, x::AbstractArray, y::AbstractArray) where {OP}
+    return fused_agg(sum, op, x, y) / length(x)
+end
 
-    fused_agg(::typeof(sum), op::OP, x::Number, y::Number) where {OP} = op(x, y)
-    function fused_agg(::typeof(sum), op::OP, x::AbstractArray, y::AbstractArray) where {OP}
-        if fast_scalar_indexing(x) && fast_scalar_indexing(y)
-            res = Core.Compiler.return_type(op, Tuple{eltype(x), eltype(y)})(0)
-            @simd ivdep for i in eachindex(x, y)
-                @inbounds res += op(x[i], y[i])
-            end
-            return res
+fused_agg(::typeof(sum), op::OP, x::Number, y::Number) where {OP} = op(x, y)
+function fused_agg(::typeof(sum), op::OP, x::AbstractArray, y::AbstractArray) where {OP}
+    if fast_scalar_indexing(x) && fast_scalar_indexing(y)
+        res = Core.Compiler.return_type(op, Tuple{eltype(x),eltype(y)})(0)
+        @simd ivdep for i in eachindex(x, y)
+            @inbounds res += op(x[i], y[i])
         end
-        return fallback_fused_agg(sum, op, x, y)
+        return res
     end
+    return fallback_fused_agg(sum, op, x, y)
+end
 
-    fused_agg(::Nothing, op::OP, args...) where {OP} = op.(args...)
-    fused_agg(f::F, op::OP, args...) where {F, OP} = fallback_fused_agg(f, op, args...)
+fused_agg(::Nothing, op::OP, args...) where {OP} = op.(args...)
+fused_agg(f::F, op::OP, args...) where {F,OP} = fallback_fused_agg(f, op, args...)
 
-    @inline fallback_fused_agg(f::F, op::OP, args...) where {F, OP} = f(op.(args...))
+@inline fallback_fused_agg(f::F, op::OP, args...) where {F,OP} = f(op.(args...))
 
-    function CRC.rrule(
-            cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
-            ::typeof(fused_agg), ::typeof(sum), op::OP, x, y
-        ) where {OP}
-        if has_custom_derivative(op)
-            res = fused_agg(sum, op, x, y)
-            ∇fused_agg_custom_derivative = Δ -> begin
+function CRC.rrule(
+    cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
+    ::typeof(fused_agg),
+    ::typeof(sum),
+    op::OP,
+    x,
+    y,
+) where {OP}
+    if has_custom_derivative(op)
+        res = fused_agg(sum, op, x, y)
+        ∇fused_agg_custom_derivative =
+            Δ -> begin
                 ∂x = @thunk derivative.(Ref(op), x, y) .* Δ
                 return NoTangent(), NoTangent(), NoTangent(), ∂x, NoTangent()
             end
-            return res, ∇fused_agg_custom_derivative
-        end
+        return res, ∇fused_agg_custom_derivative
+    end
 
-        # Without custom derivatives use ForwardDiff for the looped implementation
-        if fast_scalar_indexing(x) && fast_scalar_indexing(y)
-            x_dual = Dual{
-                Nothing, eltype(x), 1,
-            }.(x, (Partials{1, eltype(x)}((one(eltype(x)),)),))
-            x_partials = similar(x)
-            T = eltype(x)
-            res = Core.Compiler.return_type(op, Tuple{T, eltype(y)})(0)
-            @inbounds @simd for i in eachindex(x_partials, x, y)
-                x_dual = Dual{Nothing, T, 1}(x[i], Partials{1, T}((one(T),)))
-                tmp = op(x_dual, y[i])
-                x_partials[i] = ForwardDiff.partials(tmp, 1)
-                res += ForwardDiff.value(tmp)
-            end
-            ∇fused_agg_loop = Δ -> begin
+    # Without custom derivatives use ForwardDiff for the looped implementation
+    if fast_scalar_indexing(x) && fast_scalar_indexing(y)
+        x_dual = Dual{Nothing,eltype(x),1}.(x, (Partials{1,eltype(x)}((one(eltype(x)),)),))
+        x_partials = similar(x)
+        T = eltype(x)
+        res = Core.Compiler.return_type(op, Tuple{T,eltype(y)})(0)
+        @inbounds @simd for i in eachindex(x_partials, x, y)
+            x_dual = Dual{Nothing,T,1}(x[i], Partials{1,T}((one(T),)))
+            tmp = op(x_dual, y[i])
+            x_partials[i] = ForwardDiff.partials(tmp, 1)
+            res += ForwardDiff.value(tmp)
+        end
+        ∇fused_agg_loop =
+            Δ -> begin
                 @simd ivdep for i in eachindex(x_partials)
                     @inbounds x_partials[i] *= Δ
                 end
                 return NoTangent(), NoTangent(), NoTangent(), x_partials, NoTangent()
             end
-            return res, ∇fused_agg_loop
-        end
-
-        return CRC.rrule_via_ad(cfg, fallback_fused_agg, sum, op, x, y)
+        return res, ∇fused_agg_loop
     end
 
-    get_ϵ(::Type{T}, ϵ) where {T} = T(ϵ)
-    get_ϵ(::Type{T}, ::Nothing) where {T} = eps(float(T))
+    return CRC.rrule_via_ad(cfg, fallback_fused_agg, sum, op, x, y)
+end
 
-    get_loss_dims(::AbstractVector) = Colon()
-    get_loss_dims(::AbstractArray{T, N}) where {T, N} = 1:(N - 1)
+get_ϵ(::Type{T}, ϵ) where {T} = T(ϵ)
+get_ϵ(::Type{T}, ::Nothing) where {T} = eps(float(T))
 
-    has_custom_derivative(::F) where {F} = false
+get_loss_dims(::AbstractVector) = Colon()
+get_loss_dims(::AbstractArray{T,N}) where {T,N} = 1:(N - 1)
 
-    has_custom_derivative(f::Utils.Fix3) = has_custom_derivative(f.f)
-    derivative(f::Utils.Fix3, x, y) = derivative(f.f, x, y, f.x)
+has_custom_derivative(::F) where {F} = false
 
-    # Functional forms of losses
-    l1_distance_loss(x::T1, y::T2) where {T1, T2} = abs(x - y)
-    has_custom_derivative(::typeof(l1_distance_loss)) = true
-    function derivative(::typeof(l1_distance_loss), x::T1, y::T2) where {T1, T2}
-        return convert(T1, sign(x - y))
-    end
+has_custom_derivative(f::Utils.Fix3) = has_custom_derivative(f.f)
+derivative(f::Utils.Fix3, x, y) = derivative(f.f, x, y, f.x)
 
-    l2_distance_loss(x::T1, y::T2) where {T1, T2} = abs2(x - y)
-    has_custom_derivative(::typeof(l2_distance_loss)) = true
-    function derivative(::typeof(l2_distance_loss), x::T1, y::T2) where {T1, T2}
-        return convert(T1, 2 * (x - y))
-    end
+# Functional forms of losses
+l1_distance_loss(x::T1, y::T2) where {T1,T2} = abs(x - y)
+has_custom_derivative(::typeof(l1_distance_loss)) = true
+function derivative(::typeof(l1_distance_loss), x::T1, y::T2) where {T1,T2}
+    return convert(T1, sign(x - y))
+end
 
-    function huber_loss(x::T1, y::T2, δ::T3) where {T1, T2, T3}
-        T = promote_type(T1, T2, T3)
-        diff = x - y
-        abs_diff = abs(diff)
-        return ifelse(
-            abs_diff ≤ δ, convert(T, 0.5) * abs2(diff), δ * (abs_diff - convert(T, 0.5) * δ)
-        )
-    end
-    has_custom_derivative(::typeof(huber_loss)) = true
-    function derivative(::typeof(huber_loss), x::T, y::T2, δ::T3) where {T, T2, T3}
-        diff = x - y
-        return ifelse(abs(diff) ≤ δ, T(diff), T(δ) * convert(T, sign(diff)))
-    end
+l2_distance_loss(x::T1, y::T2) where {T1,T2} = abs2(x - y)
+has_custom_derivative(::typeof(l2_distance_loss)) = true
+function derivative(::typeof(l2_distance_loss), x::T1, y::T2) where {T1,T2}
+    return convert(T1, 2 * (x - y))
+end
 
-    function l1_hinge_loss(x::T1, y::T2) where {T1, T2}
-        agreement = x * y
-        return max(oftype(agreement, false), true - agreement)
-    end
-    has_custom_derivative(::typeof(l1_hinge_loss)) = true
-    function derivative(::typeof(l1_hinge_loss), x::T1, y::T2) where {T1, T2}
-        return T1(ifelse(x * y ≥ 1, false, true))
-    end
+function huber_loss(x::T1, y::T2, δ::T3) where {T1,T2,T3}
+    T = promote_type(T1, T2, T3)
+    diff = x - y
+    abs_diff = abs(diff)
+    return ifelse(
+        abs_diff ≤ δ, convert(T, 0.5) * abs2(diff), δ * (abs_diff - convert(T, 0.5) * δ)
+    )
+end
+has_custom_derivative(::typeof(huber_loss)) = true
+function derivative(::typeof(huber_loss), x::T, y::T2, δ::T3) where {T,T2,T3}
+    diff = x - y
+    return ifelse(abs(diff) ≤ δ, T(diff), T(δ) * convert(T, sign(diff)))
+end
 
-    function l2_hinge_loss(x::T1, y::T2) where {T1, T2}
-        agreement = x * y
-        return ifelse(agreement ≥ 1, oftype(agreement, false), abs2(true - agreement))
-    end
-    has_custom_derivative(::typeof(l2_hinge_loss)) = true
-    function derivative(::typeof(l2_hinge_loss), x::T1, y::T2) where {T1, T2}
-        agreement = x * y
-        return T1(ifelse(agreement ≥ 1, false, 2 * (agreement - true)))
-    end
+function l1_hinge_loss(x::T1, y::T2) where {T1,T2}
+    agreement = x * y
+    return max(oftype(agreement, false), true - agreement)
+end
+has_custom_derivative(::typeof(l1_hinge_loss)) = true
+function derivative(::typeof(l1_hinge_loss), x::T1, y::T2) where {T1,T2}
+    return T1(ifelse(x * y ≥ 1, false, true))
+end
 
-    function siamese_contrastive_loss(x::T1, y::T2, margin = true) where {T1, T2}
-        return (true - y) * x^2 + y * max(convert(promote_type(T1, T2), false), margin - x)^2
-    end
+function l2_hinge_loss(x::T1, y::T2) where {T1,T2}
+    agreement = x * y
+    return ifelse(agreement ≥ 1, oftype(agreement, false), abs2(true - agreement))
+end
+has_custom_derivative(::typeof(l2_hinge_loss)) = true
+function derivative(::typeof(l2_hinge_loss), x::T1, y::T2) where {T1,T2}
+    agreement = x * y
+    return T1(ifelse(agreement ≥ 1, false, 2 * (agreement - true)))
+end
 
-    poisson_loss(x::T1, y::T2, ϵ) where {T1, T2} = x - xlogy(y, x + get_ϵ(T1, ϵ))
+function siamese_contrastive_loss(x::T1, y::T2, margin=true) where {T1,T2}
+    return (true - y) * x^2 + y * max(convert(promote_type(T1, T2), false), margin - x)^2
+end
 
-    function msle_loss(x::T1, y::T2, ϵ) where {T1, T2}
-        ϵ = get_ϵ(promote_type(T1, T2), ϵ)
-        return log((x + ϵ) / (y + ϵ))^2
-    end
+poisson_loss(x::T1, y::T2, ϵ) where {T1,T2} = x - xlogy(y, x + get_ϵ(T1, ϵ))
 
-    label_smoothing(::Nothing, y, ::Type{T}) where {T} = y
-    function label_smoothing(label_smoothing, y, ::Type{T}) where {T}
-        label_smoothing = T(label_smoothing)
-        return y .* (1 - label_smoothing) .+ label_smoothing ./ size(y, ndims(y) - 1)
-    end
+function msle_loss(x::T1, y::T2, ϵ) where {T1,T2}
+    ϵ = get_ϵ(promote_type(T1, T2), ϵ)
+    return log((x + ϵ) / (y + ϵ))^2
+end
 
-    label_smoothing_binary(::Nothing, y, ::Type{T}) where {T} = y
-    function label_smoothing_binary(label_smoothing, y, ::Type{T}) where {T}
-        label_smoothing = T(label_smoothing)
-        return y .* (1 - label_smoothing) .+ label_smoothing ./ 2
-    end
+label_smoothing(::Nothing, y, ::Type{T}) where {T} = y
+function label_smoothing(label_smoothing, y, ::Type{T}) where {T}
+    label_smoothing = T(label_smoothing)
+    return y .* (1 - label_smoothing) .+ label_smoothing ./ size(y, ndims(y) - 1)
+end
+
+label_smoothing_binary(::Nothing, y, ::Type{T}) where {T} = y
+function label_smoothing_binary(label_smoothing, y, ::Type{T}) where {T}
+    label_smoothing = T(label_smoothing)
+    return y .* (1 - label_smoothing) .+ label_smoothing ./ 2
+end
 
 end
 
@@ -252,28 +258,33 @@ true
 ```
 """
 @concrete struct BinaryCrossEntropyLoss{logits} <: AbstractLossFunction
-    label_smoothing <: Union{Nothing, Real}
+    label_smoothing <: Union{Nothing,Real}
     agg
     epsilon
 end
 
 function BinaryCrossEntropyLoss(;
-        agg = mean, epsilon = nothing, label_smoothing::Union{Nothing, Real} = nothing,
-        logits::Union{Bool, Val} = Val(false)
-    )
+    agg=mean,
+    epsilon=nothing,
+    label_smoothing::Union{Nothing,Real}=nothing,
+    logits::Union{Bool,Val}=Val(false),
+)
     label_smoothing !== nothing && @argcheck 0 ≤ label_smoothing ≤ 1
     return BinaryCrossEntropyLoss{Utils.unwrap_val(logits)}(label_smoothing, agg, epsilon)
 end
 
 for logits in (true, false)
-    return_expr = logits ? :(return loss.agg((1 .- ỹ) .* ŷ .- logsigmoid.(ŷ))) :
+    return_expr = if logits
+        :(return loss.agg((1 .- ỹ) .* ŷ .- logsigmoid.(ŷ)))
+    else
         :(return loss.agg(-xlogy.(ỹ, ŷ .+ ϵ) .- xlogy.(1 .- ỹ, 1 .- ŷ .+ ϵ)))
+    end
 
     @eval function unsafe_apply_loss(loss::BinaryCrossEntropyLoss{$(logits)}, ŷ, y)
         T = promote_type(eltype(ŷ), eltype(y))
         ϵ = LossFunctionImpl.get_ϵ(T, loss.epsilon)
         ỹ = LossFunctionImpl.label_smoothing_binary(loss.label_smoothing, y, T)
-        $(return_expr)
+        return $(return_expr)
     end
 end
 
@@ -374,38 +385,39 @@ true
 ```
 """
 @concrete struct CrossEntropyLoss{logits} <: AbstractLossFunction
-    label_smoothing <: Union{Nothing, Real}
+    label_smoothing <: Union{Nothing,Real}
     dims
     agg
     epsilon
 end
 
 function CrossEntropyLoss(;
-        dims = 1, agg = mean, epsilon = nothing, label_smoothing::Union{Nothing, Real} = nothing,
-        logits::Union{Bool, Val} = Val(false)
-    )
+    dims=1,
+    agg=mean,
+    epsilon=nothing,
+    label_smoothing::Union{Nothing,Real}=nothing,
+    logits::Union{Bool,Val}=Val(false),
+)
     label_smoothing !== nothing && @argcheck 0 ≤ label_smoothing ≤ 1
     return CrossEntropyLoss{Utils.unwrap_val(logits)}(label_smoothing, dims, agg, epsilon)
 end
 
 for logits in (true, false)
-    return_expr = logits ?
+    return_expr = if logits
         :(
             return LossFunctionImpl.fused_agg(
                 loss.agg, -, sum(ỹ .* logsoftmax(ŷ; loss.dims); loss.dims)
             )
-        ) :
-        :(
-            return LossFunctionImpl.fused_agg(
-                loss.agg, -, sum(xlogy.(ỹ, ŷ .+ ϵ); loss.dims)
-            )
         )
+    else
+        :(return LossFunctionImpl.fused_agg(loss.agg, -, sum(xlogy.(ỹ, ŷ .+ ϵ); loss.dims)))
+    end
 
     @eval function unsafe_apply_loss(loss::CrossEntropyLoss{$(logits)}, ŷ, y)
         T = promote_type(eltype(ŷ), eltype(y))
         ϵ = LossFunctionImpl.get_ϵ(T, loss.epsilon)
         ỹ = LossFunctionImpl.label_smoothing(loss.label_smoothing, y, T)
-        $(return_expr)
+        return $(return_expr)
     end
 end
 
@@ -532,7 +544,7 @@ julia> loss(y_pred, y_true) ≈ 0.55
 true
 ```
 """
-HingeLoss(; agg = mean) = GenericLossFunction(LossFunctionImpl.l1_hinge_loss; agg)
+HingeLoss(; agg=mean) = GenericLossFunction(LossFunctionImpl.l1_hinge_loss; agg)
 
 @doc doc"""
     HuberLoss(; delta = 1, agg = mean)
@@ -558,10 +570,9 @@ julia> HuberLoss(delta=0.05)(y_model, 1:3) ≈ 0.003750000000000005
 true
 ```
 """
-function HuberLoss(; delta::Union{Nothing, AbstractFloat} = nothing, agg = mean)
+function HuberLoss(; delta::Union{Nothing,AbstractFloat}=nothing, agg=mean)
     return GenericLossFunction(
-        Utils.Fix3(LossFunctionImpl.huber_loss, ifelse(delta === nothing, true, delta));
-        agg
+        Utils.Fix3(LossFunctionImpl.huber_loss, ifelse(delta === nothing, true, delta)); agg
     )
 end
 
@@ -608,7 +619,7 @@ Inf
     celoss <: CrossEntropyLoss
 end
 
-function KLDivergenceLoss(; dims = 1, agg = mean, epsilon = nothing, label_smoothing = nothing)
+function KLDivergenceLoss(; dims=1, agg=mean, epsilon=nothing, label_smoothing=nothing)
     celoss = CrossEntropyLoss(; dims, agg, epsilon, label_smoothing)
     return KLDivergenceLoss(agg, dims, celoss)
 end
@@ -638,7 +649,7 @@ julia> loss(y_model, 1:3) ≈ 0.1
 true
 ```
 """
-MAELoss(; agg = mean) = GenericLossFunction(LossFunctionImpl.l1_distance_loss; agg)
+MAELoss(; agg=mean) = GenericLossFunction(LossFunctionImpl.l1_distance_loss; agg)
 
 const L1Loss = MAELoss
 
@@ -660,7 +671,7 @@ julia> loss(y_model, 1:3) ≈ 0.01
 true
 ```
 """
-MSELoss(; agg = mean) = GenericLossFunction(LossFunctionImpl.l2_distance_loss; agg)
+MSELoss(; agg=mean) = GenericLossFunction(LossFunctionImpl.l2_distance_loss; agg)
 
 const L2Loss = MSELoss
 
@@ -686,7 +697,7 @@ julia> loss(Float32[0.9, 1.8, 2.7], 1:3) ≈ 0.011100831f0
 true
 ```
 """
-function MSLELoss(; agg = mean, epsilon = nothing)
+function MSLELoss(; agg=mean, epsilon=nothing)
     return GenericLossFunction(Utils.Fix3(LossFunctionImpl.msle_loss, epsilon); agg)
 end
 
@@ -707,7 +718,7 @@ julia> PoissonLoss()(y_model, 1:3) ≈ 0.502312852219817
 true
 ```
 """
-function PoissonLoss(; agg = mean, epsilon = nothing)
+function PoissonLoss(; agg=mean, epsilon=nothing)
     return GenericLossFunction(Utils.Fix3(LossFunctionImpl.poisson_loss, epsilon); agg)
 end
 
@@ -739,7 +750,7 @@ true
 invariant mapping." 2006 IEEE computer society conference on computer vision and pattern
 recognition (CVPR'06). Vol. 2. IEEE, 2006.
 """
-function SiameseContrastiveLoss(; margin = true, agg = mean)
+function SiameseContrastiveLoss(; margin=true, agg=mean)
     @argcheck margin ≥ 0
     return GenericLossFunction(
         Utils.Fix3(LossFunctionImpl.siamese_contrastive_loss, margin); agg
@@ -769,7 +780,7 @@ julia> loss(y_pred, y_true) ≈ 0.625
 true
 ```
 """
-SquaredHingeLoss(; agg = mean) = GenericLossFunction(LossFunctionImpl.l2_hinge_loss; agg)
+SquaredHingeLoss(; agg=mean) = GenericLossFunction(LossFunctionImpl.l2_hinge_loss; agg)
 
 @doc doc"""
     GenericLossFunction(loss_fn; agg = mean)
@@ -797,7 +808,7 @@ into the Lux Losses API with efficient aggregation.
     agg
 end
 
-GenericLossFunction(loss_fn; agg = mean) = GenericLossFunction(loss_fn, agg)
+GenericLossFunction(loss_fn; agg=mean) = GenericLossFunction(loss_fn, agg)
 
 function unsafe_apply_loss(loss::GenericLossFunction, ŷ, y)
     return LossFunctionImpl.fused_agg(loss.agg, loss.loss_fn, ŷ, y)

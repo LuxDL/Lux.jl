@@ -5,7 +5,7 @@
     bias_act_loss2(act, x, b) = sum(abs2, bias_activation(act, x, b))
     bias_act_loss3(act, x, b) = sum(abs2, bias_activation!!(act, copy(x), b))
 
-    struct __Fix1{F, A}
+    struct __Fix1{F,A}
         f::F
         act::A
     end
@@ -13,16 +13,25 @@
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "$act, $T, $sz" for act in [
-                    identity, relu, sigmoid, sigmoid_fast, softplus,
-                    logsigmoid, gelu, swish, lisht, tanh, tanh_fast,
-                ],
-                T in [Float32, Float64],
-                sz in [(2, 2, 3, 4), (4, 5)]
+                identity,
+                relu,
+                sigmoid,
+                sigmoid_fast,
+                softplus,
+                logsigmoid,
+                gelu,
+                swish,
+                lisht,
+                tanh,
+                tanh_fast,
+            ],
+            T in [Float32, Float64],
+            sz in [(2, 2, 3, 4), (4, 5)]
 
             !fp64 && T == Float64 && continue
 
-            x = rand(rng, T, sz) |> aType
-            b = rand(rng, T, sz[end - 1]) |> aType
+            x = aType(rand(rng, T, sz))
+            b = aType(rand(rng, T, sz[end - 1]))
 
             y1 = bias_act_loss1(act, x, b)
             y2 = bias_act_loss2(act, x, b)
@@ -46,16 +55,28 @@
             @jet bias_act_loss3(act, x, b)
 
             @test_gradients(
-                __Fix1(bias_act_loss1, act), x, b; atol, rtol,
-                soft_fail = fp16 ? [AutoFiniteDiff()] : []
+                __Fix1(bias_act_loss1, act),
+                x,
+                b;
+                atol,
+                rtol,
+                soft_fail=fp16 ? [AutoFiniteDiff()] : []
             )
             @test_gradients(
-                __Fix1(bias_act_loss2, act), x, b; atol, rtol,
-                soft_fail = fp16 ? [AutoFiniteDiff()] : []
+                __Fix1(bias_act_loss2, act),
+                x,
+                b;
+                atol,
+                rtol,
+                soft_fail=fp16 ? [AutoFiniteDiff()] : []
             )
             @test_gradients(
-                __Fix1(bias_act_loss3, act), x, b; atol, rtol,
-                soft_fail = fp16 ? [AutoFiniteDiff()] : []
+                __Fix1(bias_act_loss3, act),
+                x,
+                b;
+                atol,
+                rtol,
+                soft_fail=fp16 ? [AutoFiniteDiff()] : []
             )
 
             ∂x1, ∂b1 = Zygote.gradient(__Fix1(bias_act_loss1, act), x, b)
@@ -92,13 +113,13 @@ end
 
 @testitem "Bias Activation: Zero-sized Arrays" tags = [:misc] setup = [SharedTestSetup] begin
     @testset "$mode" for (mode, aType, ongpu) in MODES
-        x = rand(Float32, 4, 3, 2, 0) |> aType
-        b = rand(Float32, 2) |> aType
+        x = aType(rand(Float32, 4, 3, 2, 0))
+        b = aType(rand(Float32, 2))
         @test size(bias_activation(identity, x, b)) == (4, 3, 2, 0)
         @test size(bias_activation!!(identity, x, b)) == (4, 3, 2, 0)
 
-        x = rand(Float32, 2, 0) |> aType
-        b = rand(Float32, 2) |> aType
+        x = aType(rand(Float32, 2, 0))
+        b = aType(rand(Float32, 2))
         @test size(bias_activation(relu, x, b)) == (2, 0)
         @test size(bias_activation!!(relu, x, b)) == (2, 0)
     end

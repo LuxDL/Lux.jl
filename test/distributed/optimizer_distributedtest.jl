@@ -9,14 +9,17 @@ if input_args[1] == "amdgpu"
 end
 
 const backend_type = input_args[2] == "nccl" ? NCCLBackend : MPIBackend
-const dev = input_args[1] == "cpu" ? CPUDevice() :
+const dev = if input_args[1] == "cpu"
+    CPUDevice()
+else
     (input_args[1] == "cuda" ? CUDADevice() : AMDGPUDevice())
+end
 
 DistributedUtils.initialize(backend_type)
 backend = DistributedUtils.get_distributed_backend(backend_type)
 
 opt = Adam(0.001f0)
-ps = (a = zeros(4), b = zeros(4)) |> dev
+ps = dev((a=zeros(4), b=zeros(4)))
 st_opt = Optimisers.setup(opt, ps)
 
 dopt = DistributedUtils.DistributedOptimizer(backend, opt)
@@ -27,7 +30,7 @@ st_dopt = Optimisers.setup(dopt, ps)
 
 @test DistributedUtils.synchronize!!(backend, st_dopt) isa Any
 
-gs = (a = ones(4), b = ones(4)) |> dev
+gs = dev((a=ones(4), b=ones(4)))
 
 _, ps_dopt = Optimisers.update(st_dopt, ps, gs)
 _, ps_opt = Optimisers.update(st_opt, ps, gs)

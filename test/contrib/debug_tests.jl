@@ -8,8 +8,8 @@
             Dense(1 => 16, relu), Chain(Dense(16 => 3), Dense(1 => 1)), BatchNorm(1)
         )
 
-        ps, st = Lux.setup(rng, model) |> dev
-        x = randn(rng, Float32, 1, 5) |> aType
+        ps, st = dev(Lux.setup(rng, model))
+        x = aType(randn(rng, Float32, 1, 5))
 
         @test_throws DimensionMismatch model(x, ps, st)
 
@@ -42,7 +42,7 @@
             Dense(1 => 16, relu), Chain(Dense(16 => 1), Dense(1 => 1)), BatchNorm(1)
         )
 
-        ps, st = Lux.setup(rng, model_fixed) |> dev
+        ps, st = dev(Lux.setup(rng, model_fixed))
 
         @test model_fixed(x, ps, st) isa Any
 
@@ -83,14 +83,14 @@ end
             Dense(1 => 16, relu), Chain(Dense(16 => 1), Dense(1 => 1)), BatchNorm(1)
         )
 
-        x = randn(rng, Float32, 1, 5) |> aType
-        ps, st = Lux.setup(rng, model) |> dev
+        x = aType(randn(rng, Float32, 1, 5))
+        ps, st = dev(Lux.setup(rng, model))
 
         model_debug = Lux.Experimental.@debug_mode model nan_check = :both
 
         ps.layer_2.layer_2.weight .*= NaN32
 
-        @test any(isnan, first(model(x, ps, st)) |> Array)
+        @test any(isnan, Array(first(model(x, ps, st))))
 
         @test_throws DomainError model_debug(x, ps, st)
 
@@ -99,18 +99,18 @@ end
         @test_throws DomainError model_debug2(x, ps, st)
 
         model_debug3 = Lux.Experimental.@debug_mode model nan_check = :backward
-        @test any(isnan, first(model_debug3(x, ps, st)) |> Array)
+        @test any(isnan, Array(first(model_debug3(x, ps, st))))
 
         model_debug4 = Lux.Experimental.@debug_mode model nan_check = :none
-        @test any(isnan, first(model_debug4(x, ps, st)) |> Array)
+        @test any(isnan, Array(first(model_debug4(x, ps, st))))
 
         model = Chain(
             Dense(1 => 16, relu), Chain(Dense(16 => 1), offending_layer), BatchNorm(1)
         )
 
-        ps, st = Lux.setup(rng, model) |> dev
+        ps, st = dev(Lux.setup(rng, model))
 
-        @test !any(isnan, first(model(x, ps, st)) |> Array)
+        @test !any(isnan, Array(first(model(x, ps, st))))
 
         gs = only(Zygote.gradient(ps -> sum(first(model(x, ps, st))), ps))
         @test any(isnan, gs.layer_1.weight)
@@ -126,9 +126,7 @@ end
         @test_logs min_level = Logging.Error model_debug(x, ps, st)
 
         @test_throws DomainError only(
-            Zygote.gradient(
-                ps -> sum(first(model_debug(x, ps, st))), ps
-            )
+            Zygote.gradient(ps -> sum(first(model_debug(x, ps, st))), ps)
         )
 
         model_debug2 = Lux.Experimental.@debug_mode model nan_check = :forward
@@ -149,9 +147,7 @@ end
         @test_logs min_level = Logging.Error model_debug3(x, ps, st)
 
         @test_throws DomainError only(
-            Zygote.gradient(
-                ps -> sum(first(model_debug3(x, ps, st))), ps
-            )
+            Zygote.gradient(ps -> sum(first(model_debug3(x, ps, st))), ps)
         )
 
         model_debug4 = Lux.Experimental.@debug_mode model nan_check = :none
@@ -171,10 +167,10 @@ end
 
 @testitem "Debugging Tools: Issue #1068" setup = [SharedTestSetup] tags = [:misc] begin
     model = Chain(
-        Conv((3, 3), 3 => 16, relu; stride = 2),
+        Conv((3, 3), 3 => 16, relu; stride=2),
         MaxPool((2, 2)),
         AdaptiveMaxPool((2, 2)),
-        GlobalMaxPool()
+        GlobalMaxPool(),
     )
 
     model_debug = Lux.Experimental.@debug_mode model

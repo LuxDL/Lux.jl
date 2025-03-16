@@ -6,7 +6,8 @@ using Tracker: Tracker
 
 for op in (:get_device, :get_device_type)
     @eval Internal.$(op)(x::Tracker.TrackedArray) = Internal.$(op)(Tracker.data(x))
-    @eval Internal.$(op)(x::AbstractArray{<:Tracker.TrackedReal}) = Internal.$(op)(Tracker.data.(x))
+    @eval Internal.$(op)(x::AbstractArray{<:Tracker.TrackedReal}) =
+        Internal.$(op)(Tracker.data.(x))
 end
 
 Internal.special_aos(::AbstractArray{<:Tracker.TrackedReal}) = true

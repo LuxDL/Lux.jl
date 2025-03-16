@@ -5,8 +5,8 @@
         for p in (0.5f0, 0.5)
             layer = Dropout(p)
             display(layer)
-            ps, st = Lux.setup(rng, layer) .|> dev
-            x = randn(Float32, 5, 2) |> aType
+            ps, st = dev.(Lux.setup(rng, layer))
+            x = aType(randn(Float32, 5, 2))
 
             x_, st_ = layer(x, ps, st)
             x__, st__ = layer(x, ps, st)
@@ -18,7 +18,7 @@
             @test x_ != x___
 
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             st = Lux.testmode(st)
             @test first(layer(x, ps, st)) == x
@@ -33,9 +33,9 @@ end
         for p in (0.5f0, 0.5)
             layer = AlphaDropout(p)
             display(layer)
-            ps, st = Lux.setup(rng, layer) .|> dev
+            ps, st = dev.(Lux.setup(rng, layer))
             # GPU compilation for mixed types fail atm
-            x = randn(typeof(p), 5, 2) |> aType
+            x = aType(randn(typeof(p), 5, 2))
 
             x_, st_ = layer(x, ps, st)
             x__, st__ = layer(x, ps, st)
@@ -47,7 +47,7 @@ end
             @test x_ != x___
 
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             st = Lux.testmode(st)
             @test first(layer(x, ps, st)) == x
@@ -62,8 +62,8 @@ end
         for p in (0.5f0, 0.5)
             layer = VariationalHiddenDropout(p)
             display(layer)
-            ps, st = Lux.setup(rng, layer) .|> dev
-            x = randn(Float32, 5, 2) |> aType
+            ps, st = dev.(Lux.setup(rng, layer))
+            x = aType(randn(Float32, 5, 2))
 
             x_, st_ = layer(x, ps, st)
             x__, st__ = layer(x, ps, st)
@@ -76,10 +76,10 @@ end
             @test x_ != x___
 
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             @jet layer(x, ps, st_)
-            @test_gradients(sumabs2first, layer, x, ps, st_; atol = 1.0f-3, rtol = 1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st_; atol=1.0f-3, rtol=1.0f-3)
 
             st__ = Lux.update_state(st_, :update_mask, Val(true))
             x___, st___ = layer(x, ps, st__)
@@ -88,7 +88,7 @@ end
             @test x___ != x_
 
             @jet layer(x, ps, st__)
-            @test_gradients(sumabs2first, layer, x, ps, st__; atol = 1.0f-3, rtol = 1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st__; atol=1.0f-3, rtol=1.0f-3)
         end
     end
 end

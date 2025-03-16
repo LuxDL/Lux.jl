@@ -7,9 +7,9 @@ using DispatchDoctor: allow_unstable
 rng = StableRNG(1234)
 
 function test_nested_ad_input_gradient_jacobian(aType, dev, ongpu, loss_fn, X, model)
-    loss_fn === loss_function3 && ongpu && return
+    loss_fn === loss_function3 && ongpu && return nothing
 
-    ps, st = Lux.setup(rng, model) |> dev
+    ps, st = dev(Lux.setup(rng, model))
     X = aType(X)
 
     l = allow_unstable() do
@@ -24,36 +24,47 @@ function test_nested_ad_input_gradient_jacobian(aType, dev, ongpu, loss_fn, X, m
 
     @test ∂x !== nothing && !iszero(∂x) && all(x -> x === nothing || isfinite(x), ∂x)
     @test ∂ps !== nothing &&
-        !iszero(ComponentArray(∂ps |> cpu_device())) &&
-        all(x -> x === nothing || isfinite(x), ComponentArray(∂ps |> cpu_device()))
+        !iszero(ComponentArray(cpu_device()(∂ps))) &&
+        all(x -> x === nothing || isfinite(x), ComponentArray(cpu_device()(∂ps)))
 
     allow_unstable() do
         @test_gradients(
-            (x, ps) -> loss_fn(model, x, ps, st), X, ps;
-            atol = 1.0f-3, rtol = 1.0f-1,
-            soft_fail = [AutoFiniteDiff()],
-            skip_backends = [AutoReverseDiff(), AutoTracker(), AutoEnzyme()]
+            (x, ps) -> loss_fn(model, x, ps, st),
+            X,
+            ps;
+            atol=1.0f-3,
+            rtol=1.0f-1,
+            soft_fail=[AutoFiniteDiff()],
+            skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()]
         )
     end
 end
 
 const Xs = (
-    randn(rng, Float32, 3, 3, 2, 2), randn(rng, Float32, 2, 2),
-    randn(rng, Float32, 2, 2), randn(rng, Float32, 3, 3, 2, 2),
+    randn(rng, Float32, 3, 3, 2, 2),
+    randn(rng, Float32, 2, 2),
+    randn(rng, Float32, 2, 2),
+    randn(rng, Float32, 3, 3, 2, 2),
 )
 
 const models = (
     Chain(
-        Conv((3, 3), 2 => 4, gelu; pad = SamePad()), BatchNorm(4),
-        Conv((3, 3), 4 => 2, gelu; pad = SamePad()),
-        BatchNorm(2), FlattenLayer(), Dense(18 => 2)
+        Conv((3, 3), 2 => 4, gelu; pad=SamePad()),
+        BatchNorm(4),
+        Conv((3, 3), 4 => 2, gelu; pad=SamePad()),
+        BatchNorm(2),
+        FlattenLayer(),
+        Dense(18 => 2),
     ),
     Chain(Dense(2, 4), GroupNorm(4, 2, gelu), Dense(4, 2)),
     Chain(Dense(2, 4), BatchNorm(4, gelu), Dense(4, 2)),
     Chain(
-        Conv((3, 3), 2 => 3, gelu; pad = SamePad()), BatchNorm(3),
-        Conv((3, 3), 3 => 2, gelu; pad = SamePad()),
-        BatchNorm(2), FlattenLayer(), Dense(18 => 1)
+        Conv((3, 3), 2 => 3, gelu; pad=SamePad()),
+        BatchNorm(3),
+        Conv((3, 3), 3 => 2, gelu; pad=SamePad()),
+        BatchNorm(2),
+        FlattenLayer(),
+        Dense(18 => 1),
     ),
 )
 
@@ -86,9 +97,7 @@ const ALL_TEST_CONFIGS = Iterators.product(
 )
 
 const TEST_BLOCKS = collect(
-    Iterators.partition(
-        ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 4)
-    )
+    Iterators.partition(ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 4))
 )
 
 export test_nested_ad_input_gradient_jacobian, TEST_BLOCKS
@@ -96,7 +105,7 @@ export test_nested_ad_input_gradient_jacobian, TEST_BLOCKS
 end
 
 @testitem "Nested AD: Input Gradient/Jacobian Group 1" setup = [
-    SharedTestSetup, NestedADInputTestSetup,
+    SharedTestSetup, NestedADInputTestSetup
 ] tags = [:autodiff] begin
     @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
         @testset "$(summary(X)) $(loss_fn)" for ((X, model), loss_fn) in TEST_BLOCKS[1]
@@ -107,7 +116,7 @@ end
 end
 
 @testitem "Nested AD: Input Gradient/Jacobian Group 2" setup = [
-    SharedTestSetup, NestedADInputTestSetup,
+    SharedTestSetup, NestedADInputTestSetup
 ] tags = [:autodiff] begin
     @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
         @testset "$(summary(X)) $(loss_fn)" for ((X, model), loss_fn) in TEST_BLOCKS[2]
@@ -118,7 +127,7 @@ end
 end
 
 @testitem "Nested AD: Input Gradient/Jacobian Group 3" setup = [
-    SharedTestSetup, NestedADInputTestSetup,
+    SharedTestSetup, NestedADInputTestSetup
 ] tags = [:autodiff] begin
     @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
         @testset "$(summary(X)) $(loss_fn)" for ((X, model), loss_fn) in TEST_BLOCKS[3]
@@ -129,7 +138,7 @@ end
 end
 
 @testitem "Nested AD: Input Gradient/Jacobian Group 4" setup = [
-    SharedTestSetup, NestedADInputTestSetup,
+    SharedTestSetup, NestedADInputTestSetup
 ] tags = [:autodiff] begin
     @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
         @testset "$(summary(X)) $(loss_fn)" for ((X, model), loss_fn) in TEST_BLOCKS[4]
@@ -148,11 +157,11 @@ using DispatchDoctor: allow_unstable
 rng = StableRNG(1234)
 
 function test_nested_ad_parameter_gradient_jacobian(aType, dev, ongpu, loss_fn, X, model)
-    loss_fn === loss_function3 && ongpu && return
+    loss_fn === loss_function3 && ongpu && return nothing
 
     ps, st = Lux.setup(rng, model)
-    ps = ps |> ComponentArray |> dev
-    st = st |> dev
+    ps = dev(ComponentArray(ps))
+    st = dev(st)
     X = aType(X)
 
     l = allow_unstable() do
@@ -167,36 +176,47 @@ function test_nested_ad_parameter_gradient_jacobian(aType, dev, ongpu, loss_fn, 
 
     @test ∂x !== nothing && !iszero(∂x) && all(x -> x === nothing || isfinite(x), ∂x)
     @test ∂ps !== nothing &&
-        !iszero(ComponentArray(∂ps |> cpu_device())) &&
-        all(x -> x === nothing || isfinite(x), ComponentArray(∂ps |> cpu_device()))
+        !iszero(ComponentArray(cpu_device()(∂ps))) &&
+        all(x -> x === nothing || isfinite(x), ComponentArray(cpu_device()(∂ps)))
 
     allow_unstable() do
         @test_gradients(
-            (x, ps) -> loss_fn(model, x, ps, st), X, ps;
-            atol = 1.0f-3, rtol = 1.0f-1,
-            soft_fail = [AutoFiniteDiff()],
-            skip_backends = [AutoReverseDiff(), AutoTracker(), AutoEnzyme()]
+            (x, ps) -> loss_fn(model, x, ps, st),
+            X,
+            ps;
+            atol=1.0f-3,
+            rtol=1.0f-1,
+            soft_fail=[AutoFiniteDiff()],
+            skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()]
         )
     end
 end
 
 const Xs = (
-    randn(rng, Float32, 3, 3, 2, 2), randn(rng, Float32, 2, 2),
-    randn(rng, Float32, 2, 2), randn(rng, Float32, 3, 3, 2, 2),
+    randn(rng, Float32, 3, 3, 2, 2),
+    randn(rng, Float32, 2, 2),
+    randn(rng, Float32, 2, 2),
+    randn(rng, Float32, 3, 3, 2, 2),
 )
 
 const models = (
     Chain(
-        Conv((3, 3), 2 => 4, gelu; pad = SamePad()), BatchNorm(4),
-        Conv((3, 3), 4 => 2, gelu; pad = SamePad()),
-        BatchNorm(2), FlattenLayer(), Dense(18 => 2)
+        Conv((3, 3), 2 => 4, gelu; pad=SamePad()),
+        BatchNorm(4),
+        Conv((3, 3), 4 => 2, gelu; pad=SamePad()),
+        BatchNorm(2),
+        FlattenLayer(),
+        Dense(18 => 2),
     ),
     Chain(Dense(2, 4, gelu), Dense(4, 2)),
     Chain(Dense(2, 4, gelu), BatchNorm(4, sigmoid), Dense(4, 2)),
     Chain(
-        Conv((3, 3), 2 => 4, gelu; pad = SamePad()), BatchNorm(4),
-        Conv((3, 3), 4 => 2, tanh; pad = SamePad()),
-        BatchNorm(2), FlattenLayer(), Dense(18 => 1)
+        Conv((3, 3), 2 => 4, gelu; pad=SamePad()),
+        BatchNorm(4),
+        Conv((3, 3), 4 => 2, tanh; pad=SamePad()),
+        BatchNorm(2),
+        FlattenLayer(),
+        Dense(18 => 1),
     ),
 )
 
@@ -217,7 +237,7 @@ function loss_function3(model, x, ps, st)
     smodel = StatefulLuxLayer{true}(model, ps, st)
     return sum(
         abs2,
-        ForwardDiff.gradient(Base.Fix1(sum, abs2) ∘ Base.Fix1(smodel, x), ps) .* 0.01f0
+        ForwardDiff.gradient(Base.Fix1(sum, abs2) ∘ Base.Fix1(smodel, x), ps) .* 0.01f0,
     )
 end
 
@@ -226,7 +246,7 @@ function loss_function4(model, x, ps, st)
     smodel = StatefulLuxLayer{true}(model, ps, st)
     return sum(
         abs2,
-        only(Zygote.gradient(Base.Fix1(sum, abs2) ∘ Base.Fix1(smodel, x), ps)) .* 0.01f0
+        only(Zygote.gradient(Base.Fix1(sum, abs2) ∘ Base.Fix1(smodel, x), ps)) .* 0.01f0,
     )
 end
 
@@ -235,9 +255,7 @@ const ALL_TEST_CONFIGS = Iterators.product(
 )
 
 const TEST_BLOCKS = collect(
-    Iterators.partition(
-        ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 4)
-    )
+    Iterators.partition(ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 4))
 )
 
 export test_nested_ad_parameter_gradient_jacobian, TEST_BLOCKS
@@ -245,7 +263,7 @@ export test_nested_ad_parameter_gradient_jacobian, TEST_BLOCKS
 end
 
 @testitem "Nested AD: Parameter Gradient/Jacobian Group 1" setup = [
-    SharedTestSetup, NestedADParameterTestSetup,
+    SharedTestSetup, NestedADParameterTestSetup
 ] tags = [:autodiff] begin
     @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
         @testset "$(summary(X)) $(loss_fn)" for ((X, model), loss_fn) in TEST_BLOCKS[1]
@@ -256,7 +274,7 @@ end
 end
 
 @testitem "Nested AD: Parameter Gradient/Jacobian Group 2" setup = [
-    SharedTestSetup, NestedADParameterTestSetup,
+    SharedTestSetup, NestedADParameterTestSetup
 ] tags = [:autodiff] begin
     @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
         @testset "$(summary(X)) $(loss_fn)" for ((X, model), loss_fn) in TEST_BLOCKS[2]
@@ -267,7 +285,7 @@ end
 end
 
 @testitem "Nested AD: Parameter Gradient/Jacobian Group 3" setup = [
-    SharedTestSetup, NestedADParameterTestSetup,
+    SharedTestSetup, NestedADParameterTestSetup
 ] tags = [:autodiff] begin
     @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
         @testset "$(summary(X)) $(loss_fn)" for ((X, model), loss_fn) in TEST_BLOCKS[3]
@@ -278,7 +296,7 @@ end
 end
 
 @testitem "Nested AD: Parameter Gradient/Jacobian Group 4" setup = [
-    SharedTestSetup, NestedADParameterTestSetup,
+    SharedTestSetup, NestedADParameterTestSetup
 ] tags = [:autodiff] begin
     @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
         @testset "$(summary(X)) $(loss_fn)" for ((X, model), loss_fn) in TEST_BLOCKS[4]
@@ -288,28 +306,31 @@ end
     end
 end
 
-@testitem "Nested AD: Structured Matrix LuxDL/Lux.jl#602" setup = [SharedTestSetup] tags = [:autodiff] begin
+@testitem "Nested AD: Structured Matrix LuxDL/Lux.jl#602" setup = [SharedTestSetup] tags = [
+    :autodiff
+] begin
     rng = StableRNG(1234)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "Structured Matrix: Issue LuxDL/Lux.jl#602" begin
-            model = @compact(; potential = Dense(5 => 5, gelu)) do x
+            model = @compact(; potential=Dense(5 => 5, gelu)) do x
                 @return reshape(diag(only(Zygote.jacobian(potential, x))), size(x))
             end
 
-            ps, st = Lux.setup(rng, model) |> dev
-            x = randn(rng, Float32, 5, 5) |> aType
+            ps, st = dev(Lux.setup(rng, model))
+            x = aType(randn(rng, Float32, 5, 5))
 
             __f = let model = model, st = st
                 (x, ps) -> sum(abs2, first(model(x, ps, st)))
             end
 
             @test_gradients(
-                __f, x,
+                __f,
+                x,
                 ps;
-                atol = 1.0f-3,
-                rtol = 1.0f-3,
-                skip_backends = [AutoReverseDiff(), AutoTracker(), AutoEnzyme()]
+                atol=1.0f-3,
+                rtol=1.0f-3,
+                skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()]
             )
         end
     end
@@ -321,8 +342,9 @@ end
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         models = (
             Chain(
-                Conv((3, 3), 2 => 4, gelu; pad = SamePad()), BatchNorm(4),
-                Conv((3, 3), 4 => 1, gelu; pad = SamePad())
+                Conv((3, 3), 2 => 4, gelu; pad=SamePad()),
+                BatchNorm(4),
+                Conv((3, 3), 4 => 1, gelu; pad=SamePad()),
             ),
             Chain(Dense(2, 4, gelu), Dense(4, 1)),
         )
@@ -330,7 +352,7 @@ end
 
         for (model, X) in zip(models, Xs)
             model = maybe_rewrite_to_crosscor(mode, model)
-            ps, st = Lux.setup(rng, model) |> dev
+            ps, st = dev(Lux.setup(rng, model))
 
             vjp_input = first(model(X, ps, st))
             jvp_input = aType(randn(rng, Float32, size(X)...))
@@ -371,7 +393,7 @@ end
             end
 
             @test ∂x ≈ ∂x_vjp rtol = 1.0e-3 atol = 1.0e-3
-            @test check_approx(∂ps, ∂ps_vjp; rtol = 1.0e-3, atol = 1.0e-3)
+            @test check_approx(∂ps, ∂ps_vjp; rtol=1.0e-3, atol=1.0e-3)
 
             @test loss_function_jvp(model, X, ps, st, jvp_input) isa Number
             @test loss_function_jvp(model, X, ps, st, jvp_input) ≈
@@ -385,7 +407,7 @@ end
             end
 
             @test ∂x ≈ ∂x_jvp rtol = 1.0e-3 atol = 1.0e-3
-            @test check_approx(∂ps, ∂ps_jvp; rtol = 1.0e-3, atol = 1.0e-3)
+            @test check_approx(∂ps, ∂ps_jvp; rtol=1.0e-3, atol=1.0e-3)
         end
     end
 end
@@ -396,8 +418,8 @@ end
     rng = StableRNG(1234)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        x = rand(rng, 3, 3) |> aType
-        v = vec(rand(rng, 3, 3)) |> aType
+        x = aType(rand(rng, 3, 3))
+        v = aType(vec(rand(rng, 3, 3)))
 
         ftest(x) = abs2.(x)
 
@@ -408,19 +430,19 @@ end
         Jv_fdiff = vec(
             allow_unstable() do
                 jacobian_vector_product(ftest, AutoForwardDiff(), x, v)
-            end
+            end,
         )
         @test Jv ≈ Jv_fdiff rtol = 1.0e-3 atol = 1.0e-3
 
         vJ_zyg = vec(
             allow_unstable() do
                 vector_jacobian_product(ftest, AutoZygote(), x, reshape(v, size(x)))
-            end
+            end,
         )
         @test vJ ≈ vJ_zyg rtol = 1.0e-3 atol = 1.0e-3
     end
 
-    struct functorABC{A, B}
+    struct functorABC{A,B}
         a::A
         b::B
     end
@@ -431,13 +453,15 @@ end
         return functorABC(st.functor.a .* st.functor.b, st.tup[1] .* st.tup[2])
     end
 
-    nt = (functor = functorABC(rand(rng, 3), rand(rng, 3)), tup = (rand(rng, 3), rand(rng, 3)))
-    u = (functor = functorABC(rand(rng, 3), rand(rng, 3)), tup = (rand(rng, 3), rand(rng, 3)))
+    nt = (functor=functorABC(rand(rng, 3), rand(rng, 3)), tup=(rand(rng, 3), rand(rng, 3)))
+    u = (functor=functorABC(rand(rng, 3), rand(rng, 3)), tup=(rand(rng, 3), rand(rng, 3)))
 
     @test jacobian_vector_product(ftest, AutoForwardDiff(), nt, u) isa Any
 end
 
-@testitem "Nested AD: Issue #743 (eval + gradient)" setup = [SharedTestSetup] tags = [:autodiff] begin
+@testitem "Nested AD: Issue #743 (eval + gradient)" setup = [SharedTestSetup] tags = [
+    :autodiff
+] begin
     function loss_function(model, ps, st, x)
         smodel = StatefulLuxLayer{true}(model, ps, st)
         y_pred = smodel(x)
@@ -456,8 +480,11 @@ end
     end
 
     @test_gradients(
-        __f, x, ps; atol = 1.0f-3,
-        rtol = 1.0f-3,
-        skip_backends = [AutoReverseDiff(), AutoTracker(), AutoEnzyme()]
+        __f,
+        x,
+        ps;
+        atol=1.0f-3,
+        rtol=1.0f-3,
+        skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()]
     )
 end

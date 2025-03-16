@@ -3,9 +3,14 @@
 
     @testset "Simple Chain (LeNet)" begin
         lenet = Chain(
-            Conv((5, 5), 1 => 6, relu), MaxPool((2, 2)),
-            Conv((5, 5), 6 => 16, relu), MaxPool((2, 2)), FlattenLayer(),
-            Dense(256 => 120, relu), Dense(120 => 84, relu), Dense(84 => 10)
+            Conv((5, 5), 1 => 6, relu),
+            MaxPool((2, 2)),
+            Conv((5, 5), 6 => 16, relu),
+            MaxPool((2, 2)),
+            FlattenLayer(),
+            Dense(256 => 120, relu),
+            Dense(120 => 84, relu),
+            Dense(84 => 10),
         )
 
         for x in (randn(rng, Float32, 28, 28, 1, 3), randn(rng, Float32, 28, 28, 1, 12))
@@ -15,11 +20,20 @@
 
     @testset "Chain with BatchNorm" begin
         lenet = Chain(
-            Conv((5, 5), 1 => 6, relu), BatchNorm(6, relu), MaxPool((2, 2)),
-            Conv((5, 5), 6 => 16, relu), BatchNorm(16, relu),
-            MaxPool((2, 2)), FlattenLayer(), Dense(256 => 120, relu),
-            BatchNorm(120, relu), Dense(120 => 84, relu), Dropout(0.5f0),
-            BatchNorm(84, relu), Dense(84 => 10), BatchNorm(10, relu)
+            Conv((5, 5), 1 => 6, relu),
+            BatchNorm(6, relu),
+            MaxPool((2, 2)),
+            Conv((5, 5), 6 => 16, relu),
+            BatchNorm(16, relu),
+            MaxPool((2, 2)),
+            FlattenLayer(),
+            Dense(256 => 120, relu),
+            BatchNorm(120, relu),
+            Dense(120 => 84, relu),
+            Dropout(0.5f0),
+            BatchNorm(84, relu),
+            Dense(84 => 10),
+            BatchNorm(10, relu),
         )
 
         for x in (randn(rng, Float32, 28, 28, 1, 3), randn(rng, Float32, 28, 28, 1, 12))
