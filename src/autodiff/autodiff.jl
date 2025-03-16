@@ -30,18 +30,16 @@ function batched_jacobian end
 function batched_jacobian_internal end
 function batched_jacobian_impl end
 
-#! format: off
 const AD_CONVERTIBLE_FUNCTIONS = [
     # Input Gradient/Jacobian
-    ComposedFunction{<:Any, <:StatefulLuxLayer},
-    ComposedFunction{<:StatefulLuxLayer, <:Any},
+    ComposedFunction{<:Any,<:StatefulLuxLayer},
+    ComposedFunction{<:StatefulLuxLayer,<:Any},
     StatefulLuxLayer,
     # Parameter Gradient/Jacobian
-    ComposedFunction{<:Any, <:Base.Fix1{<:StatefulLuxLayer}},
-    ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, <:Any},
+    ComposedFunction{<:Any,<:Base.Fix1{<:StatefulLuxLayer}},
+    ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer},<:Any},
     Base.Fix1{<:StatefulLuxLayer},
 ]
-#! format: on
 
 include("utils.jl")
 
