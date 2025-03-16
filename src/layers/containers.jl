@@ -51,26 +51,26 @@ end
 
 PrettyPrinting.printable_children(l::SkipConnection) = (; l.connection, l.layers)
 
-function SkipConnection(layers, connection; name::NAME_TYPE = nothing)
+function SkipConnection(layers, connection; name::NAME_TYPE=nothing)
     return SkipConnection(; layers, connection, name)
 end
 
-function SkipConnection(; layers, connection, name::NAME_TYPE = nothing)
+function SkipConnection(; layers, connection, name::NAME_TYPE=nothing)
     return SkipConnection(layers, connection, name)
 end
 
 function initialparameters(
-        rng::AbstractRNG, l::SkipConnection{T, <:AbstractLuxLayer}
-    ) where {T}
+    rng::AbstractRNG, l::SkipConnection{T,<:AbstractLuxLayer}
+) where {T}
     return (
-        layers = initialparameters(rng, l.layers),
-        connection = initialparameters(rng, l.connection),
+        layers=initialparameters(rng, l.layers),
+        connection=initialparameters(rng, l.connection),
     )
 end
 
-function initialstates(rng::AbstractRNG, l::SkipConnection{T, <:AbstractLuxLayer}) where {T}
+function initialstates(rng::AbstractRNG, l::SkipConnection{T,<:AbstractLuxLayer}) where {T}
     return (
-        layers = initialstates(rng, l.layers), connection = initialstates(rng, l.connection),
+        layers=initialstates(rng, l.layers), connection=initialstates(rng, l.connection)
     )
 end
 
@@ -79,12 +79,12 @@ function (skip::SkipConnection)(x, ps, st::NamedTuple)
     return skip.connection(mx, x), st
 end
 
-function (skip::SkipConnection{<:AbstractLuxLayer, <:AbstractLuxLayer})(
-        x, ps, st::NamedTuple
-    )
+function (skip::SkipConnection{<:AbstractLuxLayer,<:AbstractLuxLayer})(
+    x, ps, st::NamedTuple
+)
     mx, st1 = @inline apply(skip.layers, x, ps.layers, st.layers)
     y, st2 = @inline apply(skip.connection, (mx, x), ps.connection, st.connection)
-    return y, (layers = st1, connection = st2)
+    return y, (layers=st1, connection=st2)
 end
 
 """
@@ -163,24 +163,23 @@ function PrettyPrinting.printable_children(l::Parallel)
     return merge((; l.connection), children.layers)
 end
 
-function Parallel(connection, layers...; name::NAME_TYPE = nothing)
+function Parallel(connection, layers...; name::NAME_TYPE=nothing)
     return Parallel(connection, Utils.named_tuple_layers(layers...), name)
 end
 
-function Parallel(connection; name::NAME_TYPE = nothing, kwargs...)
+function Parallel(connection; name::NAME_TYPE=nothing, kwargs...)
     return Parallel(; connection, name, kwargs...)
 end
 
-function Parallel(; name::NAME_TYPE = nothing, connection, kwargs...)
+function Parallel(; name::NAME_TYPE=nothing, connection, kwargs...)
     return Parallel(connection, (; kwargs...), name)
 end
 
 (m::Parallel)(x, ps, st::NamedTuple) = applyparallel(m.layers, m.connection, x, ps, st)
 
 @generated function applyparallel(
-        layers::NamedTuple{names}, connection::C,
-        x::T, ps, st::NamedTuple
-    ) where {names, C, T}
+    layers::NamedTuple{names}, connection::C, x::T, ps, st::NamedTuple
+) where {names,C,T}
     N = length(names)
     y_symbols = [gensym() for _ in 1:(N + 1)]
     st_symbols = [gensym() for _ in 1:N]
@@ -190,12 +189,11 @@ end
         calls,
         [
             :(
-                    ($(y_symbols[i]), $(st_symbols[i])) = @inline apply(
-                        layers.$(names[i]), $(getinput(i)), ps.$(names[i]), st.$(names[i])
-                    )
+                ($(y_symbols[i]), $(st_symbols[i])) = @inline apply(
+                    layers.$(names[i]), $(getinput(i)), ps.$(names[i]), st.$(names[i])
                 )
-                for i in 1:N
-        ]
+            ) for i in 1:N
+        ],
     )
     push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
     if C == Nothing
@@ -272,17 +270,17 @@ BranchLayer(
     name
 end
 
-function BranchLayer(layers...; name::NAME_TYPE = nothing)
+function BranchLayer(layers...; name::NAME_TYPE=nothing)
     return BranchLayer(Utils.named_tuple_layers(layers...), name)
 end
 
-BranchLayer(; name::NAME_TYPE = nothing, kwargs...) = BranchLayer((; kwargs...), name)
+BranchLayer(; name::NAME_TYPE=nothing, kwargs...) = BranchLayer((; kwargs...), name)
 
 (m::BranchLayer)(x, ps, st::NamedTuple) = applybranching(m.layers, x, ps, st)
 
 @generated function applybranching(
-        layers::NamedTuple{names}, x, ps, st::NamedTuple
-    ) where {names}
+    layers::NamedTuple{names}, x, ps, st::NamedTuple
+) where {names}
     N = length(names)
     y_symbols = [gensym() for _ in 1:N]
     st_symbols = [gensym() for _ in 1:N]
@@ -291,11 +289,11 @@ BranchLayer(; name::NAME_TYPE = nothing, kwargs...) = BranchLayer((; kwargs...),
         calls,
         [
             :(
-                    ($(y_symbols[i]), $(st_symbols[i])) = @inline apply(
-                        layers.$(names[i]), x, ps.$(names[i]), st.$(names[i])
-                    )
-                ) for i in 1:N
-        ]
+                ($(y_symbols[i]), $(st_symbols[i])) = @inline apply(
+                    layers.$(names[i]), x, ps.$(names[i]), st.$(names[i])
+                )
+            ) for i in 1:N
+        ],
     )
     push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
     push!(calls, :(return tuple($(Tuple(y_symbols)...)), st))
@@ -375,15 +373,15 @@ function PrettyPrinting.printable_children(l::PairwiseFusion)
     return merge((; l.connection), children.layers)
 end
 
-function PairwiseFusion(connection, layers...; name::NAME_TYPE = nothing)
+function PairwiseFusion(connection, layers...; name::NAME_TYPE=nothing)
     return PairwiseFusion(connection, Utils.named_tuple_layers(layers...), name)
 end
 
-function PairwiseFusion(connection; name::NAME_TYPE = nothing, kwargs...)
+function PairwiseFusion(connection; name::NAME_TYPE=nothing, kwargs...)
     return PairwiseFusion(; connection, name, kwargs...)
 end
 
-function PairwiseFusion(; name::NAME_TYPE = nothing, connection, kwargs...)
+function PairwiseFusion(; name::NAME_TYPE=nothing, connection, kwargs...)
     return PairwiseFusion(connection, (; kwargs...), name)
 end
 
@@ -392,9 +390,8 @@ function (m::PairwiseFusion)(x, ps, st::NamedTuple)
 end
 
 @generated function applypairwisefusion(
-        layers::NamedTuple{names}, connection::C,
-        x::T, ps, st::NamedTuple
-    ) where {names, C, T}
+    layers::NamedTuple{names}, connection::C, x::T, ps, st::NamedTuple
+) where {names,C,T}
     N = length(names)
     y_symbols = [gensym() for _ in 1:(N + 1)]
     st_symbols = [gensym() for _ in 1:N]
@@ -404,17 +401,16 @@ end
         calls,
         [
             :(
-                    ($(y_symbols[i]), $(st_symbols[i])) = @inline apply(
-                        layers.$(names[i]), $(y_symbols[N + 1]), ps.$(names[i]), st.$(names[i])
-                    );
-                    $(y_symbols[N + 1]) = connection($(y_symbols[i]), $(getinput(i + 1)))
-                )
-                for i in 1:N
-        ]
+                ($(y_symbols[i]), $(st_symbols[i])) = @inline apply(
+                    layers.$(names[i]), $(y_symbols[N + 1]), ps.$(names[i]), st.$(names[i])
+                );
+                $(y_symbols[N + 1]) = connection($(y_symbols[i]), $(getinput(i + 1)))
+            ) for i in 1:N
+        ],
     )
     push!(
         calls,
-        :(return $(y_symbols[N + 1]), NamedTuple{$names}((($(Tuple(st_symbols)...),))))
+        :(return $(y_symbols[N + 1]), NamedTuple{$names}((($(Tuple(st_symbols)...),)))),
     )
     return Expr(:block, calls...)
 end
@@ -484,14 +480,14 @@ MyFancyChain(
     name
 end
 
-function Chain(xs...; name::NAME_TYPE = nothing)
+function Chain(xs...; name::NAME_TYPE=nothing)
     return Chain(Utils.named_tuple_layers(wrap_functions_in_chain_call(xs)...), name)
 end
 Chain(xs::AbstractVector; kwargs...) = Chain(xs...; kwargs...)
-Chain(nt::NamedTuple; name::NAME_TYPE = nothing) = Chain(nt, name)
-Chain(; name::NAME_TYPE = nothing, kwargs...) = Chain((; kwargs...); name)
+Chain(nt::NamedTuple; name::NAME_TYPE=nothing) = Chain(nt, name)
+Chain(; name::NAME_TYPE=nothing, kwargs...) = Chain((; kwargs...); name)
 
-function wrap_functions_in_chain_call(layers::Union{AbstractVector, Tuple})
+function wrap_functions_in_chain_call(layers::Union{AbstractVector,Tuple})
     new_layers = []
     for l in layers
         f = wrap_functions_in_chain_call(l)
@@ -513,18 +509,17 @@ wrap_functions_in_chain_call(x) = x
 (c::Chain)(x, ps, st::NamedTuple) = applychain(c.layers, x, ps, st)
 
 @generated function applychain(
-        layers::NamedTuple{fields}, x, ps, st::NamedTuple{fields}
-    ) where {fields}
+    layers::NamedTuple{fields}, x, ps, st::NamedTuple{fields}
+) where {fields}
     N = length(fields)
     x_symbols = vcat([:x], [gensym() for _ in 1:N])
     st_symbols = [gensym() for _ in 1:N]
     calls = [
         :(
-                ($(x_symbols[i + 1]), $(st_symbols[i])) = @inline apply(
-                    layers.$(fields[i]), $(x_symbols[i]), ps.$(fields[i]), st.$(fields[i])
-                )
+            ($(x_symbols[i + 1]), $(st_symbols[i])) = @inline apply(
+                layers.$(fields[i]), $(x_symbols[i]), ps.$(fields[i]), st.$(fields[i])
             )
-            for i in 1:N
+        ) for i in 1:N
     ]
     push!(calls, :(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),)))))
     push!(calls, :(return $(x_symbols[N + 1]), st))
@@ -605,17 +600,17 @@ Maxout(f::Function, n_alts::Int) = Maxout(ntuple(Returns(f()), n_alts)...)
 (m::Maxout)(x, ps, st::NamedTuple) = applymaxout(m.layers, x, ps, st)
 
 @generated function applymaxout(
-        layers::NamedTuple{fields}, x, ps, st::NamedTuple{fields}
-    ) where {fields}
+    layers::NamedTuple{fields}, x, ps, st::NamedTuple{fields}
+) where {fields}
     N = length(fields)
     y_symbols = [gensym() for _ in 1:N]
     st_symbols = [gensym() for _ in 1:N]
     calls = [
         :(
-                ($(y_symbols[i]), $(st_symbols[i])) = @inline apply(
-                    layers.$(fields[i]), x, ps.$(fields[i]), st.$(fields[i])
-                )
-            ) for i in 1:N
+            ($(y_symbols[i]), $(st_symbols[i])) = @inline apply(
+                layers.$(fields[i]), x, ps.$(fields[i]), st.$(fields[i])
+            )
+        ) for i in 1:N
     ]
     push!(calls, :(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),)))))
     push!(calls, :(res = max.($(Tuple(y_symbols)...))))
@@ -692,15 +687,16 @@ function LuxCore.display_name(r::RepeatedLayer)
 end
 
 function RepeatedLayer(
-        model::AbstractLuxLayer; repeats::Union{StaticInt, Integer, Val} = Val(10),
-        input_injection::Union{StaticBool, Bool, Val{true}, Val{false}} = Val(false)
-    )
+    model::AbstractLuxLayer;
+    repeats::Union{StaticInt,Integer,Val}=Val(10),
+    input_injection::Union{StaticBool,Bool,Val{true},Val{false}}=Val(false),
+)
     return RepeatedLayer(static(repeats), static(input_injection), model)
 end
 
 (m::RepeatedLayer)(x, ps, st) = repeatedlayer(m, m.model, x, ps, st)
 
-@generated function repeatedlayer(::RepeatedLayer{N, IJ}, model, x, ps, st) where {N, IJ}
+@generated function repeatedlayer(::RepeatedLayer{N,IJ}, model, x, ps, st) where {N,IJ}
     sts = ntuple(_ -> gensym("st"), known(N))
     xs = ntuple(_ -> gensym("x"), known(N) + known(IJ))
     calls = []
@@ -710,10 +706,12 @@ end
             calls,
             :(
                 ($(xs[i + known(IJ)]), $(sts[i])) = @inline apply(
-                    model, $(known(IJ) ? :(($(xs[i]), x)) : :x),
-                    ps, $(i == 1 ? :st : sts[i - 1])
+                    model,
+                    $(known(IJ) ? :(($(xs[i]), x)) : :x),
+                    ps,
+                    $(i == 1 ? :st : sts[i - 1]),
                 )
-            )
+            ),
         )
     end
     return quote

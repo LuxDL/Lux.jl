@@ -9,8 +9,11 @@ if input_args[1] == "amdgpu"
 end
 
 const backend_type = input_args[2] == "nccl" ? NCCLBackend : MPIBackend
-const dev = input_args[1] == "cpu" ? CPUDevice() :
+const dev = if input_args[1] == "cpu"
+    CPUDevice()
+else
     (input_args[1] == "cuda" ? CUDADevice() : AMDGPUDevice())
+end
 
 function __get_array_based_on_rank(backend, dims; root)
     DistributedUtils.local_rank(backend) == root && return ones(dims...)
@@ -23,13 +26,13 @@ DistributedUtils.initialize(backend_type)
 backend = DistributedUtils.get_distributed_backend(backend_type)
 
 # Named Tuple
-gs = (
-    a = (
-        b = __get_array_based_on_rank(backend, (2, 3); root),
-        c = __get_array_based_on_rank(backend, (2, 3); root),
+gs = dev((
+    a=(
+        b=__get_array_based_on_rank(backend, (2, 3); root),
+        c=__get_array_based_on_rank(backend, (2, 3); root),
     ),
-    d = __get_array_based_on_rank(backend, (2, 3); root),
-) |> dev
+    d=__get_array_based_on_rank(backend, (2, 3); root),
+))
 
 gs_ = DistributedUtils.synchronize!!(backend, gs; root)
 
@@ -67,13 +70,13 @@ st_opt = Optimisers.setup(opt, gs)
 
 ## ComponentArrays
 gs = (
-    a = (
-        b = __get_array_based_on_rank(backend, (2, 3); root),
-        c = __get_array_based_on_rank(backend, (2, 3); root),
+    a=(
+        b=__get_array_based_on_rank(backend, (2, 3); root),
+        c=__get_array_based_on_rank(backend, (2, 3); root),
     ),
-    d = __get_array_based_on_rank(backend, (2, 3); root),
+    d=__get_array_based_on_rank(backend, (2, 3); root),
 )
-cgs = ComponentArray(gs) |> dev
+cgs = dev(ComponentArray(gs))
 cgs_ = DistributedUtils.synchronize!!(backend, cgs; root)
 
 @test all(cgs_.a.b .== 1)
@@ -81,13 +84,13 @@ cgs_ = DistributedUtils.synchronize!!(backend, cgs; root)
 @test all(cgs_.d .== 1)
 
 # Tuple
-gs = (
+gs = dev((
     (
         __get_array_based_on_rank(backend, (2, 3); root),
         __get_array_based_on_rank(backend, (2, 3); root),
     ),
     __get_array_based_on_rank(backend, (2, 3); root),
-) |> dev
+))
 
 gs = DistributedUtils.synchronize!!(backend, gs; root)
 

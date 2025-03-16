@@ -10,7 +10,7 @@ const EXTRA_PKGS = PackageSpec[]
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
     push!(EXTRA_PKGS, PackageSpec("CUDA"))
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
-    push!(EXTRA_PKGS, PackageSpec(; name = "AMDGPU"))
+    push!(EXTRA_PKGS, PackageSpec(; name="AMDGPU"))
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "metal") &&
     push!(EXTRA_PKGS, PackageSpec("Metal"))
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "oneapi") &&
@@ -29,12 +29,14 @@ const RETESTITEMS_NWORKERS = parse(
 const RETESTITEMS_NWORKER_THREADS = parse(
     Int,
     get(
-        ENV, "RETESTITEMS_NWORKER_THREADS",
-        string(max(Int(CPUSummary.sys_threads()) ÷ RETESTITEMS_NWORKERS, 1))
-    )
+        ENV,
+        "RETESTITEMS_NWORKER_THREADS",
+        string(max(Int(CPUSummary.sys_threads()) ÷ RETESTITEMS_NWORKERS, 1)),
+    ),
 )
 
 ReTestItems.runtests(
-    WeightInitializers; nworkers = RETESTITEMS_NWORKERS,
-    nworker_threads = RETESTITEMS_NWORKER_THREADS
+    WeightInitializers;
+    nworkers=RETESTITEMS_NWORKERS,
+    nworker_threads=RETESTITEMS_NWORKER_THREADS,
 )

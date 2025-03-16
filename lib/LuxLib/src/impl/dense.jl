@@ -2,60 +2,81 @@ function cublasLt_fused_dense end # Defined in `LuxLibCUDAExt`
 function cublasLt_fused_dense! end # Defined in `LuxLibCUDAExt`
 
 function fused_dense(
-        ::typeof(identity), weight::AbstractMatrix,
-        x::AbstractMatrix, b::Optional{<:AbstractVector}
-    )
+    ::typeof(identity),
+    weight::AbstractMatrix,
+    x::AbstractMatrix,
+    b::Optional{<:AbstractVector},
+)
     return matmuladd(weight, x, b)
 end
 
 function fused_dense(
-        act::F, weight::AbstractMatrix, x::AbstractMatrix,
-        b::Optional{<:AbstractVector}
-    ) where {F}
+    act::F, weight::AbstractMatrix, x::AbstractMatrix, b::Optional{<:AbstractVector}
+) where {F}
     return fused_dense(internal_operation_mode((weight, x, b)), act, weight, x, b)
 end
 
 function fused_dense(
-        opmode::GenericBroadcastOp, act::F, weight::AbstractMatrix,
-        x::AbstractMatrix, b::Optional{<:AbstractVector}
-    ) where {F}
+    opmode::GenericBroadcastOp,
+    act::F,
+    weight::AbstractMatrix,
+    x::AbstractMatrix,
+    b::Optional{<:AbstractVector},
+) where {F}
     return bias_activation(act, matmul(opmode, weight, x), b)
 end
 
 @stable default_mode = "disable" function fused_dense(
-        opmode::AbstractInternalArrayOpMode, act::F, weight::AbstractMatrix,
-        x::AbstractMatrix, b::Optional{<:AbstractVector}
-    ) where {F}
+    opmode::AbstractInternalArrayOpMode,
+    act::F,
+    weight::AbstractMatrix,
+    x::AbstractMatrix,
+    b::Optional{<:AbstractVector},
+) where {F}
     y = similar(
-        weight, concrete_bias_act_output_eltype(act, weight, x, b),
-        size(weight, 1), size(x, 2)
+        weight,
+        concrete_bias_act_output_eltype(act, weight, x, b),
+        size(weight, 1),
+        size(x, 2),
     )
     fused_dense!(y, opmode, act, weight, x, b)
     return y
 end
 
 function fused_dense!(
-        y::AbstractMatrix, opmode::AbstractInternalArrayOpMode, act::F,
-        weight::AbstractMatrix, x::AbstractMatrix, b::Optional{<:AbstractVector}
-    ) where {F}
+    y::AbstractMatrix,
+    opmode::AbstractInternalArrayOpMode,
+    act::F,
+    weight::AbstractMatrix,
+    x::AbstractMatrix,
+    b::Optional{<:AbstractVector},
+) where {F}
     matmul!(y, opmode, weight, x)
     bias_activation!(y, opmode, act, y, b)
     return nothing
 end
 
 function fused_dense!(
-        y::AbstractMatrix, ::GPUBroadcastOp{CUDADevice}, act::F, weight::AbstractMatrix,
-        x::AbstractMatrix, b::Optional{<:AbstractVector}
-    ) where {F}
+    y::AbstractMatrix,
+    ::GPUBroadcastOp{CUDADevice},
+    act::F,
+    weight::AbstractMatrix,
+    x::AbstractMatrix,
+    b::Optional{<:AbstractVector},
+) where {F}
     cublasLt_fused_dense!(y, act, weight, x, b)
     return nothing
 end
 
 function CRC.rrule(
-        cfg::CRC.RuleConfig{>:HasReverseMode}, ::typeof(fused_dense),
-        opmode::AbstractInternalArrayOpMode, act::F, weight::AbstractMatrix,
-        x::AbstractMatrix, b::Optional{<:AbstractVector}
-    ) where {F}
+    cfg::CRC.RuleConfig{>:HasReverseMode},
+    ::typeof(fused_dense),
+    opmode::AbstractInternalArrayOpMode,
+    act::F,
+    weight::AbstractMatrix,
+    x::AbstractMatrix,
+    b::Optional{<:AbstractVector},
+) where {F}
     T = concrete_bias_act_output_eltype(act, weight, x, b)
     𝒫weight, 𝒫x, 𝒫b = CRC.ProjectTo(weight), CRC.ProjectTo(x), CRC.ProjectTo(b)
 
@@ -93,9 +114,13 @@ end
 
 ## Special Reverse Pass for gelu activation. All other cases, we don't need special handling
 function CRC.rrule(
-        ::typeof(fused_dense), ::GPUBroadcastOp{CUDADevice}, ::typeof(NNlib.gelu),
-        weight::AbstractMatrix, x::AbstractMatrix, b::Optional{<:AbstractVector}
-    )
+    ::typeof(fused_dense),
+    ::GPUBroadcastOp{CUDADevice},
+    ::typeof(NNlib.gelu),
+    weight::AbstractMatrix,
+    x::AbstractMatrix,
+    b::Optional{<:AbstractVector},
+)
     z, y = cublasLt_fused_dense(NNlib.gelu, weight, x, b, True())
     𝒫weight, 𝒫x, 𝒫b = CRC.ProjectTo(weight), CRC.ProjectTo(x), CRC.ProjectTo(b)
 
@@ -111,56 +136,72 @@ end
 # TODO: We can optimize these a bit further by checking for cases where the forward pass
 #       is not needed. We skip such optimizations for now
 function EnzymeRules.augmented_primal(
-        cfg, ::EnzymeCore.Const{typeof(fused_dense!)},
-        ::Type{EnzymeCore.Const{Nothing}}, y::EnzymeCore.Annotation{<:AbstractMatrix},
-        opmode::EnzymeCore.Const{<:AbstractInternalArrayOpMode}, act::EnzymeCore.Const,
-        weight::EnzymeCore.Annotation{<:AbstractMatrix},
-        x::EnzymeCore.Annotation{<:AbstractMatrix},
-        b::EnzymeCore.Annotation{<:Optional{<:AbstractVector}}
-    )
+    cfg,
+    ::EnzymeCore.Const{typeof(fused_dense!)},
+    ::Type{EnzymeCore.Const{Nothing}},
+    y::EnzymeCore.Annotation{<:AbstractMatrix},
+    opmode::EnzymeCore.Const{<:AbstractInternalArrayOpMode},
+    act::EnzymeCore.Const,
+    weight::EnzymeCore.Annotation{<:AbstractMatrix},
+    x::EnzymeCore.Annotation{<:AbstractMatrix},
+    b::EnzymeCore.Annotation{<:Optional{<:AbstractVector}},
+)
 
     # NOTE: Here we are using the ChainRulesCore rrules if they are defined for simplicity
-    all_const = weight isa EnzymeCore.Const && b isa EnzymeCore.Const &&
-        x isa EnzymeCore.Const
-    intermediate_not_needed = unsafe_known(
-        activation_intermediate_not_needed(
-            act.val, eltype(y.val)
-        )
-    ) || all_const
+    all_const =
+        weight isa EnzymeCore.Const && b isa EnzymeCore.Const && x isa EnzymeCore.Const
+    intermediate_not_needed =
+        unsafe_known(activation_intermediate_not_needed(act.val, eltype(y.val))) ||
+        all_const
 
-    weight_cache = EnzymeRules.overwritten(cfg)[5] && !(x isa EnzymeCore.Const) &&
-        !(y isa EnzymeCore.Const) ? copy(weight.val) : nothing
-    x_cache = EnzymeRules.overwritten(cfg)[6] && !(weight isa EnzymeCore.Const) &&
-        !(y isa EnzymeCore.Const) ? copy(x.val) : nothing
-
-    case_specific_cache = if act.val === NNlib.gelu &&
-            opmode.val isa GPUBroadcastOp{CUDADevice}
-        tmp = similar(y.val)
-        cublasLt_fused_dense!(y.val, act.val, weight.val, x.val, b.val, tmp)
-        (1, tmp)
-    elseif intermediate_not_needed
-        fused_dense!(y.val, opmode.val, act.val, weight.val, x.val, b.val)
-        (1, NotaNumber())
-    elseif unsafe_known(activation_has_rrule(act.val, eltype(y.val)))
-        tmp = matmuladd(weight.val, x.val, b.val)
-        activation!(y.val, opmode.val, act.val, tmp)
-        (1, tmp)
-    else
-        # TODO: Here for performance we might want to fuse the bias and activation together.
-        #       We skip this optimization for now
-        if b.val !== nothing
-            matmuladd!(y.val, opmode.val, weight.val, x.val, b.val)
+    weight_cache =
+        if EnzymeRules.overwritten(cfg)[5] &&
+           !(x isa EnzymeCore.Const) &&
+           !(y isa EnzymeCore.Const)
+            copy(weight.val)
         else
-            matmul!(y.val, opmode.val, weight.val, x.val)
+            nothing
         end
-        tmp = zero.(y.val)
-        EnzymeCore.autodiff(
-            EnzymeCore.Forward, EnzymeCore.Const(activation!),
-            EnzymeCore.Duplicated(y.val, tmp), opmode, act,
-            EnzymeCore.Duplicated(y.val, one.(y.val))
-        )
-        (2, tmp)
-    end
+    x_cache =
+        if EnzymeRules.overwritten(cfg)[6] &&
+           !(weight isa EnzymeCore.Const) &&
+           !(y isa EnzymeCore.Const)
+            copy(x.val)
+        else
+            nothing
+        end
+
+    case_specific_cache =
+        if act.val === NNlib.gelu && opmode.val isa GPUBroadcastOp{CUDADevice}
+            tmp = similar(y.val)
+            cublasLt_fused_dense!(y.val, act.val, weight.val, x.val, b.val, tmp)
+            (1, tmp)
+        elseif intermediate_not_needed
+            fused_dense!(y.val, opmode.val, act.val, weight.val, x.val, b.val)
+            (1, NotaNumber())
+        elseif unsafe_known(activation_has_rrule(act.val, eltype(y.val)))
+            tmp = matmuladd(weight.val, x.val, b.val)
+            activation!(y.val, opmode.val, act.val, tmp)
+            (1, tmp)
+        else
+            # TODO: Here for performance we might want to fuse the bias and activation together.
+            #       We skip this optimization for now
+            if b.val !== nothing
+                matmuladd!(y.val, opmode.val, weight.val, x.val, b.val)
+            else
+                matmul!(y.val, opmode.val, weight.val, x.val)
+            end
+            tmp = zero.(y.val)
+            EnzymeCore.autodiff(
+                EnzymeCore.Forward,
+                EnzymeCore.Const(activation!),
+                EnzymeCore.Duplicated(y.val, tmp),
+                opmode,
+                act,
+                EnzymeCore.Duplicated(y.val, one.(y.val)),
+            )
+            (2, tmp)
+        end
 
     cache = (case_specific_cache, weight_cache, x_cache)
 
@@ -168,13 +209,17 @@ function EnzymeRules.augmented_primal(
 end
 
 function EnzymeRules.reverse(
-        cfg, ::EnzymeCore.Const{typeof(fused_dense!)},
-        ::Type{EnzymeCore.Const{Nothing}}, cache, y::EnzymeCore.Annotation{<:AbstractMatrix},
-        opmode::EnzymeCore.Const{<:AbstractInternalArrayOpMode}, act::EnzymeCore.Const,
-        weight::EnzymeCore.Annotation{<:AbstractMatrix},
-        x::EnzymeCore.Annotation{<:AbstractMatrix},
-        b::EnzymeCore.Annotation{<:Optional{<:AbstractVector}}
-    )
+    cfg,
+    ::EnzymeCore.Const{typeof(fused_dense!)},
+    ::Type{EnzymeCore.Const{Nothing}},
+    cache,
+    y::EnzymeCore.Annotation{<:AbstractMatrix},
+    opmode::EnzymeCore.Const{<:AbstractInternalArrayOpMode},
+    act::EnzymeCore.Const,
+    weight::EnzymeCore.Annotation{<:AbstractMatrix},
+    x::EnzymeCore.Annotation{<:AbstractMatrix},
+    b::EnzymeCore.Annotation{<:Optional{<:AbstractVector}},
+)
     case_specific_cache, weight_cache, x_cache = cache
 
     (case, tmp) = case_specific_cache

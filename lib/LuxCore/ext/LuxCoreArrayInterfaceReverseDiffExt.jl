@@ -5,9 +5,7 @@ using LuxCore: LuxCore, AbstractLuxLayer
 using ReverseDiff: TrackedReal, TrackedArray
 
 # AoS to SoA conversion
-function LuxCore.apply(
-        m::AbstractLuxLayer, x::AbstractArray{<:TrackedReal}, ps, st
-    )
+function LuxCore.apply(m::AbstractLuxLayer, x::AbstractArray{<:TrackedReal}, ps, st)
     @warn "Lux.apply(m::AbstractLuxLayer, \
            x::AbstractArray{<:ReverseDiff.TrackedReal}, ps, st) input was corrected to \
            Lux.apply(m::AbstractLuxLayer, x::ReverseDiff.TrackedArray}, ps, st).\n\n\

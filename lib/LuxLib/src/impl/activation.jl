@@ -14,30 +14,31 @@ activation(σ::F, x::AbstractArray) where {F} = activation(internal_operation_mo
 
 # Core Implementation
 function activation!!(
-        opmode::AbstractInternalArrayOpMode, ::False, σ::F, x::AbstractArray
-    ) where {F}
+    opmode::AbstractInternalArrayOpMode, ::False, σ::F, x::AbstractArray
+) where {F}
     return activation(opmode, σ, x)
 end
 @stable default_mode = "disable" function activation!!(
-        opmode::AbstractInternalArrayOpMode, ::True, σ::F, x::AbstractArray
-    ) where {F}
+    opmode::AbstractInternalArrayOpMode, ::True, σ::F, x::AbstractArray
+) where {F}
     activation!(x, opmode, σ, x)
     return x
 end
 
 function CRC.rrule(
-        cfg::RuleConfig{>:HasReverseMode}, ::typeof(activation!!),
-        opmode::AbstractInternalArrayOpMode, ::True,
-        σ::F, x::AbstractArray{T}
-    ) where {F, T}
+    cfg::RuleConfig{>:HasReverseMode},
+    ::typeof(activation!!),
+    opmode::AbstractInternalArrayOpMode,
+    ::True,
+    σ::F,
+    x::AbstractArray{T},
+) where {F,T}
     if unsafe_known(activation_intermediate_not_needed(σ, T))
         activation!(x, opmode, σ, x)
         𝒫x_no_intermediate = CRC.ProjectTo(x)
         ∇activation_no_intermediate_rrule = @closure Δ -> begin
             ∂x = CRC.@thunk 𝒫x_no_intermediate(
-                ∇activation(
-                    recursive_unthunk(Δ), x, σ, NotaNumber()
-                )
+                ∇activation(recursive_unthunk(Δ), x, σ, NotaNumber())
             )
             return ∂∅, ∂∅, ∂∅, ∂∅, ∂x
         end
@@ -66,8 +67,8 @@ function activation(::AbstractInternalArrayOpMode, σ::F, x::AbstractArray) wher
     return broadcast(σ, x)
 end
 @stable default_mode = "disable" function activation(
-        opmode::LoopedArrayOp, σ::F, x::AbstractArray{T}
-    ) where {F, T}
+    opmode::LoopedArrayOp, σ::F, x::AbstractArray{T}
+) where {F,T}
     RT = Core.Compiler.return_type(σ, Tuple{T})
     y = similar(x, ifelse(isconcretetype(RT), RT, T))
     activation!(y, opmode, σ, x)
@@ -75,9 +76,12 @@ end
 end
 
 function CRC.rrule(
-        cfg::RuleConfig{>:HasReverseMode}, ::typeof(activation),
-        opmode::LoopedArrayOp, σ::F, x::AbstractArray{T}
-    ) where {F, T}
+    cfg::RuleConfig{>:HasReverseMode},
+    ::typeof(activation),
+    opmode::LoopedArrayOp,
+    σ::F,
+    x::AbstractArray{T},
+) where {F,T}
     if unsafe_known(activation_has_rrule(σ, T))
         y = activation(opmode, σ, x)
         𝓟x = CRC.ProjectTo(x)
@@ -97,14 +101,14 @@ function CRC.rrule(
 end
 
 function activation!(
-        y::AbstractArray, ::AbstractInternalArrayOpMode, σ::F, x::AbstractArray
-    ) where {F}
+    y::AbstractArray, ::AbstractInternalArrayOpMode, σ::F, x::AbstractArray
+) where {F}
     broadcast!(σ, y, x)
-    return
+    return nothing
 end
 function activation!(y::AbstractArray, ::LoopedArrayOp, σ::F, x::AbstractArray) where {F}
     activation_simd_loop!(y, σ, x)
-    return
+    return nothing
 end
 
 function activation_simd_loop!(y::AbstractArray, σ::F, x::AbstractArray) where {F}
@@ -142,15 +146,15 @@ function select_fastest_activation(f::F, xs...) where {F}
     )
 end
 
-select_fastest_activation(f::F, ::AbstractInternalArrayOpMode, ::Type{T}) where {F, T} = f
+select_fastest_activation(f::F, ::AbstractInternalArrayOpMode, ::Type{T}) where {F,T} = f
 
-function select_fastest_activation(f::F, ::LoopedArrayOp, ::Type{T}) where {F, T}
+function select_fastest_activation(f::F, ::LoopedArrayOp, ::Type{T}) where {F,T}
     return sleefpirates_fast_act(f, T)
 end
 
 CRC.@non_differentiable select_fastest_activation(::Any...)
 
-sleefpirates_fast_act(f::F, ::Type{T}) where {F, T} = f
+sleefpirates_fast_act(f::F, ::Type{T}) where {F,T} = f
 sleefpirates_fast_act(f::F, ::Type{Float32}) where {F} = sleefpirates_fast_act(f)
 sleefpirates_fast_act(f::F) where {F} = f
 

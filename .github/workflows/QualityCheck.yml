@@ -3,14 +3,11 @@ name: Code Quality Check
 on: [pull_request]
 
 jobs:
-  runic:
-    name: Julia Format Check
+  code-style:
+    name: Format Suggestions
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: fredrikekre/runic-action@v1
-        with:
-          version: '1'
+      - uses: julia-actions/julia-format@v3
 
   typos-check:
     name: Spell Check with Typos

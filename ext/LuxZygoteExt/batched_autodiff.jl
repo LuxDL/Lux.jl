@@ -10,8 +10,11 @@ function Lux.AutoDiffInternalImpl.batched_jacobian_impl(f::F, ::AutoZygote, x) w
     end
 
     J = similar(
-        x, promote_type(eltype(y), eltype(x)), prod(size(y)[1:(end - 1)]),
-        prod(size(x)[1:(end - 1)]), size(x, ndims(x))
+        x,
+        promote_type(eltype(y), eltype(x)),
+        prod(size(y)[1:(end - 1)]),
+        prod(size(x)[1:(end - 1)]),
+        size(x, ndims(x)),
     )
     fill_chunked_jacobian!(J, 1, f, pb_f, y, x)
 
@@ -33,7 +36,7 @@ function Lux.AutoDiffInternalImpl.batched_jacobian_impl(f::F, ::AutoZygote, x) w
     return J
 end
 
-@inbounds function fill_chunked_jacobian!(J, i::Int, ::F, pb_f::PBF, y, x) where {F, PBF}
+@inbounds function fill_chunked_jacobian!(J, i::Int, ::F, pb_f::PBF, y, x) where {F,PBF}
     v = reshape(similar(y), :, size(y, ndims(y)))
     fill!(v, zero(eltype(y)))
     v[i, :] .= one(eltype(y))
@@ -41,5 +44,5 @@ end
     Jᵢ = only(pb_f(reshape(v, size(y))))
     J[i, :, :] .= reshape(Jᵢ, :, size(x, ndims(x)))
 
-    return
+    return nothing
 end

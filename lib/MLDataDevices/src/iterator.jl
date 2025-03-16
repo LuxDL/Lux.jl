@@ -44,7 +44,7 @@ julia> for (i, x) in enumerate(CUDADevice()(dataloader))
 (i, summary(x)) = (3, "3×7 CuArray{Float32, 2, CUDA.DeviceMemory}")
 ```
 """
-struct DeviceIterator{D <: Function, I}
+struct DeviceIterator{D<:Function,I}
     dev::D
     iterator::I
 end
@@ -66,8 +66,8 @@ function Base.iterate(c::DeviceIterator, (state, prev_batch))
     return dev_batch, (next_state, dev_batch)
 end
 
-Base.IteratorSize(::Type{DeviceIterator{D, I}}) where {D, I} = Base.IteratorSize(I)
+Base.IteratorSize(::Type{DeviceIterator{D,I}}) where {D,I} = Base.IteratorSize(I)
 Base.length(c::DeviceIterator) = length(c.iterator)
 Base.axes(c::DeviceIterator) = axes(c.iterator)
 
-Base.IteratorEltype(::Type{DeviceIterator{D, I}}) where {D, I} = Base.EltypeUnknown()
+Base.IteratorEltype(::Type{DeviceIterator{D,I}}) where {D,I} = Base.EltypeUnknown()

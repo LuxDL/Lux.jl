@@ -2,9 +2,12 @@
     import SimpleChains: static
 
     lux_model = Chain(
-        Conv((5, 5), 1 => 6, relu), MaxPool((2, 2)),
-        Conv((5, 5), 6 => 16, relu), MaxPool((2, 2)), FlattenLayer(3),
-        Chain(Dense(256 => 128, relu), Dense(128 => 84, relu), Dense(84 => 10))
+        Conv((5, 5), 1 => 6, relu),
+        MaxPool((2, 2)),
+        Conv((5, 5), 6 => 16, relu),
+        MaxPool((2, 2)),
+        FlattenLayer(3),
+        Chain(Dense(256 => 128, relu), Dense(128 => 84, relu), Dense(84 => 10)),
     )
 
     adaptor = ToSimpleChainsAdaptor((static(28), static(28), static(1)))
@@ -32,8 +35,7 @@
 
     # See https://github.com/LuxDL/Lux.jl/issues/644
     @test_gradients(
-        __f, x, ps; atol = 1.0f-3, rtol = 1.0f-3,
-        broken_backends = [AutoEnzyme(), AutoTracker()]
+        __f, x, ps; atol=1.0f-3, rtol=1.0f-3, broken_backends=[AutoEnzyme(), AutoTracker()]
     )
 
     x = randn(Float32, 28, 28, 1, 15)
@@ -47,8 +49,7 @@
 
     # See https://github.com/LuxDL/Lux.jl/issues/644
     @test_gradients(
-        __f, x, ps; atol = 1.0f-3, rtol = 1.0f-3,
-        broken_backends = [AutoEnzyme(), AutoTracker()]
+        __f, x, ps; atol=1.0f-3, rtol=1.0f-3, broken_backends=[AutoEnzyme(), AutoTracker()]
     )
 
     @testset "Array Output" begin
@@ -96,7 +97,9 @@
         for dims in (static(10), (static(10),))
             adaptor = ToSimpleChainsAdaptor(dims)
 
-            simple_chains_model = @test_warn "The model provided is not a `Chain`. Trying to wrap it into a `Chain` but this might fail. Please consider using `Chain` directly." adaptor(lux_model)
+            simple_chains_model = @test_warn "The model provided is not a `Chain`. Trying to wrap it into a `Chain` but this might fail. Please consider using `Chain` directly." adaptor(
+                lux_model
+            )
 
             ps, st = Lux.setup(Random.default_rng(), simple_chains_model)
 
@@ -111,25 +114,25 @@
 
             # See https://github.com/LuxDL/Lux.jl/issues/644
             @test_gradients(
-                __f, x, ps; atol = 1.0f-3, rtol = 1.0f-3,
-                broken_backends = [AutoEnzyme(), AutoTracker()],
-                soft_fail = [AutoForwardDiff(), AutoFiniteDiff()]
+                __f,
+                x,
+                ps;
+                atol=1.0f-3,
+                rtol=1.0f-3,
+                broken_backends=[AutoEnzyme(), AutoTracker()],
+                soft_fail=[AutoForwardDiff(), AutoFiniteDiff()]
             )
         end
     end
 
     # Failures
     @test_throws Lux.SimpleChainsModelConversionException adaptor(
-        Conv(
-            (1, 1), 2 => 3; stride = (5, 5)
-        )
+        Conv((1, 1), 2 => 3; stride=(5, 5))
     )
-    @test_throws Lux.SimpleChainsModelConversionException adaptor(Dropout(0.2f0; dims = 1))
+    @test_throws Lux.SimpleChainsModelConversionException adaptor(Dropout(0.2f0; dims=1))
     @test_throws Lux.SimpleChainsModelConversionException adaptor(FlattenLayer())
     @test_throws Lux.SimpleChainsModelConversionException adaptor(
-        MaxPool(
-            (2, 2); stride = (1, 1)
-        )
+        MaxPool((2, 2); stride=(1, 1))
     )
     @test_throws Lux.SimpleChainsModelConversionException adaptor(ReshapeLayer((2, 3)))
 
@@ -138,8 +141,8 @@
         adaptor = ToSimpleChainsAdaptor((static(10),))
         smodel = adaptor(lux_model)
 
-        ps, st = Lux.setup(Lux.replicate(rng), smodel) |> dev
-        x = randn(rng, 10, 3) |> aType
+        ps, st = dev(Lux.setup(Lux.replicate(rng), smodel))
+        x = aType(randn(rng, 10, 3))
 
         if ongpu
             @test_throws ArgumentError smodel(x, ps, st)

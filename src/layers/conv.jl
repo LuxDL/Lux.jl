@@ -17,24 +17,32 @@ end
 CRC.@non_differentiable calc_padding(::Any...)
 
 function conv_transpose_dims(
-        x::AbstractArray, weight::AbstractArray; padding, stride, dilation, groups, outpad
-    )
+    x::AbstractArray, weight::AbstractArray; padding, stride, dilation, groups, outpad
+)
     # Calculate size of "input", from ∇conv_data()'s perspective...
     function calc_dim(xsz, wsz, stride, dilation, pad, outpad)
         return (xsz - 1) * stride + 1 + (wsz - 1) * dilation - pad + outpad
     end
     combined_pad = ntuple(i -> padding[2i - 1] + padding[2i], length(padding) ÷ 2)
     I = map(
-        calc_dim, size(x)[1:(end - 2)], size(weight)[1:(end - 2)],
-        stride, dilation, combined_pad, outpad
+        calc_dim,
+        size(x)[1:(end - 2)],
+        size(weight)[1:(end - 2)],
+        stride,
+        dilation,
+        combined_pad,
+        outpad,
     )
     C_in = size(weight)[end - 1] * groups
     C_out = size(weight)[end]
     batch_size = size(x)[end]
     w_size = size(weight)
 
-    size(x)[end - 1] != C_out &&
-        throw(DimensionMismatch(lazy"Expected $(C_out) input channels but got $(size(x)[end - 1]) channels."))
+    size(x)[end - 1] != C_out && throw(
+        DimensionMismatch(
+            lazy"Expected $(C_out) input channels but got $(size(x)[end - 1]) channels."
+        ),
+    )
 
     # Create DenseConvDims() that looks like the corresponding conv()
     return DenseConvDims(
@@ -47,22 +55,35 @@ CRC.@non_differentiable conv_transpose_dims(::Any...)
 conv_transpose(x, weight, cdims) = LuxLib.Impl.∇conv_data(x, weight, cdims)
 
 function init_conv_weight(
-        rng::AbstractRNG, init_weight::F, filter::NTuple{N, <:IntegerType},
-        in_chs::IntegerType, out_chs::IntegerType, groups, σ::A
-    ) where {F, N, A}
+    rng::AbstractRNG,
+    init_weight::F,
+    filter::NTuple{N,<:IntegerType},
+    in_chs::IntegerType,
+    out_chs::IntegerType,
+    groups,
+    σ::A,
+) where {F,N,A}
     if init_weight === nothing # Default from PyTorch
         return kaiming_uniform(
-            rng, Float32, filter..., in_chs ÷ groups,
-            out_chs; gain = Utils.calculate_gain(σ, √5.0f0)
+            rng,
+            Float32,
+            filter...,
+            in_chs ÷ groups,
+            out_chs;
+            gain=Utils.calculate_gain(σ, √5.0f0),
         )
     end
     return init_weight(rng, filter..., in_chs ÷ groups, out_chs)
 end
 
 function init_conv_bias(
-        rng::AbstractRNG, init_bias::F, filter::NTuple{N, <:IntegerType},
-        in_chs::IntegerType, out_chs::IntegerType, groups
-    ) where {F, N}
+    rng::AbstractRNG,
+    init_bias::F,
+    filter::NTuple{N,<:IntegerType},
+    in_chs::IntegerType,
+    out_chs::IntegerType,
+    groups,
+) where {F,N}
     if init_bias === nothing # Default from PyTorch
         fan_in = prod(filter) * (in_chs ÷ groups)
         bound = inv(sqrt(fan_in))
@@ -74,7 +95,7 @@ function init_conv_bias(
 end
 
 construct_crosscor_convdims(::False, cdims::DenseConvDims) = cdims
-construct_crosscor_convdims(::True, cdims::DenseConvDims) = DenseConvDims(cdims; F = true)
+construct_crosscor_convdims(::True, cdims::DenseConvDims) = DenseConvDims(cdims; F=true)
 
 @doc doc"""
     Conv(k::NTuple{N,Integer}, (in_chs => out_chs)::Pair{<:Integer,<:Integer},
@@ -178,22 +199,43 @@ O_i = \left\lfloor\frac{I_i + p_i + p_{(i + N) \% |p|} - d_i \times (k_i - 1)}{s
 end
 
 function Conv(
-        k::Tuple{Vararg{IntegerType}}, ch::Pair{<:IntegerType, <:IntegerType},
-        activation = identity; init_weight = nothing,
-        init_bias = nothing, stride = 1, pad = 0, dilation = 1, groups = 1,
-        use_bias::BoolType = True(), cross_correlation::BoolType = False()
-    )
+    k::Tuple{Vararg{IntegerType}},
+    ch::Pair{<:IntegerType,<:IntegerType},
+    activation=identity;
+    init_weight=nothing,
+    init_bias=nothing,
+    stride=1,
+    pad=0,
+    dilation=1,
+    groups=1,
+    use_bias::BoolType=True(),
+    cross_correlation::BoolType=False(),
+)
     stride = Utils.expand(Val(length(k)), stride)
     dilation = Utils.expand(Val(length(k)), dilation)
     pad = calc_padding(pad, k, dilation, stride)
 
-    @argcheck ch[1] % groups == 0 DimensionMismatch("Input channel dimension must be divisible by groups.")
-    @argcheck ch[2] % groups == 0 DimensionMismatch("Output channel dimension must be divisible by groups.")
+    @argcheck ch[1] % groups == 0 DimensionMismatch(
+        "Input channel dimension must be divisible by groups."
+    )
+    @argcheck ch[2] % groups == 0 DimensionMismatch(
+        "Output channel dimension must be divisible by groups."
+    )
     @argcheck allequal(length, (stride, dilation, k))
 
     return Conv(
-        activation, first(ch), last(ch), k, stride, pad, dilation, groups,
-        init_weight, init_bias, static(use_bias), static(cross_correlation)
+        activation,
+        first(ch),
+        last(ch),
+        k,
+        stride,
+        pad,
+        dilation,
+        groups,
+        init_weight,
+        init_bias,
+        static(use_bias),
+        static(cross_correlation),
     )
 end
 
@@ -201,7 +243,7 @@ function initialparameters(rng::AbstractRNG, c::Conv)
     args = (c.kernel_size, c.in_chs, c.out_chs, c.groups)
     weight = init_conv_weight(rng, c.init_weight, args..., c.activation)
     has_bias(c) || return (; weight)
-    return (; weight, bias = init_conv_bias(rng, c.init_bias, args...))
+    return (; weight, bias=init_conv_bias(rng, c.init_bias, args...))
 end
 
 function parameterlength(c::Conv)
@@ -212,7 +254,7 @@ function (c::Conv)(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(c, ps, st, x)
     cdims = construct_crosscor_convdims(
         c.cross_correlation,
-        DenseConvDims(y, ps.weight; c.stride, padding = c.pad, c.dilation, c.groups)
+        DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups),
     )
     bias = safe_getproperty(ps, Val(:bias))
     σ = NNlib.fast_act(c.activation, y)
@@ -316,11 +358,19 @@ Standard convolutional transpose layer.
 end
 
 function ConvTranspose(
-        k::Tuple{Vararg{IntegerType}}, ch::Pair{<:IntegerType, <:IntegerType},
-        activation = identity; init_weight = glorot_uniform,
-        init_bias = zeros32, stride = 1, pad = 0, outpad = 0, dilation = 1, groups = 1,
-        use_bias::BoolType = True(), cross_correlation::BoolType = False()
-    )
+    k::Tuple{Vararg{IntegerType}},
+    ch::Pair{<:IntegerType,<:IntegerType},
+    activation=identity;
+    init_weight=glorot_uniform,
+    init_bias=zeros32,
+    stride=1,
+    pad=0,
+    outpad=0,
+    dilation=1,
+    groups=1,
+    use_bias::BoolType=True(),
+    cross_correlation::BoolType=False(),
+)
     stride = Utils.expand(Val(length(k)), stride)
     dilation = Utils.expand(Val(length(k)), dilation)
     pad = if pad isa SamePad
@@ -330,13 +380,28 @@ function ConvTranspose(
     end
     outpad = Utils.expand(Val(length(k)), outpad)
 
-    @argcheck ch[2] % groups == 0 DimensionMismatch("Input channel dimension must be divisible by groups.")
-    @argcheck ch[1] % groups == 0 DimensionMismatch("Output channel dimension must be divisible by groups.")
+    @argcheck ch[2] % groups == 0 DimensionMismatch(
+        "Input channel dimension must be divisible by groups."
+    )
+    @argcheck ch[1] % groups == 0 DimensionMismatch(
+        "Output channel dimension must be divisible by groups."
+    )
     @argcheck allequal(length, (stride, dilation, k))
 
     return ConvTranspose(
-        activation, first(ch), last(ch), k, stride, pad, outpad, dilation, groups,
-        init_weight, init_bias, static(use_bias), static(cross_correlation)
+        activation,
+        first(ch),
+        last(ch),
+        k,
+        stride,
+        pad,
+        outpad,
+        dilation,
+        groups,
+        init_weight,
+        init_bias,
+        static(use_bias),
+        static(cross_correlation),
     )
 end
 
@@ -349,7 +414,7 @@ function initialparameters(rng::AbstractRNG, c::ConvTranspose)
     #       bias vector
     return (;
         weight,
-        bias = init_conv_bias(
+        bias=init_conv_bias(
             rng, c.init_bias, c.kernel_size, c.out_chs, c.out_chs, c.groups
         ),
     )
@@ -364,8 +429,8 @@ function (c::ConvTranspose)(x::AbstractArray, ps, st::NamedTuple)
     cdims = construct_crosscor_convdims(
         c.cross_correlation,
         conv_transpose_dims(
-            y, ps.weight; c.stride, padding = c.pad, c.dilation, c.groups, c.outpad
-        )
+            y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups, c.outpad
+        ),
     )
     bias = safe_getproperty(ps, Val(:bias))
     σ = NNlib.fast_act(c.activation, y)
@@ -448,9 +513,11 @@ Currently supported upsampling `mode`s and corresponding NNlib's methods are:
 end
 
 function Upsample(
-        mode::SymbolType = static(:nearest); scale = nothing,
-        size = nothing, align_corners::Bool = false
-    )
+    mode::SymbolType=static(:nearest);
+    scale=nothing,
+    size=nothing,
+    align_corners::Bool=false,
+)
     @argcheck dynamic(mode) in (:nearest, :bilinear, :trilinear)
 
     if !xor(isnothing(scale), isnothing(size))
@@ -459,7 +526,7 @@ function Upsample(
     return Upsample(scale, size, static(mode), align_corners)
 end
 
-Upsample(scale, mode::SymbolType = static(:nearest)) = Upsample(mode; scale)
+Upsample(scale, mode::SymbolType=static(:nearest)) = Upsample(mode; scale)
 
 function (m::Upsample)(x::AbstractArray, _, st::NamedTuple)
     return lux_upsample_scale_dispatch(m.upsample_mode, x, m.scale, m.align_corners), st
@@ -472,13 +539,13 @@ for interp in (:bilinear, :trilinear)
     nnlib_interp_func = Symbol(:upsample_, interp)
     @eval begin
         function lux_upsample_scale_dispatch(
-                ::StaticSymbol{$(Meta.quot(interp))}, x, scale, align_corners
-            )
+            ::StaticSymbol{$(Meta.quot(interp))}, x, scale, align_corners
+        )
             return $(nnlib_interp_func)(x, scale)
         end
         function lux_upsample_size_dispatch(
-                ::StaticSymbol{$(Meta.quot(interp))}, x, size, align_corners
-            )
+            ::StaticSymbol{$(Meta.quot(interp))}, x, size, align_corners
+        )
             return $(nnlib_interp_func)(x; size)
         end
     end

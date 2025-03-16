@@ -10,7 +10,7 @@ using Random: Random, AbstractRNG
 
 Creates a copy of the `rng` state depending on its type.
 """
-@generated function replicate(rng::T) where {T <: AbstractRNG}
+@generated function replicate(rng::T) where {T<:AbstractRNG}
     hasmethod(copy, (T,)) && return :(copy(rng))
     return :(deepcopy(rng))
 end
@@ -61,11 +61,11 @@ function initialstates end
 
 for op in (:initialparameters, :initialstates)
     @eval begin
-        $(op)(::AbstractRNG, ::Union{AbstractLuxLayer, Nothing}) = NamedTuple()
+        $(op)(::AbstractRNG, ::Union{AbstractLuxLayer,Nothing}) = NamedTuple()
         $(op)(rng::AbstractRNG, l::NamedTuple) = map(Base.Fix1($op, rng), l)
         function $(op)(rng::AbstractRNG, l)
             contains_lux_layer(l) || throw(MethodError($op, (rng, l)))
-            return Internal.fmap(Base.Fix1($op, rng), l; exclude = Internal.isleaf)
+            return Internal.fmap(Base.Fix1($op, rng), l; exclude=Internal.isleaf)
         end
     end
 end
@@ -78,7 +78,7 @@ Return the total number of parameters of the layer `l`.
 function parameterlength(l::AbstractLuxLayer)
     return parameterlength(initialparameters(Internal.default_rng(), l))
 end
-function parameterlength(nt::Union{NamedTuple, Tuple})
+function parameterlength(nt::Union{NamedTuple,Tuple})
     return length(nt) == 0 ? 0 : sum(parameterlength, nt)
 end
 parameterlength(a::AbstractArray) = length(a)
@@ -89,7 +89,7 @@ parameterlength(a::AbstractArray) = length(a)
 Return the total number of states of the layer `l`.
 """
 statelength(l::AbstractLuxLayer) = statelength(initialstates(Internal.default_rng(), l))
-statelength(nt::Union{NamedTuple, Tuple}) = length(nt) == 0 ? 0 : sum(statelength, nt)
+statelength(nt::Union{NamedTuple,Tuple}) = length(nt) == 0 ? 0 : sum(statelength, nt)
 statelength(a::AbstractArray) = length(a)
 statelength(::Any) = 1
 
@@ -172,7 +172,7 @@ end
 Printed Name of the `layer`. If the `layer` has a field `name` that is used, else the type
 name is used.
 """
-@generated function display_name(l::L) where {L <: AbstractLuxLayer}
+@generated function display_name(l::L) where {L<:AbstractLuxLayer}
     hasfield(L, :name) &&
         return :(ifelse(l.name === nothing, $(string(nameof(L))), string(l.name)))
     return :($(string(nameof(L))))
@@ -212,16 +212,14 @@ Users implementing their custom layer can extend the same functions as in
 abstract type AbstractLuxContainerLayer{layers} <: AbstractLuxLayer end
 
 function initialparameters(
-        rng::AbstractRNG,
-        l::AbstractLuxContainerLayer{layers}
-    ) where {layers}
+    rng::AbstractRNG, l::AbstractLuxContainerLayer{layers}
+) where {layers}
     return NamedTuple{layers}(initialparameters.(rng, getfield.((l,), layers)))
 end
 
 function initialstates(
-        rng::AbstractRNG,
-        l::AbstractLuxContainerLayer{layers}
-    ) where {layers}
+    rng::AbstractRNG, l::AbstractLuxContainerLayer{layers}
+) where {layers}
     return NamedTuple{layers}(initialstates.(rng, getfield.((l,), layers)))
 end
 
@@ -250,8 +248,8 @@ which calls `getfield(x, layer)(x, ps, st)`.
 abstract type AbstractLuxWrapperLayer{layer} <: AbstractLuxLayer end
 
 function initialparameters(
-        rng::AbstractRNG, l::AbstractLuxWrapperLayer{layer}
-    ) where {layer}
+    rng::AbstractRNG, l::AbstractLuxWrapperLayer{layer}
+) where {layer}
     return initialparameters(rng, getfield(l, layer))
 end
 
@@ -296,7 +294,7 @@ Recursively update all occurrences of the `key` in the state `st` with the `valu
 
     This function requires `Functors.jl` to be loaded.
 """
-function update_state(st::NamedTuple, key::Symbol, value; exclude = Internal.isleaf)
+function update_state(st::NamedTuple, key::Symbol, value; exclude=Internal.isleaf)
     fmap_fn = let key = key, value = value
         (kp, val) -> begin
             last(kp) == key && return value
@@ -333,7 +331,7 @@ A Boolean Value
 """
 check_fmap_condition(cond::C, ::Nothing, x) where {C} = any(cond, Internal.fleaves(x))
 check_fmap_condition(cond::C, ::Nothing, ::NamedTuple{()}) where {C} = any(cond, ())
-function check_fmap_condition(cond::C, ::Type{T}, x) where {C, T}
+function check_fmap_condition(cond::C, ::Type{T}, x) where {C,T}
     x isa T && return true
     return check_fmap_condition(cond, nothing, x)
 end
@@ -386,9 +384,21 @@ end
 @compat(
     public,
     (
-        replicate, trainmode, testmode, update_state, contains_lux_layer,
-        check_fmap_condition, initialparameters, initialstates, parameterlength,
-        statelength, outputsize, setup, apply, stateless_apply, display_name,
+        replicate,
+        trainmode,
+        testmode,
+        update_state,
+        contains_lux_layer,
+        check_fmap_condition,
+        initialparameters,
+        initialstates,
+        parameterlength,
+        statelength,
+        outputsize,
+        setup,
+        apply,
+        stateless_apply,
+        display_name,
     )
 )
 

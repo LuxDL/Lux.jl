@@ -25,15 +25,15 @@ EnzymeRules.inactive_noinl(::typeof(is_extension_loaded), ::Any...) = nothing
 # Simple Operations -- no rrules needed
 ofeltype_array(::Type{T}, x::AbstractArray{T}) where {T} = x
 function ofeltype_array(
-        ::Type{T}, x::AbstractArray{<:ForwardDiff.Dual{Tag, T, N}}
-    ) where {Tag, T, N}
+    ::Type{T}, x::AbstractArray{<:ForwardDiff.Dual{Tag,T,N}}
+) where {Tag,T,N}
     return x
 end
 ofeltype_array(::Type{T}, x::AbstractArray) where {T} = T.(x)
 function ofeltype_array(
-        ::Type{T}, x::AbstractArray{<:ForwardDiff.Dual{Tag, T2, N}}
-    ) where {Tag, T, T2, N}
-    return ForwardDiff.Dual{Tag, T, N}.(x)
+    ::Type{T}, x::AbstractArray{<:ForwardDiff.Dual{Tag,T2,N}}
+) where {Tag,T,T2,N}
+    return ForwardDiff.Dual{Tag,T,N}.(x)
 end
 ofeltype_array(::Type{T}, ::Nothing) where {T} = nothing
 
@@ -48,7 +48,7 @@ remove_tracking(x::AbstractArray) = x
 remove_tracking(::Type{T}) where {T} = T
 remove_tracking(x::ForwardDiff.Dual) = ForwardDiff.value(x)
 remove_tracking(x::AbstractArray{<:ForwardDiff.Dual}) = ForwardDiff.value.(x)
-remove_tracking(::Type{<:ForwardDiff.Dual{Tag, T}}) where {Tag, T} = remove_tracking(T)
+remove_tracking(::Type{<:ForwardDiff.Dual{Tag,T}}) where {Tag,T} = remove_tracking(T)
 remove_tracking(::Nothing) = nothing
 
 safe_vec(x) = x
@@ -66,10 +66,10 @@ only_derivative(y, f::F, x) where {F} = only(only(CRC.derivatives_given_output(y
 # Non-differentiable functions
 eltype_mismatch(::Type, ::Type) = True()
 eltype_mismatch(::Type{T}, ::Type{T}) where {T} = False()
-function eltype_mismatch(::Type{T}, ::Type{<:ForwardDiff.Dual{Tag, T, N}}) where {Tag, T, N}
+function eltype_mismatch(::Type{T}, ::Type{<:ForwardDiff.Dual{Tag,T,N}}) where {Tag,T,N}
     return False()
 end
-function eltype_mismatch(::Type{<:ForwardDiff.Dual{Tag, T, N}}, ::Type{T}) where {Tag, T, N}
+function eltype_mismatch(::Type{<:ForwardDiff.Dual{Tag,T,N}}, ::Type{T}) where {Tag,T,N}
     return False()
 end
 
@@ -119,17 +119,16 @@ default_epsilon(::AbstractArray{T}) where {T} = default_epsilon(T)
 CRC.@non_differentiable default_epsilon(::Any...)
 
 function concrete_bias_act_output_eltype(
-        act::F, ::AbstractArray{Tw}, ::AbstractArray{Tx},
-        b::Optional{<:AbstractVector}
-    ) where {F, Tw, Tx}
+    act::F, ::AbstractArray{Tw}, ::AbstractArray{Tx}, b::Optional{<:AbstractVector}
+) where {F,Tw,Tx}
     Ty = promote_type(Tw, Tx, safe_eltype(b))
     Tact = Core.Compiler.return_type(act, Tuple{Ty})
     return ifelse(isconcretetype(Tact), Tact, Ty)
 end
 
 function concrete_bias_act_output_eltype(
-        act::F, x::AbstractArray, b::Optional{<:AbstractVector}
-    ) where {F}
+    act::F, x::AbstractArray, b::Optional{<:AbstractVector}
+) where {F}
     return concrete_bias_act_output_eltype(act, x, x, b)
 end
 
@@ -146,7 +145,7 @@ EnzymeRules.inactive_noinl(::typeof(copy_drop_gradients), ::Any...) = nothing
 is_tracked(x) = x == :TrackedArray || x == :TrackedVector
 is_tracked(args...) = unrolled_any(is_tracked, args)
 
-inferred_length(::Type{<:NTuple{N, Any}}) where {N} = N
+inferred_length(::Type{<:NTuple{N,Any}}) where {N} = N
 @generated static_length(itr) = return :($(Val(inferred_length(itr))))
 
 @generated function unrolled_any(f::F, xs) where {F}
@@ -166,17 +165,17 @@ end
     end
 end
 
-function unrolled_mapreduce(f::F, op::O, itr) where {F, O}
+function unrolled_mapreduce(f::F, op::O, itr) where {F,O}
     return unrolled_mapreduce(f, op, itr, static_length(itr))
 end
 
-function unrolled_mapreduce(::F, ::O, _, ::Val{0}) where {F, O}
-    error("Cannot unroll over an empty iterator.")
+function unrolled_mapreduce(::F, ::O, _, ::Val{0}) where {F,O}
+    return error("Cannot unroll over an empty iterator.")
 end
 
-unrolled_mapreduce(f::F, ::O, itr, ::Val{1}) where {F, O} = f(only(itr))
+unrolled_mapreduce(f::F, ::O, itr, ::Val{1}) where {F,O} = f(only(itr))
 
-@generated function unrolled_mapreduce(f::F, op::O, itr, ::Val{N}) where {F, O, N}
+@generated function unrolled_mapreduce(f::F, op::O, itr, ::Val{N}) where {F,O,N}
     syms = [gensym("f_itr_$(i)") for i in 1:N]
     op_syms = [gensym("op_$(i)") for i in 1:(N - 1)]
     f_applied = [:($(syms[i]) = f(itr[$i])) for i in 1:N]
@@ -195,11 +194,11 @@ unrolled_mapreduce(f::F, ::O, itr, ::Val{1}) where {F, O} = f(only(itr))
 end
 
 # Working with batches
-batchview(x::AbstractArray{<:Any, 3}, k::Int) = view(x, :, :, k)
+batchview(x::AbstractArray{<:Any,3}, k::Int) = view(x, :, :, k)
 batchview(x::NNlib.BatchedTranspose, k::Int) = transpose(batchview(parent(x), k))
 batchview(x::NNlib.BatchedAdjoint, k::Int) = adjoint(batchview(parent(x), k))
 
-batchview(x::AbstractArray{<:Any, 3}) = map(Base.Fix1(batchview, x), 1:size(x, 3))
+batchview(x::AbstractArray{<:Any,3}) = map(Base.Fix1(batchview, x), 1:size(x, 3))
 
 expand_batchdim(x::AbstractMatrix) = reshape(x, size(x)..., 1)
 function expand_batchdim(x::LinearAlgebra.Adjoint)
@@ -209,7 +208,7 @@ function expand_batchdim(x::LinearAlgebra.Transpose)
     return NNlib.BatchedTranspose(reshape(parent(x), size(parent(x))..., 1))
 end
 expand_batchdim(x::AbstractVector) = reshape(x, :, 1)
-expand_batchdim(x::SVector{L, T}) where {L, T} = SMatrix{L, 1, T}(x)
+expand_batchdim(x::SVector{L,T}) where {L,T} = SMatrix{L,1,T}(x)
 
 function CRC.rrule(::typeof(expand_batchdim), x::AbstractMatrix)
     ∇expand_batchdim = @closure Δ -> begin
@@ -235,12 +234,16 @@ macro enzyme_alternative(f₁, f₂)
     return esc(
         quote
             function EnzymeRules.augmented_primal(
-                    ::EnzymeRules.RevConfig, ::EnzymeCore.Const{typeof($(f₁))},
-                    ::Type{RT}, args...
-                ) where {RT}
+                ::EnzymeRules.RevConfig,
+                ::EnzymeCore.Const{typeof($(f₁))},
+                ::Type{RT},
+                args...,
+            ) where {RT}
                 fwd, rev = EnzymeCore.autodiff_thunk(
-                    EnzymeCore.ReverseSplitWithPrimal, EnzymeCore.Const{typeof($(f₂))},
-                    EnzymeCore.Const, typeof.(args)...
+                    EnzymeCore.ReverseSplitWithPrimal,
+                    EnzymeCore.Const{typeof($(f₂))},
+                    EnzymeCore.Const,
+                    typeof.(args)...,
                 )
 
                 tape, result, shadow_result = fwd(EnzymeCore.Const($(f₂)), args...)
@@ -249,20 +252,27 @@ macro enzyme_alternative(f₁, f₂)
             end
 
             function EnzymeRules.reverse(
-                    ::EnzymeRules.RevConfig, ::EnzymeCore.Const{typeof($(f₁))},
-                    ::Type{RT}, (tape, rev), args...
-                ) where {RT}
+                ::EnzymeRules.RevConfig,
+                ::EnzymeCore.Const{typeof($(f₁))},
+                ::Type{RT},
+                (tape, rev),
+                args...,
+            ) where {RT}
                 return only(rev(EnzymeCore.Const($(f₂)), args..., tape))
             end
 
             function EnzymeRules.forward(
-                    cfg::EnzymeRules.FwdConfig,
-                    ::EnzymeCore.Const{typeof($(f₁))}, ::Type{RT}, args...
-                ) where {RT}
-                EnzymeCore.autodiff(EnzymeCore.Forward, EnzymeCore.Const($(f₂)), RT, args...)
-                return
+                cfg::EnzymeRules.FwdConfig,
+                ::EnzymeCore.Const{typeof($(f₁))},
+                ::Type{RT},
+                args...,
+            ) where {RT}
+                EnzymeCore.autodiff(
+                    EnzymeCore.Forward, EnzymeCore.Const($(f₂)), RT, args...
+                )
+                return nothing
             end
-        end
+        end,
     )
 end
 
@@ -270,11 +280,11 @@ end
     if workgroupsize === nothing
         kernel = f(backend)
         kernel(args...; ndrange)
-        return
+        return nothing
     end
     kernel = f(backend, KA.StaticSize(workgroupsize), KA.StaticSize(ndrange))
     kernel(args...)
-    return
+    return nothing
 end
 
 within_autodiff_vararg(args...) = unrolled_any(within_autodiff, args)
@@ -297,8 +307,8 @@ end
 static_training_mode(::Nothing, args...) = within_autodiff_vararg(args...)
 
 function static_training_mode(
-        training::Union{Bool, Val{true}, Val{false}, StaticBool}, args...
-    )
+    training::Union{Bool,Val{true},Val{false},StaticBool}, args...
+)
     return static_training_mode_check(
         training, static(training), within_autodiff_vararg(args...)
     )
@@ -309,9 +319,10 @@ function CRC.rrule(::typeof(static_training_mode), ::Nothing, args...)
 end
 
 function CRC.rrule(
-        ::typeof(static_training_mode),
-        training::Union{Bool, Val{true}, Val{false}, StaticBool}, args...
-    )
+    ::typeof(static_training_mode),
+    training::Union{Bool,Val{true},Val{false},StaticBool},
+    args...,
+)
     res = static_training_mode_check(training, static(training), True())
     return res, _ -> ntuple(Returns(∂∅), length(args) + 2)
 end
@@ -355,6 +366,6 @@ CRC.@non_differentiable can_loopvec_args_check(::Any...)
 
 EnzymeRules.inactive_noinl(::typeof(can_loopvec_args_check), ::Any...) = nothing
 
-recursive_unthunk(x) = Functors.fmap(CRC.unthunk, x; exclude = MLDataDevices.isleaf)
+recursive_unthunk(x) = Functors.fmap(CRC.unthunk, x; exclude=MLDataDevices.isleaf)
 
 end

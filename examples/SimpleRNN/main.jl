@@ -21,32 +21,30 @@ using ADTypes, Lux, JLD2, MLUtils, Optimisers, Printf, Reactant, Random
 # us sequences of size 2 × seq_len × batch_size and we need to predict a binary value
 # whether the sequence is clockwise or anticlockwise.
 
-function get_dataloaders(; dataset_size = 1000, sequence_length = 50)
+function get_dataloaders(; dataset_size=1000, sequence_length=50)
     ## Create the spirals
     data = [MLUtils.Datasets.make_spiral(sequence_length) for _ in 1:dataset_size]
     ## Get the labels
     labels = vcat(repeat([0.0f0], dataset_size ÷ 2), repeat([1.0f0], dataset_size ÷ 2))
     clockwise_spirals = [
-        reshape(d[1][:, 1:sequence_length], :, sequence_length, 1)
-            for d in data[1:(dataset_size ÷ 2)]
+        reshape(d[1][:, 1:sequence_length], :, sequence_length, 1) for
+        d in data[1:(dataset_size ÷ 2)]
     ]
     anticlockwise_spirals = [
-        reshape(
-                d[1][:, (sequence_length + 1):end], :, sequence_length, 1
-            )
-            for d in data[((dataset_size ÷ 2) + 1):end]
+        reshape(d[1][:, (sequence_length + 1):end], :, sequence_length, 1) for
+        d in data[((dataset_size ÷ 2) + 1):end]
     ]
-    x_data = Float32.(cat(clockwise_spirals..., anticlockwise_spirals...; dims = 3))
+    x_data = Float32.(cat(clockwise_spirals..., anticlockwise_spirals...; dims=3))
     ## Split the dataset
-    (x_train, y_train), (x_val, y_val) = splitobs((x_data, labels); at = 0.8, shuffle = true)
+    (x_train, y_train), (x_val, y_val) = splitobs((x_data, labels); at=0.8, shuffle=true)
     ## Create DataLoaders
     return (
         ## Use DataLoader to automatically minibatch and shuffle the data
         DataLoader(
-            collect.((x_train, y_train)); batchsize = 128, shuffle = true, partial = false
+            collect.((x_train, y_train)); batchsize=128, shuffle=true, partial=false
         ),
         ## Don't shuffle the validation data
-        DataLoader(collect.((x_val, y_val)); batchsize = 128, shuffle = false, partial = false),
+        DataLoader(collect.((x_val, y_val)); batchsize=128, shuffle=false, partial=false),
     )
 end
 
@@ -62,7 +60,7 @@ end
 # To understand more about container layers, please look at
 # [Container Layer](@ref Container-Layer).
 
-struct SpiralClassifier{L, C} <: AbstractLuxContainerLayer{(:lstm_cell, :classifier)}
+struct SpiralClassifier{L,C} <: AbstractLuxContainerLayer{(:lstm_cell, :classifier)}
     lstm_cell::L
     classifier::C
 end
@@ -82,8 +80,8 @@ end
 # Now we need to define the behavior of the Classifier when it is invoked.
 
 function (s::SpiralClassifier)(
-        x::AbstractArray{T, 3}, ps::NamedTuple, st::NamedTuple
-    ) where {T}
+    x::AbstractArray{T,3}, ps::NamedTuple, st::NamedTuple
+) where {T}
     ## First we will have to run the sequence through the LSTM Cell
     ## The first call to LSTM Cell will create the initial hidden state
     ## See that the parameters and states are automatically populated into a field called
@@ -99,7 +97,7 @@ function (s::SpiralClassifier)(
     ## After running through the sequence we will pass the output through the classifier
     y, st_classifier = s.classifier(y, ps.classifier, st.classifier)
     ## Finally remember to create the updated state
-    st = merge(st, (classifier = st_classifier, lstm_cell = st_lstm))
+    st = merge(st, (classifier=st_classifier, lstm_cell=st_lstm))
     return vec(y), st
 end
 
@@ -112,7 +110,7 @@ end
 function SpiralClassifierCompact(in_dims, hidden_dims, out_dims)
     lstm_cell = LSTMCell(in_dims => hidden_dims)
     classifier = Dense(hidden_dims => out_dims, sigmoid)
-    return @compact(; lstm_cell, classifier) do x::AbstractArray{T, 3} where {T}
+    return @compact(; lstm_cell, classifier) do x::AbstractArray{T,3} where {T}
         x_init, x_rest = Iterators.peel(LuxOps.eachslice(x, Val(2)))
         y, carry = lstm_cell(x_init)
         for x in x_rest
@@ -132,7 +130,7 @@ const lossfn = BinaryCrossEntropyLoss()
 function compute_loss(model, ps, st, (x, y))
     ŷ, st_ = model(x, ps, st)
     loss = lossfn(ŷ, y)
-    return loss, st_, (; y_pred = ŷ)
+    return loss, st_, (; y_pred=ŷ)
 end
 
 matches(y_pred, y_true) = sum((y_pred .> 0.5f0) .== y_true)
@@ -145,11 +143,11 @@ function main(model_type)
     cdev = cpu_device()
 
     ## Get the dataloaders
-    train_loader, val_loader = get_dataloaders() |> dev
+    train_loader, val_loader = dev(get_dataloaders())
 
     ## Create the model
     model = model_type(2, 8, 1)
-    ps, st = Lux.setup(Random.default_rng(), model) |> dev
+    ps, st = dev(Lux.setup(Random.default_rng(), model))
 
     train_state = Training.TrainState(model, ps, st, Adam(0.01f0))
     model_compiled = if dev isa ReactantDevice
@@ -186,10 +184,12 @@ function main(model_type)
             total_samples += length(y)
         end
 
-        @printf "Validation:\tLoss %4.5f\tAccuracy %4.5f\n" (total_loss / total_samples) (total_acc / total_samples)
+        @printf "Validation:\tLoss %4.5f\tAccuracy %4.5f\n" (total_loss / total_samples) (
+            total_acc / total_samples
+        )
     end
 
-    return (train_state.parameters, train_state.states) |> cpu_device()
+    return cpu_device()((train_state.parameters, train_state.states))
 end
 
 ps_trained, st_trained = main(SpiralClassifier)

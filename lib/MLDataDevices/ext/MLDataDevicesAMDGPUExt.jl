@@ -8,29 +8,30 @@ using Random: Random
 __init__() = reset_gpu_device!()
 
 # This code used to be in `LuxAMDGPU.jl`, but we no longer need that package.
-const USE_AMD_GPU = Ref{Union{Nothing, Bool}}(nothing)
+const USE_AMD_GPU = Ref{Union{Nothing,Bool}}(nothing)
 
 function check_use_amdgpu!()
-    USE_AMD_GPU[] === nothing || return
+    USE_AMD_GPU[] === nothing || return nothing
 
     USE_AMD_GPU[] = AMDGPU.functional()
     if USE_AMD_GPU[] && !AMDGPU.functional(:MIOpen)
         @warn "MIOpen is not functional in AMDGPU.jl, some functionality will not be \
                available." maxlog = 1
     end
-    return
+    return nothing
 end
 
-MLDataDevices.loaded(::Union{AMDGPUDevice, <:Type{AMDGPUDevice}}) = true
-function MLDataDevices.functional(::Union{AMDGPUDevice, <:Type{AMDGPUDevice}})::Bool
+MLDataDevices.loaded(::Union{AMDGPUDevice,<:Type{AMDGPUDevice}}) = true
+function MLDataDevices.functional(::Union{AMDGPUDevice,<:Type{AMDGPUDevice}})::Bool
     check_use_amdgpu!()
     return USE_AMD_GPU[]
 end
 
 Internal.with_device(::Type{AMDGPUDevice}, ::Nothing) = AMDGPUDevice(nothing)
 function Internal.with_device(::Type{AMDGPUDevice}, id::Integer)
-    id > length(AMDGPU.devices()) &&
-        throw(ArgumentError("id = $id > length(AMDGPU.devices()) = $(length(AMDGPU.devices()))"))
+    id > length(AMDGPU.devices()) && throw(
+        ArgumentError("id = $id > length(AMDGPU.devices()) = $(length(AMDGPU.devices()))"),
+    )
     old_dev = AMDGPU.device()
     AMDGPU.device!(AMDGPU.devices()[id])
     device = AMDGPUDevice(AMDGPU.device())
@@ -73,7 +74,7 @@ function Internal.unsafe_free_internal!(::Type{AMDGPUDevice}, x::AbstractArray)
     else
         @warn "AMDGPU.unsafe_free! is not defined for $(typeof(x))." maxlog = 1
     end
-    return
+    return nothing
 end
 
 # Device Transfer

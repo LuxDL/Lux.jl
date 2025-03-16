@@ -64,9 +64,7 @@ Constructor for [`TrainState`](@ref).
 """
 function TrainState(model::AbstractLuxLayer, ps, st, optimizer::Optimisers.AbstractRule)
     st_opt = if get_device_type(ps) <: ReactantDevice
-        Optimisers.setup(
-            ReactantCompatibleOptimisers.make_reactant_compatible(optimizer), ps
-        )
+        Optimisers.setup(ReactantCompatibleOptimisers.make_reactant_compatible(optimizer), ps)
     else
         Optimisers.setup(optimizer, ps)
     end
@@ -82,7 +80,7 @@ end
 
 dparameters(cache::TrainingBackendCache) = dparameters(cache, cache.first_try)
 function dparameters(cache::TrainingBackendCache, ::False)
-    return fmap(Utils.zero!!, cache.dparameters; exclude = MLDataDevices.isleaf)
+    return fmap(Utils.zero!!, cache.dparameters; exclude=MLDataDevices.isleaf)
 end
 dparameters(cache::TrainingBackendCache, ::True) = cache.dparameters
 
@@ -101,7 +99,7 @@ function Base.show(io::IO, ::MIME"text/plain", ts::TrainState)
         end
     end
     return ts.objective_function !== nothing &&
-        print(io, "\n    objective_function: ", nameof(typeof(ts.objective_function)))
+           print(io, "\n    objective_function: ", nameof(typeof(ts.objective_function)))
 end
 
 @concrete struct ReactantBackend
@@ -203,9 +201,8 @@ end
 maybe_wrap_adtype(backend::ReactantBackend, ::Any; kwargs...) = backend
 maybe_wrap_adtype(ad::AbstractADType, ::Any; kwargs...) = ad
 function maybe_wrap_adtype(
-        ad::AbstractADType, ::Type{ReactantDevice};
-        return_gradients::Utils.BoolType = True()
-    )
+    ad::AbstractADType, ::Type{ReactantDevice}; return_gradients::Utils.BoolType=True()
+)
     ad isa AutoEnzyme && return ReactantBackend(static(return_gradients))
     throw(ArgumentError("Computing gradients for models on XLA is supported only with \
                          Enzyme.jl (`AutoEnzyme`)."))
@@ -215,13 +212,15 @@ function compute_gradients_impl(ad, ::F, _, ts::TrainState) where {F}
     return check_if_compute_gradients_implemented(ad)
 end
 
-function check_if_compute_gradients_implemented(::T) where {T <: AbstractADType}
+function check_if_compute_gradients_implemented(::T) where {T<:AbstractADType}
     throw(ArgumentError("Support for AD backend $(nameof(T)) has not been implemented \
                          yet!"))
 end
 
 function check_if_compute_gradients_implemented(::ReactantBackend)
-    throw(ArgumentError("Load `Reactant` with `using Reactant` before using this function!"))
+    throw(
+        ArgumentError("Load `Reactant` with `using Reactant` before using this function!")
+    )
 end
 
 for package in (:Zygote, :Tracker, :ReverseDiff, :Enzyme)
@@ -249,8 +248,8 @@ function generate_wrappers(objective_function::F, m, ps, st, data, ::True) where
 end
 
 function wrap_objective_function(
-        objective_function::F, m, ps, st, data, first_try::StaticBool
-    ) where {F}
+    objective_function::F, m, ps, st, data, first_try::StaticBool
+) where {F}
     st_updated, stats = generate_wrappers(objective_function, m, ps, st, data, first_try)
 
     wrapped_objective_function = @closure (model, ps, st, data) -> begin
@@ -283,9 +282,8 @@ object for further training steps, else there is no caching and performance will
 suboptimal (and absolutely terrible for backends like `AutoReactant`).
 """
 function single_train_step!(
-        backend, obj_fn::F, data, ts::TrainState;
-        return_gradients::Utils.BoolType = True()
-    ) where {F}
+    backend, obj_fn::F, data, ts::TrainState; return_gradients::Utils.BoolType=True()
+) where {F}
     backend = maybe_wrap_adtype(
         backend, get_device_type((ts.parameters, ts.states)); return_gradients
     )
@@ -311,9 +309,8 @@ In most cases you should use [`single_train_step!`](@ref) instead of this functi
 Returned values are the same as [`single_train_step!`](@ref).
 """
 function single_train_step(
-        backend, obj_fn::F, data, ts::TrainState;
-        return_gradients::Utils.BoolType = True()
-    ) where {F}
+    backend, obj_fn::F, data, ts::TrainState; return_gradients::Utils.BoolType=True()
+) where {F}
     backend = maybe_wrap_adtype(
         backend, get_device_type((ts.parameters, ts.states)); return_gradients
     )
@@ -358,8 +355,12 @@ end
 @compat(
     public,
     (
-        TrainState, apply_gradients, apply_gradients!,
-        compute_gradients, single_train_step, single_train_step!,
+        TrainState,
+        apply_gradients,
+        apply_gradients!,
+        compute_gradients,
+        single_train_step,
+        single_train_step!,
     )
 )
 

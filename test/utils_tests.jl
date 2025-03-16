@@ -3,8 +3,7 @@
         _rng = get_default_rng(mode)
         @test randn(_rng, 10, 2) != randn(_rng, 10, 2)
         @test randn(Lux.replicate(_rng), 10, 2) == randn(Lux.replicate(_rng), 10, 2) broken = (
-            mode ==
-                "amdgpu"
+            mode == "amdgpu"
         )
     end
 end
@@ -14,11 +13,11 @@ end
 
     @test LuxOps.istraining(Val(true))
     @test !LuxOps.istraining(Val(false))
-    @test !LuxOps.istraining((training = Val(false),))
-    @test LuxOps.istraining((training = Val(true),))
-    @test !LuxOps.istraining((no_training = 1,))
-    @test LuxOps.istraining((training = true,))
-    @test !LuxOps.istraining((training = false,))
+    @test !LuxOps.istraining((training=Val(false),))
+    @test LuxOps.istraining((training=Val(true),))
+    @test !LuxOps.istraining((no_training=1,))
+    @test LuxOps.istraining((training=true,))
+    @test !LuxOps.istraining((training=false,))
     @test LuxOps.istraining(static(true))
     @test !LuxOps.istraining(static(false))
 end
@@ -42,7 +41,7 @@ end
     end
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        x = randn(rng, 10, 1) |> aType
+        x = aType(randn(rng, 10, 1))
         x1, x2 = LuxOps.multigate(x, Val(2))
 
         @test x1 == x[1:5, :]
@@ -50,7 +49,7 @@ end
 
         @jet LuxOps.multigate(x, Val(2))
 
-        x = randn(rng, 10) |> aType
+        x = aType(randn(rng, 10))
         x1, x2 = LuxOps.multigate(x, Val(2))
 
         @test x1 == x[1:5]
@@ -58,7 +57,7 @@ end
 
         @jet LuxOps.multigate(x, Val(2))
 
-        x = rand(6, 5) |> aType
+        x = aType(rand(6, 5))
         res, (dx,) = Zygote.withgradient(bcast_multigate, x)
 
         @jet LuxOps.multigate(x, Val(3))
@@ -66,7 +65,7 @@ end
         @test res ≈ sum(x[1:2, :]) + sum(x[5:6, :]) + sum(abs2, x[3:4, :])
         @test dx ≈ aType([ones(2, 5); Array(x[3:4, :] .* 2); ones(2, 5)])
 
-        @test_gradients(bcast_multigate, x; atol = 1.0f-3, rtol = 1.0f-3)
+        @test_gradients(bcast_multigate, x; atol=1.0f-3, rtol=1.0f-3)
     end
 end
 
@@ -76,7 +75,7 @@ end
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        ps = (weight = randn(rng, 3, 4), bias = randn(rng, 4))
+        ps = (weight=randn(rng, 3, 4), bias=randn(rng, 4))
         p_flat, re = Optimisers.destructure(ps)
         ps_c = ComponentArray(ps)
 
@@ -100,7 +99,7 @@ end
 
         # Optimisers
         opt = Adam(0.001f0)
-        ps_c = ps_c |> dev
+        ps_c = dev(ps_c)
         st_opt = Optimisers.setup(opt, ps_c)
 
         @test Optimisers.update(st_opt, ps_c, ps_c) isa Any
@@ -119,7 +118,7 @@ end
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        rnn = RNNCell(3 => 5; init_state = Lux.zeros32)
+        rnn = RNNCell(3 => 5; init_state=Lux.zeros32)
         x = randn(rng, Float32, 3, 2, 2)
         @test Lux.Utils.init_rnn_hidden_state(rng, rnn, view(dev(x), :, 1, :)) ==
             aType(zeros(Float32, 5, 2))
@@ -135,7 +134,7 @@ end
         )
 
         for (f, ftype) in zip((f16, f32, f64), (Float16, Float32, Float64))
-            ps, st = Lux.setup(rng, model) |> dev |> f
+            ps, st = f(dev(Lux.setup(rng, model)))
 
             @test eltype(ps.layer_1.weight) == ftype
             @test eltype(ps.layer_1.bias) == ftype
@@ -152,12 +151,12 @@ end
             @test eltype(st.layer_3.running_var) == ftype
             @test typeof(st.layer_3.training) == Val{true}
 
-            @test_throws ArgumentError (ps .|> f)
+            @test_throws ArgumentError (f.(ps))
             @test_throws ArgumentError f.(ps)
 
-            x = [1.0, 2.0, 3.0] |> aType
+            x = aType([1.0, 2.0, 3.0])
             @test eltype(f(x)) == ftype
-            x = ComplexF64.([1, 2, 3]) |> aType
+            x = aType(ComplexF64.([1, 2, 3]))
             @test eltype(f(x)) == complex(ftype)
         end
     end
@@ -179,21 +178,21 @@ end
     @test_throws ErrorException Lux.Utils.named_tuple(abc)
     @test_throws MethodError Lux.Utils.pairs(abc)
 
-    Base.NamedTuple(abc::ABC) = (a = abc.a, b = abc.b)
+    Base.NamedTuple(abc::ABC) = (a=abc.a, b=abc.b)
 
-    @test Lux.Utils.named_tuple(abc) == (a = 1, b = 2)
-    @test Lux.Utils.pairs(abc) == pairs((a = 1, b = 2))
+    @test Lux.Utils.named_tuple(abc) == (a=1, b=2)
+    @test Lux.Utils.pairs(abc) == pairs((a=1, b=2))
 
     @test Lux.Utils.merge(1.0, []) == 1.0
     @test Lux.Utils.merge([], 1.0) == 1.0
     @test_throws ArgumentError Lux.Utils.merge([2.0], 1)
-    @test Lux.Utils.merge(abc, abc) == (a = 1, b = 2)
+    @test Lux.Utils.merge(abc, abc) == (a=1, b=2)
 end
 
 @testitem "Recursive Utils (Deprecated)" tags = [:misc] begin
     using Functors, Tracker, ReverseDiff, ForwardDiff
 
-    struct functorABC{A, B}
+    struct functorABC{A,B}
         a::A
         b::B
     end
@@ -224,9 +223,14 @@ end
             @test Lux.recursive_eltype(x, Val(true)) == Float64
 
             x_wrapped = (
-                ForwardDiff.Dual.(x), ForwardDiff.Dual(2.0), ReverseDiff.track.(x),
-                ReverseDiff.track(2.0), ReverseDiff.track(x),
-                Tracker.param.(x), Tracker.param(x), Tracker.param(2.0),
+                ForwardDiff.Dual.(x),
+                ForwardDiff.Dual(2.0),
+                ReverseDiff.track.(x),
+                ReverseDiff.track(2.0),
+                ReverseDiff.track(x),
+                Tracker.param.(x),
+                Tracker.param(x),
+                Tracker.param(2.0),
             )
 
             for x in x_wrapped
@@ -238,8 +242,13 @@ end
 
     @testset "recursive_make_zero" begin
         nt = (;
-            a = 1.0, b = rand(2), c = [rand(2), rand(4)], d = (rand(3), rand(5)),
-            e = nothing, f = Val(2), g = functorABC(randn(3, 2), randn(2, 3)),
+            a=1.0,
+            b=rand(2),
+            c=[rand(2), rand(4)],
+            d=(rand(3), rand(5)),
+            e=nothing,
+            f=Val(2),
+            g=functorABC(randn(3, 2), randn(2, 3)),
         )
 
         nt_zero = Lux.recursive_make_zero(nt)
@@ -247,9 +256,15 @@ end
         @test nt_zero.e === nothing
         @test nt_zero.f === Val(2)
         for leaf in (
-                nt_zero.a, nt_zero.b, nt_zero.c[1], nt_zero.c[2],
-                nt_zero.d[1], nt_zero.d[2], nt_zero.g.a, nt_zero.g.b,
-            )
+            nt_zero.a,
+            nt_zero.b,
+            nt_zero.c[1],
+            nt_zero.c[2],
+            nt_zero.d[1],
+            nt_zero.d[2],
+            nt_zero.g.a,
+            nt_zero.g.b,
+        )
             @test iszero(leaf)
         end
 
@@ -274,8 +289,9 @@ end
     rng = StableRNG(12345)
 
     c = Parallel(
-        +; chain = Chain(; dense_1 = Dense(2 => 3), dense_2 = Dense(3 => 5)),
-        dense_3 = Dense(5 => 1)
+        +;
+        chain=Chain(; dense_1=Dense(2 => 3), dense_2=Dense(3 => 5)),
+        dense_3=Dense(5 => 1),
     )
 
     @test fmap(println, c) isa Any

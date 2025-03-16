@@ -11,9 +11,9 @@ sumabs2dense(args...) = sum(abs2, fused_dense_bias_activation(args...))
 function run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
     rng = StableRNG(1234)
 
-    bias = hasbias ? randn(rng, Tw, M) |> aType : nothing
-    w = randn(rng, Tw, M, N) |> aType
-    x = randn(rng, Tx, N, 3) |> aType
+    bias = hasbias ? aType(randn(rng, Tw, M)) : nothing
+    w = aType(randn(rng, Tw, M, N))
+    x = aType(randn(rng, Tx, N, 3))
 
     if activation === tanh_fast || activation === tanh || activation === gelu
         bias = bias === nothing ? nothing : (bias .* eltype(bias)(0.001))
@@ -60,13 +60,11 @@ const ALL_TEST_CONFIGS = Iterators.product(
     (4, 32),
     (4, 32),
     (true, false),
-    (identity, tanh, tanh_fast, sigmoid, sigmoid_fast, relu, gelu, anonact)
+    (identity, tanh, tanh_fast, sigmoid, sigmoid_fast, relu, gelu, anonact),
 )
 
 const TEST_BLOCKS = collect(
-    Iterators.partition(
-        ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 5)
-    )
+    Iterators.partition(ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 5))
 )
 
 export ALL_TEST_CONFIGS, TEST_BLOCKS, run_dense_testing
@@ -75,7 +73,9 @@ end
 
 @testitem "Fused Dense: Group 1" tags = [:dense] setup = [SharedTestSetup, DenseSetup] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for ((Tx, Tw), M, N, hasbias, activation) in TEST_BLOCKS[1]
+        @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for (
+            (Tx, Tw), M, N, hasbias, activation
+        ) in TEST_BLOCKS[1]
             !fp64 && (Tx == Float64 || Tw == Float64) && continue
             run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
         end
@@ -84,7 +84,9 @@ end
 
 @testitem "Fused Dense: Group 2" tags = [:dense] setup = [SharedTestSetup, DenseSetup] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for ((Tx, Tw), M, N, hasbias, activation) in TEST_BLOCKS[2]
+        @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for (
+            (Tx, Tw), M, N, hasbias, activation
+        ) in TEST_BLOCKS[2]
             !fp64 && (Tx == Float64 || Tw == Float64) && continue
             run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
         end
@@ -93,7 +95,9 @@ end
 
 @testitem "Fused Dense: Group 3" tags = [:dense] setup = [SharedTestSetup, DenseSetup] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for ((Tx, Tw), M, N, hasbias, activation) in TEST_BLOCKS[3]
+        @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for (
+            (Tx, Tw), M, N, hasbias, activation
+        ) in TEST_BLOCKS[3]
             !fp64 && (Tx == Float64 || Tw == Float64) && continue
             run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
         end
@@ -102,7 +106,9 @@ end
 
 @testitem "Fused Dense: Group 4" tags = [:dense] setup = [SharedTestSetup, DenseSetup] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for ((Tx, Tw), M, N, hasbias, activation) in TEST_BLOCKS[4]
+        @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for (
+            (Tx, Tw), M, N, hasbias, activation
+        ) in TEST_BLOCKS[4]
             !fp64 && (Tx == Float64 || Tw == Float64) && continue
             run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
         end
@@ -111,7 +117,9 @@ end
 
 @testitem "Fused Dense: Group 5" tags = [:dense] setup = [SharedTestSetup, DenseSetup] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for ((Tx, Tw), M, N, hasbias, activation) in TEST_BLOCKS[5]
+        @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for (
+            (Tx, Tw), M, N, hasbias, activation
+        ) in TEST_BLOCKS[5]
             !fp64 && (Tx == Float64 || Tw == Float64) && continue
             run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
         end
@@ -163,7 +171,8 @@ end
     end
 end
 
-@testitem "Enzyme.Forward patch: dense" tags = [:dense] setup = [SharedTestSetup] skip = :(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
+@testitem "Enzyme.Forward patch: dense" tags = [:dense] setup = [SharedTestSetup] skip =
+    :(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
     using LuxLib, Random, ForwardDiff, Enzyme
 
     x = rand(Float32, 2, 2)
@@ -173,7 +182,8 @@ end
     @test only(Enzyme.gradient(Forward, f, x)) ≈ ForwardDiff.gradient(f, x)
 end
 
-@testitem "Enzyme rules for fused dense" tags = [:dense] setup = [SharedTestSetup] skip = :(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
+@testitem "Enzyme rules for fused dense" tags = [:dense] setup = [SharedTestSetup] skip =
+    :(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
     using LuxLib, NNlib, Zygote, Enzyme
 
     # These are mostly for testing the CUDA rules since we don't enable the CUDA tests
@@ -181,20 +191,19 @@ end
     function fused_dense!(y, act, weight, x, b)
         op = LuxLib.internal_operation_mode((y, weight, x, b))
         LuxLib.Impl.fused_dense!(y, op, act, weight, x, b)
-        return
+        return nothing
     end
 
     function matmuladd!(C, A, B, bias)
         op = LuxLib.internal_operation_mode((C, A, B, bias))
         LuxLib.Impl.matmuladd!(C, op, A, B, bias)
-        return
+        return nothing
     end
 
     rng = StableRNG(1234)
 
     ALL_ACTS = [
-        identity, tanh, tanh_fast, sigmoid, sigmoid_fast,
-        relu, gelu, x -> x^3, x -> gelu(x),
+        identity, tanh, tanh_fast, sigmoid, sigmoid_fast, relu, gelu, x -> x^3, x -> gelu(x)
     ]
 
     @testset "$mode" for (mode, aType, ongpu) in MODES
@@ -202,23 +211,28 @@ end
         # mode ∈ ("cpu", "cuda") || continue
         mode ∈ ("cpu",) || continue
 
-        y = zeros(Float32, 2, 2) |> aType
-        weight = randn(rng, Float32, 2, 2) |> aType
-        x = randn(rng, Float32, 2, 2) |> aType
+        y = aType(zeros(Float32, 2, 2))
+        weight = aType(randn(rng, Float32, 2, 2))
+        x = aType(randn(rng, Float32, 2, 2))
         @testset for (act, hasbias) in Iterators.product(ALL_ACTS, (true, false))
             b = hasbias ? aType(randn(rng, Float32, 2)) : nothing
 
-            dy = randn(rng, Float32, 2, 2) |> aType
+            dy = aType(randn(rng, Float32, 2, 2))
 
-            dweight = zeros(Float32, 2, 2) |> aType
-            dx = zeros(Float32, 2, 2) |> aType
+            dweight = aType(zeros(Float32, 2, 2))
+            dx = aType(zeros(Float32, 2, 2))
             db = hasbias ? aType(zeros(Float32, 2)) : nothing
 
             b_enz = hasbias ? Duplicated(b, db) : Const(b)
 
             Enzyme.autodiff(
-                Reverse, fused_dense!, Duplicated(y, copy(dy)), Const(act),
-                Duplicated(weight, dweight), Duplicated(x, dx), b_enz
+                Reverse,
+                fused_dense!,
+                Duplicated(y, copy(dy)),
+                Const(act),
+                Duplicated(weight, dweight),
+                Duplicated(x, dx),
+                b_enz,
             )
 
             _, pb_f = Zygote.pullback(fused_dense_bias_activation, act, weight, x, b)
@@ -236,8 +250,12 @@ end
             dx .= 0
             db .= 0
             Enzyme.autodiff(
-                Reverse, matmuladd!, Duplicated(y, copy(dy)),
-                Duplicated(weight, dweight), Duplicated(x, dx), b_enz
+                Reverse,
+                matmuladd!,
+                Duplicated(y, copy(dy)),
+                Duplicated(weight, dweight),
+                Duplicated(x, dx),
+                b_enz,
             )
 
             _, pb_f = Zygote.pullback(LuxLib.Impl.matmuladd, weight, x, b)

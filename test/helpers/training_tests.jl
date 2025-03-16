@@ -6,7 +6,7 @@
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         model = Dense(3, 2)
         opt = Adam(0.01f0)
-        ps, st = Lux.setup(Lux.replicate(rng), model) |> dev
+        ps, st = dev(Lux.setup(Lux.replicate(rng), model))
 
         tstate = Training.TrainState(model, ps, st, opt)
 
@@ -32,11 +32,11 @@ end
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         model = Dense(3, 2)
         opt = Adam(0.01f0)
-        ps, st = Lux.setup(rng, model) |> dev
+        ps, st = dev(Lux.setup(rng, model))
 
         tstate = Training.TrainState(model, ps, st, opt)
 
-        x = randn(Lux.replicate(rng), Float32, (3, 1)) |> aType
+        x = aType(randn(Lux.replicate(rng), Float32, (3, 1)))
 
         for ad in (AutoZygote(), AutoTracker(), AutoReverseDiff(), AutoEnzyme())
             ongpu && (ad isa AutoReverseDiff || ad isa AutoEnzyme) && continue
@@ -64,28 +64,28 @@ end
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         model = Chain(
-            Dense(4, 32, tanh), BatchNorm(32),
-            Dense(32, 32, tanh), BatchNorm(32), Dense(32, 4)
+            Dense(4, 32, tanh),
+            BatchNorm(32),
+            Dense(32, 32, tanh),
+            BatchNorm(32),
+            Dense(32, 4),
         )
         dataset_ = [dev((x, y)) for (x, y) in dataset]
         opt = Adam(0.001f0)
 
-        @testset "$(ad)" for ad in (
-                AutoZygote(), AutoTracker(), AutoReverseDiff(), AutoEnzyme(),
-            )
+        @testset "$(ad)" for ad in
+                             (AutoZygote(), AutoTracker(), AutoReverseDiff(), AutoEnzyme())
             ongpu && (ad isa AutoReverseDiff || ad isa AutoEnzyme) && continue
             !LuxTestUtils.ENZYME_TESTING_ENABLED && ad isa AutoEnzyme && continue
 
             broken = ad isa AutoEnzyme && VERSION ≥ v"1.11-"
 
-            ps, st = Lux.setup(rng, model) |> dev
+            ps, st = dev(Lux.setup(rng, model))
             tstate = Training.TrainState(model, ps, st, opt)
 
             @test begin
                 initial_loss = first(
-                    mse(
-                        model, tstate.parameters, tstate.states, dataset_[1]
-                    )
+                    mse(model, tstate.parameters, tstate.states, dataset_[1])
                 )
 
                 for epoch in 1:1000, (x, y) in dataset_
@@ -108,9 +108,7 @@ end
                 end
 
                 final_loss = first(
-                    mse(
-                        model, tstate.parameters, tstate.states, dataset_[1]
-                    )
+                    mse(model, tstate.parameters, tstate.states, dataset_[1])
                 )
 
                 final_loss * 100 < initial_loss
@@ -120,19 +118,19 @@ end
             tstate = Optimisers.adjust(tstate, 0.1f0)
             @test tstate.optimizer_state.layer_1.weight.rule.eta ≈ 0.1f0
 
-            tstate = Optimisers.adjust(tstate; eta = 0.5f0)
+            tstate = Optimisers.adjust(tstate; eta=0.5f0)
             @test tstate.optimizer_state.layer_1.weight.rule.eta ≈ 0.5f0
 
             Optimisers.adjust!(tstate, 0.01f0)
             @test tstate.optimizer_state.layer_1.weight.rule.eta ≈ 0.01f0
 
-            Optimisers.adjust!(tstate; eta = 0.11f0)
+            Optimisers.adjust!(tstate; eta=0.11f0)
             @test tstate.optimizer_state.layer_1.weight.rule.eta ≈ 0.11f0
         end
 
         struct AutoCustomAD <: ADTypes.AbstractADType end
 
-        ps, st = Lux.setup(rng, model) |> dev
+        ps, st = dev(Lux.setup(rng, model))
         tstate = Training.TrainState(model, ps, st, opt)
 
         @test_throws ArgumentError Training.compute_gradients(
@@ -141,7 +139,9 @@ end
     end
 end
 
-@testitem "Enzyme: Invalidate Cache on State Update" setup = [SharedTestSetup] tags = [:misc] skip = :(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
+@testitem "Enzyme: Invalidate Cache on State Update" setup = [SharedTestSetup] tags = [
+    :misc
+] skip = :(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
     using ADTypes, Optimisers
 
     mse = MSELoss()
@@ -224,7 +224,7 @@ end
     mse1 = MSELoss()
     function mse2(model, ps, st, data)
         l, st_, stats = mse1(model, ps, st, data)
-        return l, st_, (; data = 2.0f0)
+        return l, st_, (; data=2.0f0)
     end
 
     rng = StableRNG(12345)
@@ -233,8 +233,11 @@ end
 
     @testset "Unhandled Cases" begin
         model = Chain(
-            Dense(4, 32, tanh), BatchNorm(32),
-            Dense(32, 32, tanh), BatchNorm(32), Dense(32, 4)
+            Dense(4, 32, tanh),
+            BatchNorm(32),
+            Dense(32, 32, tanh),
+            BatchNorm(32),
+            Dense(32, 4),
         )
         ps, st = Lux.setup(rng, model)
 
@@ -242,7 +245,7 @@ end
 
         # Stateful models are not supported
         @test_throws ArgumentError Training.compute_gradients(
-            AutoReverseDiff(; compile = true), mse1, dataset[1], tstate
+            AutoReverseDiff(; compile=true), mse1, dataset[1], tstate
         )
 
         model = Chain(Dense(4, 32, tanh), Dense(32, 32, tanh), Dense(32, 4))
@@ -252,13 +255,13 @@ end
 
         # Loss functions that return non-empty `stats` are not supported
         @test_throws ArgumentError Training.compute_gradients(
-            AutoReverseDiff(; compile = true), mse2, dataset[1], tstate
+            AutoReverseDiff(; compile=true), mse2, dataset[1], tstate
         )
 
         struct StrangeModel <: Lux.AbstractLuxLayer end
 
         function (m::StrangeModel)(x, ps, st)
-            return x, (; new_state = 0.0)
+            return x, (; new_state=0.0)
         end
 
         model = StrangeModel()
@@ -268,7 +271,7 @@ end
 
         # Stateful models are not supported
         @test_throws ArgumentError Training.compute_gradients(
-            AutoReverseDiff(; compile = true), mse1, dataset[1], tstate
+            AutoReverseDiff(; compile=true), mse1, dataset[1], tstate
         )
     end
 
@@ -282,7 +285,7 @@ end
         for (x, y) in dataset
             _, _, _, tstate = allow_unstable() do
                 Training.single_train_step!(
-                    AutoReverseDiff(; compile = true), mse1, (x, y), tstate
+                    AutoReverseDiff(; compile=true), mse1, (x, y), tstate
                 )
             end
         end

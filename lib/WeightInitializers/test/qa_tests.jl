@@ -1,8 +1,8 @@
 @testitem "Aqua: Quality Assurance" begin
     using Aqua
 
-    Aqua.test_all(WeightInitializers; ambiguities = false)
-    Aqua.test_ambiguities(WeightInitializers; recursive = false)
+    Aqua.test_all(WeightInitializers; ambiguities=false)
+    Aqua.test_ambiguities(WeightInitializers; recursive=false)
 end
 
 @testitem "Explicit Imports: Quality Assurance" setup = [SharedTestSetup] begin
@@ -28,6 +28,6 @@ end
 
     doctestexpr = :(using Random, WeightInitializers)
 
-    DocMeta.setdocmeta!(WeightInitializers, :DocTestSetup, doctestexpr; recursive = true)
-    doctest(WeightInitializers; manual = false)
+    DocMeta.setdocmeta!(WeightInitializers, :DocTestSetup, doctestexpr; recursive=true)
+    doctest(WeightInitializers; manual=false)
 end

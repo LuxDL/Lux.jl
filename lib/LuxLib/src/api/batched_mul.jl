@@ -10,14 +10,14 @@ but attempts to be faster on CPUs.
     On CPUs loading LoopVectorization adds faster implementations of batched matrix
     multiplication.
 """
-function batched_matmul(x::AbstractMatrix, y::AbstractArray{yT, 3}) where {yT}
+function batched_matmul(x::AbstractMatrix, y::AbstractArray{yT,3}) where {yT}
     return batched_matmul(expand_batchdim(x), y)
 end
 
-function batched_matmul(x::AbstractArray{xT, 3}, y::AbstractMatrix) where {xT}
+function batched_matmul(x::AbstractArray{xT,3}, y::AbstractMatrix) where {xT}
     return batched_matmul(x, expand_batchdim(y))
 end
 
-function batched_matmul(x::AbstractArray{xT, 3}, y::AbstractArray{yT, 3}) where {xT, yT}
+function batched_matmul(x::AbstractArray{xT,3}, y::AbstractArray{yT,3}) where {xT,yT}
     return batched_matmul_impl(x, y)
 end

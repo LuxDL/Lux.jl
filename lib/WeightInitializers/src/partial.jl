@@ -6,7 +6,7 @@ using Random: AbstractRNG
 
 @concrete struct Partial{T} <: Function
     f <: Function
-    rng <: Union{Nothing, AbstractRNG}
+    rng <: Union{Nothing,AbstractRNG}
     kwargs
 end
 
@@ -31,19 +31,19 @@ function Base.show(io::IO, ::MIME"text/plain", f::Partial{T}) where {T}
     return print(io, ")")
 end
 
-function (f::Partial{<:Union{Nothing, Missing}})(args...; kwargs...)
+function (f::Partial{<:Union{Nothing,Missing}})(args...; kwargs...)
     f.rng === nothing && return f.f(args...; f.kwargs..., kwargs...)
     return f.f(f.rng, args...; f.kwargs..., kwargs...)
 end
-function (f::Partial{<:Union{Nothing, Missing}})(rng::AbstractRNG, args...; kwargs...)
+function (f::Partial{<:Union{Nothing,Missing}})(rng::AbstractRNG, args...; kwargs...)
     @argcheck f.rng === nothing
     return f.f(rng, args...; f.kwargs..., kwargs...)
 end
-function (f::Partial{T})(args...; kwargs...) where {T <: Number}
+function (f::Partial{T})(args...; kwargs...) where {T<:Number}
     f.rng === nothing && return f.f(T, args...; f.kwargs..., kwargs...)
     return f.f(f.rng, T, args...; f.kwargs..., kwargs...)
 end
-function (f::Partial{T})(rng::AbstractRNG, args...; kwargs...) where {T <: Number}
+function (f::Partial{T})(rng::AbstractRNG, args...; kwargs...) where {T<:Number}
     @argcheck f.rng === nothing
     return f.f(rng, T, args...; f.kwargs..., kwargs...)
 end

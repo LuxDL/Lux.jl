@@ -1,243 +1,253 @@
 module Utils
 
-    using ArrayInterface: ArrayInterface
-    using ArgCheck: @argcheck
-    using ChainRulesCore: ChainRulesCore, @non_differentiable, NoTangent
-    using ConcreteStructs: @concrete
-    using EnzymeCore: EnzymeRules
-    using ForwardDiff: Dual
-    using Functors: Functors, fmapstructure
-    using Random: AbstractRNG
-    using Static: Static, StaticBool, StaticInteger, StaticSymbol
-    using StaticArraysCore: SMatrix, SVector
+using ArrayInterface: ArrayInterface
+using ArgCheck: @argcheck
+using ChainRulesCore: ChainRulesCore, @non_differentiable, NoTangent
+using ConcreteStructs: @concrete
+using EnzymeCore: EnzymeRules
+using ForwardDiff: Dual
+using Functors: Functors, fmapstructure
+using Random: AbstractRNG
+using Static: Static, StaticBool, StaticInteger, StaticSymbol
+using StaticArraysCore: SMatrix, SVector
 
-    using LuxCore: LuxCore, AbstractLuxLayer
-    using MLDataDevices: MLDataDevices
-    using NNlib: NNlib
+using LuxCore: LuxCore, AbstractLuxLayer
+using MLDataDevices: MLDataDevices
+using NNlib: NNlib
 
-    const CRC = ChainRulesCore
+const CRC = ChainRulesCore
 
-    const BoolType = Union{StaticBool, Bool, Val{true}, Val{false}}
-    const IntegerType = Union{Integer, StaticInteger}
-    const SymbolType = Union{Symbol, StaticSymbol, Val}
+const BoolType = Union{StaticBool,Bool,Val{true},Val{false}}
+const IntegerType = Union{Integer,StaticInteger}
+const SymbolType = Union{Symbol,StaticSymbol,Val}
 
-    # Aliased `size` from Base
-    size(x::AbstractArray) = Base.size(x)
-    size(x::T) where {T} = hasmethod(Base.size, Tuple{T}) ? Base.size(x) : nothing
+# Aliased `size` from Base
+size(x::AbstractArray) = Base.size(x)
+size(x::T) where {T} = hasmethod(Base.size, Tuple{T}) ? Base.size(x) : nothing
 
-    @non_differentiable size(::Any)
+@non_differentiable size(::Any)
 
-    structure(x) = fmapstructure(size, x)
+structure(x) = fmapstructure(size, x)
 
-    size_unbatched(x::AbstractVector) = Base.size(x)
-    size_unbatched(x::AbstractArray) = Base.size(x)[1:(end - 1)]
-    function size_unbatched(x::T) where {T}
-        return hasmethod(Base.size, Tuple{T}) ? Base.size(x)[1:(end - 1)] : nothing
+size_unbatched(x::AbstractVector) = Base.size(x)
+size_unbatched(x::AbstractArray) = Base.size(x)[1:(end - 1)]
+function size_unbatched(x::T) where {T}
+    return hasmethod(Base.size, Tuple{T}) ? Base.size(x)[1:(end - 1)] : nothing
+end
+
+@non_differentiable size_unbatched(::Any)
+
+unbatched_structure(x) = fmapstructure(size_unbatched, x)
+
+# Can we convert this to a NamedTuple?
+can_named_tuple(::NamedTuple) = true
+can_named_tuple(::T) where {T} = can_named_tuple(T)
+function can_named_tuple(::Type{T}) where {T}
+    return Core.Compiler.return_type(named_tuple, Tuple{T}) !== Union{}
+end
+
+@non_differentiable can_named_tuple(::Any)
+
+# Convert to a NamedTuple
+named_tuple(nt::NamedTuple) = nt
+function named_tuple(x::T) where {T}
+    NT = Core.Compiler.return_type(NamedTuple, Tuple{T})
+    if NT === Union{} || NT === NamedTuple
+        error("`NamedTuple` is not defined for type `$(T)`. Please define \
+           `Lux.Utils.named_tuple(::$(T))` method (or preferably \
+           `NamedTuple(::$(T))`).")
     end
+    return NamedTuple(x)
+end
 
-    @non_differentiable size_unbatched(::Any)
+# A more generalized version of `merge` that works with non-NamedTuples
+merge(nt₁::NamedTuple, nt₂::NamedTuple) = Base.merge(nt₁, nt₂)
+function merge(p, nt::NamedTuple)
+    can_named_tuple(p) && return merge(named_tuple(p), nt)
+    @argcheck length(p) == 0
+    return nt
+end
+function merge(nt::NamedTuple, p)
+    can_named_tuple(p) && return merge(nt, named_tuple(p))
+    @argcheck length(p) == 0
+    return nt
+end
+function merge(x, y)
+    can_named_tuple(x) && return merge(named_tuple(x), y)
+    can_named_tuple(y) && return merge(x, named_tuple(y))
+    length(x) == 0 && return y
+    length(y) == 0 && return x
+    throw(
+        ArgumentError(
+            lazy"Cannot merge $(x)::$(typeof(x)) and $(y)::$(typeof(y)). Define `merge` method for these types.",
+        ),
+    )
+end
 
-    unbatched_structure(x) = fmapstructure(size_unbatched, x)
+# Used in freezing
+function pairs(x)
+    can_named_tuple(x) && return Base.pairs(named_tuple(x))
+    return Base.pairs(x)
+end
 
-    # Can we convert this to a NamedTuple?
-    can_named_tuple(::NamedTuple) = true
-    can_named_tuple(::T) where {T} = can_named_tuple(T)
-    function can_named_tuple(::Type{T}) where {T}
-        return Core.Compiler.return_type(named_tuple, Tuple{T}) !== Union{}
-    end
+@concrete struct Fix3 <: Function
+    f
+    x
+end
 
-    @non_differentiable can_named_tuple(::Any)
+Broadcast.broadcastable(f::Fix3) = Ref(f)
 
-    # Convert to a NamedTuple
-    named_tuple(nt::NamedTuple) = nt
-    function named_tuple(x::T) where {T}
-        NT = Core.Compiler.return_type(NamedTuple, Tuple{T})
-        if NT === Union{} || NT === NamedTuple
-            error("`NamedTuple` is not defined for type `$(T)`. Please define \
-               `Lux.Utils.named_tuple(::$(T))` method (or preferably \
-               `NamedTuple(::$(T))`).")
-        end
-        return NamedTuple(x)
-    end
+(f::Fix3)(a, b) = f.f(a, b, f.x)
 
-    # A more generalized version of `merge` that works with non-NamedTuples
-    merge(nt₁::NamedTuple, nt₂::NamedTuple) = Base.merge(nt₁, nt₂)
-    function merge(p, nt::NamedTuple)
-        can_named_tuple(p) && return merge(named_tuple(p), nt)
-        @argcheck length(p) == 0
-        return nt
-    end
-    function merge(nt::NamedTuple, p)
-        can_named_tuple(p) && return merge(nt, named_tuple(p))
-        @argcheck length(p) == 0
-        return nt
-    end
-    function merge(x, y)
-        can_named_tuple(x) && return merge(named_tuple(x), y)
-        can_named_tuple(y) && return merge(x, named_tuple(y))
-        length(x) == 0 && return y
-        length(y) == 0 && return x
-        throw(ArgumentError(lazy"Cannot merge $(x)::$(typeof(x)) and $(y)::$(typeof(y)). Define `merge` method for these types."))
-    end
+# Take a `Val` and return the value. Noop for other types
+unwrap_val(::Val{T}) where {T} = T
+unwrap_val(x) = x
 
-    # Used in freezing
-    function pairs(x)
-        can_named_tuple(x) && return Base.pairs(named_tuple(x))
-        return Base.pairs(x)
-    end
+contiguous(x::AbstractArray) = x
+contiguous(x::SubArray) = copy(x)
 
-    @concrete struct Fix3 <: Function
-        f
-        x
-    end
+gate(h::Int, n::Int) = (1:h) .+ h * (n - 1)
+gate(x::AbstractVector, h::Int, n::Int) = view(x, gate(h, n))
+gate(x::AbstractMatrix, h::Int, n::Int) = view(x, gate(h, n), :)
 
-    Broadcast.broadcastable(f::Fix3) = Ref(f)
+reverse(x::AbstractArray; dims=:) = Base.reverse(x; dims)
 
-    (f::Fix3)(a, b) = f.f(a, b, f.x)
+vec(x::AbstractArray) = Base.vec(x)
+vec(::Nothing) = nothing
 
-    # Take a `Val` and return the value. Noop for other types
-    unwrap_val(::Val{T}) where {T} = T
-    unwrap_val(x) = x
+function CRC.rrule(::typeof(vec), x::AbstractArray)
+    return (
+        Base.vec(x), Δ -> (NoTangent(), CRC.@thunk(reshape(recursive_unthunk(Δ), size(x))))
+    )
+end
 
-    contiguous(x::AbstractArray) = x
-    contiguous(x::SubArray) = copy(x)
+function sample_replicate(rng::AbstractRNG)
+    rand(rng)
+    return LuxCore.replicate(rng)
+end
 
-    gate(h::Int, n::Int) = (1:h) .+ h * (n - 1)
-    gate(x::AbstractVector, h::Int, n::Int) = view(x, gate(h, n))
-    gate(x::AbstractMatrix, h::Int, n::Int) = view(x, gate(h, n), :)
+function index_namedtuple(nt::NamedTuple{fields}, idxs::AbstractArray) where {fields}
+    return NamedTuple{fields[idxs]}(values(nt)[idxs])
+end
 
-    reverse(x::AbstractArray; dims = :) = Base.reverse(x; dims)
+eltype(x) = eltype(Base.eltype(x))
+eltype(::Type{T}) where {T} = T
+eltype(::Type{<:Dual{T,V}}) where {T,V} = V
 
-    vec(x::AbstractArray) = Base.vec(x)
-    vec(::Nothing) = nothing
+@non_differentiable eltype(::Any)
 
-    function CRC.rrule(::typeof(vec), x::AbstractArray)
-        return (
-            Base.vec(x),
-            Δ -> (NoTangent(), CRC.@thunk(reshape(recursive_unthunk(Δ), size(x)))),
-        )
-    end
+ofeltype_array(::Type{T}, x::AbstractArray) where {T} = broadcast(T, x)
+function ofeltype_array(::Type{T}, x::AbstractArray{<:Dual{Tag,V,N}}) where {Tag,T,V,N}
+    return Dual{Tag,T,N}.(x)
+end
 
-    function sample_replicate(rng::AbstractRNG)
-        rand(rng)
-        return LuxCore.replicate(rng)
-    end
+function warn_mismatch(layer, x, warn_msg::AbstractString)
+    return @warn warn_msg layer summary(x) maxlog = 1
+end
 
-    function index_namedtuple(nt::NamedTuple{fields}, idxs::AbstractArray) where {fields}
-        return NamedTuple{fields[idxs]}(values(nt)[idxs])
-    end
+@non_differentiable warn_mismatch(::Any, ::Any, ::Any)
 
-    eltype(x) = eltype(Base.eltype(x))
-    eltype(::Type{T}) where {T} = T
-    eltype(::Type{<:Dual{T, V}}) where {T, V} = V
+zero(x) = Base.zero(x)
+zero(::Nothing) = nothing
+zero(x::Val) = x
+zero(t::Tuple{}) = t
 
-    @non_differentiable eltype(::Any)
+zero!!(x::Number) = Base.zero(x)
+function zero!!(x::AbstractArray{<:Number})
+    fill!(x, false)
+    return x
+end
+zero!!(::Nothing) = nothing
+zero!!(x::Val) = x
 
-    ofeltype_array(::Type{T}, x::AbstractArray) where {T} = broadcast(T, x)
-    function ofeltype_array(::Type{T}, x::AbstractArray{<:Dual{Tag, V, N}}) where {Tag, T, V, N}
-        return Dual{Tag, T, N}.(x)
-    end
+function add!!(x::AbstractArray{<:Number}, y::AbstractArray{<:Number})
+    ArrayInterface.can_setindex(x) || return x .+ y
+    @. x += y
+    return x
+end
+add!!(x::Number, y::Number) = x + y
+add!!(::Nothing, ::Nothing) = nothing
 
-    function warn_mismatch(layer, x, warn_msg::AbstractString)
-        return @warn warn_msg layer summary(x) maxlog = 1
-    end
+function init_rnn_hidden_state(rng::AbstractRNG, rnn, x::AbstractMatrix)
+    y = similar(x, rnn.out_dims, Base.size(x, 2))
+    copyto!(y, rnn.init_state(rng, size(y)...))
+    return ArrayInterface.aos_to_soa(y)
+end
 
-    @non_differentiable warn_mismatch(::Any, ::Any, ::Any)
+@non_differentiable init_rnn_hidden_state(::Any...)
 
-    zero(x) = Base.zero(x)
-    zero(::Nothing) = nothing
-    zero(x::Val) = x
-    zero(t::Tuple{}) = t
+function init_trainable_rnn_hidden_state(hidden_state::AbstractVector, x::AbstractMatrix)
+    return repeat(hidden_state, 1, Base.size(x, 2))
+end
 
-    zero!!(x::Number) = Base.zero(x)
-    function zero!!(x::AbstractArray{<:Number})
-        fill!(x, false)
-        return x
-    end
-    zero!!(::Nothing) = nothing
-    zero!!(x::Val) = x
+norm(x; dims=Colon()) = sqrt.(sum(abs2, x; dims))
 
-    function add!!(x::AbstractArray{<:Number}, y::AbstractArray{<:Number})
-        ArrayInterface.can_setindex(x) || return x .+ y
-        @. x += y
-        return x
-    end
-    add!!(x::Number, y::Number) = x + y
-    add!!(::Nothing, ::Nothing) = nothing
+function norm_except(x::AbstractArray{T,N}; dims::Union{Int,Tuple}=N) where {T,N}
+    return norm(x; dims=get_norm_except_dims(ndims(x), dims))
+end
 
-    function init_rnn_hidden_state(rng::AbstractRNG, rnn, x::AbstractMatrix)
-        y = similar(x, rnn.out_dims, Base.size(x, 2))
-        copyto!(y, rnn.init_state(rng, size(y)...))
-        return ArrayInterface.aos_to_soa(y)
-    end
+get_norm_except_dims(N, dim::Int) = filter(i -> i != dim, 1:N)
+get_norm_except_dims(N, dims::Tuple) = filter(i -> i ∉ dims, 1:N)
 
-    @non_differentiable init_rnn_hidden_state(::Any...)
+@non_differentiable get_norm_except_dims(::Any...)
 
-    function init_trainable_rnn_hidden_state(hidden_state::AbstractVector, x::AbstractMatrix)
-        return repeat(hidden_state, 1, Base.size(x, 2))
-    end
+expand(_, i::Tuple) = i
+expand(N, i::Integer) = ntuple(Returns(i), N)
 
-    norm(x; dims = Colon()) = sqrt.(sum(abs2, x; dims))
+@non_differentiable expand(::Any...)
 
-    function norm_except(x::AbstractArray{T, N}; dims::Union{Int, Tuple} = N) where {T, N}
-        return norm(x; dims = get_norm_except_dims(ndims(x), dims))
-    end
+stack1(xs) = mapfoldl(expanddims1, vcat, xs)
+expanddims1(x) = reshape(x, 1, size(x)...)
 
-    get_norm_except_dims(N, dim::Int) = filter(i -> i != dim, 1:N)
-    get_norm_except_dims(N, dims::Tuple) = filter(i -> i ∉ dims, 1:N)
+set_refval!(x, y) = (x[] = y)
 
-    @non_differentiable get_norm_except_dims(::Any...)
+@non_differentiable set_refval!(::Any...)
+EnzymeRules.inactive(::typeof(set_refval!), ::Any...) = nothing
 
-    expand(_, i::Tuple) = i
-    expand(N, i::Integer) = ntuple(Returns(i), N)
+function named_tuple_layers(layers::Vararg{AbstractLuxLayer,N}) where {N}
+    return NamedTuple{ntuple(i -> Symbol(:layer_, i), N)}(layers)
+end
 
-    @non_differentiable expand(::Any...)
+make_abstract_matrix(x::AbstractVector) = reshape(x, :, 1)
+make_abstract_matrix(x::SVector{L,T}) where {L,T} = SMatrix{L,1,T}(x)
+make_abstract_matrix(x::AbstractMatrix) = x
+make_abstract_matrix(x::AbstractArray{T,N}) where {T,N} = reshape(x, Base.size(x, 1), :)
 
-    stack1(xs) = mapfoldl(expanddims1, vcat, xs)
-    expanddims1(x) = reshape(x, 1, size(x)...)
+matrix_to_array(x::AbstractMatrix, ::AbstractVector) = vec(x)
+matrix_to_array(x::SMatrix{L,1,T}, ::AbstractVector) where {L,T} = SVector{L,T}(x)
+matrix_to_array(x::AbstractMatrix, ::AbstractMatrix) = x
+matrix_to_array(x::AbstractMatrix, y::AbstractArray) = reshape(x, :, size(y)[2:end]...)
 
-    set_refval!(x, y) = (x[] = y)
+function to_rarray end
+function promote_to end
 
-    @non_differentiable set_refval!(::Any...)
-    EnzymeRules.inactive(::typeof(set_refval!), ::Any...) = nothing
+# This should probably be in WeightInitializers.jl
+calculate_gain(_, __) = 1.0f0
+calculate_gain(::typeof(identity), _) = 1.0f0
+calculate_gain(::typeof(NNlib.sigmoid), _) = 1.0f0
+calculate_gain(::typeof(NNlib.sigmoid_fast), _) = 1.0f0
+calculate_gain(::typeof(NNlib.relu), _) = 2.0f0
+calculate_gain(::typeof(tanh), _) = 5.0f0 / 3.0f0
+calculate_gain(::typeof(NNlib.tanh_fast), _) = 5.0f0 / 3.0f0
+function calculate_gain(::typeof(NNlib.leakyrelu), ::Nothing)
+    return calculate_gain(NNlib.leakyrelu, 0.1f0)
+end
+calculate_gain(::typeof(NNlib.leakyrelu), x) = typeof(x)(√(2 / (1 + x^2)))
+calculate_gain(::typeof(NNlib.selu), _) = 3.0f0 / 4
 
-    function named_tuple_layers(layers::Vararg{AbstractLuxLayer, N}) where {N}
-        return NamedTuple{ntuple(i -> Symbol(:layer_, i), N)}(layers)
-    end
-
-    make_abstract_matrix(x::AbstractVector) = reshape(x, :, 1)
-    make_abstract_matrix(x::SVector{L, T}) where {L, T} = SMatrix{L, 1, T}(x)
-    make_abstract_matrix(x::AbstractMatrix) = x
-    make_abstract_matrix(x::AbstractArray{T, N}) where {T, N} = reshape(x, Base.size(x, 1), :)
-
-    matrix_to_array(x::AbstractMatrix, ::AbstractVector) = vec(x)
-    matrix_to_array(x::SMatrix{L, 1, T}, ::AbstractVector) where {L, T} = SVector{L, T}(x)
-    matrix_to_array(x::AbstractMatrix, ::AbstractMatrix) = x
-    matrix_to_array(x::AbstractMatrix, y::AbstractArray) = reshape(x, :, size(y)[2:end]...)
-
-    function to_rarray end
-    function promote_to end
-
-    # This should probably be in WeightInitializers.jl
-    calculate_gain(_, __) = 1.0f0
-    calculate_gain(::typeof(identity), _) = 1.0f0
-    calculate_gain(::typeof(NNlib.sigmoid), _) = 1.0f0
-    calculate_gain(::typeof(NNlib.sigmoid_fast), _) = 1.0f0
-    calculate_gain(::typeof(NNlib.relu), _) = 2.0f0
-    calculate_gain(::typeof(tanh), _) = 5.0f0 / 3.0f0
-    calculate_gain(::typeof(NNlib.tanh_fast), _) = 5.0f0 / 3.0f0
-    function calculate_gain(::typeof(NNlib.leakyrelu), ::Nothing)
-        return calculate_gain(NNlib.leakyrelu, 0.1f0)
-    end
-    calculate_gain(::typeof(NNlib.leakyrelu), x) = typeof(x)(√(2 / (1 + x^2)))
-    calculate_gain(::typeof(NNlib.selu), _) = 3.0f0 / 4
-
-    recursive_unthunk(x) = Functors.fmap(CRC.unthunk, x; exclude = MLDataDevices.isleaf)
+recursive_unthunk(x) = Functors.fmap(CRC.unthunk, x; exclude=MLDataDevices.isleaf)
 
 end
 
-using .Utils: Utils, BoolType, IntegerType, SymbolType, make_abstract_matrix,
-    matrix_to_array, init_trainable_rnn_hidden_state, init_rnn_hidden_state
+using .Utils:
+    Utils,
+    BoolType,
+    IntegerType,
+    SymbolType,
+    make_abstract_matrix,
+    matrix_to_array,
+    init_trainable_rnn_hidden_state,
+    init_rnn_hidden_state
 
 const safe_reverse = Utils.reverse
 const safe_vec = Utils.vec

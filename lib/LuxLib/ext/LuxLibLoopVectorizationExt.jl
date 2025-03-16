@@ -14,8 +14,8 @@ Utils.can_loopvec_args_check(::True, args...) = LoopVectorization.check_args(arg
 for serial in (true, false)
     opname = serial ? :serial_matmul_loopvec! : :matmul_loopvec!
     @eval @inline function LuxLib.Impl.$(opname)(
-            C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, α::Number, β::Number
-        )
+        C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, α::Number, β::Number
+    )
         return if !iszero(β) # Special case this because Base.FastMath.mul_fast(NaN, false) = NaN
             @turbo thread = $(!serial) for K in indices((C, B), 2), J in indices((C, A), 1)
                 Cⱼₖ = zero(eltype(C))
@@ -37,8 +37,8 @@ for serial in (true, false)
 end
 
 @inline function LuxLib.Impl.matmuladd_loopvec!(
-        C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector
-    )
+    C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector
+)
     @tturbo for K in indices((C, B), 2), J in indices((C, A), 1)
         Cⱼₖ = zero(eltype(C))
         for I in indices((A, B), (2, 1))
@@ -46,14 +46,17 @@ end
         end
         C[J, K] = bias[J] + Cⱼₖ
     end
-    return
+    return nothing
 end
 
 # batched matmul
 function LuxLib.Impl.batched_matmul_loopvec_impl!(
-        z::AbstractArray{zT, 3}, x::AbstractArray{xT, 3},
-        y::AbstractArray{yT, 3}, α::Number = true, β::Number = false
-    ) where {zT, xT, yT}
+    z::AbstractArray{zT,3},
+    x::AbstractArray{xT,3},
+    y::AbstractArray{yT,3},
+    α::Number=true,
+    β::Number=false,
+) where {zT,xT,yT}
     return if size(x, 3) == size(y, 3)
         @batch for L in axes(z, 3)
             LuxLib.Impl.serial_matmul_loopvec!(

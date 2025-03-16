@@ -6,12 +6,24 @@ using DispatchDoctor: allow_unstable
 using Functors: Functors
 using MLDataDevices: cpu_device, gpu_device, get_device, get_device_type, AbstractGPUDevice
 using Optimisers: Optimisers
-using Test: Test, Error, Broken, Pass, Fail, get_testset, @testset, @test, @test_skip,
-    @test_broken, eval_test, Threw, Returned
+using Test:
+    Test,
+    Error,
+    Broken,
+    Pass,
+    Fail,
+    get_testset,
+    @testset,
+    @test,
+    @test_skip,
+    @test_broken,
+    eval_test,
+    Threw,
+    Returned
 
 # Autodiff
-using ADTypes: AutoEnzyme, AutoFiniteDiff, AutoTracker, AutoForwardDiff, AutoReverseDiff,
-    AutoZygote
+using ADTypes:
+    AutoEnzyme, AutoFiniteDiff, AutoTracker, AutoForwardDiff, AutoReverseDiff, AutoZygote
 using ChainRulesCore: ChainRulesCore
 using FiniteDiff: FiniteDiff
 using ForwardDiff: ForwardDiff

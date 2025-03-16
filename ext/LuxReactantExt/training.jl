@@ -4,8 +4,8 @@ mutable struct StatsAndNewStateWrapper
 end
 
 function wrapped_objective_function(
-        fn::F, model, ps, data, cache::StatsAndNewStateWrapper
-    ) where {F}
+    fn::F, model, ps, data, cache::StatsAndNewStateWrapper
+) where {F}
     loss, stₙ, stats = fn(model, ps, cache.st, data)
     cache.stats = stats
     cache.st = stₙ
@@ -16,8 +16,12 @@ function compute_gradients_internal(objective_function::F, model, data, ps, st) 
     st_stats_wrapper = StatsAndNewStateWrapper(nothing, st)
     res = Enzyme.gradient(
         Enzyme.set_abi(Enzyme.ReverseWithPrimal, Reactant.ReactantABI),
-        Const(wrapped_objective_function), Const(objective_function),
-        Const(model), ps, Const(data), Const(st_stats_wrapper)
+        Const(wrapped_objective_function),
+        Const(objective_function),
+        Const(model),
+        ps,
+        Const(data),
+        Const(st_stats_wrapper),
     )
     loss, dps = res.val, res.derivs[3]
     return dps, loss, st_stats_wrapper.stats, st_stats_wrapper.st
@@ -32,16 +36,19 @@ function maybe_dump_to_mlir_file!(f::F, args...) where {F}
         close(io)
         @info "HLO dumped to $fname"
     end
-    return
+    return nothing
 end
 
 function Lux.Training.compute_gradients_impl(
-        backend::ReactantBackend, objective_function::F,
-        data, ts::Training.TrainState
-    ) where {F}
+    backend::ReactantBackend, objective_function::F, data, ts::Training.TrainState
+) where {F}
     maybe_dump_to_mlir_file!(
-        compute_gradients_internal, objective_function, ts.model,
-        data, ts.parameters, ts.states
+        compute_gradients_internal,
+        objective_function,
+        ts.model,
+        data,
+        ts.parameters,
+        ts.states,
     )
 
     compiled_gradient_function = @compile compute_gradients_internal(
@@ -60,9 +67,11 @@ function Lux.Training.compute_gradients_impl(
 end
 
 function Lux.Training.compute_gradients_impl(
-        ::ReactantBackend, obj_fn::F, data,
-        ts::Training.TrainState{<:TrainingBackendCache{<:ReactantBackend}, F}
-    ) where {F}
+    ::ReactantBackend,
+    obj_fn::F,
+    data,
+    ts::Training.TrainState{<:TrainingBackendCache{<:ReactantBackend},F},
+) where {F}
     grads, loss, stats, st = ts.cache.extras.compiled_gradient_function(
         obj_fn, ts.model, data, ts.parameters, ts.states
     )
@@ -78,14 +87,13 @@ for inplace in ("!", "")
 
     # Ideally users never hit this dispatch but it is still good to have as a fallback
     @eval function Lux.Training.$(apply_gradients_fn)(
-            ts::Training.TrainState{<:TrainingBackendCache{<:ReactantBackend}}, grads
-        )
+        ts::Training.TrainState{<:TrainingBackendCache{<:ReactantBackend}}, grads
+    )
         if hasfield(typeof(ts.cache.extras), :update_function)
             update_function = ts.cache.extras.update_function
         else
             maybe_dump_to_mlir_file!(
-                update_function, ts.optimizer_state, ts.parameters,
-                grads
+                update_function, ts.optimizer_state, ts.parameters, grads
             )
 
             update_function = @compile Optimisers.$(update_fn)(
@@ -103,22 +111,37 @@ for inplace in ("!", "")
 
     # XXX: recompile with a warning if new input types are used
     @eval function Lux.Training.$(fname)(
-            backend::ReactantBackend, objective_function::F,
-            data, ts::Training.TrainState
-        ) where {F}
+        backend::ReactantBackend, objective_function::F, data, ts::Training.TrainState
+    ) where {F}
         maybe_dump_to_mlir_file!(
-            $(internal_fn), objective_function, ts.model, data,
-            ts.parameters, ts.states, ts.optimizer_state, backend.return_gradients
+            $(internal_fn),
+            objective_function,
+            ts.model,
+            data,
+            ts.parameters,
+            ts.states,
+            ts.optimizer_state,
+            backend.return_gradients,
         )
 
         compiled_grad_and_step_function = @compile $(internal_fn)(
-            objective_function, ts.model, data, ts.parameters, ts.states,
-            ts.optimizer_state, backend.return_gradients
+            objective_function,
+            ts.model,
+            data,
+            ts.parameters,
+            ts.states,
+            ts.optimizer_state,
+            backend.return_gradients,
         )
 
         grads, ps, loss, stats, st, opt_state = compiled_grad_and_step_function(
-            objective_function, ts.model, data, ts.parameters, ts.states,
-            ts.optimizer_state, backend.return_gradients
+            objective_function,
+            ts.model,
+            data,
+            ts.parameters,
+            ts.states,
+            ts.optimizer_state,
+            backend.return_gradients,
         )
 
         cache = TrainingBackendCache(
@@ -135,12 +158,19 @@ for inplace in ("!", "")
     end
 
     @eval function Lux.Training.$(fname)(
-            backend::ReactantBackend, obj_fn::F, data,
-            ts::Training.TrainState{<:TrainingBackendCache{<:ReactantBackend}, F}
-        ) where {F}
+        backend::ReactantBackend,
+        obj_fn::F,
+        data,
+        ts::Training.TrainState{<:TrainingBackendCache{<:ReactantBackend},F},
+    ) where {F}
         grads, ps, loss, stats, st, opt_state = ts.cache.extras.compiled_grad_and_step_function(
-            obj_fn, ts.model, data, ts.parameters, ts.states,
-            ts.optimizer_state, backend.return_gradients
+            obj_fn,
+            ts.model,
+            data,
+            ts.parameters,
+            ts.states,
+            ts.optimizer_state,
+            backend.return_gradients,
         )
 
         @set! ts.states = st
@@ -153,8 +183,8 @@ for inplace in ("!", "")
 
     # XXX: Inplace version not actually inplace
     @eval function $(internal_fn)(
-            objective_function::F, model, data, ps, st, opt_state, ::False
-        ) where {F}
+        objective_function::F, model, data, ps, st, opt_state, ::False
+    ) where {F}
         dps, loss, stats, stₙ = compute_gradients_internal(
             objective_function, model, data, ps, st
         )
@@ -163,8 +193,8 @@ for inplace in ("!", "")
     end
 
     @eval function $(internal_fn)(
-            objective_function::F, model, data, ps, st, opt_state, ::True
-        ) where {F}
+        objective_function::F, model, data, ps, st, opt_state, ::True
+    ) where {F}
         dps, loss, stats, stₙ = compute_gradients_internal(
             objective_function, model, data, ps, st
         )

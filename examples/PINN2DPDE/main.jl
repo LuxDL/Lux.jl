@@ -10,10 +10,18 @@
 
 # ## Package Imports
 
-using Lux, Optimisers, Random, Printf, Statistics, MLUtils, OnlineStats, CairoMakie,
-    Reactant, Enzyme
+using Lux,
+    Optimisers,
+    Random,
+    Printf,
+    Statistics,
+    MLUtils,
+    OnlineStats,
+    CairoMakie,
+    Reactant,
+    Enzyme
 
-const xdev = reactant_device(; force = true)
+const xdev = reactant_device(; force=true)
 const cdev = cpu_device()
 
 # ## Problem Definition
@@ -28,7 +36,7 @@ const cdev = cpu_device()
 # a wrapper over the 3 networks, so that we can train them using
 # [`Training.TrainState`](@ref).
 
-struct PINN{U, V, W} <: Lux.AbstractLuxContainerLayer{(:u, :v, :w)}
+struct PINN{U,V,W} <: Lux.AbstractLuxContainerLayer{(:u, :v, :w)}
     u::U
     v::V
     w::W
@@ -39,15 +47,15 @@ function create_mlp(act, hidden_dims)
         Dense(3 => hidden_dims, act),
         Dense(hidden_dims => hidden_dims, act),
         Dense(hidden_dims => hidden_dims, act),
-        Dense(hidden_dims => 1)
+        Dense(hidden_dims => 1),
     )
 end
 
-function PINN(; hidden_dims::Int = 32)
+function PINN(; hidden_dims::Int=32)
     return PINN(
         create_mlp(tanh, hidden_dims),
         create_mlp(tanh, hidden_dims),
-        create_mlp(tanh, hidden_dims)
+        create_mlp(tanh, hidden_dims),
     )
 end
 
@@ -57,8 +65,8 @@ end
 # will use the following loss function
 
 @views function physics_informed_loss_function(
-        u::StatefulLuxLayer, v::StatefulLuxLayer, w::StatefulLuxLayer, xyt::AbstractArray
-    )
+    u::StatefulLuxLayer, v::StatefulLuxLayer, w::StatefulLuxLayer, xyt::AbstractArray
+)
     ∂u_∂xyt = Enzyme.gradient(Enzyme.Reverse, sum ∘ u, xyt)[1]
     ∂u_∂x, ∂u_∂y, ∂u_∂t = ∂u_∂xyt[1:1, :], ∂u_∂xyt[2:2, :], ∂u_∂xyt[3:3, :]
     ∂v_∂x = Enzyme.gradient(Enzyme.Reverse, sum ∘ v, xyt)[1][1:1, :]
@@ -67,8 +75,8 @@ end
     w_xyt = w(xyt)
     return (
         mean(abs2, ∂u_∂t .- ∂v_∂x .- ∂w_∂y) +
-            mean(abs2, v_xyt .- ∂u_∂x) +
-            mean(abs2, w_xyt .- ∂u_∂y)
+        mean(abs2, v_xyt .- ∂u_∂x) +
+        mean(abs2, w_xyt .- ∂u_∂y)
     )
 end
 
@@ -87,9 +95,7 @@ function loss_function(model, ps, st, (xyt, target_data, xyt_bc, target_bc))
     bc_loss = mse_loss_function(u_net, target_bc, xyt_bc)
     loss = physics_loss + data_loss + bc_loss
     return (
-        loss,
-        (; u = u_net.st, v = v_net.st, w = w_net.st),
-        (; physics_loss, data_loss, bc_loss),
+        loss, (; u=u_net.st, v=v_net.st, w=w_net.st), (; physics_loss, data_loss, bc_loss)
     )
 end
 
@@ -106,23 +112,23 @@ analytical_solution(xyt) = analytical_solution(xyt[1, :], xyt[2, :], xyt[3, :])
 begin
     grid_len = 16
 
-    grid = range(0.0f0, 2.0f0; length = grid_len)
+    grid = range(0.0f0, 2.0f0; length=grid_len)
     xyt = stack([[elem...] for elem in vec(collect(Iterators.product(grid, grid, grid)))])
 
     target_data = reshape(analytical_solution(xyt), 1, :)
 
     bc_len = 512
 
-    x = collect(range(0.0f0, 2.0f0; length = bc_len))
-    y = collect(range(0.0f0, 2.0f0; length = bc_len))
-    t = collect(range(0.0f0, 2.0f0; length = bc_len))
+    x = collect(range(0.0f0, 2.0f0; length=bc_len))
+    y = collect(range(0.0f0, 2.0f0; length=bc_len))
+    t = collect(range(0.0f0, 2.0f0; length=bc_len))
 
     xyt_bc = hcat(
-        stack((x, y, zeros(Float32, bc_len)); dims = 1),
-        stack((zeros(Float32, bc_len), y, t); dims = 1),
-        stack((ones(Float32, bc_len) .* 2, y, t); dims = 1),
-        stack((x, zeros(Float32, bc_len), t); dims = 1),
-        stack((x, ones(Float32, bc_len) .* 2, t); dims = 1)
+        stack((x, y, zeros(Float32, bc_len)); dims=1),
+        stack((zeros(Float32, bc_len), y, t); dims=1),
+        stack((ones(Float32, bc_len) .* 2, y, t); dims=1),
+        stack((x, zeros(Float32, bc_len), t); dims=1),
+        stack((x, ones(Float32, bc_len) .* 2, t); dims=1),
     )
     target_bc = reshape(analytical_solution(xyt_bc), 1, :)
 
@@ -140,39 +146,42 @@ nothing #hide
 # ## Training
 
 function train_model(
-        xyt, target_data, xyt_bc, target_bc; seed::Int = 0,
-        maxiters::Int = 50000, hidden_dims::Int = 32
-    )
+    xyt,
+    target_data,
+    xyt_bc,
+    target_bc;
+    seed::Int=0,
+    maxiters::Int=50000,
+    hidden_dims::Int=32,
+)
     rng = Random.default_rng()
     Random.seed!(rng, seed)
 
     pinn = PINN(; hidden_dims)
-    ps, st = Lux.setup(rng, pinn) |> xdev
+    ps, st = xdev(Lux.setup(rng, pinn))
 
-    bc_dataloader = DataLoader(
-        (xyt_bc, target_bc); batchsize = 32, shuffle = true, partial = false
-    ) |> xdev
-    pde_dataloader = DataLoader(
-        (xyt, target_data); batchsize = 32, shuffle = true, partial = false
-    ) |> xdev
+    bc_dataloader =
+        xdev(DataLoader((xyt_bc, target_bc); batchsize=32, shuffle=true, partial=false))
+    pde_dataloader =
+        xdev(DataLoader((xyt, target_data); batchsize=32, shuffle=true, partial=false))
 
     train_state = Training.TrainState(pinn, ps, st, Adam(0.05f0))
     lr = i -> i < 5000 ? 0.05f0 : (i < 10000 ? 0.005f0 : 0.0005f0)
 
     total_loss_tracker, physics_loss_tracker, data_loss_tracker, bc_loss_tracker = ntuple(
-        _ -> OnlineStats.CircBuff(Float32, 32; rev = true), 4
+        _ -> OnlineStats.CircBuff(Float32, 32; rev=true), 4
     )
 
     iter = 1
-    for ((xyt_batch, target_data_batch), (xyt_bc_batch, target_bc_batch)) in zip(
-            Iterators.cycle(pde_dataloader), Iterators.cycle(bc_dataloader)
-        )
+    for ((xyt_batch, target_data_batch), (xyt_bc_batch, target_bc_batch)) in
+        zip(Iterators.cycle(pde_dataloader), Iterators.cycle(bc_dataloader))
         Optimisers.adjust!(train_state, lr(iter))
 
         _, loss, stats, train_state = Training.single_train_step!(
-            AutoEnzyme(), loss_function,
+            AutoEnzyme(),
+            loss_function,
             (xyt_batch, target_data_batch, xyt_bc_batch, target_bc_batch),
-            train_state
+            train_state,
         )
 
         fit!(total_loss_tracker, Float32(loss))
@@ -220,14 +229,14 @@ u_pred = u_pred .* (max_pde_val - min_pde_val) .+ min_pde_val
 
 begin
     fig = Figure()
-    ax = CairoMakie.Axis(fig[1, 1]; xlabel = "x", ylabel = "y")
+    ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
     errs = [abs.(u_pred[:, :, i] .- u_real[:, :, i]) for i in 1:length(ts)]
-    Colorbar(fig[1, 2]; limits = extrema(stack(errs)))
+    Colorbar(fig[1, 2]; limits=extrema(stack(errs)))
 
-    CairoMakie.record(fig, "pinn_nested_ad.gif", 1:length(ts); framerate = 10) do i
+    CairoMakie.record(fig, "pinn_nested_ad.gif", 1:length(ts); framerate=10) do i
         ax.title = "Abs. Predictor Error | Time: $(ts[i])"
         err = errs[i]
-        contour!(ax, xs, ys, err; levels = 10, linewidth = 2)
+        contour!(ax, xs, ys, err; levels=10, linewidth=2)
         heatmap!(ax, xs, ys, err)
         return fig
     end

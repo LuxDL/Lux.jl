@@ -1,4 +1,5 @@
-@testitem "Compiled Loss Functions" tags = [:reactant] setup = [SharedTestSetup] skip = :(Sys.iswindows()) begin
+@testitem "Compiled Loss Functions" tags = [:reactant] setup = [SharedTestSetup] skip =
+    :(Sys.iswindows()) begin
     using Reactant, Lux, OneHotArrays
 
     rng = StableRNG(123)
@@ -37,8 +38,8 @@
 
             @testset for loss in ("MSE", "MAE", "Huber")
                 loss_mean = eval(Symbol(loss * "Loss"))()
-                loss_sum = eval(Symbol(loss * "Loss"))(; agg = sum)
-                loss_sum2 = eval(Symbol(loss * "Loss"))(; agg = (args...) -> sum(args...))
+                loss_sum = eval(Symbol(loss * "Loss"))(; agg=sum)
+                loss_sum2 = eval(Symbol(loss * "Loss"))(; agg=(args...) -> sum(args...))
 
                 @test loss_mean(ŷ, y) ≈ @jit(loss_mean(ŷ_ra, y_ra))
                 @test loss_sum(ŷ, y) ≈ @jit(loss_sum(ŷ_ra, y_ra))
@@ -58,8 +59,8 @@
         end
 
         @testset "Classification Loss" begin
-            y = onehotbatch([1, 1, 0, 0], 0:1) |> Array
-            ŷ = [0.1 0.9; 0.9 0.1; 0.9 0.1; 0.1 0.9]' |> Array
+            y = Array(onehotbatch([1, 1, 0, 0], 0:1))
+            ŷ = Array([0.1 0.9; 0.9 0.1; 0.9 0.1; 0.1 0.9]')
 
             y_ra = Reactant.to_rarray(y)
             ŷ_ra = Reactant.to_rarray(ŷ)
@@ -68,14 +69,14 @@
                 celoss = CrossEntropyLoss()
                 @test celoss(ŷ, y) ≈ @jit(celoss(ŷ_ra, y_ra))
 
-                celoss_ls = CrossEntropyLoss(; label_smoothing = 0.1)
+                celoss_ls = CrossEntropyLoss(; label_smoothing=0.1)
                 @test celoss_ls(ŷ, y) ≈ @jit(celoss_ls(ŷ_ra, y_ra))
 
-                celoss_lp = CrossEntropyLoss(; logits = Val(true))
+                celoss_lp = CrossEntropyLoss(; logits=Val(true))
                 logit_celoss_lp = (ŷ, y) -> celoss_lp(log.(ŷ), y)
                 @test logit_celoss_lp(ŷ, y) ≈ @jit(logit_celoss_lp(ŷ_ra, y_ra))
 
-                celoss_lp_ls = CrossEntropyLoss(; logits = Val(true), label_smoothing = 0.1)
+                celoss_lp_ls = CrossEntropyLoss(; logits=Val(true), label_smoothing=0.1)
                 logit_celoss_lp_ls = (ŷ, y) -> celoss_lp_ls(log.(ŷ), y)
                 @test logit_celoss_lp_ls(ŷ, y) ≈ @jit(logit_celoss_lp_ls(ŷ_ra, y_ra))
             end
@@ -84,15 +85,15 @@
                 bceloss = BinaryCrossEntropyLoss()
                 @test bceloss(ŷ, y) ≈ @jit(bceloss(ŷ_ra, y_ra))
 
-                bceloss_ls = BinaryCrossEntropyLoss(; label_smoothing = 0.1)
+                bceloss_ls = BinaryCrossEntropyLoss(; label_smoothing=0.1)
                 @test bceloss_ls(ŷ, y) ≈ @jit(bceloss_ls(ŷ_ra, y_ra))
 
-                bceloss_lp = BinaryCrossEntropyLoss(; logits = Val(true))
+                bceloss_lp = BinaryCrossEntropyLoss(; logits=Val(true))
                 logit_bceloss_lp = (ŷ, y) -> bceloss_lp(log.(ŷ), y)
                 @test logit_bceloss_lp(ŷ, y) ≈ @jit(logit_bceloss_lp(ŷ_ra, y_ra))
 
                 bceloss_lp_ls = BinaryCrossEntropyLoss(;
-                    logits = Val(true), label_smoothing = 0.1
+                    logits=Val(true), label_smoothing=0.1
                 )
                 logit_bceloss_lp_ls = (ŷ, y) -> bceloss_lp_ls(log.(ŷ), y)
                 @test logit_bceloss_lp_ls(ŷ, y) ≈ @jit(logit_bceloss_lp_ls(ŷ_ra, y_ra))
@@ -121,7 +122,7 @@
                     0 1 0 1 0
                     0 0 1 0 0
                 ]
-                ŷ = softmax(reshape(-7:7, 3, 5) .* 1.0f0) |> Array
+                ŷ = Array(softmax(reshape(-7:7, 3, 5) .* 1.0f0))
 
                 y_ra = Reactant.to_rarray(y)
                 ŷ_ra = Reactant.to_rarray(ŷ)
@@ -153,7 +154,7 @@
                 hl = HingeLoss()
                 @test hl(ŷ, y) ≈ @jit(hl(ŷ_ra, y_ra))
 
-                hl = HingeLoss(; agg = mean)
+                hl = HingeLoss(; agg=mean)
                 @test hl(ŷ, y) ≈ @jit(hl(ŷ_ra, y_ra))
             end
 
@@ -167,7 +168,7 @@
                 hl = SquaredHingeLoss()
                 @test hl(ŷ, y) ≈ @jit(hl(ŷ_ra, y_ra))
 
-                hl = SquaredHingeLoss(; agg = mean)
+                hl = SquaredHingeLoss(; agg=mean)
                 @test hl(ŷ, y) ≈ @jit(hl(ŷ_ra, y_ra))
             end
 
@@ -181,7 +182,7 @@
                 pl = PoissonLoss()
                 @test pl(ŷ, y) ≈ @jit(pl(ŷ_ra, y_ra))
 
-                pl = PoissonLoss(; agg = mean)
+                pl = PoissonLoss(; agg=mean)
                 @test pl(ŷ, y) ≈ @jit(pl(ŷ_ra, y_ra))
             end
 
@@ -195,7 +196,7 @@
                 dl = DiceCoeffLoss()
                 @test dl(ŷ, y) ≈ @jit(dl(ŷ_ra, y_ra))
 
-                dl = DiceCoeffLoss(; agg = mean)
+                dl = DiceCoeffLoss(; agg=mean)
                 @test dl(ŷ, y) ≈ @jit(dl(ŷ_ra, y_ra))
             end
 
@@ -217,7 +218,7 @@
                 sl = SiameseContrastiveLoss()
                 @test sl(ŷ, y) ≈ @jit(sl(ŷ_ra, y_ra))
 
-                sl = SiameseContrastiveLoss(; agg = mean)
+                sl = SiameseContrastiveLoss(; agg=mean)
                 @test sl(ŷ, y) ≈ @jit(sl(ŷ_ra, y_ra))
             end
         end

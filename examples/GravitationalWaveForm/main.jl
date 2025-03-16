@@ -7,8 +7,15 @@
 
 # ## Package Imports
 
-using Lux, ComponentArrays, LineSearches, OrdinaryDiffEqLowOrderRK, Optimization,
-    OptimizationOptimJL, Printf, Random, SciMLSensitivity
+using Lux,
+    ComponentArrays,
+    LineSearches,
+    OrdinaryDiffEqLowOrderRK,
+    Optimization,
+    OptimizationOptimJL,
+    Printf,
+    Random,
+    SciMLSensitivity
 using CairoMakie
 
 # ## Define some Utility Functions
@@ -32,7 +39,7 @@ end
 # Next we define a function to perform the change of variables:
 # $$(\chi(t),\phi(t)) \mapsto (x(t),y(t))$$
 
-@views function soln2orbit(soln, model_params = nothing)
+@views function soln2orbit(soln, model_params=nothing)
     @assert size(soln, 1) ∈ [2, 4] "size(soln,1) must be either 2 or 4"
 
     if size(soln, 1) == 2
@@ -78,7 +85,7 @@ end
 
 # Now we define a function to compute the trace-free moment tensor from the orbit
 
-function orbit2tensor(orbit, component, mass = 1)
+function orbit2tensor(orbit, component, mass=1)
     x = orbit[1, :]
     y = orbit[2, :]
 
@@ -98,13 +105,13 @@ function orbit2tensor(orbit, component, mass = 1)
     return mass .* tmp
 end
 
-function h_22_quadrupole_components(dt, orbit, component, mass = 1)
+function h_22_quadrupole_components(dt, orbit, component, mass=1)
     mtensor = orbit2tensor(orbit, component, mass)
     mtensor_ddot = d2_dt2(mtensor, dt)
     return 2 * mtensor_ddot
 end
 
-function h_22_quadrupole(dt, orbit, mass = 1)
+function h_22_quadrupole(dt, orbit, mass=1)
     h11 = h_22_quadrupole_components(dt, orbit, (1, 1), mass)
     h22 = h_22_quadrupole_components(dt, orbit, (2, 2), mass)
     h12 = h_22_quadrupole_components(dt, orbit, (1, 2), mass)
@@ -144,7 +151,7 @@ function h_22_strain_two_body(dt::T, orbit1, mass1, orbit2, mass2) where {T}
     return scaling_const * h₊, -scaling_const * hₓ
 end
 
-function compute_waveform(dt::T, soln, mass_ratio, model_params = nothing) where {T}
+function compute_waveform(dt::T, soln, mass_ratio, model_params=nothing) where {T}
     @assert mass_ratio ≤ 1 "mass_ratio must be <= 1"
     @assert mass_ratio ≥ 0 "mass_ratio must be non-negative"
 
@@ -187,7 +194,7 @@ mass_ratio = 0.0         # test particle
 u0 = Float64[π, 0.0]     # initial conditions
 datasize = 250
 tspan = (0.0f0, 6.0f4)   # timespace for GW waveform
-tsteps = range(tspan[1], tspan[2]; length = datasize)  # time at each timestep
+tsteps = range(tspan[1], tspan[2]; length=datasize)  # time at each timestep
 dt_data = tsteps[2] - tsteps[1]
 dt = 100.0
 const ode_model_params = [100.0, 1.0, 0.5]; # p, M, e
@@ -195,15 +202,15 @@ const ode_model_params = [100.0, 1.0, 0.5]; # p, M, e
 # Let's simulate the true model and plot the results using `OrdinaryDiffEq.jl`
 
 prob = ODEProblem(RelativisticOrbitModel, u0, tspan, ode_model_params)
-soln = Array(solve(prob, RK4(); saveat = tsteps, dt, adaptive = false))
+soln = Array(solve(prob, RK4(); saveat=tsteps, dt, adaptive=false))
 waveform = first(compute_waveform(dt_data, soln, mass_ratio, ode_model_params))
 
 begin
     fig = Figure()
-    ax = CairoMakie.Axis(fig[1, 1]; xlabel = "Time", ylabel = "Waveform")
+    ax = CairoMakie.Axis(fig[1, 1]; xlabel="Time", ylabel="Waveform")
 
-    l = lines!(ax, tsteps, waveform; linewidth = 2, alpha = 0.75)
-    s = scatter!(ax, tsteps, waveform; marker = :circle, markersize = 12, alpha = 0.5)
+    l = lines!(ax, tsteps, waveform; linewidth=2, alpha=0.75)
+    s = scatter!(ax, tsteps, waveform; marker=:circle, markersize=12, alpha=0.5)
 
     axislegend(ax, [[l, s]], ["Waveform Data"])
 
@@ -223,16 +230,16 @@ end
 # `WeightInitializers.jl`,
 const nn = Chain(
     Base.Fix1(fast_activation, cos),
-    Dense(1 => 32, cos; init_weight = truncated_normal(; std = 1.0e-4), init_bias = zeros32),
-    Dense(32 => 32, cos; init_weight = truncated_normal(; std = 1.0e-4), init_bias = zeros32),
-    Dense(32 => 2; init_weight = truncated_normal(; std = 1.0e-4), init_bias = zeros32)
+    Dense(1 => 32, cos; init_weight=truncated_normal(; std=1.0e-4), init_bias=zeros32),
+    Dense(32 => 32, cos; init_weight=truncated_normal(; std=1.0e-4), init_bias=zeros32),
+    Dense(32 => 2; init_weight=truncated_normal(; std=1.0e-4), init_bias=zeros32),
 )
 ps, st = Lux.setup(Random.default_rng(), nn)
 
 # Similar to most DL frameworks, Lux defaults to using `Float32`, however, in this case we
 # need Float64
 
-const params = ComponentArray(ps |> f64)
+const params = ComponentArray(f64(ps))
 
 const nn_model = StatefulLuxLayer{true}(nn, nothing, st)
 
@@ -265,26 +272,28 @@ end
 # neural network parameters to simulate the model.
 
 prob_nn = ODEProblem(ODE_model, u0, tspan, params)
-soln_nn = Array(solve(prob_nn, RK4(); u0, p = params, saveat = tsteps, dt, adaptive = false))
+soln_nn = Array(solve(prob_nn, RK4(); u0, p=params, saveat=tsteps, dt, adaptive=false))
 waveform_nn = first(compute_waveform(dt_data, soln_nn, mass_ratio, ode_model_params))
 
 begin
     fig = Figure()
-    ax = CairoMakie.Axis(fig[1, 1]; xlabel = "Time", ylabel = "Waveform")
+    ax = CairoMakie.Axis(fig[1, 1]; xlabel="Time", ylabel="Waveform")
 
-    l1 = lines!(ax, tsteps, waveform; linewidth = 2, alpha = 0.75)
+    l1 = lines!(ax, tsteps, waveform; linewidth=2, alpha=0.75)
     s1 = scatter!(
-        ax, tsteps, waveform; marker = :circle, markersize = 12, alpha = 0.5, strokewidth = 2
+        ax, tsteps, waveform; marker=:circle, markersize=12, alpha=0.5, strokewidth=2
     )
 
-    l2 = lines!(ax, tsteps, waveform_nn; linewidth = 2, alpha = 0.75)
+    l2 = lines!(ax, tsteps, waveform_nn; linewidth=2, alpha=0.75)
     s2 = scatter!(
-        ax, tsteps, waveform_nn; marker = :circle, markersize = 12, alpha = 0.5, strokewidth = 2
+        ax, tsteps, waveform_nn; marker=:circle, markersize=12, alpha=0.5, strokewidth=2
     )
 
     axislegend(
-        ax, [[l1, s1], [l2, s2]],
-        ["Waveform Data", "Waveform Neural Net (Untrained)"]; position = :lb
+        ax,
+        [[l1, s1], [l2, s2]],
+        ["Waveform Data", "Waveform Neural Net (Untrained)"];
+        position=:lb,
     )
 
     fig
@@ -297,7 +306,7 @@ end
 const mseloss = MSELoss()
 
 function loss(θ)
-    pred = Array(solve(prob_nn, RK4(); u0, p = θ, saveat = tsteps, dt, adaptive = false))
+    pred = Array(solve(prob_nn, RK4(); u0, p=θ, saveat=tsteps, dt, adaptive=false))
     pred_waveform = first(compute_waveform(dt_data, pred, mass_ratio, ode_model_params))
     return mseloss(pred_waveform, waveform)
 end
@@ -323,8 +332,10 @@ adtype = Optimization.AutoZygote()
 optf = Optimization.OptimizationFunction((x, p) -> loss(x), adtype)
 optprob = Optimization.OptimizationProblem(optf, params)
 res = Optimization.solve(
-    optprob, BFGS(; initial_stepnorm = 0.01, linesearch = LineSearches.BackTracking());
-    callback, maxiters = 1000
+    optprob,
+    BFGS(; initial_stepnorm=0.01, linesearch=LineSearches.BackTracking());
+    callback,
+    maxiters=1000,
 )
 
 # ## Visualizing the Results
@@ -333,10 +344,10 @@ res = Optimization.solve(
 
 begin
     fig = Figure()
-    ax = CairoMakie.Axis(fig[1, 1]; xlabel = "Iteration", ylabel = "Loss")
+    ax = CairoMakie.Axis(fig[1, 1]; xlabel="Iteration", ylabel="Loss")
 
-    lines!(ax, losses; linewidth = 4, alpha = 0.75)
-    scatter!(ax, 1:length(losses), losses; marker = :circle, markersize = 12, strokewidth = 2)
+    lines!(ax, losses; linewidth=4, alpha=0.75)
+    scatter!(ax, 1:length(losses), losses; marker=:circle, markersize=12, strokewidth=2)
 
     fig
 end
@@ -344,37 +355,41 @@ end
 # Finally let us visualize the results
 
 prob_nn = ODEProblem(ODE_model, u0, tspan, res.u)
-soln_nn = Array(solve(prob_nn, RK4(); u0, p = res.u, saveat = tsteps, dt, adaptive = false))
+soln_nn = Array(solve(prob_nn, RK4(); u0, p=res.u, saveat=tsteps, dt, adaptive=false))
 waveform_nn_trained = first(
-    compute_waveform(
-        dt_data, soln_nn, mass_ratio, ode_model_params
-    )
+    compute_waveform(dt_data, soln_nn, mass_ratio, ode_model_params)
 )
 
 begin
     fig = Figure()
-    ax = CairoMakie.Axis(fig[1, 1]; xlabel = "Time", ylabel = "Waveform")
+    ax = CairoMakie.Axis(fig[1, 1]; xlabel="Time", ylabel="Waveform")
 
-    l1 = lines!(ax, tsteps, waveform; linewidth = 2, alpha = 0.75)
+    l1 = lines!(ax, tsteps, waveform; linewidth=2, alpha=0.75)
     s1 = scatter!(
-        ax, tsteps, waveform; marker = :circle, alpha = 0.5, strokewidth = 2, markersize = 12
+        ax, tsteps, waveform; marker=:circle, alpha=0.5, strokewidth=2, markersize=12
     )
 
-    l2 = lines!(ax, tsteps, waveform_nn; linewidth = 2, alpha = 0.75)
+    l2 = lines!(ax, tsteps, waveform_nn; linewidth=2, alpha=0.75)
     s2 = scatter!(
-        ax, tsteps, waveform_nn; marker = :circle, alpha = 0.5, strokewidth = 2, markersize = 12
+        ax, tsteps, waveform_nn; marker=:circle, alpha=0.5, strokewidth=2, markersize=12
     )
 
-    l3 = lines!(ax, tsteps, waveform_nn_trained; linewidth = 2, alpha = 0.75)
+    l3 = lines!(ax, tsteps, waveform_nn_trained; linewidth=2, alpha=0.75)
     s3 = scatter!(
-        ax, tsteps, waveform_nn_trained; marker = :circle,
-        alpha = 0.5, strokewidth = 2, markersize = 12
+        ax,
+        tsteps,
+        waveform_nn_trained;
+        marker=:circle,
+        alpha=0.5,
+        strokewidth=2,
+        markersize=12,
     )
 
     axislegend(
-        ax, [[l1, s1], [l2, s2], [l3, s3]],
+        ax,
+        [[l1, s1], [l2, s2], [l3, s3]],
         ["Waveform Data", "Waveform Neural Net (Untrained)", "Waveform Neural Net"];
-        position = :lb
+        position=:lb,
     )
 
     fig

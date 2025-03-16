@@ -4,9 +4,20 @@ using Functors: fmap
 using Preferences: load_preference
 using Random: AbstractRNG
 
-using ..MLDataDevices: MLDataDevices, AbstractDevice, CPUDevice, CUDADevice, AMDGPUDevice,
-    MetalDevice, oneAPIDevice, ReactantDevice, UnknownDevice,
-    supported_gpu_backends, GPU_DEVICES, loaded, functional
+using ..MLDataDevices:
+    MLDataDevices,
+    AbstractDevice,
+    CPUDevice,
+    CUDADevice,
+    AMDGPUDevice,
+    MetalDevice,
+    oneAPIDevice,
+    ReactantDevice,
+    UnknownDevice,
+    supported_gpu_backends,
+    GPU_DEVICES,
+    loaded,
+    functional
 
 for dev in (CPUDevice, MetalDevice, oneAPIDevice)
     msg = "`device_id` is not applicable for `$dev`."
@@ -23,17 +34,21 @@ for name in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI)
     tpkg = name === :CPU ? "" : string(name)
     ldev = Symbol(name, :Device)
     @eval begin
-        get_device_name(::Union{$ldev, Type{<:$ldev}}) = $(string(name))
-        get_triggerpkg_name(::Union{$ldev, Type{<:$ldev}}) = $(tpkg)
+        get_device_name(::Union{$ldev,Type{<:$ldev}}) = $(string(name))
+        get_triggerpkg_name(::Union{$ldev,Type{<:$ldev}}) = $(tpkg)
     end
 end
 get_device_name(::ReactantDevice) = "XLA"
 get_triggerpkg_name(::ReactantDevice) = "Reactant"
 
 for T in (
-        CPUDevice, CUDADevice{Nothing}, AMDGPUDevice{Nothing},
-        MetalDevice, oneAPIDevice, ReactantDevice,
-    )
+    CPUDevice,
+    CUDADevice{Nothing},
+    AMDGPUDevice{Nothing},
+    MetalDevice,
+    oneAPIDevice,
+    ReactantDevice,
+)
     @eval get_device_id(::$(T)) = nothing
 end
 
@@ -93,14 +108,15 @@ function get_gpu_device(; force::Bool)
     end
 
     force && throw(DeviceSelectionException("GPU"))
-    Base.get_bool_env("MLDATADEVICES_SILENCE_WARN_NO_GPU", false) || @warn """No functional GPU backend found! Defaulting to CPU.
+    Base.get_bool_env("MLDATADEVICES_SILENCE_WARN_NO_GPU", false) ||
+        @warn """No functional GPU backend found! Defaulting to CPU.
 
-    1. If no GPU is available, nothing needs to be done. Set `MLDATADEVICES_SILENCE_WARN_NO_GPU=1` to silence this warning.
-    2. If GPU is available, load the corresponding trigger package.
-        a. `CUDA.jl` and `cuDNN.jl` (or just `LuxCUDA.jl`) for  NVIDIA CUDA Support.
-        b. `AMDGPU.jl` for AMD GPU ROCM Support.
-        c. `Metal.jl` for Apple Metal GPU Support. (Experimental)
-        d. `oneAPI.jl` for Intel oneAPI GPU Support. (Experimental)""" maxlog = 1
+1. If no GPU is available, nothing needs to be done. Set `MLDATADEVICES_SILENCE_WARN_NO_GPU=1` to silence this warning.
+2. If GPU is available, load the corresponding trigger package.
+    a. `CUDA.jl` and `cuDNN.jl` (or just `LuxCUDA.jl`) for  NVIDIA CUDA Support.
+    b. `AMDGPU.jl` for AMD GPU ROCM Support.
+    c. `Metal.jl` for Apple Metal GPU Support. (Experimental)
+    d. `oneAPI.jl` for Intel oneAPI GPU Support. (Experimental)""" maxlog = 1
     return CPUDevice
 end
 
@@ -117,11 +133,11 @@ function combine_devices(dev1::AbstractDevice, dev2::AbstractDevice)
 end
 
 combine_devices(::Type{Nothing}, ::Type{Nothing}) = Nothing
-combine_devices(::Type{T}, ::Type{T}) where {T <: AbstractDevice} = T
-combine_devices(::Type{T}, ::Type{Nothing}) where {T <: AbstractDevice} = T
-combine_devices(::Type{T}, ::Type{UnknownDevice}) where {T <: AbstractDevice} = T
-combine_devices(::Type{Nothing}, ::Type{T}) where {T <: AbstractDevice} = T
-combine_devices(::Type{UnknownDevice}, ::Type{T}) where {T <: AbstractDevice} = T
+combine_devices(::Type{T}, ::Type{T}) where {T<:AbstractDevice} = T
+combine_devices(::Type{T}, ::Type{Nothing}) where {T<:AbstractDevice} = T
+combine_devices(::Type{T}, ::Type{UnknownDevice}) where {T<:AbstractDevice} = T
+combine_devices(::Type{Nothing}, ::Type{T}) where {T<:AbstractDevice} = T
+combine_devices(::Type{UnknownDevice}, ::Type{T}) where {T<:AbstractDevice} = T
 combine_devices(::Type{UnknownDevice}, ::Type{UnknownDevice}) = UnknownDevice
 function combine_devices(T1::Type{<:AbstractDevice}, T2::Type{<:AbstractDevice})
     throw(ArgumentError("Objects are on devices with different types: $(T1) and $(T2)."))
@@ -143,10 +159,10 @@ function combine_devices(dev1::ReactantDevice, dev2::ReactantDevice)
 end
 combine_devices(::Type{ReactantDevice}, ::Type{UnknownDevice}) = ReactantDevice
 combine_devices(::Type{UnknownDevice}, ::Type{ReactantDevice}) = ReactantDevice
-function combine_devices(::Type{ReactantDevice}, ::Type{T}) where {T <: AbstractDevice}
+function combine_devices(::Type{ReactantDevice}, ::Type{T}) where {T<:AbstractDevice}
     return ReactantDevice
 end
-function combine_devices(::Type{T}, ::Type{ReactantDevice}) where {T <: AbstractDevice}
+function combine_devices(::Type{T}, ::Type{ReactantDevice}) where {T<:AbstractDevice}
     return ReactantDevice
 end
 combine_devices(::Type{ReactantDevice}, ::Type{ReactantDevice}) = ReactantDevice
@@ -180,7 +196,7 @@ for op in (:get_device, :get_device_type)
             return $(cpu_ret_val)
         end
 
-        function $(op)(x::Union{Tuple, NamedTuple})
+        function $(op)(x::Union{Tuple,NamedTuple})
             length(x) == 0 && return $(op == :get_device ? nothing : Nothing)
             # NOTE: We need unrolled_mapreduce for julia 1.10 to ensure type stability
             return unrolled_mapreduce(MLDataDevices.$(op), combine_devices, values(x))
@@ -199,23 +215,23 @@ get_device(_) = UnknownDevice()
 get_device_type(_) = UnknownDevice
 
 fast_structure(::AbstractArray) = true
-fast_structure(::Union{Tuple, NamedTuple}) = true
+fast_structure(::Union{Tuple,NamedTuple}) = true
 for T in (Number, AbstractRNG, Val, Symbol, String, Nothing, AbstractRange)
     @eval fast_structure(::$(T)) = true
 end
 fast_structure(_) = false
 
-function unrolled_mapreduce(f::F, op::O, itr) where {F, O}
+function unrolled_mapreduce(f::F, op::O, itr) where {F,O}
     return unrolled_mapreduce(f, op, itr, static_length(itr))
 end
 
-function unrolled_mapreduce(::F, ::O, _, ::Val{0}) where {F, O}
-    error("Cannot unroll over an empty iterator.")
+function unrolled_mapreduce(::F, ::O, _, ::Val{0}) where {F,O}
+    return error("Cannot unroll over an empty iterator.")
 end
 
-unrolled_mapreduce(f::F, ::O, itr, ::Val{1}) where {F, O} = f(only(itr))
+unrolled_mapreduce(f::F, ::O, itr, ::Val{1}) where {F,O} = f(only(itr))
 
-@generated function unrolled_mapreduce(f::F, op::O, itr, ::Val{N}) where {F, O, N}
+@generated function unrolled_mapreduce(f::F, op::O, itr, ::Val{N}) where {F,O,N}
     syms = [gensym("f_itr_$(i)") for i in 1:N]
     op_syms = [gensym("op_$(i)") for i in 1:(N - 1)]
     f_applied = [:($(syms[i]) = f(itr[$i])) for i in 1:N]
@@ -235,14 +251,14 @@ end
 
 function unsafe_free_internal!(x::AbstractArray)
     unsafe_free_internal!(MLDataDevices.get_device_type(x), x)
-    return
+    return nothing
 end
 unsafe_free_internal!(::Type, x::AbstractArray) = nothing
 unsafe_free_internal!(_) = nothing
 
 function unsafe_free!(x)
     fmap(unsafe_free_internal!, x)
-    return
+    return nothing
 end
 
 static_length(t::Tuple) = Val(length(t))

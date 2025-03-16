@@ -9,14 +9,23 @@
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "$f: $T" for f in [
-                    identity, relu, sigmoid, sigmoid_fast, softplus,
-                    logsigmoid, gelu, swish, lisht, tanh, tanh_fast,
-                ],
-                T in [Float32, Float64]
+                identity,
+                relu,
+                sigmoid,
+                sigmoid_fast,
+                softplus,
+                logsigmoid,
+                gelu,
+                swish,
+                lisht,
+                tanh,
+                tanh_fast,
+            ],
+            T in [Float32, Float64]
 
             !fp64 && T == Float64 && continue
 
-            x = rand(rng, T, 4, 3) |> aType
+            x = aType(rand(rng, T, 4, 3))
 
             y1 = apply_act(f, x)
             y2 = apply_act_fast(f, x)
@@ -40,7 +49,7 @@
             @jet apply_act_fast2(f, x)
 
             @test_gradients(apply_act, f, x; atol, rtol)
-            @test_gradients(apply_act_fast, f, x; atol, rtol, skip_backends = [AutoEnzyme()])
+            @test_gradients(apply_act_fast, f, x; atol, rtol, skip_backends=[AutoEnzyme()])
             @test_gradients(apply_act_fast2, f, x; atol, rtol)
 
             ∂x1 = Zygote.gradient(apply_act, f, x)[2]

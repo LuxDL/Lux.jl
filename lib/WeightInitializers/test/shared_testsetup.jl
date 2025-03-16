@@ -13,7 +13,7 @@ if BACKEND_GROUP == "all" || BACKEND_GROUP == "cpu"
         [
             (StableRNG(12345), AbstractArray, true, "cpu"),
             (Random.GLOBAL_RNG, AbstractArray, true, "cpu"),
-        ]
+        ],
     )
 end
 if BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda"
@@ -23,7 +23,7 @@ if BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda"
         [
             (CUDA.default_rng(), CuArray, true, "cuda"),
             (GPUArrays.default_rng(CuArray), CuArray, true, "cuda"),
-        ]
+        ],
     )
 end
 if BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu"
@@ -33,7 +33,7 @@ if BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu"
         [
             (AMDGPU.rocrand_rng(), ROCArray, true, "amdgpu"),
             (AMDGPU.gpuarrays_rng(), ROCArray, true, "amdgpu"),
-        ]
+        ],
     )
 end
 if BACKEND_GROUP == "all" || BACKEND_GROUP == "metal"
@@ -44,7 +44,8 @@ if BACKEND_GROUP == "all" || BACKEND_GROUP == "oneapi"
     using oneAPI
     using oneAPI: oneL0
 
-    supports_fp64 = oneL0.module_properties(first(oneAPI.devices())).fp64flags &
+    supports_fp64 =
+        oneL0.module_properties(first(oneAPI.devices())).fp64flags &
         oneL0.ZE_DEVICE_MODULE_FLAG_FP64 == oneL0.ZE_DEVICE_MODULE_FLAG_FP64
 
     push!(RNGS_ARRTYPES, (oneAPI.gpuarrays_rng(), oneArray, supports_fp64, "oneapi"))

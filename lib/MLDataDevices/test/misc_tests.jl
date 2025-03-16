@@ -10,18 +10,18 @@ const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "none"))
 @testset "Issues Patches" begin
     @testset "#10 patch" begin
         dev = CPUDevice()
-        ps = (; weight = randn(10, 1), bias = randn(1))
+        ps = (; weight=randn(10, 1), bias=randn(1))
 
-        ps_ca = ps |> ComponentArray
+        ps_ca = ComponentArray(ps)
 
-        ps_ca_dev = ps_ca |> dev
+        ps_ca_dev = dev(ps_ca)
 
         @test ps_ca_dev isa ComponentArray
 
         @test ps_ca_dev.weight == ps.weight
         @test ps_ca_dev.bias == ps.bias
 
-        @test ps_ca_dev == (ps |> dev |> ComponentArray)
+        @test ps_ca_dev == (ComponentArray(dev(ps)))
     end
 end
 
@@ -39,20 +39,20 @@ end
     @test get_device(x_tracker) isa CPUDevice
     x_tracker = Tracker.param.(x)
     @test get_device(x_tracker) isa CPUDevice
-    x_tracker_dev = Tracker.param(x) |> gdev
+    x_tracker_dev = gdev(Tracker.param(x))
     @test get_device(x_tracker_dev) isa parameterless_type(typeof(gdev))
-    x_tracker_dev = Tracker.param.(x) |> gdev
+    x_tracker_dev = gdev(Tracker.param.(x))
     @test get_device(x_tracker_dev) isa parameterless_type(typeof(gdev))
 
     x_fdiff = ForwardDiff.Dual.(x)
     @test get_device(x_fdiff) isa CPUDevice
-    x_fdiff_dev = ForwardDiff.Dual.(x) |> gdev
+    x_fdiff_dev = gdev(ForwardDiff.Dual.(x))
     @test get_device(x_fdiff_dev) isa parameterless_type(typeof(gdev))
 end
 
 @testset "CRC Tests" begin
     dev = cpu_device() # Other devices don't work with FiniteDifferences.jl
-    test_rrule(Adapt.adapt_storage, dev, randn(Float64, 10); check_inferred = false)
+    test_rrule(Adapt.adapt_storage, dev, randn(Float64, 10); check_inferred=false)
 
     gdev = gpu_device()
     if !(gdev isa MetalDevice)  # On intel devices causes problems
@@ -61,7 +61,7 @@ end
         @test ∂dev === nothing
         @test ∂x ≈ ones(10)
 
-        x = randn(10) |> gdev
+        x = gdev(randn(10))
         ∂dev, ∂x = Zygote.gradient(sum ∘ Adapt.adapt, cpu_device(), x)
         @test ∂dev === nothing
         @test ∂x ≈ gdev(ones(10))
@@ -84,13 +84,13 @@ end
     diffeqarray = DiffEqArray([rand(10) for _ in 1:10], rand(10))
     @test get_device(diffeqarray) isa CPUDevice
 
-    diffeqarray_dev = diffeqarray |> gdev
+    diffeqarray_dev = gdev(diffeqarray)
     @test get_device(diffeqarray_dev) isa parameterless_type(typeof(gdev))
 
     vecarray = VectorOfArray([rand(10) for _ in 1:10])
     @test get_device(vecarray) isa CPUDevice
 
-    vecarray_dev = vecarray |> gdev
+    vecarray_dev = gdev(vecarray)
     @test get_device(vecarray_dev) isa parameterless_type(typeof(gdev))
 end
 
@@ -102,9 +102,7 @@ end
     @test_logs (
         :warn,
         "Setting device for `CPUDevice` doesn't make sense. Ignoring the device setting.",
-    ) MLDataDevices.set_device!(
-        CPUDevice, nothing, 1
-    )
+    ) MLDataDevices.set_device!(CPUDevice, nothing, 1)
 end
 
 @testset "get_device on Arrays" begin
@@ -114,8 +112,8 @@ end
     @test get_device(x) isa CPUDevice
     @test get_device(x_view) isa CPUDevice
 
-    struct MyArrayType <: AbstractArray{Float32, 2}
-        data::Array{Float32, 2}
+    struct MyArrayType <: AbstractArray{Float32,2}
+        data::Array{Float32,2}
     end
 
     x_custom = MyArrayType(rand(10, 10))
@@ -135,11 +133,20 @@ end
     ) gpu_backend!()
 
     for backend in (
-            :CUDA, :AMDGPU, :oneAPI, :Metal, AMDGPUDevice(),
-            CUDADevice(), MetalDevice(), oneAPIDevice(),
-        )
-        backend_name = backend isa Symbol ? string(backend) :
+        :CUDA,
+        :AMDGPU,
+        :oneAPI,
+        :Metal,
+        AMDGPUDevice(),
+        CUDADevice(),
+        MetalDevice(),
+        oneAPIDevice(),
+    )
+        backend_name = if backend isa Symbol
+            string(backend)
+        else
             MLDataDevices.Internal.get_device_name(backend)
+        end
         @test_logs (
             :info,
             "GPU backend has been set to $(backend_name). Restart Julia to use the new backend.",
@@ -147,14 +154,16 @@ end
     end
 
     gpu_backend!(:CUDA)
-    @test_logs (:info, "GPU backend is already set to CUDA. No action is required.") gpu_backend!(:CUDA)
+    @test_logs (:info, "GPU backend is already set to CUDA. No action is required.") gpu_backend!(
+        :CUDA
+    )
 
     @test_throws ArgumentError gpu_backend!("my_backend")
 end
 
 @testset "get_device_type compile constant" begin
     x = rand(10, 10)
-    ps = (; weight = x, bias = x, d = (x, x))
+    ps = (; weight=x, bias=x, d=(x, x))
 
     return_val(x) = Val(get_device_type(x))  # If it is a compile time constant then type inference will work
     @test @inferred(return_val(ps)) isa Val{typeof(cpu_device())}
@@ -193,9 +202,9 @@ end
 
     @testset "shared parameters" begin
         x = rand(1)
-        m = (; a = x, b = x')
+        m = (; a=x, b=x')
         count = Ref(0)
-        mcopy = Functors.fmap(m; exclude = MLDataDevices.isleaf) do x
+        mcopy = Functors.fmap(m; exclude=MLDataDevices.isleaf) do x
             count[] += 1
             return copy(x)
         end
@@ -241,9 +250,7 @@ end
     @test g isa Vector{Float32}
 
     g = only(
-        Zygote.gradient(
-            x -> cdev(gdev(x) * gdev(x))[1, 2], Float32[1 2 3; 4 5 6; 7 8 9]
-        )
+        Zygote.gradient(x -> cdev(gdev(x) * gdev(x))[1, 2], Float32[1 2 3; 4 5 6; 7 8 9])
     )
     @test g isa Matrix{Float32}
 end
@@ -264,7 +271,7 @@ end
         rdev = reactant_device()
         x_rd = rdev(x)
         @test get_device(x_rd) isa ReactantDevice
-        @test x_rd isa Reactant.ConcreteRArray{Bool, 2}
+        @test x_rd isa Reactant.ConcreteRArray{Bool,2}
     end
 end
 

@@ -12,9 +12,9 @@ function extract_partials(::Type{Tag}, x, i) where {Tag}
     return fmap(map_fn, x)
 end
 
-function construct_duals(::Type{Tag}, ::Type{T}, x, u) where {Tag, T}
+function construct_duals(::Type{Tag}, ::Type{T}, x, u) where {Tag,T}
     if x isa AbstractArray
-        bfn(xᵢ, uᵢ) = ForwardDiff.Dual{Tag, T, 1}(xᵢ, ForwardDiff.Partials{1, T}(uᵢ))
+        bfn(xᵢ, uᵢ) = ForwardDiff.Dual{Tag,T,1}(xᵢ, ForwardDiff.Partials{1,T}(uᵢ))
         return bfn.(x, tuple.(reshape(u, size(x))))
     end
     (x isa Tuple || x isa NamedTuple) &&
@@ -31,10 +31,10 @@ function forwarddiff_jvp(f::F, x, Δx, y) where {F}
 end
 
 numrows(x::AbstractMatrix) = size(x, 1)
-numrows(x::AbstractArray{T, 3}) where {T} = size(x, 1) * size(x, 3)
+numrows(x::AbstractArray{T,3}) where {T} = size(x, 1) * size(x, 3)
 
 batched_row(x::AbstractMatrix, i::Integer) = view(x, i, :)
-function batched_row(x::AbstractArray{T, 3}, i::Integer) where {T}
+function batched_row(x::AbstractArray{T,3}, i::Integer) where {T}
     M, N, K = size(x)
     k = (i - 1) ÷ M + 1
     i = mod1(i, M)
@@ -47,8 +47,8 @@ function batched_row(x::AbstractArray{T, 3}, i::Integer) where {T}
 end
 
 function compactify_if_structured_matrix(
-        J::AbstractArray{T1, N}, Δ::AbstractArray{T2}
-    ) where {T1, T2, N}
+    J::AbstractArray{T1,N}, Δ::AbstractArray{T2}
+) where {T1,T2,N}
     @argcheck N ∈ (2, 3) "Only 2D and 3D arrays are supported for compactifying."
     if !ArrayInterface.fast_scalar_indexing(J) && ArrayInterface.isstructured(Δ)
         J_ = similar(J)
@@ -59,6 +59,8 @@ function compactify_if_structured_matrix(
 end
 
 function rule_config(::Val{P}) where {P}
-    error("`Lux.AutoDiffInternalImpl.rule_config` for `$(P).jl` is not implemented. This \
-           could be because `$(P).jl` hasn't been loaded yet. Try `using $(P)` first.")
+    return error(
+        "`Lux.AutoDiffInternalImpl.rule_config` for `$(P).jl` is not implemented. This \
+         could be because `$(P).jl` hasn't been loaded yet. Try `using $(P)` first."
+    )
 end

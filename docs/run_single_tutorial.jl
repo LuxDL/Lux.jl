@@ -12,12 +12,13 @@ push!(LOAD_PATH, "@literate")  # Should have the Literate and InteractiveUtils p
 
 io = open(pkg_log_path, "w")
 warn_old_version = try
-    Pkg.develop(; path = joinpath(@__DIR__, ".."), io)
+    Pkg.develop(; path=joinpath(@__DIR__, ".."), io)
     false
 catch err
     err isa Pkg.Resolve.ResolverError || rethrow()
     @warn "Failed to install the latest version of Lux.jl. This is possible when the \
-           downstream packages haven't been updated to support latest releases yet." err = err
+           downstream packages haven't been updated to support latest releases yet." err =
+        err
     true
 end
 Pkg.instantiate(; io)
@@ -27,13 +28,14 @@ using Literate
 
 function preprocess(path, str)
     if warn_old_version
-        str = """
-            # !!! danger "Using older version of Lux.jl"
+        str =
+            """
+          # !!! danger "Using older version of Lux.jl"
 
-            #     This tutorial cannot be run on the latest Lux.jl release due to downstream
-            #     packages not being updated yet.
+          #     This tutorial cannot be run on the latest Lux.jl release due to downstream
+          #     packages not being updated yet.
 
-            \n\n""" * str
+          \n\n""" * str
     end
     new_str = replace(str, "__DIR = @__DIR__" => "__DIR = \"$(dirname(path))\"")
     appendix_code = """
@@ -67,6 +69,11 @@ function postprocess(path, str)
 end
 
 Literate.markdown(
-    path, output_directory; execute = true, name, flavor = Literate.DocumenterFlavor(),
-    preprocess = Base.Fix1(preprocess, path), postprocess = Base.Fix1(postprocess, path)
+    path,
+    output_directory;
+    execute=true,
+    name,
+    flavor=Literate.DocumenterFlavor(),
+    preprocess=Base.Fix1(preprocess, path),
+    postprocess=Base.Fix1(postprocess, path),
 )

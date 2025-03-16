@@ -8,8 +8,9 @@ using Random: Random
 
 Internal.with_device(::Type{CUDADevice}, ::Nothing) = CUDADevice(nothing)
 function Internal.with_device(::Type{CUDADevice}, id::Integer)
-    id > length(CUDA.devices()) &&
-        throw(ArgumentError("id = $id > length(CUDA.devices()) = $(length(CUDA.devices()))"))
+    id > length(CUDA.devices()) && throw(
+        ArgumentError("id = $id > length(CUDA.devices()) = $(length(CUDA.devices()))")
+    )
     old_dev = CUDA.device()
     CUDA.device!(id - 1)
     device = CUDADevice(CUDA.device())
@@ -32,7 +33,7 @@ Internal.get_device(x::AbstractCuSparseArray) = CUDADevice(CUDA.device(x.nzVal))
 Internal.get_device(::CUDA.RNG) = CUDADevice(CUDA.device())
 Internal.get_device(::CUDA.CURAND.RNG) = CUDADevice(CUDA.device())
 
-Internal.get_device_type(::Union{<:CUDA.AnyCuArray, <:AbstractCuSparseArray}) = CUDADevice
+Internal.get_device_type(::Union{<:CUDA.AnyCuArray,<:AbstractCuSparseArray}) = CUDADevice
 Internal.get_device_type(::CUDA.RNG) = CUDADevice
 Internal.get_device_type(::CUDA.CURAND.RNG) = CUDADevice
 
@@ -53,7 +54,7 @@ function Internal.unsafe_free_internal!(::Type{CUDADevice}, x::AbstractArray)
     else
         @warn "CUDA.unsafe_free! is not defined for $(typeof(x))." maxlog = 1
     end
-    return
+    return nothing
 end
 
 # Device Transfer

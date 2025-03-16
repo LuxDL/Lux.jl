@@ -6,9 +6,26 @@
 
 # ## Package Imports
 
-using ArgCheck, CairoMakie, ConcreteStructs, Comonicon, DataAugmentation, DataDeps, FileIO,
-    ImageCore, JLD2, Lux, LuxCUDA, MLUtils, Optimisers, ParameterSchedulers, ProgressBars,
-    Random, Setfield, StableRNGs, Statistics, Zygote
+using ArgCheck,
+    CairoMakie,
+    ConcreteStructs,
+    Comonicon,
+    DataAugmentation,
+    DataDeps,
+    FileIO,
+    ImageCore,
+    JLD2,
+    Lux,
+    LuxCUDA,
+    MLUtils,
+    Optimisers,
+    ParameterSchedulers,
+    ProgressBars,
+    Random,
+    Setfield,
+    StableRNGs,
+    Statistics,
+    Zygote
 using TensorBoardLogger: TBLogger, log_value, log_images
 
 CUDA.allowscalar(false)
@@ -20,44 +37,45 @@ CUDA.allowscalar(false)
 # embedding.
 
 function sinusoidal_embedding(
-        x::AbstractArray{T, 4}, min_freq::T, max_freq::T,
-        embedding_dims::Int
-    ) where {T <: AbstractFloat}
+    x::AbstractArray{T,4}, min_freq::T, max_freq::T, embedding_dims::Int
+) where {T<:AbstractFloat}
     size(x)[1:3] != (1, 1, 1) &&
         throw(DimensionMismatch("Input shape must be (1, 1, 1, batch)"))
 
     lower, upper = log(min_freq), log(max_freq)
     n = embedding_dims ÷ 2
     d = (upper - lower) / (n - 1)
-    freqs = reshape(exp.(lower:d:upper) |> get_device(x), 1, 1, n, 1)
+    freqs = reshape(get_device(x)(exp.(lower:d:upper)), 1, 1, n, 1)
     x_ = 2 .* x .* freqs
-    return cat(sinpi.(x_), cospi.(x_); dims = Val(3))
+    return cat(sinpi.(x_), cospi.(x_); dims=Val(3))
 end
 
 function residual_block(in_channels::Int, out_channels::Int)
     return Parallel(
         +,
-        in_channels == out_channels ? NoOpLayer() :
-            Conv((1, 1), in_channels => out_channels; pad = SamePad()),
+        if in_channels == out_channels
+            NoOpLayer()
+        else
+            Conv((1, 1), in_channels => out_channels; pad=SamePad())
+        end,
         Chain(
-            BatchNorm(in_channels; affine = false),
-            Conv((3, 3), in_channels => out_channels, swish; pad = SamePad()),
-            Conv((3, 3), out_channels => out_channels; pad = SamePad())
+            BatchNorm(in_channels; affine=false),
+            Conv((3, 3), in_channels => out_channels, swish; pad=SamePad()),
+            Conv((3, 3), out_channels => out_channels; pad=SamePad()),
         );
-        name = "ResidualBlock(in_chs=$in_channels, out_chs=$out_channels)"
+        name="ResidualBlock(in_chs=$in_channels, out_chs=$out_channels)",
     )
 end
 
 function downsample_block(in_channels::Int, out_channels::Int, block_depth::Int)
     return @compact(;
-        name = "DownsampleBlock(in_chs=$in_channels, out_chs=$out_channels, block_depth=$block_depth)",
-        residual_blocks = Tuple(
-            residual_block(
-                    ifelse(i == 1, in_channels, out_channels), out_channels
-                )
-                for i in 1:block_depth
+        name="DownsampleBlock(in_chs=$in_channels, out_chs=$out_channels, block_depth=$block_depth)",
+        residual_blocks=Tuple(
+            residual_block(ifelse(i == 1, in_channels, out_channels), out_channels) for
+            i in 1:block_depth
         ),
-        meanpool = MeanPool((2, 2)), block_depth
+        meanpool=MeanPool((2, 2)),
+        block_depth
     ) do x
         skips = (x,)
         for i in 1:block_depth
@@ -70,54 +88,53 @@ end
 
 function upsample_block(in_channels::Int, out_channels::Int, block_depth::Int)
     return @compact(;
-        name = "UpsampleBlock(in_chs=$in_channels, out_chs=$out_channels, block_depth=$block_depth)",
-        residual_blocks = Tuple(
+        name="UpsampleBlock(in_chs=$in_channels, out_chs=$out_channels, block_depth=$block_depth)",
+        residual_blocks=Tuple(
             residual_block(
-                    ifelse(
-                        i == 1, in_channels + out_channels, out_channels * 2
-                    ),
-                    out_channels
-                ) for i in 1:block_depth
+                ifelse(i == 1, in_channels + out_channels, out_channels * 2), out_channels
+            ) for i in 1:block_depth
         ),
-        upsample = Upsample(:bilinear; scale = 2), block_depth
+        upsample=Upsample(:bilinear; scale=2),
+        block_depth
     ) do x_skips
         x, skips = x_skips
         x = upsample(x)
         for i in 1:block_depth
-            x = residual_blocks[i](cat(x, skips[end - i + 1]; dims = Val(3)))
+            x = residual_blocks[i](cat(x, skips[end - i + 1]; dims=Val(3)))
         end
         @return x
     end
 end
 
 function unet_model(
-        image_size::Tuple{Int, Int}; channels = [32, 64, 96, 128],
-        block_depth = 2, min_freq = 1.0f0, max_freq = 1000.0f0, embedding_dims = 32
-    )
-    upsample = Upsample(:nearest; size = image_size)
+    image_size::Tuple{Int,Int};
+    channels=[32, 64, 96, 128],
+    block_depth=2,
+    min_freq=1.0f0,
+    max_freq=1000.0f0,
+    embedding_dims=32,
+)
+    upsample = Upsample(:nearest; size=image_size)
     conv_in = Conv((1, 1), 3 => channels[1])
-    conv_out = Conv((1, 1), channels[1] => 3; init_weight = Lux.zeros32)
+    conv_out = Conv((1, 1), channels[1] => 3; init_weight=Lux.zeros32)
 
     channel_input = embedding_dims + channels[1]
     down_blocks = [
         downsample_block(
-                i == 1 ? channel_input : channels[i - 1], channels[i], block_depth
-            )
-            for i in 1:(length(channels) - 1)
+            i == 1 ? channel_input : channels[i - 1], channels[i], block_depth
+        ) for i in 1:(length(channels) - 1)
     ]
     residual_blocks = Chain(
         [
-            residual_block(
-                    ifelse(i == 1, channels[end - 1], channels[end]),
-                    channels[end]
-                ) for i in 1:block_depth
-        ]...
+            residual_block(ifelse(i == 1, channels[end - 1], channels[end]), channels[end])
+            for i in 1:block_depth
+        ]...,
     )
 
     reverse!(channels)
     up_blocks = [
-        upsample_block(in_chs, out_chs, block_depth)
-            for (in_chs, out_chs) in zip(channels[1:(end - 1)], channels[2:end])
+        upsample_block(in_chs, out_chs, block_depth) for
+        (in_chs, out_chs) in zip(channels[1:(end - 1)], channels[2:end])
     ]
 
     #! format: off
@@ -133,11 +150,9 @@ function unet_model(
         @argcheck size(noisy_images, 4) == size(noise_variances, 4)
 
         emb = upsample(
-            sinusoidal_embedding(
-                noise_variances, min_freq, max_freq, embedding_dims
-            )
+            sinusoidal_embedding(noise_variances, min_freq, max_freq, embedding_dims)
         )
-        x = cat(conv_in(noisy_images), emb; dims = Val(3))
+        x = cat(conv_in(noisy_images), emb; dims=Val(3))
         skips_at_each_stage = ()
         for i in 1:num_blocks
             x, skips = down_blocks[i](x)
@@ -152,16 +167,14 @@ function unet_model(
 end
 
 function ddim(
-        rng::AbstractRNG, args...; min_signal_rate = 0.02f0,
-        max_signal_rate = 0.95f0, kwargs...
-    )
+    rng::AbstractRNG, args...; min_signal_rate=0.02f0, max_signal_rate=0.95f0, kwargs...
+)
     unet = unet_model(args...; kwargs...)
-    bn = BatchNorm(3; affine = false, track_stats = true)
+    bn = BatchNorm(3; affine=false, track_stats=true)
 
     return @compact(;
-        unet, bn, rng, min_signal_rate,
-        max_signal_rate, dispatch = :DDIM
-    ) do x::AbstractArray{<:Real, 4}
+        unet, bn, rng, min_signal_rate, max_signal_rate, dispatch=:DDIM
+    ) do x::AbstractArray{<:Real,4}
         images = bn(x)
         rng = Lux.replicate(rng)
 
@@ -181,9 +194,8 @@ function ddim(
 end
 
 function diffusion_schedules(
-        diffusion_times::AbstractArray{T, 4}, min_signal_rate::T,
-        max_signal_rate::T
-    ) where {T <: Real}
+    diffusion_times::AbstractArray{T,4}, min_signal_rate::T, max_signal_rate::T
+) where {T<:Real}
     start_angle = acos(max_signal_rate)
     end_angle = acos(min_signal_rate)
 
@@ -196,9 +208,11 @@ function diffusion_schedules(
 end
 
 function denoise(
-        unet, noisy_images::AbstractArray{T, 4}, noise_rates::AbstractArray{T, 4},
-        signal_rates::AbstractArray{T, 4}
-    ) where {T <: Real}
+    unet,
+    noisy_images::AbstractArray{T,4},
+    noise_rates::AbstractArray{T,4},
+    signal_rates::AbstractArray{T,4},
+) where {T<:Real}
     pred_noises = unet((noisy_images, noise_rates .^ 2))
     pred_images = @. (noisy_images - pred_noises * noise_rates) / signal_rates
     return pred_noises, pred_images
@@ -207,8 +221,8 @@ end
 # ## Helper Functions for Image Generation
 
 function reverse_diffusion(
-        model, initial_noise::AbstractArray{T, 4}, diffusion_steps::Int
-    ) where {T <: Real}
+    model, initial_noise::AbstractArray{T,4}, diffusion_steps::Int
+) where {T<:Real}
     num_images = size(initial_noise, 4)
     step_size = one(T) / diffusion_steps
     dev = get_device(initial_noise)
@@ -223,7 +237,7 @@ function reverse_diffusion(
         noisy_images = next_noisy_images
 
         # We start t = 1, and gradually decreases to t=0
-        diffusion_times = (ones(T, 1, 1, 1, num_images) .- step_size * step) |> dev
+        diffusion_times = dev((ones(T, 1, 1, 1, num_images) .- step_size * step))
 
         noise_rates, signal_rates = diffusion_schedules(
             diffusion_times, min_signal_rate, max_signal_rate
@@ -231,7 +245,9 @@ function reverse_diffusion(
 
         pred_noises, pred_images = denoise(
             StatefulLuxLayer{true}(model.model.layers.unet, model.ps.unet, model.st.unet),
-            noisy_images, noise_rates, signal_rates
+            noisy_images,
+            noise_rates,
+            signal_rates,
         )
 
         next_diffusion_times = diffusion_times .- step_size
@@ -239,22 +255,22 @@ function reverse_diffusion(
             next_diffusion_times, min_signal_rate, max_signal_rate
         )
 
-        next_noisy_images = next_signal_rates .* pred_images .+
-            next_noisy_rates .* pred_noises
+        next_noisy_images =
+            next_signal_rates .* pred_images .+ next_noisy_rates .* pred_noises
     end
 
     return pred_images
 end
 
-function denormalize(model::StatefulLuxLayer, x::AbstractArray{<:Real, 4})
+function denormalize(model::StatefulLuxLayer, x::AbstractArray{<:Real,4})
     mean = reshape(model.st.bn.running_mean, 1, 1, 3, 1)
     var = reshape(model.st.bn.running_var, 1, 1, 3, 1)
     std = sqrt.(var .+ model.model.layers.bn.epsilon)
     return std .* x .+ mean
 end
 
-function save_images(output_dir, images::AbstractArray{<:Real, 4})
-    imgs = Vector{Array{RGB, 2}}(undef, size(images, 4))
+function save_images(output_dir, images::AbstractArray{<:Real,4})
+    imgs = Vector{Array{RGB,2}}(undef, size(images, 4))
     for i in axes(images, 4)
         img = @view images[:, :, :, i]
         img = colorview(RGB, permutedims(img, (3, 1, 2)))
@@ -264,24 +280,24 @@ function save_images(output_dir, images::AbstractArray{<:Real, 4})
     return imgs
 end
 
-function generate_and_save_image_grid(output_dir, imgs::Vector{<:AbstractArray{<:RGB, 2}})
+function generate_and_save_image_grid(output_dir, imgs::Vector{<:AbstractArray{<:RGB,2}})
     fig = Figure()
     nrows, ncols = 3, 4
     for r in 1:nrows, c in 1:ncols
         i = (r - 1) * ncols + c
         i > length(imgs) && break
-        ax = Axis(fig[r, c]; aspect = DataAspect())
+        ax = Axis(fig[r, c]; aspect=DataAspect())
         image!(ax, imgs[i])
         hidedecorations!(ax)
     end
     save(joinpath(output_dir, "flowers_generated.png"), fig)
-    return
+    return nothing
 end
 
 function generate(
-        model::StatefulLuxLayer, rng, image_size::NTuple{4, Int}, diffusion_steps::Int, dev
-    )
-    initial_noise = randn(rng, Float32, image_size...) |> dev
+    model::StatefulLuxLayer, rng, image_size::NTuple{4,Int}, diffusion_steps::Int, dev
+)
+    initial_noise = dev(randn(rng, Float32, image_size...))
     generated_images = reverse_diffusion(model, initial_noise, diffusion_steps)
     generated_images = denormalize(model, generated_images)
     return clamp01.(generated_images)
@@ -298,7 +314,7 @@ struct FlowersDataset
     image_files::Vector{AbstractString}
     preprocess::Function
     use_cache::Bool
-    cache::Vector{Union{Nothing, AbstractArray{Float32, 3}}}
+    cache::Vector{Union{Nothing,AbstractArray{Float32,3}}}
 end
 
 function FlowersDataset(preprocess::F, use_cache::Bool) where {F}
@@ -307,11 +323,12 @@ function FlowersDataset(preprocess::F, use_cache::Bool) where {F}
     catch KeyError
         register(
             DataDep(
-                "FlowersDataset", "102 Category Flowers Dataset",
+                "FlowersDataset",
+                "102 Category Flowers Dataset",
                 "https://www.robots.ox.ac.uk/~vgg/data/flowers/102/102flowers.tgz",
                 "2d01ecc807db462958cfe3d92f57a8c252b4abd240eb955770201e45f783b246";
-                post_fetch_method = file -> run(`tar -xzf $file`)
-            )
+                post_fetch_method=file -> run(`tar -xzf $file`),
+            ),
         )
         joinpath(datadep"FlowersDataset", "jpg")
     end
@@ -332,10 +349,9 @@ function Base.getindex(ds::FlowersDataset, i::Int)
 end
 
 function preprocess_image(image::Matrix{<:RGB}, image_size::Int)
-    return apply(
+    return itemdata(apply(
         CenterResizeCrop((image_size, image_size)), DataAugmentation.Image(image)
-    ) |>
-        itemdata
+    ))
 end
 
 const maeloss = MAELoss()
@@ -350,18 +366,30 @@ end
 # ## Entry Point for our code
 
 Comonicon.@main function main(;
-        epochs::Int = 100, image_size::Int = 128,
-        batchsize::Int = 128, learning_rate_start::Float32 = 1.0f-3,
-        learning_rate_end::Float32 = 1.0f-5, weight_decay::Float32 = 1.0f-6,
-        checkpoint_interval::Int = 25, expt_dir = tempname(@__DIR__),
-        diffusion_steps::Int = 80, generate_image_interval::Int = 5,
-        # model hyper params
-        channels::Vector{Int} = [32, 64, 96, 128], block_depth::Int = 2, min_freq::Float32 = 1.0f0, max_freq::Float32 = 1000.0f0,
-        embedding_dims::Int = 32, min_signal_rate::Float32 = 0.02f0,
-        max_signal_rate::Float32 = 0.95f0, generate_image_seed::Int = 12,
-        # inference specific
-        inference_mode::Bool = false, saved_model_path = nothing, generate_n_images::Int = 12
-    )
+    epochs::Int=100,
+    image_size::Int=128,
+    batchsize::Int=128,
+    learning_rate_start::Float32=1.0f-3,
+    learning_rate_end::Float32=1.0f-5,
+    weight_decay::Float32=1.0f-6,
+    checkpoint_interval::Int=25,
+    expt_dir=tempname(@__DIR__),
+    diffusion_steps::Int=80,
+    generate_image_interval::Int=5,
+    # model hyper params
+    channels::Vector{Int}=[32, 64, 96, 128],
+    block_depth::Int=2,
+    min_freq::Float32=1.0f0,
+    max_freq::Float32=1000.0f0,
+    embedding_dims::Int=32,
+    min_signal_rate::Float32=0.02f0,
+    max_signal_rate::Float32=0.95f0,
+    generate_image_seed::Int=12,
+    # inference specific
+    inference_mode::Bool=false,
+    saved_model_path=nothing,
+    generate_n_images::Int=12,
+)
     isdir(expt_dir) || mkpath(expt_dir)
 
     @info "Experiment directory: $(expt_dir)"
@@ -380,29 +408,38 @@ Comonicon.@main function main(;
 
     @info "Building model"
     model = ddim(
-        rng, (image_size, image_size); channels, block_depth, min_freq,
-        max_freq, embedding_dims, min_signal_rate, max_signal_rate
+        rng,
+        (image_size, image_size);
+        channels,
+        block_depth,
+        min_freq,
+        max_freq,
+        embedding_dims,
+        min_signal_rate,
+        max_signal_rate,
     )
-    ps, st = Lux.setup(rng, model) |> gdev
+    ps, st = gdev(Lux.setup(rng, model))
 
     if inference_mode
         @argcheck saved_model_path !== nothing "`saved_model_path` must be specified for inference"
         @load saved_model_path parameters states
-        parameters = parameters |> gdev
-        states = states |> gdev
+        parameters = gdev(parameters)
+        states = gdev(states)
         model = StatefulLuxLayer{true}(model, parameters, Lux.testmode(states))
 
-        generated_images = generate(
-            model, StableRNG(generate_image_seed),
-            (image_size, image_size, 3, generate_n_images), diffusion_steps, gdev
-        ) |>
-            cpu_device()
+        generated_images = cpu_device()(generate(
+            model,
+            StableRNG(generate_image_seed),
+            (image_size, image_size, 3, generate_n_images),
+            diffusion_steps,
+            gdev,
+        ))
 
         path = joinpath(image_dir, "inference")
         @info "Saving generated images to $(path)"
         imgs = save_images(path, generated_images)
         generate_and_save_image_grid(path, imgs)
-        return
+        return nothing
     end
 
     tb_dir = joinpath(expt_dir, "tb_logs")
@@ -411,12 +448,12 @@ Comonicon.@main function main(;
     tb_logger = TBLogger(tb_dir)
 
     tstate = Training.TrainState(
-        model, ps, st, AdamW(; eta = learning_rate_start, lambda = weight_decay)
+        model, ps, st, AdamW(; eta=learning_rate_start, lambda=weight_decay)
     )
 
     @info "Preparing dataset"
     ds = FlowersDataset(x -> preprocess_image(x, image_size), true)
-    data_loader = DataLoader(ds; batchsize, collate = true, parallel = true) |> gdev
+    data_loader = gdev(DataLoader(ds; batchsize, collate=true, parallel=true))
 
     scheduler = CosAnneal(learning_rate_start, learning_rate_end, epochs)
 
@@ -444,8 +481,9 @@ Comonicon.@main function main(;
 
             ProgressBars.update(pbar)
             set_description(
-                pbar, "Epoch: $(epoch) Image Loss: $(mean(view(image_losses, 1:i))) Noise \
-                       Loss: $(mean(view(noise_losses, 1:i)))"
+                pbar,
+                "Epoch: $(epoch) Image Loss: $(mean(view(image_losses, 1:i))) Noise \
+                 Loss: $(mean(view(noise_losses, 1:i)))",
             )
         end
 
@@ -453,11 +491,13 @@ Comonicon.@main function main(;
             model_test = StatefulLuxLayer{true}(
                 tstate.model, tstate.parameters, Lux.testmode(tstate.states)
             )
-            generated_images = generate(
-                model_test, StableRNG(generate_image_seed),
-                (image_size, image_size, 3, generate_n_images), diffusion_steps, gdev
-            ) |>
-                cpu_device()
+            generated_images = cpu_device()(generate(
+                model_test,
+                StableRNG(generate_image_seed),
+                (image_size, image_size, 3, generate_n_images),
+                diffusion_steps,
+                gdev,
+            ))
 
             path = joinpath(image_dir, "epoch_$(epoch)")
             @info "Saving generated images to $(path)"
@@ -468,8 +508,8 @@ Comonicon.@main function main(;
         if epoch % checkpoint_interval == 0 || epoch == epochs
             path = joinpath(ckpt_dir, "model_$(epoch).jld2")
             @info "Saving checkpoint to $(path)"
-            parameters = tstate.parameters |> cpu_device()
-            states = tstate.states |> cpu_device()
+            parameters = cpu_device()(tstate.parameters)
+            states = cpu_device()(tstate.states)
             @save path parameters states
         end
     end

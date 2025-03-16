@@ -9,7 +9,8 @@ LuxTestUtils.jet_target_modules!(["LuxLib"])
 const LUXLIB_BLAS_BACKEND = lowercase(get(ENV, "LUXLIB_BLAS_BACKEND", "default"))
 
 if parse(Bool, get(ENV, "LUXLIB_LOAD_LOOPVEC", "true"))
-    import LoopVectorization, Octavian
+    using LoopVectorization: LoopVectorization
+    using Octavian: Octavian
 end
 
 if LUXLIB_BLAS_BACKEND == "default"
@@ -48,19 +49,19 @@ end
 cpu_testing() = BACKEND_GROUP == "all" || BACKEND_GROUP == "cpu"
 function cuda_testing()
     return (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
-        MLDataDevices.functional(CUDADevice)
+           MLDataDevices.functional(CUDADevice)
 end
 function amdgpu_testing()
     return (BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
-        MLDataDevices.functional(AMDGPUDevice)
+           MLDataDevices.functional(AMDGPUDevice)
 end
 function oneapi_testing()
     return (BACKEND_GROUP == "all" || BACKEND_GROUP == "oneapi") &&
-        MLDataDevices.functional(oneAPIDevice)
+           MLDataDevices.functional(oneAPIDevice)
 end
 function metal_testing()
     return (BACKEND_GROUP == "all" || BACKEND_GROUP == "metal") &&
-        MLDataDevices.functional(MetalDevice)
+           MLDataDevices.functional(MetalDevice)
 end
 
 const MODES = begin

@@ -25,12 +25,18 @@ Random.seed!(rng, 12345)
 # Let's visualize the dataset
 begin
     fig = Figure()
-    ax = CairoMakie.Axis(fig[1, 1]; xlabel = "x", ylabel = "y")
+    ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
 
-    l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth = 3, color = :blue)
+    l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3, color=:blue)
     s = scatter!(
-        ax, x[1, :], y[1, :]; markersize = 12, alpha = 0.5,
-        color = :orange, strokecolor = :black, strokewidth = 2
+        ax,
+        x[1, :],
+        y[1, :];
+        markersize=12,
+        alpha=0.5,
+        color=:orange,
+        strokecolor=:black,
+        strokewidth=2,
     )
 
     axislegend(ax, [l, s], ["True Quadratic Function", "Data Points"])
@@ -59,7 +65,7 @@ const loss_function = MSELoss()
 const cdev = cpu_device()
 const xdev = reactant_device()
 
-ps, st = Lux.setup(rng, model) |> xdev
+ps, st = xdev(Lux.setup(rng, model))
 
 # ## Training
 
@@ -75,7 +81,7 @@ vjp_rule = AutoEnzyme()
 # Finally the training loop.
 
 function main(tstate::Training.TrainState, vjp, data, epochs)
-    data = data |> xdev
+    data = xdev(data)
     for epoch in 1:epochs
         _, loss, _, tstate = Training.single_train_step!(vjp, loss_function, data, tstate)
         if epoch % 50 == 1 || epoch == epochs
@@ -95,10 +101,8 @@ forward_pass = @compile Lux.apply(
 
 y_pred = cdev(
     first(
-        forward_pass(
-            tstate.model, xdev(x), tstate.parameters, Lux.testmode(tstate.states)
-        )
-    )
+        forward_pass(tstate.model, xdev(x), tstate.parameters, Lux.testmode(tstate.states))
+    ),
 )
 nothing #hide
 
@@ -106,16 +110,28 @@ nothing #hide
 
 begin
     fig = Figure()
-    ax = CairoMakie.Axis(fig[1, 1]; xlabel = "x", ylabel = "y")
+    ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
 
-    l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth = 3)
+    l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3)
     s1 = scatter!(
-        ax, x[1, :], y[1, :]; markersize = 12, alpha = 0.5,
-        color = :orange, strokecolor = :black, strokewidth = 2
+        ax,
+        x[1, :],
+        y[1, :];
+        markersize=12,
+        alpha=0.5,
+        color=:orange,
+        strokecolor=:black,
+        strokewidth=2,
     )
     s2 = scatter!(
-        ax, x[1, :], y_pred[1, :]; markersize = 12, alpha = 0.5,
-        color = :green, strokecolor = :black, strokewidth = 2
+        ax,
+        x[1, :],
+        y_pred[1, :];
+        markersize=12,
+        alpha=0.5,
+        color=:green,
+        strokecolor=:black,
+        strokewidth=2,
     )
 
     axislegend(ax, [l, s1, s2], ["True Quadratic Function", "Actual Data", "Predictions"])
