@@ -95,7 +95,7 @@ makedocs(;
         deploy_url="https://lux.csail.mit.edu",
         deploy_decision,
     ),
-    plugins=[CitationBibliography(; joinpath(@__DIR__, "references.bib"))],
+    plugins=[CitationBibliography(joinpath(@__DIR__, "references.bib"))],
     draft=false,
     pages,
 )
