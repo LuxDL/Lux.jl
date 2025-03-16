@@ -38,7 +38,7 @@ Pkg.add("Lux")
 ```
 
 > [!TIP]
-> If you are using a pre-v1 version of Lux.jl, please see the [Updating to v1 section](https://lux.csail.mit.edu/dev/introduction/updating_to_v1) for instructions on how to update.
+> To use Lux online, use [Google Colab](https://colab.research.google.com/). The Julia Runtime comes pre-installed with Lux and Reactant!
 
 <div align="center">
 
@@ -131,6 +131,40 @@ Pkg.add("Lux")
 
 ## 🤸 Quickstart
 
+### Reactant & Enzyme
+
+```julia
+using Lux, Random, Optimisers, Reactant, Enzyme
+
+rng = Random.default_rng()
+Random.seed!(rng, 0)
+
+model = Chain(Dense(128, 256, tanh), Chain(Dense(256, 1, tanh), Dense(1, 10)))
+
+dev = reactant_device()
+
+ps, st = Lux.setup(rng, model) |> dev
+
+x = rand(rng, Float32, 128, 2) |> dev
+
+# We need to compile the model before we can use it.
+model_forward = @compile model(x, ps, Lux.testmode(st))
+model_forward(x, ps, Lux.testmode(st))
+
+# Gradients can be computed using Enzyme
+@jit Enzyme.gradient(Reverse, sum ∘ first ∘ Lux.apply, Const(model), x, ps, Const(st))
+
+# All of this can be automated using the TrainState API
+train_state = Training.TrainState(model, ps, st, Adam(0.001f0))
+
+gs, loss, stats, train_state = Training.single_train_step!(
+    AutoEnzyme(), MSELoss(),
+    (x, dev(rand(rng, Float32, 10, 2))), train_state
+)
+```
+
+### Native Julia & Zygote
+
 ```julia
 using Lux, Random, Optimisers, Zygote
 # using LuxCUDA, AMDGPU, Metal, oneAPI # Optional packages for GPU support
@@ -168,38 +202,6 @@ train_state = Training.apply_gradients!(train_state, gs) # or Training.apply_gra
 # Both these steps can be combined into a single call
 gs, loss, stats, train_state = Training.single_train_step!(AutoZygote(), MSELoss(),
     (x, dev(rand(rng, Float32, 10, 2))), train_state)
-```
-
-## 🤸 Quickstart with Reactant
-
-```julia
-using Lux, Random, Optimisers, Reactant, Enzyme
-
-rng = Random.default_rng()
-Random.seed!(rng, 0)
-
-model = Chain(Dense(128, 256, tanh), Chain(Dense(256, 1, tanh), Dense(1, 10)))
-
-dev = reactant_device()
-
-ps, st = Lux.setup(rng, model) |> dev
-
-x = rand(rng, Float32, 128, 2) |> dev
-
-# We need to compile the model before we can use it.
-model_forward = @compile model(x, ps, Lux.testmode(st))
-model_forward(x, ps, Lux.testmode(st))
-
-# Gradients can be computed using Enzyme
-@jit Enzyme.gradient(Reverse, sum ∘ first ∘ Lux.apply, Const(model), x, ps, Const(st))
-
-# All of this can be automated using the TrainState API
-train_state = Training.TrainState(model, ps, st, Adam(0.001f0))
-
-gs, loss, stats, train_state = Training.single_train_step!(
-    AutoEnzyme(), MSELoss(),
-    (x, dev(rand(rng, Float32, 10, 2))), train_state
-)
 ```
 
 ## 📚 Examples
