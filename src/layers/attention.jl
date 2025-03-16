@@ -77,6 +77,8 @@ function apply_multiheadattention(mha::MultiHeadAttention, ps, st, q, kv)
 end
 
 function apply_multiheadattention(mha::MultiHeadAttention, ps, st, q, k, v, mask=nothing)
+    q, k, v = match_eltype(mha, ps, st, q, k, v)
+
     q, q_st = mha.q_proj(q, ps.q_proj, st.q_proj)
     k, k_st = mha.k_proj(k, ps.k_proj, st.k_proj)
     v, v_st = mha.v_proj(v, ps.v_proj, st.v_proj)
@@ -84,12 +86,12 @@ function apply_multiheadattention(mha::MultiHeadAttention, ps, st, q, k, v, mask
     dropout = StatefulLuxLayer{true}(
         mha.attention_dropout, ps.attention_dropout, st.attention_dropout
     )
-    x, α = NNlib.dot_product_attention(q, k, v; mha.nheads, fdrop=dropout, mask)
+    x, _ = NNlib.dot_product_attention(q, k, v; mha.nheads, fdrop=dropout, mask)
 
-    x, out_st = mha.out_proj(x, ps.out_proj, st.out_proj)
+    y, out_st = mha.out_proj(x, ps.out_proj, st.out_proj)
 
     return (
-        x,
+        y,
         (;
             q_proj=q_st,
             k_proj=k_st,
