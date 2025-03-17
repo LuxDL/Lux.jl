@@ -3,11 +3,28 @@
 This implements training of popular model architectures, such as ResNet, AlexNet, and VGG on
 the ImageNet dataset.
 
+## Structure of the code
+
+```bash
+examples/ImageNet
+├── common.jl             # DataLoaders, Model Construction, etc.
+├── single_host
+│   ├── Project.toml      # Dependencies for single-host training
+│   └── main.jl           # Single-host training -- not scalable but useful for debugging
+├── ddp
+│   ├── Project.toml      # Dependencies for DDP training
+│   └── main.jl           # DDP training
+├── reactant
+│   ├── Project.toml      # Dependencies for Reactant training (FSDP, MP, DDP, etc.)
+│   └── main.jl           # Reactant training
+└── README.md
+```
+
 ## Requirements
 
-* Install [julia](https://julialang.org/)
-* In the Julia REPL instantiate the `Project.toml` in the parent directory
-* Download the ImageNet dataset from http://www.image-net.org/
+- Install [julia](https://julialang.org/)
+- In the Julia REPL instantiate the `Project.toml` in the parent directory
+- Download the ImageNet dataset from http://www.image-net.org/
   - Then, move and extract the training and validation images to labeled subfolders, using
     [this shell script](https://github.com/pytorch/examples/blob/main/imagenet/extract_ILSVRC.sh)
 
@@ -25,7 +42,6 @@ julia --startup=no --project=examples/ImageNet -t auto examples/ImageNet/main.jl
   --optimizer-kind="sgd" \
   --learning-rate=0.01 \
   --base-path="/home/avik-pal/data/ImageNet/"
-
 
 julia --startup=no --project=examples/ImageNet -t auto examples/ImageNet/main.jl \
   --model-name="ViT" \
