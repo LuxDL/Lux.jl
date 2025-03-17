@@ -13,22 +13,22 @@ norm_cdf(x::T) where {T} = T(0.5) * (1 + T(erf(x / √2))) # erf often doesn't r
 
 default_rng() = Xoshiro(1234)
 
-    #! format: off
-    const NAME_TO_DIST = Dict(
-        :zeros => "an AbstractArray of zeros",
-        :ones  => "an AbstractArray of ones",
-        :randn => "random numbers from a standard normal distribution",
-        :rand  => "random numbers from a uniform distribution"
-    )
-    const NUM_TO_FPOINT = Dict(
-        Symbol(16) => Float16,
-        Symbol(32) => Float32,
-        Symbol(64) => Float64,
-        :C16       => ComplexF16,
-        :C32       => ComplexF32,
-        :C64       => ComplexF64
-    )
-    #! format: on
+#! format: off
+const NAME_TO_DIST = Dict(
+    :zeros => "an AbstractArray of zeros",
+    :ones  => "an AbstractArray of ones",
+    :randn => "random numbers from a standard normal distribution",
+    :rand  => "random numbers from a uniform distribution"
+)
+const NUM_TO_FPOINT = Dict(
+    Symbol(16) => Float16,
+    Symbol(32) => Float32,
+    Symbol(64) => Float64,
+    :C16       => ComplexF16,
+    :C32       => ComplexF32,
+    :C64       => ComplexF64
+)
+#! format: on
 
 function function_name(fname::String)
     fp = fname[(end - 2):end]

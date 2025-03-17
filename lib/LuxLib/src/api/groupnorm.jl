@@ -2,7 +2,7 @@
     groupnorm(x, scale, bias, groups::Int, σ::F=identity,
         epsilon=eps(eltype(x)) ^ (5 // 7))
 
-Group Normalization. For details see [1].
+Group Normalization. For details see [wu2018group](@citet).
 
 This op is similar to batch normalization, but statistics are shared across equally-sized
 groups of channels and not shared across batch dimension. Thus, group normalization does not
@@ -22,11 +22,6 @@ statistics.
 ## Returns
 
 The normalized array is returned.
-
-## References
-
-[1] Wu, Yuxin, and Kaiming He. "Group normalization." Proceedings of the European conference
-    on computer vision (ECCV). 2018.
 """
 function groupnorm(
     x::AbstractArray{<:Number,N},

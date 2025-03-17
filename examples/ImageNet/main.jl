@@ -122,30 +122,26 @@ function construct_dataloaders(;
 )
     sensible_println("=> creating dataloaders.")
 
-    train_augment = ToEltype(Float32)(
-        Normalize((0.485f0, 0.456f0, 0.406f0), (0.229f0, 0.224f0, 0.225f0))(
-            MakeColoredImage()(
-                ImageToTensor()(
-                    PinOrigin()(
-                        RandomResizeCrop((image_size, image_size))(
-                            Maybe(FlipX(), 0.5)(ScaleFixed((256, 256)))
-                        ),
-                    ),
-                ),
-            ),
-        ),
-    )
+    train_augment =
+        ScaleFixed((256, 256)) |>
+        Maybe(FlipX(), 0.5) |>
+        RandomResizeCrop((image_size, image_size)) |>
+        PinOrigin() |>
+        ImageToTensor() |>
+        MakeColoredImage() |>
+        ToEltype(Float32) |>
+        Normalize((0.485f0, 0.456f0, 0.406f0), (0.229f0, 0.224f0, 0.225f0))
     train_files, train_labels = load_imagenet1k(base_path, :train)
 
     train_dataset = FileDataset(train_files, train_labels, train_augment)
 
-    val_augment = ToEltype(Float32)(
-        Normalize((0.485f0, 0.456f0, 0.406f0), (0.229f0, 0.224f0, 0.225f0))(
-            MakeColoredImage()(
-                ImageToTensor()(PinOrigin()(ScaleFixed((image_size, image_size))))
-            ),
-        ),
-    )
+    val_augment =
+        ScaleFixed((image_size, image_size)) |>
+        PinOrigin() |>
+        ImageToTensor() |>
+        MakeColoredImage() |>
+        ToEltype(Float32) |>
+        Normalize((0.485f0, 0.456f0, 0.406f0), (0.229f0, 0.224f0, 0.225f0))
     val_files, val_labels = load_imagenet1k(base_path, :val)
 
     val_dataset = FileDataset(val_files, val_labels, val_augment)

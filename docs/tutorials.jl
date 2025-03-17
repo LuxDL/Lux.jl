@@ -1,4 +1,3 @@
-#! format: off
 const BEGINNER_TUTORIALS = [
     "Basics/main.jl" => "CPU",
     "PolynomialFitting/main.jl" => "CUDA",
@@ -16,21 +15,21 @@ const INTERMEDIATE_TUTORIALS = [
     "GCN_Cora/main.jl" => "CUDA",
     "RealNVP/main.jl" => "CUDA",
 ]
-const ADVANCED_TUTORIALS = [
-    "GravitationalWaveForm/main.jl" => "CPU",
-]
+const ADVANCED_TUTORIALS = ["GravitationalWaveForm/main.jl" => "CPU"]
 
 const TUTORIALS = [
     collect(enumerate(Iterators.product(["beginner"], first.(BEGINNER_TUTORIALS))))...,
-    collect(enumerate(Iterators.product(["intermediate"], first.(INTERMEDIATE_TUTORIALS))))...,
-    collect(enumerate(Iterators.product(["advanced"], first.(ADVANCED_TUTORIALS))))...
+    collect(
+        enumerate(Iterators.product(["intermediate"], first.(INTERMEDIATE_TUTORIALS)))
+    )...,
+    collect(enumerate(Iterators.product(["advanced"], first.(ADVANCED_TUTORIALS))))...,
 ]
-const BACKEND_LIST = lowercase.([
-    last.(BEGINNER_TUTORIALS)...,
-    last.(INTERMEDIATE_TUTORIALS)...,
-    last.(ADVANCED_TUTORIALS)...
-])
-#! format: on
+const BACKEND_LIST =
+    lowercase.([
+        last.(BEGINNER_TUTORIALS)...,
+        last.(INTERMEDIATE_TUTORIALS)...,
+        last.(ADVANCED_TUTORIALS)...,
+    ])
 
 const BACKEND_GROUP = lowercase(get(ENV, "TUTORIAL_BACKEND_GROUP", "all"))
 

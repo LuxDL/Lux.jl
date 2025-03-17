@@ -135,9 +135,9 @@ end
 const StatefulRealNVP{M} = StatefulLuxLayer{M,<:RealNVP}
 
 function Lux.initialstates(rng::AbstractRNG, l::RealNVP)
-    mask_list = Vector{Bool}([
+    mask_list = Vector{Bool}[
         collect(1:(l.dist_dims)) .% 2 .== i % 2 for i in 1:(l.n_transforms)
-    ])
+    ]
     return (; mask_list, conditioners=Lux.initialstates(rng, l.conditioners))
 end
 

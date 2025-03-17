@@ -3,7 +3,7 @@
     dropout(rng::AbstractRNG, x, mask, p, training, update_mask::Union{Val, StaticBool},
         invp, dims)
 
-Dropout: Simple Way to prevent Neural Networks for Overfitting. For details see [1].
+Dropout: Simple Way to prevent Neural Networks for Overfitting. For details see [srivastava2014dropout](@citet).
 
 ## Arguments
 
@@ -23,11 +23,6 @@ Dropout: Simple Way to prevent Neural Networks for Overfitting. For details see 
   - Output Array after applying dropout
   - Dropout Mask (if `training == false`, the returned value is meaningless)
   - Updated state for the random number generator
-
-## References
-
-[1] Srivastava, Nitish, et al. "Dropout: a simple way to prevent neural networks from
-overfitting." The journal of machine learning research 15.1 (2014): 1929-1958.
 """
 function dropout(
     rng::AbstractRNG, x::AbstractArray, p::T, training::TrainingType, invp::T, dims
@@ -55,8 +50,8 @@ end
     alpha_dropout(rng::AbstractRNG, x, p, training, α, A, B)
 
 Alpha Dropout: Dropout ensuring that the mean and variance of the output remains same as the
-input. For details see [1]. Use the second call signature to avoid recomputing the constants
-for a fixed dropout probability.
+input. For details see [klambauer2017self](@citet). Use the second call signature to avoid
+recomputing the constants for a fixed dropout probability.
 
 ## Arguments
 
@@ -74,11 +69,6 @@ for a fixed dropout probability.
 
   - Output Array after applying alpha dropout
   - Updated state for the random number generator
-
-## References
-
-[1] Klambauer, Günter, et al. "Self-normalizing neural networks." Advances in neural
-information processing systems 30 (2017).
 """
 function alpha_dropout(rng::AbstractRNG, x::AbstractArray, p, training::TrainingType)
     return alpha_dropout_impl(rng, x, p, static_training_mode(training, x))

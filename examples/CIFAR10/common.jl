@@ -28,13 +28,14 @@ function get_cifar10_dataloaders(::Type{T}, batchsize; kwargs...) where {T}
     cifar10_mean = T.((0.4914, 0.4822, 0.4465))
     cifar10_std = T.((0.2471, 0.2435, 0.2616))
 
-    train_transform = ToEltype(T)(
-        Normalize(cifar10_mean, cifar10_std)(
-            ImageToTensor()(Maybe(FlipX{2}())(RandomResizeCrop((32, 32))))
-        ),
-    )
+    train_transform =
+        RandomResizeCrop((32, 32)) |>
+        Maybe(FlipX{2}()) |>
+        ImageToTensor() |>
+        Normalize(cifar10_mean, cifar10_std) |>
+        ToEltype(T)
 
-    test_transform = ToEltype(T)(Normalize(cifar10_mean, cifar10_std)(ImageToTensor()))
+    test_transform = ImageToTensor() |> Normalize(cifar10_mean, cifar10_std) |> ToEltype(T)
 
     trainset = TensorDataset(CIFAR10(; Tx=T, split=:train), train_transform)
     trainloader = DataLoader(trainset; batchsize, shuffle=true, kwargs...)

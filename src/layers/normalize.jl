@@ -305,7 +305,7 @@ end
     InstanceNorm(chs::Integer, activation=identity; init_bias=zeros32, init_scale=ones32,
                  affine=False(), track_stats=False(), epsilon=1f-5, momentum=0.1f0)
 
-Instance Normalization. For details see [1].
+Instance Normalization. For details see [ulyanov2016instance](@citet).
 
 Instance Normalization computes the mean and variance for each
 ``D_1 \times ... \times D_{N - 2} \times 1 \times 1``` input slice and normalises the input
@@ -379,11 +379,6 @@ Chain(
 )         # Total: 51_038 parameters,
           #        plus 2 states.
 ```
-
-## References
-
-[1] Ulyanov, Dmitry, Andrea Vedaldi, and Victor Lempitsky. "Instance normalization: The
-    missing ingredient for fast stylization." arXiv preprint arXiv:1607.08022 (2016).
 
 See also [`BatchNorm`](@ref), [`GroupNorm`](@ref), [`LayerNorm`](@ref), [`WeightNorm`](@ref)
 """

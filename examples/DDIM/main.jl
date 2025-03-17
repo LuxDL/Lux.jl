@@ -137,13 +137,18 @@ function unet_model(
         (in_chs, out_chs) in zip(channels[1:(end - 1)], channels[2:end])
     ]
 
-    #! format: off
     return @compact(;
-        upsample, conv_in, conv_out, down_blocks, residual_blocks, up_blocks,
-        min_freq, max_freq, embedding_dims,
-        num_blocks = (length(channels) - 1)
-    ) do x::Tuple{AbstractArray{<:Real, 4}, AbstractArray{<:Real, 4}}
-        #! format: on
+        upsample,
+        conv_in,
+        conv_out,
+        down_blocks,
+        residual_blocks,
+        up_blocks,
+        min_freq,
+        max_freq,
+        embedding_dims,
+        num_blocks=(length(channels) - 1)
+    ) do x::Tuple{AbstractArray{<:Real,4},AbstractArray{<:Real,4}}
         noisy_images, noise_variances = x
 
         @argcheck size(noise_variances)[1:3] == (1, 1, 1)

@@ -2,7 +2,7 @@
     layernorm(x::AbstractArray{xT, N}, scale, bias, σ = identity, dims=1:(N - 1),
         epsilon = eps(eltype(x)) ^ (5 / 7)) where {xT, N}
 
-Layer Normalization. For details see [1].
+Layer Normalization. For details see [ba2016layer](@citet).
 
 Given an input array ``x``, this layer computes
 
@@ -28,11 +28,6 @@ and applies the activation function `σ` elementwise to `y`.
 ## Returns
 
 Normalized Array of same size as `x`.
-
-## References
-
-[1] Ba, Jimmy Lei, Jamie Ryan Kiros, and Geoffrey E. Hinton. "Layer normalization." arXiv
-    preprint arXiv:1607.06450 (2016).
 """
 function layernorm(
     x::AbstractArray{xT,N},

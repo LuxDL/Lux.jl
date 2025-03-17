@@ -3,7 +3,7 @@
     instancenorm(x, scale, bias, running_mean, running_var, training, act, momentum,
         epsilon = eps(eltype(x)) ^ (5 // 7))
 
-Instance Normalization. For details see [1].
+Instance Normalization. For details see [ulyanov2016instance](@citet).
 
 Instance Normalization computes the mean and variance for each
 ``D_1 \times ... \times D_{N - 2} \times 1 \times 1`` input slice and normalises the input
@@ -28,11 +28,6 @@ accordingly.
 
 Normalized Array of same size as `x`. And a Named Tuple containing the updated running
 mean and variance.
-
-## References
-
-[1] Ulyanov, Dmitry, Andrea Vedaldi, and Victor Lempitsky. "Instance normalization: The
-    missing ingredient for fast stylization." arXiv preprint arXiv:1607.08022 (2016).
 """
 function instancenorm(
     x::AbstractArray,

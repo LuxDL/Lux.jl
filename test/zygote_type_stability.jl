@@ -5,7 +5,6 @@ include("setup_modes.jl")
 @testset "Type Stability" begin
     rng = StableRNG(12345)
 
-    #! format: off
     MODELS = [
         [
             Dense(3 => 4, gelu),
@@ -28,13 +27,17 @@ include("setup_modes.jl")
         ],
         [Dropout(0.5f0), AlphaDropout(0.5f0)],
         [
-            Chain(Parallel(nothing, Dense(3 => 4, gelu), Dense(3 => 4, gelu)),
-                WrappedFunction(first)),
-            Parallel(+, Dense(3 => 4, gelu), Dense(3 => 4, gelu))
+            Chain(
+                Parallel(nothing, Dense(3 => 4, gelu), Dense(3 => 4, gelu)),
+                WrappedFunction(first),
+            ),
+            Parallel(+, Dense(3 => 4, gelu), Dense(3 => 4, gelu)),
         ],
         [
-            Chain(BranchLayer(Dense(3 => 4, gelu), Dense(3 => 4, gelu)),
-                WrappedFunction(first))
+            Chain(
+                BranchLayer(Dense(3 => 4, gelu), Dense(3 => 4, gelu)),
+                WrappedFunction(first),
+            ),
         ],
         [RepeatedLayer(Dense(3 => 4, gelu))],
         [PairwiseFusion(+, Dense(3 => 3, gelu), Dense(3 => 3, gelu))],
@@ -45,7 +48,7 @@ include("setup_modes.jl")
             GlobalMeanPool(),
             AdaptiveMaxPool((2, 2)),
             AdaptiveMeanPool((2, 2)),
-        ]
+        ],
     ]
 
     INPUTS = [
@@ -61,9 +64,8 @@ include("setup_modes.jl")
         [randn(rng, Float32, 3, 2)],
         [randn(rng, Float32, 3, 2)],
         [randn(rng, Float32, 3, 2)],
-        [randn(rng, Float32, 4, 4, 2, 3)]
+        [randn(rng, Float32, 4, 4, 2, 3)],
     ]
-    #! format: on
 
     loss_function(model, x, ps, st) = sum(abs2, first(model(x, ps, st)))
 

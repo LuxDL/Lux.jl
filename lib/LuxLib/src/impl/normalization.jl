@@ -88,7 +88,8 @@ end
 )
     I = @index(Global)
     rμₙ[I] = m₃ * rμ[I] + m₁ * μ[I]
-    return rσ²ₙ[I] = m₃ * rσ²[I] + m₂ * σ²[I]
+    rσ²ₙ[I] = m₃ * rσ²[I] + m₂ * σ²[I]
+    return nothing
 end
 
 function update_normalization_statistics(

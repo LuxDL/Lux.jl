@@ -321,7 +321,8 @@ end
     i, j, k, l = @index(Global, NTuple)
     γ′ = inv(sqrt(σ²[1, 1, k, l] + ϵ))
     β′ = -μ[1, 1, k, l] * γ′
-    return y[i, j, k, l] = f(muladd(x[i, j, k, l], γ′, β′))
+    y[i, j, k, l] = f(muladd(x[i, j, k, l], γ′, β′))
+    return nothing
 end
 
 @kernel cpu = false inbounds = true function groupnorm_affine_normalize_kernel!(
@@ -337,7 +338,8 @@ end
     i, j, k, l = @index(Global, NTuple)
     γ′ = γ[1, j, k, 1] / sqrt(σ²[1, 1, k, l] + ϵ)
     β′ = muladd(-μ[1, 1, k, l], γ′, β[1, j, k, 1])
-    return y[i, j, k, l] = f(muladd(x[i, j, k, l], γ′, β′))
+    y[i, j, k, l] = f(muladd(x[i, j, k, l], γ′, β′))
+    return nothing
 end
 
 function CRC.rrule(
@@ -572,8 +574,8 @@ end
     idenom = inv(sqrt(σ²[1, 1, k, l] + ϵ))
 
     ∂x[i, j, k, l] = ∂y[i, j, k, l] * idenom
-    return ∂σ²[i, j, k, l] =
-        ∂x[i, j, k, l] * (μ[1, 1, k, l] - x[i, j, k, l]) * idenom * idenom / 2
+    ∂σ²[i, j, k, l] = ∂x[i, j, k, l] * (μ[1, 1, k, l] - x[i, j, k, l]) * idenom * idenom / 2
+    return nothing
 end
 
 @kernel cpu = false inbounds = true function ∇groupnorm_affine_normalize_kernel!(
@@ -587,5 +589,6 @@ end
 
     ∂x[i, j, k, l] = ∂y[i, j, k, l] * γ′
     ∂σ²[i, j, k, l] = -∂x[i, j, k, l] * xμ_d * idenom / 2
-    return ∂γ[i, j, k, l] = ∂y[i, j, k, l] * xμ_d
+    ∂γ[i, j, k, l] = ∂y[i, j, k, l] * xμ_d
+    return nothing
 end

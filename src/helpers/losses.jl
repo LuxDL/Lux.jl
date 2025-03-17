@@ -291,8 +291,8 @@ end
 @doc doc"""
     BinaryFocalLoss(; gamma = 2, agg = mean, epsilon = nothing)
 
-Return the binary focal loss [1]. The model input, $\hat{y}$, is expected to be normalized
-(i.e. softmax output).
+Return the binary focal loss [lin2017focal](@cite). The model input, $\hat{y}$, is expected
+to be normalized (i.e. softmax output).
 
 For $\gamma = 0$ this is equivalent to [`BinaryCrossEntropyLoss`](@ref).
 
@@ -311,11 +311,6 @@ true
 julia> BinaryFocalLoss(gamma=0)(ŷ, y) ≈ BinaryCrossEntropyLoss()(ŷ, y)
 true
 ```
-
-## References
-
-[1] Lin, Tsung-Yi, et al. "Focal loss for dense object detection." Proceedings of the IEEE
-international conference on computer vision. 2017.
 """
 @kwdef @concrete struct BinaryFocalLoss <: AbstractLossFunction
     gamma = 2
@@ -424,8 +419,8 @@ end
 @doc doc"""
     DiceCoeffLoss(; smooth = true, agg = mean)
 
-Return the Dice Coefficient loss [1] which is used in segmentation tasks. The dice
-coefficient is similar to the F1_score. Loss calculated as:
+Return the Dice Coefficient loss [milletari2016v](@cite) which is used in segmentation
+tasks. The dice coefficient is similar to the F1_score. Loss calculated as:
 
 $$agg\left(1 - \frac{2 \sum y \hat{y} + \alpha}{\sum y^2 + \sum \hat{y}^2 + \alpha}\right)$$
 
@@ -445,12 +440,6 @@ true
 julia> DiceCoeffLoss()(reshape(y_pred, 3, 1), reshape(1:3, 3, 1)) ≈ 0.000992391663909964
 true
 ```
-
-## References
-
-[1] Milletari, Fausto, Nassir Navab, and Seyed-Ahmad Ahmadi. "V-net: Fully convolutional
-neural networks for volumetric medical image segmentation." 2016 fourth international
-conference on 3D vision (3DV). Ieee, 2016.
 """
 @kwdef @concrete struct DiceCoeffLoss <: AbstractLossFunction
     smooth = true
@@ -473,9 +462,9 @@ end
 @doc doc"""
     FocalLoss(; gamma = 2, dims = 1, agg = mean, epsilon = nothing)
 
-Return the focal loss [1] which can be used in classification tasks with highly imbalanced
-classes. It down-weights well-classified examples and focuses on hard examples.
-The input, $\hat{y}$, is expected to be normalized (i.e. `softmax` output).
+Return the focal loss [lin2017focal](@cite) which can be used in classification tasks with
+highly imbalanced classes. It down-weights well-classified examples and focuses on hard
+examples. The input, $\hat{y}$, is expected to be normalized (i.e. `softmax` output).
 
 The modulating factor $\gamma$, controls the down-weighting strength. For $\gamma = 0$ this
 is equivalent to [`CrossEntropyLoss`](@ref).
@@ -500,11 +489,6 @@ julia> ŷ = softmax(reshape(-7:7, 3, 5) .* 1f0)
 julia> FocalLoss()(ŷ, y) ≈ 1.1277556f0
 true
 ```
-
-## References
-
-[1] Lin, Tsung-Yi, et al. "Focal loss for dense object detection." Proceedings of the IEEE
-international conference on computer vision. 2017.
 """
 @kwdef @concrete struct FocalLoss <: AbstractLossFunction
     gamma = 2
@@ -725,8 +709,8 @@ end
 @doc doc"""
     SiameseContrastiveLoss(; margin = true, agg = mean)
 
-Return the contrastive loss [1] which can be useful for training Siamese Networks. It is
-given by:
+Return the contrastive loss [hadsell2006dimensionality](@cite) which can be useful for
+training Siamese Networks. It is given by:
 
 $$\text{agg}\left((1 - y) \hat{y}^2 + y * \max(0, \text{margin} - \hat{y})^2\right)$$
 
@@ -743,12 +727,6 @@ true
 julia> SiameseContrastiveLoss(margin=2)(ŷ, 1:3) ≈ -4.0
 true
 ```
-
-## References
-
-[1] Hadsell, Raia, Sumit Chopra, and Yann LeCun. "Dimensionality reduction by learning an
-invariant mapping." 2006 IEEE computer society conference on computer vision and pattern
-recognition (CVPR'06). Vol. 2. IEEE, 2006.
 """
 function SiameseContrastiveLoss(; margin=true, agg=mean)
     @argcheck margin ≥ 0

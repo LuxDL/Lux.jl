@@ -3,7 +3,6 @@ using Comonicon, Interpolations, Lux, Optimisers, Printf, Random, Statistics, Zy
 include("common.jl")
 
 function ConvMixer(; dim, depth, kernel_size=5, patch_size=2)
-    #! format: off
     return Chain(
         Conv((patch_size, patch_size), 3 => dim, gelu; stride=patch_size),
         BatchNorm(dim),
@@ -12,23 +11,24 @@ function ConvMixer(; dim, depth, kernel_size=5, patch_size=2)
                 SkipConnection(
                     Chain(
                         Conv(
-                            (kernel_size, kernel_size), dim => dim, gelu;
-                            groups=dim, pad=SamePad()
+                            (kernel_size, kernel_size),
+                            dim => dim,
+                            gelu;
+                            groups=dim,
+                            pad=SamePad(),
                         ),
-                        BatchNorm(dim)
+                        BatchNorm(dim),
                     ),
-                    +
+                    +,
                 ),
                 Conv((1, 1), dim => dim, gelu),
-                BatchNorm(dim)
-            )
-            for _ in 1:depth
+                BatchNorm(dim),
+            ) for _ in 1:depth
         ]...,
         GlobalMeanPool(),
         FlattenLayer(),
-        Dense(dim => 10)
+        Dense(dim => 10),
     )
-    #! format: on
 end
 
 Comonicon.@main function main(;

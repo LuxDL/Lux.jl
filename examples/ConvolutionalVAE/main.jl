@@ -157,7 +157,7 @@ function loadmnist(batchsize, image_size::Dims{2})
     train_dataset = MNIST(; split=:train)
     N = parse(Bool, get(ENV, "CI", "false")) ? 1500 : length(train_dataset)
 
-    train_transform = ImageToTensor()(ScaleKeepAspect(image_size))
+    train_transform = ScaleKeepAspect(image_size) |> ImageToTensor()
     trainset = TensorDataset(train_dataset, train_transform, N)
     trainloader = DataLoader(trainset; batchsize, shuffle=true, partial=false)
 
