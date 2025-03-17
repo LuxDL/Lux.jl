@@ -1,13 +1,13 @@
 module LuxReactantExt
 
-using Enzyme: Enzyme, Const, Duplicated, Active
+using Enzyme: Enzyme, Const
 using Optimisers: Optimisers
 using Reactant:
     Reactant, @compile, @code_hlo, @trace, AnyTracedRArray, TracedRArray, TracedRNumber
 using Setfield: @set!
 using Static: True, False
 
-using Lux: Lux, LuxOps, Training, Utils, StatefulLuxLayer
+using Lux: Lux, Training, Utils, StatefulLuxLayer
 using Lux.Training: TrainingBackendCache, ReactantBackend
 using LuxCore: LuxCore
 
