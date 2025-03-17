@@ -63,6 +63,12 @@ Dense
 Scale
 ```
 
+## Attention Layers
+
+```@docs
+MultiHeadAttention
+```
+
 ## Embedding Layers
 
 ```@docs
