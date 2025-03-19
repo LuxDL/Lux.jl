@@ -76,7 +76,9 @@ end
 
 using Lux, Reactant, Enzyme, Zygote
 
-sumabs2(model, x, ps, st) = sum(abs2, first(model(x, ps, st)))
+sumabs2(x::AbstractArray) = sum(abs2, x)
+sumabs2(x::Tuple) = sumabs2(first(x))
+sumabs2(model, x, ps, st) = sumabs2(model(x, ps, st))
 
 function ∇sumabs2_zygote(model, x, ps, st)
     return Zygote.gradient((x, ps) -> sumabs2(model, x, ps, st), x, ps)

@@ -40,7 +40,7 @@ The multi-head dot-product attention layer used in Transformer architectures
 
 The query tensor `q` is expected to have shape `(q_in_dim, q_len, batch_size)`, the
 key test `k` is expected to have shape `(k_in_dim, kv_len, batch_size)`, the value
-tensor `v` is expected to have shape `(v_in_dim, kv_len, batch_size)` and the
+tensor `v` is expected to have shape `(v_in_dim, kv_len, batch_size)`.
 
 ## Returns
 
@@ -48,6 +48,8 @@ tensor `v` is expected to have shape `(v_in_dim, kv_len, batch_size)` and the
     `(out_dim, q_len, batch_size)` and the second element is the attention scores
     of shape `(q_len, kv_len, nheads, batch_size)`.
   - A NamedTuple of the states of the layer.
+
+# Extended Help
 
 ## Examples
 
@@ -89,6 +91,18 @@ julia> size(α)
     v_proj <: Dense
     attention_dropout
     out_proj <: Dense
+end
+
+function Base.show(io::IO, ::MIME"text/plain", mha::MultiHeadAttention)
+    q_in, k_in, v_in = mha.q_proj.in_dims, mha.k_proj.in_dims, mha.v_proj.in_dims
+    out_dim = mha.out_proj.out_dims
+    attention_dropout_probability =
+        mha.attention_dropout isa NoOpLayer ? 0.0f0 : mha.attention_dropout.p
+    return print(
+        io,
+        "MultiHeadAttention($q_in => ($k_in, $v_in) => $out_dim; nheads=$(mha.nheads), \
+         attention_dropout_probability=$(attention_dropout_probability))",
+    )
 end
 
 function parse_mha_dims(dims::IntegerType)
