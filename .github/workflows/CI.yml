@@ -99,9 +99,7 @@ jobs:
           version: "1.10"
       - uses: julia-actions/julia-downgrade-compat@v1
         with:
-          # We skip GPUArraysCore since Reactant installed later doesn't support old
-          # GPUArraysCore versions
-          skip: "LuxCore,MLDataDevices,WeightInitializers,LuxLib,GPUArraysCore"
+          skip: "LuxCore,MLDataDevices,WeightInitializers,LuxLib"
       - uses: julia-actions/julia-buildpkg@v1
       - name: "Dev Test Dependencies"
         run: |

@@ -91,6 +91,7 @@ include("layers/display.jl")
 
 # Layer Implementations
 include("layers/basic.jl")
+include("layers/attention.jl")
 include("layers/containers.jl")
 include("layers/embedding.jl")
 include("layers/normalize.jl")
@@ -142,6 +143,7 @@ export MaxPool,
 export AlphaDropout, Dropout, VariationalHiddenDropout
 export BatchNorm, GroupNorm, InstanceNorm, LayerNorm
 export WeightNorm
+export MultiHeadAttention
 export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction, ReverseSequence
 export RNNCell, LSTMCell, GRUCell, Recurrence, StatefulRecurrentCell, BidirectionalRNN
 export SamePad, TimeLastIndex, BatchLastIndex
