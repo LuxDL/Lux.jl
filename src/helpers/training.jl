@@ -1,6 +1,6 @@
 module Training
 
-using ADTypes: AbstractADType, AutoEnzyme, AutoReverseDiff, AutoTracker, AutoZygote
+using ADTypes: AbstractADType, AutoEnzyme, AutoReverseDiff, AutoTracker, AutoZygote, AutoForwardDiff
 using Compat: @compat
 using ConcreteStructs: @concrete
 using FastClosures: @closure
@@ -160,6 +160,7 @@ Compute the gradients of the objective function wrt parameters stored in `ts`.
 | `AutoReverseDiff(; compile)` | `ReverseDiff.jl` |
 | `AutoTracker`                | `Tracker.jl`     |
 | `AutoEnzyme`                 | `Enzyme.jl`      |
+| `AutoForwardDiff`            | `ForwardDiff.jl` |
 
 ## Arguments
 
