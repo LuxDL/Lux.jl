@@ -8,7 +8,7 @@ using Functors: Functors, fmap
 using Optimisers: Optimisers
 using Setfield: @set!
 using Static: StaticBool, Static, False, True, static
-using ForwardDiff
+using ForwardDiff: ForwardDiff
 
 using ..Lux: Lux, Utils, ReactantCompatibleOptimisers
 using LuxCore: LuxCore, AbstractLuxLayer
