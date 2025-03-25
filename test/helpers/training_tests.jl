@@ -39,7 +39,7 @@ end
         x = aType(randn(Lux.replicate(rng), Float32, (3, 1)))
 
         for ad in (AutoZygote(), AutoTracker(), AutoReverseDiff(), AutoEnzyme(), AutoForwardDiff())
-            ongpu && (ad isa AutoReverseDiff || ad isa AutoEnzyme || ad isa AutoForwardDiff()) && continue
+            ongpu && (ad isa AutoReverseDiff || ad isa AutoEnzyme || ad isa AutoForwardDiff) && continue
             !LuxTestUtils.ENZYME_TESTING_ENABLED && ad isa AutoEnzyme && continue
 
             grads, _, _, _ = Training.compute_gradients(ad, _loss_function, x, tstate)
