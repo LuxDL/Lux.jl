@@ -161,7 +161,7 @@ Compute the gradients of the objective function wrt parameters stored in `ts`.
 | `AutoReverseDiff(; compile)` | `ReverseDiff.jl` |
 | `AutoTracker`                | `Tracker.jl`     |
 | `AutoEnzyme`                 | `Enzyme.jl`      |
-| `AutoForwardDiff`            | `ForwardDiff.jl` |
+| `AutoForwardDiff`            |                  |
 
 ## Arguments
 
