@@ -38,8 +38,8 @@ end
 
         x = aType(randn(Lux.replicate(rng), Float32, (3, 1)))
 
-        for ad in (AutoZygote(), AutoTracker(), AutoReverseDiff(), AutoEnzyme())
-            ongpu && (ad isa AutoReverseDiff || ad isa AutoEnzyme) && continue
+        for ad in (AutoZygote(), AutoTracker(), AutoReverseDiff(), AutoEnzyme(), AutoForwardDiff())
+            ongpu && (ad isa AutoReverseDiff || ad isa AutoEnzyme || ad isa AutoForwardDiff()) && continue
             !LuxTestUtils.ENZYME_TESTING_ENABLED && ad isa AutoEnzyme && continue
 
             grads, _, _, _ = Training.compute_gradients(ad, _loss_function, x, tstate)
@@ -74,8 +74,8 @@ end
         opt = Adam(0.001f0)
 
         @testset "$(ad)" for ad in
-                             (AutoZygote(), AutoTracker(), AutoReverseDiff(), AutoEnzyme())
-            ongpu && (ad isa AutoReverseDiff || ad isa AutoEnzyme) && continue
+                             (AutoZygote(), AutoTracker(), AutoReverseDiff(), AutoEnzyme(), AutoForwardDiff())
+            ongpu && (ad isa AutoReverseDiff || ad isa AutoEnzyme || ad isa AutoForwardDiff) && continue
             !LuxTestUtils.ENZYME_TESTING_ENABLED && ad isa AutoEnzyme && continue
 
             broken = ad isa AutoEnzyme && VERSION ≥ v"1.11-"
