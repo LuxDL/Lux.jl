@@ -68,7 +68,6 @@ LuxMPIExt = "MPI"
 LuxMPINCCLExt = ["CUDA", "MPI", "NCCL"]
 LuxReactantExt = ["Enzyme", "Reactant", "ReactantCore"]
 LuxReverseDiffExt = ["FunctionWrappers", "ReverseDiff"]
-LuxForwardDiffExt = "ForwardDiff"
 LuxSimpleChainsExt = "SimpleChains"
 LuxTrackerExt = "Tracker"
 LuxZygoteExt = "Zygote"
