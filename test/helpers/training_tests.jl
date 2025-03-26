@@ -189,6 +189,8 @@ end
     final_loss = first(
         mse(model, tstate.parameters, tstate.states, dataset_[1])
     )
+    
+    @test final_loss * 100 < initial_loss
 end
 
 @testitem "Enzyme: Invalidate Cache on State Update" setup = [SharedTestSetup] tags = [

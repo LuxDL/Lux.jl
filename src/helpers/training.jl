@@ -8,7 +8,7 @@ using Functors: Functors, fmap
 using Optimisers: Optimisers
 using Setfield: @set!
 using Static: StaticBool, Static, False, True, static
-using ForwardDiff: ForwardDiff
+using ForwardDiff: ForwardDiff, DiffResults
 
 using ..Lux: Lux, Utils, ReactantCompatibleOptimisers
 using LuxCore: LuxCore, AbstractLuxLayer
@@ -213,12 +213,16 @@ function maybe_wrap_adtype(
 end
 
 function compute_gradients_impl(
-    ::AutoForwardDiff, objective_function::F, data, ts::Lux.Training.TrainState
+    ::AutoForwardDiff, obj_fn::F, data, ts::Lux.Training.TrainState
 ) where {F}
-    grads = ForwardDiff.gradient(ps -> objective_function(ts.model,ps,ts.states,data)[1], ts.parameters);
-    loss, st, stats = objective_function(ts.model,ts.parameters,ts.states,data)
-    @set! ts.states = st
-    return grads, loss, stats, ts
+    obj_fn_wrap, st_wrap, stats_wrap = Lux.Training.wrap_objective_function(
+    obj_fn, ts.model, ts.parameters, ts.states, data, True())
+    result = DiffResults.GradientResult(ts.parameters)
+    result = ForwardDiff.gradient!(result, ps -> obj_fn_wrap(ts.model, ps, ts.states, data), ts.parameters)
+
+    @set! ts.objective_function = obj_fn
+    @set! ts.states = st_wrap[]
+    return DiffResults.gradient(result), DiffResults.value(result), stats_wrap[], ts
 end
 
 function compute_gradients_impl(ad, ::F, _, ts::TrainState) where {F}
