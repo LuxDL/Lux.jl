@@ -63,7 +63,7 @@ function accuracy(model, ps, st, dataloader)
     total_correct, total = 0, 0
     st = Lux.testmode(st)
     for (x, y) in dataloader
-        target_class = onecold(y)
+        target_class = onecold(Array(y))
         predicted_class = onecold(Array(first(model(x, ps, st))))
         total_correct += sum(target_class .== predicted_class)
         total += length(target_class)
