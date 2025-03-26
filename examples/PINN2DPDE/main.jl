@@ -36,7 +36,7 @@ const cdev = cpu_device()
 # a wrapper over the 3 networks, so that we can train them using
 # [`Training.TrainState`](@ref).
 
-struct PINN{U,V,W} <: Lux.AbstractLuxContainerLayer{(:u, :v, :w)}
+struct PINN{U,V,W} <: AbstractLuxContainerLayer{(:u, :v, :w)}
     u::U
     v::V
     w::W

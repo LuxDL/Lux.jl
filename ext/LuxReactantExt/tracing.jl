@@ -10,7 +10,7 @@
         return StatefulLuxLayer{
             ST,
             M,
-            Reactant.traced_type(psT.seen, mode, track_numbers, sharding, runtime),
+            Reactant.traced_type(psT, seen, mode, track_numbers, sharding, runtime),
             Reactant.traced_type(stT, seen, mode, track_numbers, sharding, runtime),
         }
     end
