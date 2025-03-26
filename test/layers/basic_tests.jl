@@ -163,6 +163,13 @@ end
                 )
             end == aType([10 20; 10 20])
         end
+
+        @testset "outputsize" begin
+            d = Dense(10, 2)
+            @test Lux.outputsize(d, randn(Float32, 10, 3), rng) == (2,)
+            @test Lux.outputsize(d, randn(Float32, 10), rng) == (2,)
+            @test Lux.outputsize(d, randn(Float32, 10, 3, 2), rng) == (2, 3)
+        end
     end
 end
 
