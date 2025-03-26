@@ -13,7 +13,7 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
 ConcreteStructs = "0.2.3"
-Enzyme = "0.13.28"
+Enzyme = "0.13.35"
 GNNGraphs = "1"
 Lux = "1.5"
 MLDatasets = "0.7.18"

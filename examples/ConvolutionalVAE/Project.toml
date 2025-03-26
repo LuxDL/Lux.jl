@@ -16,7 +16,7 @@ Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
 [compat]
 ConcreteStructs = "0.2.3"
 DataAugmentation = "0.3.2"
-Enzyme = "0.13.20"
+Enzyme = "0.13.35"
 ImageShow = "0.3.8"
 Images = "0.26.1"
 Lux = "1.4.1"
