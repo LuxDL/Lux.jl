@@ -8,7 +8,6 @@ using Functors: Functors, fmap
 using Optimisers: Optimisers
 using Setfield: @set!
 using Static: StaticBool, Static, False, True, static
-using ForwardDiff: ForwardDiff, DiffResults
 
 using ..Lux: Lux, Utils, ReactantCompatibleOptimisers
 using LuxCore: LuxCore, AbstractLuxLayer
@@ -163,7 +162,6 @@ Compute the gradients of the objective function wrt parameters stored in `ts`.
 | `AutoEnzyme`                 | `Enzyme.jl`      |
 | `AutoForwardDiff`            |                  |
 
-
 ## Arguments
 
   - `ad`: Backend (from [ADTypes.jl](https://github.com/SciML/ADTypes.jl)) used to compute
@@ -188,7 +186,8 @@ A 4-Tuple containing:
   - `AutoReverseDiff(; compile=true)` is not supported for Lux models with non-empty state
     `st`. Additionally the returned stats must be empty (`NamedTuple()`). We catch these
     issues in most cases and throw an error.
-  - AutoForwardDiff only works with parameters that are converted to ComponentVectors (e.g. ps=ComponentVector(ps))
+  - AutoForwardDiff only works with parameters that are AbstractArrays
+    (e.g. ps=ComponentVector(ps))
 
 !!! danger "Aliased Gradients"
 
