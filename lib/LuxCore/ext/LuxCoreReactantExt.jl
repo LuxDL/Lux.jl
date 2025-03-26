@@ -10,27 +10,15 @@ function Reactant.make_tracer(
     return model
 end
 
-@static if isdefined(Reactant, :ConcreteIFRTArray)
-    function Reactant.traced_type_inner(
-        @nospecialize(T::Type{<:AbstractLuxLayer}),
-        seen,
-        @nospecialize(mode::Reactant.TraceMode),
-        @nospecialize(track_numbers::Type),
-        @nospecialize(sharding),
-        @nospecialize(runtime)
-    )
-        return T
-    end
-else
-    function Reactant.traced_type_inner(
-        @nospecialize(T::Type{<:AbstractLuxLayer}),
-        seen,
-        @nospecialize(mode::Reactant.TraceMode),
-        @nospecialize(track_numbers::Type),
-        @nospecialize(sharding)
-    )
-        return T
-    end
+function Reactant.traced_type_inner(
+    @nospecialize(T::Type{<:AbstractLuxLayer}),
+    seen,
+    @nospecialize(mode::Reactant.TraceMode),
+    @nospecialize(track_numbers::Type),
+    @nospecialize(sharding),
+    @nospecialize(runtime)
+)
+    return T
 end
 
 LuxCore.replicate(rng::Reactant.TracedRNG) = copy(rng)
