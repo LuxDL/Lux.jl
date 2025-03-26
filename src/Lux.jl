@@ -82,6 +82,7 @@ include("extended_ops.jl")
 # Training Helpers
 include("helpers/optimizers.jl")
 include("helpers/training.jl")
+include("helpers/forwarddiff_training.jl")
 
 # Experimental
 include("contrib/contrib.jl")
@@ -155,7 +156,8 @@ export Training
 
 export jacobian_vector_product, vector_jacobian_product
 export batched_jacobian
-export AutoEnzyme, AutoForwardDiff, AutoReverseDiff, AutoTracker, AutoZygote
+export AutoEnzyme,
+    AutoForwardDiff, AutoReverseDiff, AutoTracker, AutoZygote, AutoForwardDiff
 
 export BinaryCrossEntropyLoss,
     BinaryFocalLoss,

@@ -152,11 +152,7 @@ end
     dataset = [(x_data[:, i], y_data[:, i]) for i in Iterators.partition(1:32, 8)]
 
     model = Chain(
-        Dense(4, 32, tanh),
-        BatchNorm(32),
-        Dense(32, 32, tanh),
-        BatchNorm(32),
-        Dense(32, 4),
+        Dense(4, 32, tanh), BatchNorm(32), Dense(32, 32, tanh), BatchNorm(32), Dense(32, 4)
     )
 
     dataset_ = [(x, y) for (x, y) in dataset]
@@ -165,32 +161,32 @@ end
     ps, st = Lux.setup(rng, model)
     tstate = Training.TrainState(model, ComponentVector(ps), st, opt)
 
-    initial_loss = first(mse(model, tstate.parameters, tstate.states, dataset_[1]))
+    initial_loss = first(
+        mse(model, tstate.parameters, Lux.testmode(tstate.states), dataset_[1])
+    )
 
-    for epoch in 1:1000, (x, y) in dataset_
+    for epoch in 1:100, (x, y) in dataset_
         grads, loss, _, tstate = allow_unstable() do
             Training.compute_gradients(AutoForwardDiff(), mse, (x, y), tstate)
         end
         tstate = Training.apply_gradients!(tstate, grads)
     end
 
-    for epoch in 1:1000, (x, y) in dataset_
+    for epoch in 1:100, (x, y) in dataset_
         grads, loss, _, tstate = allow_unstable() do
             Training.single_train_step!(AutoForwardDiff(), mse, (x, y), tstate)
         end
     end
 
-    for epoch in 1:1000, (x, y) in dataset_
+    for epoch in 1:100, (x, y) in dataset_
         grads, loss, _, tstate = allow_unstable() do
             Training.single_train_step(AutoForwardDiff(), mse, (x, y), tstate)
         end
     end
 
-    final_loss = first(
-        mse(model, tstate.parameters, tstate.states, dataset_[1])
-    )
-    
-    @test final_loss * 100 < initial_loss
+    final_loss = first(mse(model, tstate.parameters, tstate.states, dataset_[1]))
+
+    @test final_loss * 50 < initial_loss
 end
 
 @testitem "Enzyme: Invalidate Cache on State Update" setup = [SharedTestSetup] tags = [

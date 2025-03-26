@@ -1,6 +1,6 @@
 module Training
 
-using ADTypes: AbstractADType, AutoEnzyme, AutoReverseDiff, AutoTracker, AutoZygote, AutoForwardDiff
+using ADTypes: AbstractADType, AutoEnzyme, AutoReverseDiff, AutoTracker, AutoZygote
 using Compat: @compat
 using ConcreteStructs: @concrete
 using FastClosures: @closure
@@ -210,19 +210,6 @@ function maybe_wrap_adtype(
     ad isa AutoEnzyme && return ReactantBackend(static(return_gradients))
     throw(ArgumentError("Computing gradients for models on XLA is supported only with \
                          Enzyme.jl (`AutoEnzyme`)."))
-end
-
-function compute_gradients_impl(
-    ::AutoForwardDiff, obj_fn::F, data, ts::Lux.Training.TrainState
-) where {F}
-    obj_fn_wrap, st_wrap, stats_wrap = Lux.Training.wrap_objective_function(
-    obj_fn, ts.model, ts.parameters, ts.states, data, True())
-    result = DiffResults.GradientResult(ts.parameters)
-    result = ForwardDiff.gradient!(result, ps -> obj_fn_wrap(ts.model, ps, ts.states, data), ts.parameters)
-
-    @set! ts.objective_function = obj_fn
-    @set! ts.states = st_wrap[]
-    return DiffResults.gradient(result), DiffResults.value(result), stats_wrap[], ts
 end
 
 function compute_gradients_impl(ad, ::F, _, ts::TrainState) where {F}
