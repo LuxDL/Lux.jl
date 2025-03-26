@@ -46,22 +46,17 @@ MLUtils = "f1d291b0-491e-4a28-83b9-f70985020b54"
 MPI = "da04e1cc-30fd-572f-bb4f-1f8673147195"
 NCCL = "3fe64909-d7a1-4096-9b7d-7a0f12cf0f6b"
 Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
+ReactantCore = "a3311ec8-5e00-46d5-b541-4f83e724a433"
 ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
 SimpleChains = "de6bee2f-e2f4-4ec7-b6ed-219cc6f6e9e5"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
-[sources.LuxCore]
-path = "lib/LuxCore"
-
-[sources.LuxLib]
-path = "lib/LuxLib"
-
-[sources.MLDataDevices]
-path = "lib/MLDataDevices"
-
-[sources.WeightInitializers]
-path = "lib/WeightInitializers"
+[sources]
+LuxCore = {path = "lib/LuxCore"}
+LuxLib = {path = "lib/LuxLib"}
+MLDataDevices = {path = "lib/MLDataDevices"}
+WeightInitializers = {path = "lib/WeightInitializers"}
 
 [extensions]
 LuxComponentArraysExt = "ComponentArrays"
@@ -71,7 +66,7 @@ LuxLossFunctionsExt = "LossFunctions"
 LuxMLUtilsExt = "MLUtils"
 LuxMPIExt = "MPI"
 LuxMPINCCLExt = ["CUDA", "MPI", "NCCL"]
-LuxReactantExt = ["Enzyme", "Reactant"]
+LuxReactantExt = ["Enzyme", "Reactant", "ReactantCore"]
 LuxReverseDiffExt = ["FunctionWrappers", "ReverseDiff"]
 LuxSimpleChainsExt = "SimpleChains"
 LuxTrackerExt = "Tracker"
@@ -111,6 +106,7 @@ Optimisers = "0.4.1"
 Preferences = "1.4.3"
 Random = "1.10"
 Reactant = "0.2.55"
+ReactantCore = "0.1.8"
 Reexport = "1.2.2"
 ReverseDiff = "1.15"
 SIMDTypes = "0.1"
