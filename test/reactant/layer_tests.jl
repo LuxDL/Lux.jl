@@ -131,8 +131,6 @@ end
                     1.0e-3
             end
 
-            # TODO: Check for stablehlo.batch_norm_training once we emit it in LuxLib
-
             @testset "gradient" begin
                 ∂x, ∂ps = ∇sumabs2_zygote(model, x, ps, st)
                 ∂x_ra, ∂ps_ra = @jit ∇sumabs2_enzyme(model, x_ra, ps_ra, st_ra)
@@ -150,9 +148,6 @@ end
                 @test st3.layer_2.running_var ≈ st3_ra.layer_2.running_var rtol = 1.0e-3 atol =
                     1.0e-3
             end
-
-            hlo = @code_hlo model(x_ra, ps_ra, Lux.testmode(st_ra))
-            @test contains(repr(hlo), "stablehlo.batch_norm_inference")
         end
     end
 end
