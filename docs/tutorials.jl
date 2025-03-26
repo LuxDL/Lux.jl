@@ -8,7 +8,7 @@ const BEGINNER_TUTORIALS = [
 ]
 const INTERMEDIATE_TUTORIALS = [
     "NeuralODE/main.jl" => "CUDA",
-    "BayesianNN/main.jl" => "CPU",
+    "BayesianNN/main.jl" => "CPU", # This is an empty tutorial, left to redirect to Turing
     "HyperNet/main.jl" => "CUDA",
     "PINN2DPDE/main.jl" => "CUDA",
     "ConvolutionalVAE/main.jl" => "CUDA",

@@ -227,10 +227,6 @@ export default defineConfig({
                 link: "/tutorials/intermediate/1_NeuralODE",
               },
               {
-                text: "Bayesian Neural Network",
-                link: "/tutorials/intermediate/2_BayesianNN",
-              },
-              {
                 text: "Training a HyperNetwork on MNIST and FashionMNIST",
                 link: "/tutorials/intermediate/3_HyperNet",
               },

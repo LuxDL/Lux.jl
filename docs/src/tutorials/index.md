@@ -49,12 +49,6 @@ const intermediate = [
     desc: "Train a Neural Ordinary Differential Equations to classify MNIST Images."
   },
   {
-    href: "intermediate/2_BayesianNN",
-    src: "https://github.com/TuringLang.png",
-    caption: "Bayesian Neural Networks",
-    desc: "Figure out how to use Probabilistic Programming Frameworks like Turing with Lux."
-  },
-  {
     href: "intermediate/3_HyperNet",
     src: "../hypernet.jpg",
     caption: "Training a HyperNetwork",
@@ -128,6 +122,12 @@ const third_party = [
     src: "../pinn.gif",
     caption: "GPU-Accelerated Physics-Informed Neural Networks",
     desc: "Use Machine Learning (PINNs) to solve the Heat Equation PDE on a GPU."
+  },
+  {
+    href: "https://turinglang.org/docs/tutorials/bayesian-neural-networks/",
+    src: "https://github.com/TuringLang.png",
+    caption: "Bayesian Neural Networks",
+    desc: "Figure out how to use Probabilistic Programming Frameworks like Turing with Lux."
   },
   {
     href: "https://docs.sciml.ai/DiffEqFlux/stable/examples/neural_ode_weather_forecast/",
