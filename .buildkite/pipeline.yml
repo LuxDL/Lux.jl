@@ -129,5 +129,6 @@ steps:
       # Documentation
       buildkite-agent pipeline upload .buildkite/documentation.yml
 
-      # Benchmarks
-      buildkite-agent pipeline upload .buildkite/benchmarks.yml
+      # Disable benchmarks for now
+      # # Benchmarks
+      # buildkite-agent pipeline upload .buildkite/benchmarks.yml
