@@ -346,7 +346,9 @@ end
 parameterlength(d::Dense) = d.out_dims * d.in_dims + has_bias(d) * d.out_dims
 statelength(d::Dense) = 0
 
-outputsize(d::Dense, _, ::AbstractRNG) = (d.out_dims,)
+function outputsize(d::Dense, x::AbstractArray, ::AbstractRNG)
+    return (d.out_dims, size(x)[2:(end - 1)]...)
+end
 
 function (d::Dense)(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(d, ps, st, x)
