@@ -1,7 +1,7 @@
 name = "LuxLib"
 uuid = "82251201-b29d-42c6-8e01-566dec8acb11"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "1.7.0"
+version = "1.7.1"
 
 [deps]
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
@@ -72,7 +72,7 @@ DispatchDoctor = "0.4.12"
 Enzyme = "0.13.35"
 EnzymeCore = "0.8.8"
 FastClosures = "0.3.2"
-ForwardDiff = "0.10.36"
+ForwardDiff = "0.10.36, 1"
 Functors = "0.5"
 KernelAbstractions = "0.9.27"
 LinearAlgebra = "1.10"
