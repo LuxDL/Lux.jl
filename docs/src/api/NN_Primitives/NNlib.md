@@ -118,6 +118,7 @@ ctc_loss
 ```@docs
 logsumexp
 glu
+NNlib.@disallow_spawns
 ```
 
 !!! tip
