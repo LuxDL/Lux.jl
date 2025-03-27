@@ -1,7 +1,7 @@
 module LuxLibcuDNNExt
 
 using LuxLib: LuxLib, Optional, ∂∅, Impl
-using LuxLib.Utils: safe_reshape, safe_vec, unsafe_known, recursive_unthunk
+using LuxLib.Utils: Utils, safe_reshape, safe_vec, unsafe_known, recursive_unthunk
 using CUDA: CUDA, CuArray, CuVector, CU_NULL, DenseCuArray, DenseCuVector
 using ChainRulesCore: ChainRulesCore
 using cuDNN:

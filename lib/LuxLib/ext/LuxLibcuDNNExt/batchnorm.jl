@@ -14,8 +14,8 @@ function Impl.batchnorm_cudnn(::Nothing, ::Nothing, x::DenseCuArray, args...)
 
     y, xμ, xσ⁻² = Impl.batchnorm_cudnn(γ, β, x, args...)
 
-    CUDA.unsafe_free!(γ)
-    CUDA.unsafe_free!(β)
+    Utils.unsafe_free!(γ)
+    Utils.unsafe_free!(β)
 
     return y, xμ, xσ⁻²
 end
@@ -136,10 +136,10 @@ function Impl.∇batchnorm_cudnn(
 
     ∂γ, ∂β, ∂x = Impl.∇batchnorm_cudnn(γ, β, x, ∂y, rμ, rσ², args...)
 
-    CUDA.unsafe_free!(γ)
-    CUDA.unsafe_free!(β)
-    CUDA.unsafe_free!(∂γ)
-    CUDA.unsafe_free!(∂β)
+    Utils.unsafe_free!(γ)
+    Utils.unsafe_free!(β)
+    Utils.unsafe_free!(∂γ)
+    Utils.unsafe_free!(∂β)
 
     return nothing, nothing, ∂x
 end
