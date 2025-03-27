@@ -99,7 +99,7 @@ function kaiming_normal(
 ) where {T<:Number}
     std = T(gain) / sqrt(T(first(Utils.nfan(dims...))))
     x = DeviceAgnostic.randn(rng, T, dims...)
-    x .*= std
+    broadcast!(Base.Fix2(*, std), x, x)
     return x
 end
 
