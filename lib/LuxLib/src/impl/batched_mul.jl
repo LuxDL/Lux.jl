@@ -31,7 +31,7 @@ function batched_matmul(
 end
 
 function batched_matmul(
-    opmode::Union{GPUBroadcastOp{AMDGPUDevice}, GenericBroadcastOp{AMDGPUDevice}},
+    opmode::Union{GPUBroadcastOp{AMDGPUDevice},GenericBroadcastOp{AMDGPUDevice}},
     x::AbstractArray{<:Complex,3},
     y::AbstractArray{<:Complex,3},
 )
