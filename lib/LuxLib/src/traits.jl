@@ -158,7 +158,7 @@ abstract type AbstractInternalArrayOpMode end
 
 abstract type AbstractBroadcastOpMode <: AbstractInternalArrayOpMode end
 
-struct GenericBroadcastOp <: AbstractBroadcastOpMode end
+struct GenericBroadcastOp{dev} <: AbstractBroadcastOpMode end
 struct GPUBroadcastOp{dev} <: AbstractBroadcastOpMode end
 struct LoopedArrayOp <: AbstractInternalArrayOpMode end
 
@@ -192,15 +192,15 @@ Currently supported modes are:
 """
 function internal_operation_mode(xs::Tuple)
     xs = filter(!isnothing, xs)
-    known(Traits.use_generic_broadcasting(xs)) && return GenericBroadcastOp()
-
     dev = get_device_type(xs)
+
+    known(Traits.use_generic_broadcasting(xs)) && return GenericBroadcastOp{dev}()
     dev <: AbstractGPUDevice && return GPUBroadcastOp{dev}()
-    dev <: ReactantDevice && return GenericBroadcastOp()
+    dev <: ReactantDevice && return GenericBroadcastOp{dev}()
 
     # This check needs to be done after the GPU Check
     known(Utils.unrolled_any(!Traits.fast_scalar_indexing, xs)) &&
-        return GenericBroadcastOp()
+        return GenericBroadcastOp{dev}()
     return LoopedArrayOp()
 end
 internal_operation_mode(x::AbstractArray) = internal_operation_mode((x,))
