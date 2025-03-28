@@ -306,7 +306,7 @@ function LuxLib.Impl.cublasLt_fused_dense!(
         )
         @warn warn_msg maxlog = 1
     else
-        @warn "cuBLASLt not available. Falling back to generic implementation." maxlog = 1
+        @debug "cuBLASLt not available. Falling back to generic implementation." maxlog = 1
     end
     # Generic fallback
     if y === nothing
