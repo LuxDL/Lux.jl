@@ -1,0 +1,237 @@
+       55 ```@meta
+        2 EditURL = "../../../../examples/SimpleRNN/main.jl"
+        4 ```
+        - 
+        1 # Training a Simple LSTM
+       52 
+      451 In this tutorial we will go over using a recurrent neural network to classify clockwise
+      852 and anticlockwise spirals. By the end of this tutorial you will be able to:
+      401 
+        - 1. Create custom Lux models.
+       52 2. Become familiar with the Lux recurrent neural network API.
+     9901 3. Training using Optimisers.jl and Zygote.jl.
+    20002 
+    28225 ## Package Imports
+        1 
+      501 ````julia
+       50 using Lux, LuxAMDGPU, LuxCUDA, JLD2, MLUtils, Optimisers, Zygote, Random, Statistics
+      401 ````
+      575 
+       25 ## Dataset
+      175 
+      175 We will use MLUtils to generate 500 (noisy) clockwise and 500 (noisy) anticlockwise
+      175 spirals. Using this data we will create a `MLUtils.DataLoader`. Our dataloader will give
+      175 us sequences of size 2 × seq_len × batch_size and we need to predict a binary value
+      175 whether the sequence is clockwise or anticlockwise.
+        - 
+      175 ````julia
+      175 function get_dataloaders(; dataset_size=1000, sequence_length=50)
+        -     # Create the spirals
+        -     data = [MLUtils.Datasets.make_spiral(sequence_length) for _ in 1:dataset_size]
+       25     # Get the labels
+       25     labels = vcat(repeat([0.0f0], dataset_size ÷ 2), repeat([1.0f0], dataset_size ÷ 2))
+       50     clockwise_spirals = [reshape(d[1][:, 1:sequence_length], :, sequence_length, 1)
+       50                          for d in data[1:(dataset_size ÷ 2)]]
+       50     anticlockwise_spirals = [reshape(
+       50                                  d[1][:, (sequence_length + 1):end], :, sequence_length, 1)
+      100                              for d in data[((dataset_size ÷ 2) + 1):end]]
+       50     x_data = Float32.(cat(clockwise_spirals..., anticlockwise_spirals...; dims=3))
+       49     # Split the dataset
+        -     (x_train, y_train), (x_val, y_val) = splitobs((x_data, labels); at=0.8, shuffle=true)
+        1     # Create DataLoaders
+        -     return (
+        -         # Use DataLoader to automatically minibatch and shuffle the data
+        -         DataLoader(collect.((x_train, y_train)); batchsize=128, shuffle=true),
+        -         # Don't shuffle the validation data
+        -         DataLoader(collect.((x_val, y_val)); batchsize=128, shuffle=false))
+        - end
+        - ````
+        - 
+        - ````
+        - get_dataloaders (generic function with 1 method)
+        - ````
+        - 
+        - ## Creating a Classifier
+        - 
+        - We will be extending the `Lux.AbstractExplicitContainerLayer` type for our custom model
+        - since it will contain a lstm block and a classifier head.
+        - 
+        - We pass the fieldnames `lstm_cell` and `classifier` to the type to ensure that the
+        - parameters and states are automatically populated and we don't have to define
+        - `Lux.initialparameters` and `Lux.initialstates`.
+        - 
+        - To understand more about container layers, please look at
+        - [Container Layer](@ref Container-Layer).
+        - 
+        - ````julia
+        - struct SpiralClassifier{L, C} <:
+        -        Lux.AbstractExplicitContainerLayer{(:lstm_cell, :classifier)}
+        -     lstm_cell::L
+        -     classifier::C
+        - end
+        - ````
+        - 
+        - We won't define the model from scratch but rather use the [`Lux.LSTMCell`](@ref) and
+        - [`Lux.Dense`](@ref).
+        - 
+        - ````julia
+        - function SpiralClassifier(in_dims, hidden_dims, out_dims)
+        -     return SpiralClassifier(
+        -         LSTMCell(in_dims => hidden_dims), Dense(hidden_dims => out_dims, sigmoid))
+        - end
+        - ````
+        - 
+        - ````
+        - Main.var"##225".SpiralClassifier
+        - ````
+        - 
+        - We can use default Lux blocks -- `Recurrence(LSTMCell(in_dims => hidden_dims)` -- instead
+        - of defining the following. But let's still do it for the sake of it.
+        - 
+        - Now we need to define the behavior of the Classifier when it is invoked.
+        - 
+        - ````julia
+        - function (s::SpiralClassifier)(
+        -         x::AbstractArray{T, 3}, ps::NamedTuple, st::NamedTuple) where {T}
+        -     # First we will have to run the sequence through the LSTM Cell
+        -     # The first call to LSTM Cell will create the initial hidden state
+        -     # See that the parameters and states are automatically populated into a field called
+        -     # `lstm_cell` We use `eachslice` to get the elements in the sequence without copying,
+        -     # and `Iterators.peel` to split out the first element for LSTM initialization.
+        -     x_init, x_rest = Iterators.peel(Lux._eachslice(x, Val(2)))
+        -     (y, carry), st_lstm = s.lstm_cell(x_init, ps.lstm_cell, st.lstm_cell)
+        -     # Now that we have the hidden state and memory in `carry` we will pass the input and
+        -     # `carry` jointly
+        -     for x in x_rest
+        -         (y, carry), st_lstm = s.lstm_cell((x, carry), ps.lstm_cell, st_lstm)
+        -     end
+        -     # After running through the sequence we will pass the output through the classifier
+        -     y, st_classifier = s.classifier(y, ps.classifier, st.classifier)
+        -     # Finally remember to create the updated state
+        -     st = merge(st, (classifier=st_classifier, lstm_cell=st_lstm))
+        -     return vec(y), st
+        - end
+        - ````
+        - 
+        - ## Defining Accuracy, Loss and Optimiser
+        - 
+        - Now let's define the binarycrossentropy loss. Typically it is recommended to use
+        - `logitbinarycrossentropy` since it is more numerically stable, but for the sake of
+        - simplicity we will use `binarycrossentropy`.
+        - 
+        - ````julia
+        - function xlogy(x, y)
+        -     result = x * log(y)
+        -     return ifelse(iszero(x), zero(result), result)
+        - end
+        - 
+        - function binarycrossentropy(y_pred, y_true)
+        -     y_pred = y_pred .+ eps(eltype(y_pred))
+        -     return mean(@. -xlogy(y_true, y_pred) - xlogy(1 - y_true, 1 - y_pred))
+        - end
+        - 
+        - function compute_loss(x, y, model, ps, st)
+        -     y_pred, st = model(x, ps, st)
+        -     return binarycrossentropy(y_pred, y), y_pred, st
+        - end
+        - 
+        - matches(y_pred, y_true) = sum((y_pred .> 0.5f0) .== y_true)
+        - accuracy(y_pred, y_true) = matches(y_pred, y_true) / length(y_pred)
+        - ````
+        - 
+        - ````
+        - accuracy (generic function with 1 method)
+        - ````
+        - 
+        - Finally lets create an optimiser given the model parameters.
+        - 
+        - ````julia
+        - function create_optimiser(ps)
+        -     opt = Optimisers.Adam(0.01f0)
+        -     return Optimisers.setup(opt, ps)
+        - end
+        - ````
+        - 
+        - ````
+        - create_optimiser (generic function with 1 method)
+        - ````
+        - 
+        - ## Training the Model
+        - 
+        - ````julia
+        - function main()
+        -     # Get the dataloaders
+        -     (train_loader, val_loader) = get_dataloaders()
+        - 
+        -     # Create the model
+        -     model = SpiralClassifier(2, 8, 1)
+        -     rng = Random.default_rng()
+        -     Random.seed!(rng, 0)
+        -     ps, st = Lux.setup(rng, model)
+        - 
+        -     dev = gpu_device()
+        -     ps = ps |> dev
+        -     st = st |> dev
+        - 
+        -     # Create the optimiser
+        -     opt_state = create_optimiser(ps)
+        - 
+        -     for epoch in 1:25
+        -         # Train the model
+        -         for (x, y) in train_loader
+        -             x = x |> dev
+        -             y = y |> dev
+        -             (loss, y_pred, st), back = pullback(compute_loss, x, y, model, ps, st)
+        -             gs = back((one(loss), nothing, nothing))[4]
+        -             opt_state, ps = Optimisers.update(opt_state, ps, gs)
+        - 
+        -             println("Epoch [$epoch]: Loss $loss")
+        -         end
+        - 
+        -         # Validate the model
+        -         st_ = Lux.testmode(st)
+        -         for (x, y) in val_loader
+        -             x = x |> dev
+        -             y = y |> dev
+        -             (loss, y_pred, st_) = compute_loss(x, y, model, ps, st_)
+        -             acc = accuracy(y_pred, y)
+        -             println("Validation: Loss $loss Accuracy $acc")
+        -         end
+        -     end
+        - 
+        -     return (ps, st) |> cpu_device()
+        - end
+        - 
+        - ps_trained, st_trained = main()
+        - ````
+        - 
+        - ````
+        - ((lstm_cell = (weight_i = Float32[-0.861691 -0.4182207; -0.2534238 -0.7553057; 0.8104275 0.8834548; -0.05779058 0.07526984; -0.1449393 -0.6218852; 0.28877485 0.55152285; -0.8315963 0.0716649; 0.07415046 0.052163385; -0.03985321 0.07746917; -0.6615334 0.45192182; 1.1539111 -0.021582697; -0.0135255875 0.087450475; -0.10740759 0.24583218; -0.8499632 0.32141298; -0.12987587 -0.27720964; 1.215614 0.102995746; 0.6789927 -0.62850034; 0.13114709 -0.34574214; 0.47810355 -0.32646126; -0.5563547 0.5167148; 0.5833233 -0.83786947; 0.09745401 0.2940957; 0.8681477 -0.6395339; 0.94705 0.62477183; -1.2660133 -0.09737401; 0.47938448 0.6427358; 1.0556724 0.67625046; -0.44330177 -0.15993161; 0.7404913 -0.69981307; -0.33939204 0.7333553; -0.21735701 0.61067647; 0.6115292 -0.29619157], weight_h = Float32[-0.5135542 -0.05505858 0.29031095 -0.26330513 0.2972485 0.010044145 -0.7003636 0.549339; -0.65270287 0.22708312 -0.06520428 0.6355265 0.3826406 0.31160903 0.13021088 -0.04576894; 0.017062953 0.061652027 -0.03475262 0.55943924 -0.
+        - ````
+        - 
+        - ## Saving the Model
+        - 
+        - We can save the model using JLD2 (and any other serialization library of your choice)
+        - Note that we transfer the model to CPU before saving. Additionally, we recommend that
+        - you don't save the model
+        - 
+        - ````julia
+        - @save "trained_model.jld2" {compress = true} ps_trained st_trained
+        - ````
+        - 
+        - Let's try loading the model
+        - 
+        - ````julia
+        - @load "trained_model.jld2" ps_trained st_trained
+        - ````
+        - 
+        - ````
+        - 2-element Vector{Symbol}:
+        -  :ps_trained
+        -  :st_trained
+        - ````
+        - 
+        - ---
+        - 
+        - *This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
+        - 
