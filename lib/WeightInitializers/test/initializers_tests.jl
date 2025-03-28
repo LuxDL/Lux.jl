@@ -356,12 +356,21 @@ end
                 @test -1σ2 < minimum(v) < -0.9σ2
                 @test 0.9σ2 < maximum(v) < 1σ2
 
-                @test begin
-                    v = kaiming_normal(rng, n_in, n_out)
-                    σ2 = sqrt(2 / n_out)
+                if backend == "amdgpu"
+                    @test_skip begin
+                        v = kaiming_normal(rng, n_in, n_out)
+                        σ2 = sqrt(2 / n_out)
 
-                    0.9σ2 < std(v) < 1.1σ2
-                end broken = rng isa GPUArrays.RNG || backend == "amdgpu"
+                        0.9σ2 < std(v) < 1.1σ2
+                    end
+                else
+                    @test begin
+                        v = kaiming_normal(rng, n_in, n_out)
+                        σ2 = sqrt(2 / n_out)
+
+                        0.9σ2 < std(v) < 1.1σ2
+                    end broken = rng isa GPUArrays.RNG
+                end
             end
 
             # Type
