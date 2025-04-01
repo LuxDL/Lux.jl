@@ -58,7 +58,6 @@ LuxCore = {path = "lib/LuxCore"}
 LuxLib = {path = "lib/LuxLib"}
 MLDataDevices = {path = "lib/MLDataDevices"}
 WeightInitializers = {path = "lib/WeightInitializers"}
-Optimisers = {url="https://github.com/avik-pal/Optimisers.jl", rev="ap/fix_check"}
 
 [extensions]
 LuxComponentArraysExt = "ComponentArrays"
