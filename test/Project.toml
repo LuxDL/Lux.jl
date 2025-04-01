@@ -81,6 +81,3 @@ Statistics = "1.10"
 Test = "1.10"
 Tracker = "0.2.37"
 Zygote = "0.6.73, 0.7"
-
-[sources]
-Optimisers = {url="https://github.com/avik-pal/Optimisers.jl", rev="ap/fix_check"}
