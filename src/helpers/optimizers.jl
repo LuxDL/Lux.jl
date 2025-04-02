@@ -2,7 +2,7 @@
 # We can remove this once https://github.com/FluxML/Optimisers.jl/issues/205 is resolved.
 module ReactantCompatibleOptimisers
 
-using Optimisers: Optimisers, AbstractRule
+using Optimisers: Optimisers
 
 using ..Lux: Lux, Utils
 
