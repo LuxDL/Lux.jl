@@ -1,11 +1,12 @@
 module LuxReactantExt
 
 using Enzyme: Enzyme, Const
+using Functors: Functors
 using Optimisers: Optimisers
 using Reactant:
     Reactant, @compile, @code_hlo, @jit, AnyTracedRArray, TracedRArray, TracedRNumber
 using ReactantCore: ReactantCore, @trace
-using Setfield: @set!
+using Setfield: Setfield, @set!
 using Static: True, False
 
 using Lux: Lux, Training, Utils, StatefulLuxLayer

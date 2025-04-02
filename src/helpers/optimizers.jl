@@ -29,20 +29,17 @@ function Optimisers._adjust(opt::ReactantOptimiser{<:Optimisers.AccumGrad}, nt::
 end
 
 # Convert existing Optimisers.jl rules to ReactantOptimisers
-function make_reactant_compatible(opt::Optimisers.OptimiserChain, outermost=Val(true))
-    opt_ra = Optimisers.OptimiserChain(make_reactant_compatible.(opt.opts, Val(false))...)
-    outermost isa Val{true} && return ReactantOptimiser(opt_ra)
-    return opt_ra
+function make_reactant_compatible(opt::Optimisers.OptimiserChain)
+    return ReactantOptimiser(
+        Optimisers.OptimiserChain(make_reactant_compatible.(opt.opts)...)
+    )
 end
 
-function make_reactant_compatible(opt::Optimisers.AbstractRule, outermost=Val(true))
-    opt_ra = Utils.to_rarray(opt; track_numbers=AbstractFloat)
-    outermost isa Val{true} && return ReactantOptimiser(opt_ra)
-    return opt_ra
+function make_reactant_compatible(opt::Optimisers.AbstractRule)
+    return ReactantOptimiser(Utils.to_rarray(opt; track_numbers=AbstractFloat))
 end
 
-function make_reactant_compatible(opt::Optimisers.AccumGrad, outermost=Val(true))
-    # ignore outermost we will need to update the fields
+function make_reactant_compatible(opt::Optimisers.AccumGrad)
     return ReactantOptimiser(Utils.to_rarray(opt; track_numbers=Integer))
 end
 
