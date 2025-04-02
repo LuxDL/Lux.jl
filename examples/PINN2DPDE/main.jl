@@ -158,16 +158,15 @@ function train_model(
     Random.seed!(rng, seed)
 
     pinn = PINN(; hidden_dims)
-    ps, st = xdev(Lux.setup(rng, pinn))
+    ps, st = Lux.setup(rng, pinn) |> xdev
 
-    bc_dataloader = xdev(
-        DataLoader((xyt_bc, target_bc); batchsize=32, shuffle=true, partial=false)
-    )
-    pde_dataloader = xdev(
-        DataLoader((xyt, target_data); batchsize=32, shuffle=true, partial=false)
-    )
+    bc_dataloader =
+        DataLoader((xyt_bc, target_bc); batchsize=32, shuffle=true, partial=false) |> xdev
+    pde_dataloader =
+        DataLoader((xyt, target_data); batchsize=32, shuffle=true, partial=false) |> xdev
 
     train_state = Training.TrainState(pinn, ps, st, Adam(0.05f0))
+
     lr = i -> i < 5000 ? 0.05f0 : (i < 10000 ? 0.005f0 : 0.0005f0)
 
     total_loss_tracker, physics_loss_tracker, data_loss_tracker, bc_loss_tracker = ntuple(
@@ -183,7 +182,8 @@ function train_model(
             AutoEnzyme(),
             loss_function,
             (xyt_batch, target_data_batch, xyt_bc_batch, target_bc_batch),
-            train_state,
+            train_state;
+            return_gradients=Val(false),
         )
 
         fit!(total_loss_tracker, Float32(loss))
