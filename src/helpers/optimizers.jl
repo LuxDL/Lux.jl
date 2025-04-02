@@ -18,4 +18,6 @@ function make_reactant_compatible(opt::Optimisers.AccumGrad)
     return Utils.to_rarray(opt; track_numbers=Integer)
 end
 
+function optimisers_setup_with_jit end
+
 end
