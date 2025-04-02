@@ -1,5 +1,5 @@
-# This is mostly an internal implementation detail that users shouldn't need to worry about.
-# We can remove this once https://github.com/FluxML/Optimisers.jl/issues/205 is resolved.
+# We use this module mostly as a placeholder for patches that should be merged into
+# Optimisers.jl for Reactant compatibility.
 module ReactantCompatibleOptimisers
 
 using Optimisers: Optimisers
