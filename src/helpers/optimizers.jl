@@ -23,9 +23,7 @@ function Optimisers._adjust(opt::ReactantOptimiser, nt::NamedTuple)
     return ReactantOptimiser(Optimisers._adjust(opt.opt, nt_tracked))
 end
 
-function Optimisers._adjust(
-    opt::ReactantOptimiser{<:Optimisers.AccumGrad}, nt::NamedTuple
-)
+function Optimisers._adjust(opt::ReactantOptimiser{<:Optimisers.AccumGrad}, nt::NamedTuple)
     nt_tracked = Utils.to_rarray(nt; track_numbers=Integer)
     return ReactantOptimiser(Optimisers._adjust(opt.opt, nt_tracked))
 end
