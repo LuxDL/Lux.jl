@@ -47,8 +47,13 @@
                 inference_loss_fn_compiled(xᵢ, yᵢ, model, ps, st)
             end
 
-            @testset for opt in
-                         (Descent(0.01f0), Momentum(0.01f0), Adam(0.01f0), AdamW(0.01f0))
+            @testset for opt in (
+                Descent(0.01f0),
+                Momentum(0.01f0),
+                Adam(0.01f0),
+                AdamW(0.01f0),
+                OptimiserChain(AccumGrad(5), Adam(0.01f0)),
+            )
                 train_state = Training.TrainState(model, ps, st, opt)
 
                 for epoch in 1:100, (xᵢ, yᵢ) in dataloader
@@ -75,4 +80,27 @@
             end
         end
     end
+end
+
+@testitem "Reactant Optimisers Patch: AccumGrad" tags = [:reactant] setup = [
+    SharedTestSetup
+] skip = :(Sys.iswindows()) begin
+    using Lux, Random, Reactant, Optimisers
+
+    dev = reactant_device(; force=true)
+
+    model = Chain(
+        Dense(2 => 4, relu), Chain(Dense(4 => 2, relu; use_bias=false), Dense(2 => 1))
+    )
+    ps, st = Lux.setup(Random.default_rng(), model) |> dev
+
+    x = randn(Float32, 2, 32) |> dev
+
+    train_state = Training.TrainState(
+        model, ps, st, OptimiserChain(AccumGrad(5), Descent(0.1))
+    )
+    st_opt = train_state.optimizer_state
+
+    hlo = repr(@code_hlo(Optimisers.update(st_opt, ps, ps)))
+    @test length(findall("stablehlo.if", hlo)) == (2 + 1 + 2) * 2
 end
