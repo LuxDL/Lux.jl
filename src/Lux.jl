@@ -54,21 +54,6 @@ const CRC = ChainRulesCore
 const NAME_TYPE = Union{Nothing,String,Symbol}
 const Optional{T} = Union{T,Nothing}
 
-const DUMP_REACTANT_HLO_OPT_MODE = Ref{Union{Symbol,Nothing,Bool}}(nothing)
-
-function __init__()
-    HLO_DUMP = get(ENV, "LUX_DUMP_REACTANT_HLO_OPTIMIZE", nothing)
-    return if HLO_DUMP !== nothing
-        if HLO_DUMP == "true" || HLO_DUMP == "1"
-            DUMP_REACTANT_HLO_OPT_MODE[] = true
-        elseif HLO_DUMP == "false" || HLO_DUMP == "0"
-            DUMP_REACTANT_HLO_OPT_MODE[] = false
-        else
-            DUMP_REACTANT_HLO_OPT_MODE[] = Symbol(HLO_DUMP)
-        end
-    end
-end
-
 is_extension_loaded(::Val) = false
 
 # Preferences
