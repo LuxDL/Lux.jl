@@ -53,11 +53,17 @@ SimpleChains = "de6bee2f-e2f4-4ec7-b6ed-219cc6f6e9e5"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
-[sources]
-LuxCore = {path = "lib/LuxCore"}
-LuxLib = {path = "lib/LuxLib"}
-MLDataDevices = {path = "lib/MLDataDevices"}
-WeightInitializers = {path = "lib/WeightInitializers"}
+[sources.LuxCore]
+path = "lib/LuxCore"
+
+[sources.LuxLib]
+path = "lib/LuxLib"
+
+[sources.MLDataDevices]
+path = "lib/MLDataDevices"
+
+[sources.WeightInitializers]
+path = "lib/WeightInitializers"
 
 [extensions]
 LuxComponentArraysExt = "ComponentArrays"
@@ -107,7 +113,7 @@ NNlib = "0.9.26"
 Optimisers = "0.4.6"
 Preferences = "1.4.3"
 Random = "1.10"
-Reactant = "0.2.55 - 0.2.60"
+Reactant = "0.2.55 - 0.2.60, 0.2"
 ReactantCore = "0.1.8"
 Reexport = "1.2.2"
 ReverseDiff = "1.15"
