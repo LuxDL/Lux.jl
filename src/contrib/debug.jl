@@ -169,7 +169,7 @@ macro debug_mode(layer, kwargs...)
                 l; location=$(KeyPath)($(Meta.quot(layer)), kp), $(kwargs...)
             ),
             $(layer);
-            exclude=$(layer_map_leaf),
+            exclude=($(layer_map_leaf)),
         )),
     )
 end

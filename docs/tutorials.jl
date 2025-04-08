@@ -24,12 +24,11 @@ const TUTORIALS = [
     )...,
     collect(enumerate(Iterators.product(["advanced"], first.(ADVANCED_TUTORIALS))))...,
 ]
-const BACKEND_LIST =
-    lowercase.([
-        last.(BEGINNER_TUTORIALS)...,
-        last.(INTERMEDIATE_TUTORIALS)...,
-        last.(ADVANCED_TUTORIALS)...,
-    ])
+const BACKEND_LIST = lowercase.([
+    last.(BEGINNER_TUTORIALS)...,
+    last.(INTERMEDIATE_TUTORIALS)...,
+    last.(ADVANCED_TUTORIALS)...,
+])
 
 const BACKEND_GROUP = lowercase(get(ENV, "TUTORIAL_BACKEND_GROUP", "all"))
 

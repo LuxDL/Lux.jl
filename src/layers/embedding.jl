@@ -138,7 +138,7 @@ function SinusoidalPositionalEmbedding(
 end
 
 function initialstates(::AbstractRNG, spe::SinusoidalPositionalEmbedding{T}) where {T}
-    one_zero = range(T(1), T(0); length=spe.dims ÷ 2)
+    one_zero = range(T(1), T(0); length=(spe.dims ÷ 2))
     sigmas = exp.(one_zero .* (spe.log_max_freq - spe.log_min_freq) .+ spe.log_min_freq)
     spe.full_turns && (@. sigmas *= 2π)
     return (; sigmas)
@@ -200,12 +200,11 @@ function RotaryPositionalEmbedding(
 end
 
 function initialstates(::AbstractRNG, rope::RotaryPositionalEmbedding)
-    theta =
-        inv.(
-            Float32.(
-                rope.base .^ (range(0, rope.dim - 1; step=2)[1:(rope.dim ÷ 2)] ./ rope.dim)
-            )
-        )
+    theta = inv.(
+        Float32.(
+            rope.base .^ (range(0, rope.dim - 1; step=2)[1:(rope.dim ÷ 2)] ./ rope.dim)
+        ),
+    )
 
     seq_idx = collect(Float32, 0:(rope.max_sequence_length - 1))
     idx_theta = reshape(theta, :, 1) .* reshape(seq_idx, 1, :)
@@ -221,7 +220,7 @@ end
 function (rope::RotaryPositionalEmbedding)((x, input_pos)::Tuple, ps, st::NamedTuple)
     @argcheck ndims(x) == 4 "Input must be a 4D tensor ([dim, nheads, seq_len, batch])"
     @argcheck size(x, 3) ≤ rope.max_sequence_length "Sequence length must be less than \
-                                                     $(rope.max_sequence_length)"
+                                                   $(rope.max_sequence_length)"
     @argcheck size(x, 1) == rope.dim "Input Dimension Mismatch: Expected $(rope.dim), got \
                                       $(size(x, 1))"
 

@@ -172,7 +172,7 @@ function create_image_grid(imgs::AbstractArray, grid_rows::Int, grid_cols::Int)
     total_images = grid_rows * grid_cols
     imgs = map(eachslice(imgs[:, :, :, 1:total_images]; dims=4)) do img
         cimg = if size(img, 3) == 1
-            colorview(Gray, view(img, :, :, 1))
+            colorview(Gray, view(img,:,:,1))
         else
             colorview(RGB, permutedims(img, (3, 1, 2)))
         end

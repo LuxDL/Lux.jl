@@ -181,27 +181,19 @@ end
     if length(idxs_prev) == 0
         x_part_prev = similar(x_part_duals, 0, B)
     else
-        x_part_prev =
-            Dual.(
-                x[idxs_prev, :],
-                map(
-                    𝒾 -> Partials(ntuple(_ -> zero(T), CK)),
-                    dev(collect(1:length(idxs_prev))),
-                ),
-            )
+        x_part_prev = Dual.(
+            x[idxs_prev, :],
+            map(𝒾 -> Partials(ntuple(_ -> zero(T), CK)), dev(collect(1:length(idxs_prev)))),
+        )
     end
 
     if length(idxs_next) == 0
         x_part_next = similar(x_part_duals, 0, B)
     else
-        x_part_next =
-            Dual.(
-                x[idxs_next, :],
-                map(
-                    𝒾 -> Partials(ntuple(_ -> zero(T), CK)),
-                    dev(collect(1:length(idxs_next))),
-                ),
-            )
+        x_part_next = Dual.(
+            x[idxs_next, :],
+            map(𝒾 -> Partials(ntuple(_ -> zero(T), CK)), dev(collect(1:length(idxs_next)))),
+        )
     end
 
     x_duals = vcat(x_part_prev, x_part_duals, x_part_next)

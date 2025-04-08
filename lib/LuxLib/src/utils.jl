@@ -194,7 +194,7 @@ unrolled_mapreduce(f::F, ::O, itr, ::Val{1}) where {F,O} = f(only(itr))
 end
 
 # Working with batches
-batchview(x::AbstractArray{<:Any,3}, k::Int) = view(x, :, :, k)
+batchview(x::AbstractArray{<:Any,3}, k::Int) = view(x,:,:,k)
 batchview(x::NNlib.BatchedTranspose, k::Int) = transpose(batchview(parent(x), k))
 batchview(x::NNlib.BatchedAdjoint, k::Int) = adjoint(batchview(parent(x), k))
 
@@ -212,7 +212,7 @@ expand_batchdim(x::SVector{L,T}) where {L,T} = SMatrix{L,1,T}(x)
 
 function CRC.rrule(::typeof(expand_batchdim), x::AbstractMatrix)
     ∇expand_batchdim = @closure Δ -> begin
-        return ∂∅, CRC.@thunk(CRC.ProjectTo(x)(view(recursive_unthunk(Δ), :, :, 1)))
+        return ∂∅, CRC.@thunk(CRC.ProjectTo(x)(view(recursive_unthunk(Δ),:,:,1)))
     end
     return expand_batchdim(x), ∇expand_batchdim
 end
