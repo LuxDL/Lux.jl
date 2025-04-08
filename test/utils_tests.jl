@@ -120,7 +120,7 @@ end
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         rnn = RNNCell(3 => 5; init_state=Lux.zeros32)
         x = randn(rng, Float32, 3, 2, 2)
-        @test Lux.Utils.init_rnn_hidden_state(rng, rnn, view(dev(x), :, 1, :)) ==
+        @test Lux.Utils.init_rnn_hidden_state(rng, rnn, view(dev(x),:,1,:)) ==
             aType(zeros(Float32, 5, 2))
     end
 end

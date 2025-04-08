@@ -52,7 +52,7 @@ end
     test_gradients(f, 1.0, x_ca, nothing)
     @test_gradients(f, 1.0, x_ca, nothing)
 
-    x_2 = (; t=x.t', x=(z=x.x.z',))
+    x_2 = (; t=(x.t'), x=(z=(x.x.z'),))
 
     test_gradients(f, 1.0, x_2, nothing)
     @test_gradients(f, 1.0, x_2, nothing)

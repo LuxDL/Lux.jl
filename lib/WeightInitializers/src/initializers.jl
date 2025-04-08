@@ -72,7 +72,7 @@ imagenet classification." _Proceedings of the IEEE international conference on c
 vision_. 2015.
 """
 function kaiming_uniform(
-    rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=√T(2)
+    rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=(√T(2))
 ) where {T<:Number}
     bound = √T(3) * T(gain) / sqrt(T(first(Utils.nfan(dims...))))
     x = DeviceAgnostic.rand(rng, T, dims...)
@@ -95,7 +95,7 @@ imagenet classification." _Proceedings of the IEEE international conference on c
 vision_. 2015.
 """
 function kaiming_normal(
-    rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=√T(2)
+    rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=(√T(2))
 ) where {T<:Number}
     std = T(gain) / sqrt(T(first(Utils.nfan(dims...))))
     x = DeviceAgnostic.randn(rng, T, dims...)
@@ -112,7 +112,7 @@ truncated normal distribution. The numbers are distributed like
 `filter(x -> lo ≤ x ≤ hi, mean .+ std .* randn(100))`.
 """
 function truncated_normal(
-    rng::AbstractRNG, ::Type{T}, dims::Integer...; mean=T(0), std=T(1), lo=-T(2), hi=T(2)
+    rng::AbstractRNG, ::Type{T}, dims::Integer...; mean=T(0), std=T(1), lo=(-T(2)), hi=T(2)
 ) where {T<:Real}
     if (mean < lo - 2 * std) || (mean > hi + 2 * std)
         @warn "Mean is more than 2 std outside the limits in truncated_normal, so the \

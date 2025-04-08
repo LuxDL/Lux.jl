@@ -5,10 +5,9 @@
     # Computes (∂f/∂x)u
     function jvp_forwarddiff(f::F, x, u) where {F}
         uu = reshape(u, axes(x))
-        y =
-            ForwardDiff.Dual{
-                typeof(ForwardDiff.Tag(f, eltype(x))),eltype(x),1
-            }.(x, ForwardDiff.Partials.(tuple.(uu)))
+        y = ForwardDiff.Dual{typeof(ForwardDiff.Tag(f, eltype(x))),eltype(x),1}.(
+            x, ForwardDiff.Partials.(tuple.(uu))
+        )
         return vec(ForwardDiff.partials.(vec(f(y)), 1))
     end
 
@@ -16,9 +15,9 @@
         xx = getdata(x)
         uu = vec(u)
         y = ComponentArray(
-            ForwardDiff.Dual{
-                typeof(ForwardDiff.Tag(f, eltype(x))),eltype(x),1
-            }.(xx, ForwardDiff.Partials.(tuple.(uu))),
+            ForwardDiff.Dual{typeof(ForwardDiff.Tag(f, eltype(x))),eltype(x),1}.(
+                xx, ForwardDiff.Partials.(tuple.(uu))
+            ),
             getaxes(x),
         )
         return vec(ForwardDiff.partials.(vec(f(y)), 1))
@@ -183,8 +182,9 @@ end
         @test_nowarn dropout(rng, x_dual, 0.5f0, Val(true), 2.0f0, :)
 
         x_dropout = dropout(rng, x, 0.5f0, Val(true), 2.0f0, :)[1]
-        x_dual_dropout =
-            ForwardDiff.value.(dropout(rng, x_dual, 0.5f0, Val(true), 2.0f0, :)[1])
+        x_dual_dropout = ForwardDiff.value.(
+            dropout(rng, x_dual, 0.5f0, Val(true), 2.0f0, :)[1]
+        )
 
         @test check_approx(x_dropout, x_dual_dropout)
     end

@@ -156,6 +156,7 @@ end
     @testset "rng = $(typeof(rng)) & arrtype = $arrtype" for (
         rng, arrtype, supports_fp64, backend
     ) in RNGS_ARRTYPES
+
         @testset "Sizes and Types: $init" for init in [
             zeros32,
             ones32,

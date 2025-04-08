@@ -400,12 +400,11 @@ end
     append!(
         calls,
         [
-            :(
-                ($(y_symbols[i]), $(st_symbols[i])) = @inline apply(
-                    layers.$(names[i]), $(y_symbols[N + 1]), ps.$(names[i]), st.$(names[i])
-                );
-                $(y_symbols[N + 1]) = connection($(y_symbols[i]), $(getinput(i + 1)))
-            ) for i in 1:N
+            :(($(y_symbols[i]), $(st_symbols[i])) = @inline apply(
+                layers.$(names[i]), $(y_symbols[N + 1]), ps.$(names[i]), st.$(names[i])
+            );
+            $(y_symbols[N + 1]) = connection($(y_symbols[i]), $(getinput(i + 1)))) for
+            i in 1:N
         ],
     )
     push!(
