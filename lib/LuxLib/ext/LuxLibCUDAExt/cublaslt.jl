@@ -2,6 +2,9 @@ const TransOrAdjOrRegStridedCuMatrix{T} = Union{
     Transpose{T,<:StridedCuMatrix{T}},Adjoint{T,<:StridedCuMatrix{T}},StridedCuMatrix{T}
 }
 
+prepare_transposed(arr) = arr, false
+prepare_transposed(arr::Union{Transpose, Adjoint}) = parent(arr), true
+
 function cublaslt_matmul_fused!(
     @nospecialize(y::TransOrAdjOrRegStridedCuMatrix{<:Real}),
     σ::F,
@@ -10,11 +13,11 @@ function cublaslt_matmul_fused!(
     b::Optional{<:StridedCuVector{<:Real}},
     aux::Optional{<:StridedCuMatrix{<:Real}}=nothing,
 ) where {F}
-    transy = y isa Transpose || y isa Adjoint
-    transx = x isa Transpose || x isa Adjoint
-    transw = w isa Transpose || x isa Adjoint
+    y, transy = prepare_transposed(y) 
+    x, transx = prepare_transposed(x) 
+    w, transw = prepare_transposed(w) 
     return cublaslt_matmul_fused!(
-        transy, parent(y), σ, transw, parent(w), transx, parent(x), b, aux
+        transy, y, σ, transw, w, transx, x, b, aux
     )
 end
 
