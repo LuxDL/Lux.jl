@@ -247,6 +247,9 @@ section 😜.
 
 ### 💎 Formatting (JuliaFormatter)
 
+> [!NOTE]
+> Pin JuliaFormatter to v1 until upstream issues with v2 are resolved.
+
 ```julia
 using JuliaFormatter
 format(".")
