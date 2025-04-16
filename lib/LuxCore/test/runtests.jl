@@ -243,7 +243,7 @@ end
             @test children.layers.layer_2.out == 5
 
             new_model = reconstructor((;
-                layers=(; layer_1=Dense(10, 5), layer_2=Dense(5, 10)),
+                layers=(; layer_1=Dense(10, 5), layer_2=Dense(5, 10))
             ))
 
             @test new_model isa Chain
@@ -268,7 +268,7 @@ end
             @test children.layers.layer_2.out == 5
 
             new_model = reconstructor((;
-                layers=(; layer_1=Dense(10, 5), layer_2=Dense(5, 10)),
+                layers=(; layer_1=Dense(10, 5), layer_2=Dense(5, 10))
             ))
 
             @test new_model isa ChainWrapper

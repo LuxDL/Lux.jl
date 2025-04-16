@@ -321,7 +321,7 @@ function initialstates(rng::AbstractRNG, m::CompactLuxLayer)
         (;
             ₋₋₋kwargs₋₋₋=CompactMacroImpl.KwargsStorage(
                 NamedTuple{m.stored_kwargs[1]}(m.stored_kwargs[2])
-            ),
+            )
         ),
     )
 end

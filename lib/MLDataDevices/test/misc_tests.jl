@@ -222,7 +222,7 @@ end
             @test MLDataDevices.isleaf([x])
             @test !MLDataDevices.isleaf([x]')
             @test !MLDataDevices.isleaf(transpose([x]))
-            @test !MLDataDevices.isleaf(PermutedDimsArray([x;;], (1, 2)))
+            @test !MLDataDevices.isleaf(PermutedDimsArray([x], (1, 2)))
         end
     end
 end

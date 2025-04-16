@@ -83,10 +83,9 @@ function setup_benchmarks!(suite::BenchmarkGroup, backend::String, num_cpu_threa
     return setup_batched_matmul_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
 end
 
-function setup_forward_pass_benchmark!(
-        suite::BenchmarkGroup, benchmark_name::String,
-        cpu_or_gpu::String, backend::String, model, x_dims, dev::AbstractDevice
-)
+function setup_forward_pass_benchmark!(suite::BenchmarkGroup, benchmark_name::String,
+                                       cpu_or_gpu::String, backend::String, model, x_dims,
+                                       dev::AbstractDevice)
     return suite[benchmark_name]["forward"][cpu_or_gpu][backend] = @benchmarkable begin
         Lux.apply($model, x, ps, st_test)
         synchronize($dev)
@@ -97,22 +96,19 @@ function setup_forward_pass_benchmark!(
     end
 end
 
-function setup_reverse_pass_benchmark!(
-        suite::BenchmarkGroup, benchmark_name::String,
-        cpu_or_gpu::String, backend::String, ad_backends, model, x_dims, dev::AbstractDevice
-)
+function setup_reverse_pass_benchmark!(suite::BenchmarkGroup, benchmark_name::String,
+                                       cpu_or_gpu::String, backend::String, ad_backends,
+                                       model, x_dims, dev::AbstractDevice)
     for ad_backend in ad_backends
-        setup_reverse_pass_benchmark!(
-            suite, benchmark_name, cpu_or_gpu, backend, ad_backend, model, x_dims, dev
-        )
+        setup_reverse_pass_benchmark!(suite, benchmark_name, cpu_or_gpu, backend,
+                                      ad_backend, model, x_dims, dev)
     end
     return
 end
 
-function setup_reverse_pass_benchmark!(
-        suite::BenchmarkGroup, benchmark_name::String,
-        cpu_or_gpu::String, backend::String, ::AutoZygote, model, x_dims, dev::AbstractDevice
-)
+function setup_reverse_pass_benchmark!(suite::BenchmarkGroup, benchmark_name::String,
+                                       cpu_or_gpu::String, backend::String, ::AutoZygote,
+                                       model, x_dims, dev::AbstractDevice)
     return suite[benchmark_name]["zygote"][cpu_or_gpu][backend] = @benchmarkable begin
         Zygote.gradient(sumabs2, $model, x, ps, st)
         synchronize($dev)
@@ -123,26 +119,23 @@ function setup_reverse_pass_benchmark!(
     end
 end
 
-function setup_reverse_pass_benchmark!(
-        suite::BenchmarkGroup, benchmark_name::String,
-        cpu_or_gpu::String, backend::String, ::AutoEnzyme, model, x_dims, dev::AbstractDevice
-)
+function setup_reverse_pass_benchmark!(suite::BenchmarkGroup, benchmark_name::String,
+                                       cpu_or_gpu::String, backend::String, ::AutoEnzyme,
+                                       model, x_dims, dev::AbstractDevice)
     cpu_or_gpu != "CPU" && return  # TODO: Remove once Enzyme.jl supports GPUs
 
     return suite[benchmark_name]["enzyme"][cpu_or_gpu][backend] = @benchmarkable begin
-        Enzyme.autodiff(
-            Enzyme.Reverse, sumabs2, Enzyme.Active, Enzyme.Const($model),
-            Enzyme.Duplicated(x, dx), Enzyme.Duplicated(ps, dps), Enzyme.Const(st)
-        )
+        Enzyme.autodiff(Enzyme.Reverse, sumabs2, Enzyme.Active, Enzyme.Const($model),
+                        Enzyme.Duplicated(x, dx), Enzyme.Duplicated(ps, dps),
+                        Enzyme.Const(st))
         synchronize($dev)
     end setup=begin
         reclaim($dev)
         x, ps, st = general_setup($model, $x_dims) |> $dev
         dps = Enzyme.make_zero(ps)
         dx = Enzyme.make_zero(x)
-        Enzyme.autodiff(
-            Enzyme.Reverse, sumabs2, Enzyme.Active, Enzyme.Const($model),
-            Enzyme.Duplicated(x, dx), Enzyme.Duplicated(ps, dps), Enzyme.Const(st)
-        ) # Warm up
+        Enzyme.autodiff(Enzyme.Reverse, sumabs2, Enzyme.Active, Enzyme.Const($model),
+                        Enzyme.Duplicated(x, dx), Enzyme.Duplicated(ps, dps),
+                        Enzyme.Const(st)) # Warm up
     end
 end
