@@ -9,7 +9,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install JuliaFormatter and format
         run: |
-          julia  -e 'using Pkg; Pkg.add(; name="JuliaFormatter", version=v"1")'
+          julia  -e 'using Pkg; Pkg.add(; name="JuliaFormatter", version="1")'
           julia  -e 'using JuliaFormatter; format(".")'
       - name: Create Pull Request
         id: cpr
