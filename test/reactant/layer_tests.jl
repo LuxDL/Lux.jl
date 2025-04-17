@@ -55,7 +55,7 @@
                 model2 = Recurrence(cell(4 => 4); ordering, return_sequence=true)
                 (y_ra, sequence_ra), st_ra = @jit model2(x_ra, ps_ra, st_ra)
                 @test y_ra ≈ y atol = 1.0e-2 rtol = 1.0e-2
-                @test length(sequence_ra) == size(x_ra, ndims(x_ra))
+                @test length(sequence_ra) == 16
 
                 @testset "Efficient Codegen" begin
                     hlo = @code_hlo model2(x_ra, ps_ra, st_ra)
