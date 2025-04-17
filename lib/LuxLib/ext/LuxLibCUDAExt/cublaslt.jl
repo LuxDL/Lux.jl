@@ -164,7 +164,7 @@ function cublaslt_matmul_fused!(
         wdesc, convert(CUDA.cudaDataType, wxT), m, k, max(1, stride(w, 2))
     )
     CUBLAS.cublasLtMatrixLayoutCreate(
-        xdesc, convert(CUDA.cudaDataType, wxT), k, n, max(1, stride(x, 2))
+        xdesc, convert(CUDA.cudaDataType, wxT), size(x)..., max(1, stride(x, 2))
     )
     CUBLAS.cublasLtMatrixLayoutCreate(
         ydesc, convert(CUDA.cudaDataType, yT), m, n, max(1, stride(y, 2))
