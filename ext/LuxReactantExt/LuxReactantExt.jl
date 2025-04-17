@@ -1,6 +1,6 @@
 module LuxReactantExt
 
-using Enzyme: Enzyme, Const
+using Enzyme: Enzyme, Const, Duplicated
 using Optimisers: Optimisers
 using Reactant:
     Reactant,
