@@ -38,11 +38,29 @@
 
                 @test y_ra ≈ y atol = 1.0e-2 rtol = 1.0e-2
 
+                @testset "Efficient Codegen" begin
+                    hlo = @code_hlo model(x_ra, ps_ra, st_ra)
+                    @test contains(repr(hlo), "stablehlo.while")
+                    # ensure dead args elimination is working for while loop
+                    @test !contains(repr(hlo), "stablehlo.dynamic_update_slice")
+                end
+
                 @testset "gradient" begin
                     ∂x, ∂ps = ∇sumabs2_zygote(model, x, ps, st)
                     ∂x_ra, ∂ps_ra = @jit ∇sumabs2_enzyme(model, x_ra, ps_ra, st_ra)
                     @test ∂x_ra ≈ ∂x atol = 1.0e-2 rtol = 1.0e-2
                     @test check_approx(∂ps_ra, ∂ps; atol=1.0e-2, rtol=1.0e-2)
+                end
+
+                model2 = Recurrence(cell(4 => 4); ordering, return_sequence=true)
+                (y_ra, sequence_ra), st_ra = @jit model2(x_ra, ps_ra, st_ra)
+                @test y_ra ≈ y atol = 1.0e-2 rtol = 1.0e-2
+                @test length(sequence_ra) == 16
+
+                @testset "Efficient Codegen" begin
+                    hlo = @code_hlo model2(x_ra, ps_ra, st_ra)
+                    @test contains(repr(hlo), "stablehlo.while")
+                    @test contains(repr(hlo), "stablehlo.dynamic_update_slice")
                 end
             end
         end
