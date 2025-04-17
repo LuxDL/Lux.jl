@@ -31,7 +31,7 @@ end
 
 if !Sys.iswindows()
     ("all" in LUX_TEST_GROUP || "reactant" in LUX_TEST_GROUP) &&
-        push!(EXTRA_PKGS, Pkg.PackageSpec(; name="Reactant", rev="ap/new_jll2"))
+        push!(EXTRA_PKGS, Pkg.PackageSpec("Reactant"))
 end
 
 if (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda")
