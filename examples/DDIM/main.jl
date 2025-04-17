@@ -6,11 +6,15 @@
 
 # ## Package Imports
 
+ENV["XLA_REACTANT_GPU_MEM_FRACTION"] = get(ENV, "XLA_REACTANT_GPU_MEM_FRACTION", "0.98")
+
 using ConcreteStructs,
     Comonicon,
     DataAugmentation,
     DataDeps,
+    Dates,
     Enzyme,
+    Functors,
     FileIO,
     ImageCore,
     ImageShow,
@@ -25,7 +29,9 @@ using ConcreteStructs,
     Reactant,
     StableRNGs,
     Statistics,
-    Wandb
+    TensorBoardLogger
+
+const IN_VSCODE = isdefined(Main, :VSCodeServer)
 
 # ## Model Definition
 
@@ -57,25 +63,12 @@ function ResidualBlock(in_channels::Int, out_channels::Int)
             if in_channels == out_channels
                 NoOpLayer()
             else
-                Conv(
-                (1, 1), in_channels => out_channels; pad=SamePad(), cross_correlation=true
-            )
+                Conv((1, 1), in_channels => out_channels; pad=SamePad())
             end,
             Chain(
                 BatchNorm(in_channels; affine=false),
-                Conv(
-                    (3, 3),
-                    in_channels => out_channels,
-                    swish;
-                    pad=SamePad(),
-                    cross_correlation=true,
-                ),
-                Conv(
-                    (3, 3),
-                    out_channels => out_channels;
-                    pad=SamePad(),
-                    cross_correlation=true,
-                ),
+                Conv((3, 3), in_channels => out_channels, swish; pad=SamePad()),
+                Conv((3, 3), out_channels => out_channels; pad=SamePad()),
             ),
         ),
     )
@@ -91,7 +84,10 @@ function DownsampleBlock(in_channels::Int, out_channels::Int, block_depth::Int)
         ResidualBlock(ifelse(i == 1, in_channels, out_channels), out_channels) for
         i in 1:block_depth
     ])
-    return DownsampleBlock(residual_blocks, MaxPool((2, 2)))
+    return DownsampleBlock(
+        residual_blocks,#  MeanPool((2, 2))
+        Conv((3, 3), out_channels => out_channels; stride=2, pad=1),
+    )
 end
 
 function (d::DownsampleBlock)(x::AbstractArray, ps, st::NamedTuple)
@@ -105,8 +101,6 @@ function (d::DownsampleBlock)(x::AbstractArray, ps, st::NamedTuple)
         st_residual_blocks = (st_residual_blocks..., st_new)
     end
     y, st_pool = d.pool(last(skips), ps.pool, st.pool)
-    st_new = (; residual_blocks=st_residual_blocks, pool=st_pool)
-    @assert typeof(st_new) == typeof(st) "$(typeof(st_new)) != $(typeof(st))"
     return (y, skips), (; residual_blocks=st_residual_blocks, pool=st_pool)
 end
 
@@ -128,14 +122,13 @@ function (u::UpsampleBlock)((x, skips), ps, st::NamedTuple)
     x, st_upsample = u.upsample(x, ps.upsample, st.upsample)
     y, st_residual_blocks = x, ()
     for i in eachindex(u.residual_blocks)
-        input = cat(y, skips[end - i + 1]; dims=Val(3))
         y, st_new = u.residual_blocks[i](
-            input, ps.residual_blocks[i], st.residual_blocks[i]
+            cat(y, skips[end - i + 1]; dims=Val(3)),
+            ps.residual_blocks[i],
+            st.residual_blocks[i],
         )
         st_residual_blocks = (st_residual_blocks..., st_new)
     end
-    st_new = (; residual_blocks=st_residual_blocks, upsample=st_upsample)
-    @assert typeof(st_new) == typeof(st) "$(typeof(st_new)) != $(typeof(st))"
     return y, (; residual_blocks=st_residual_blocks, upsample=st_upsample)
 end
 
@@ -162,10 +155,8 @@ function UNet(
     embedding_dims=32,
 )
     upsample = Upsample(:nearest; size=image_size)
-    conv_in = Conv((1, 1), 3 => channels[1]; cross_correlation=true)
-    conv_out = Conv(
-        (1, 1), channels[1] => 3; init_weight=Lux.zeros32, cross_correlation=true
-    )
+    conv_in = Conv((1, 1), 3 => channels[1])
+    conv_out = Conv((1, 1), channels[1] => 3; init_weight=zeros32)
 
     channel_input = embedding_dims + channels[1]
     down_blocks = Tuple([
@@ -273,6 +264,23 @@ function denoise(
     return pred_noises, pred_images
 end
 
+function denoise!(
+    pred_images,
+    unet,
+    noisy_images::AbstractArray{T1,4},
+    noise_rates::AbstractArray{T2,4},
+    signal_rates::AbstractArray{T3,4},
+) where {T1,T2,T3}
+    T = promote_type(T1, T2, T3)
+    noisy_images = T.(noisy_images)
+    noise_rates = T.(noise_rates)
+    signal_rates = T.(signal_rates)
+
+    pred_noises = unet((noisy_images, noise_rates .^ 2))
+    @. pred_images = (noisy_images - pred_noises * noise_rates) / signal_rates
+    return pred_noises
+end
+
 @concrete struct DDIM <: AbstractLuxContainerLayer{(:unet, :bn)}
     unet
     bn
@@ -325,8 +333,17 @@ function generate(model::DDIM, ps, st::NamedTuple, diffusion_steps::Int, num_sam
     return clamp01.(denormalize(generated_images, μ, σ², model.bn.epsilon))
 end
 
-function reverse_diffusion_single_step(
-    step, step_size, unet, ps, st, noisy_images, ones, min_signal_rate, max_signal_rate
+function reverse_diffusion_single_step!(
+    pred_images,
+    noisy_images,
+    step,
+    step_size,
+    unet,
+    ps,
+    st,
+    ones,
+    min_signal_rate,
+    max_signal_rate,
 )
     diffusion_times = ones .- step_size * step
 
@@ -335,15 +352,15 @@ function reverse_diffusion_single_step(
     )
 
     sunet = StatefulLuxLayer{true}(unet, ps, st)
-    pred_noises, pred_images = denoise(sunet, noisy_images, noise_rates, signal_rates)
+    pred_noises = denoise!(pred_images, sunet, noisy_images, noise_rates, signal_rates)
 
     next_diffusion_times = diffusion_times .- step_size
     next_noisy_rates, next_signal_rates = diffusion_schedules(
         next_diffusion_times, min_signal_rate, max_signal_rate
     )
-    next_noisy_images = next_signal_rates .* pred_images .+ next_noisy_rates .* pred_noises
+    @. noisy_images = next_signal_rates .* pred_images .+ next_noisy_rates .* pred_noises
 
-    return next_noisy_images, pred_images
+    return nothing
 end
 
 function reverse_diffusion(
@@ -352,16 +369,17 @@ function reverse_diffusion(
     step_size = one(T) / diffusion_steps
     ones_dev = ones_like(initial_noise, (1, 1, 1, size(initial_noise, 4)))
 
-    next_noisy_images, pred_images = initial_noise, initial_noise
+    noisy_images, pred_images = initial_noise, similar(initial_noise)
 
     @trace for step in 1:diffusion_steps
-        next_noisy_images, pred_images = reverse_diffusion_single_step(
+        reverse_diffusion_single_step!(
+            pred_images,
+            noisy_images,
             step,
             step_size,
             model.unet,
             ps.unet,
             st.unet,
-            next_noisy_images,
             ones_dev,
             model.min_signal_rate,
             model.max_signal_rate,
@@ -487,17 +505,26 @@ function loss_function(model, ps, st, data)
     return noise_loss, st, (; image_loss, noise_loss)
 end
 
+function log_named_tuple(tb_logger, name, ps::NamedTuple; step)
+    fmap_with_path(ps) do path, x
+        x isa AbstractArray || return nothing
+        log_vector(tb_logger, join([name, join(path, "/")], "/"), vec(x); step)
+        return nothing
+    end
+    return nothing
+end
+
 # ## Entry Point for our code
 
 Comonicon.@main function main(;
     epochs::Int=100,
     image_size::Int=128,
-    batchsize::Int=128,
+    batchsize::Int=64,
     learning_rate_start::Float32=1.0f-3,
     learning_rate_end::Float32=1.0f-5,
     weight_decay::Float32=1.0f-6,
     checkpoint_interval::Int=25,
-    expt_dir=tempname(@__DIR__),
+    expt_dir="",
     diffusion_steps::Int=80,
     generate_image_interval::Int=5,
     ## model hyper params
@@ -514,9 +541,11 @@ Comonicon.@main function main(;
     saved_model_path=nothing,
     generate_n_images::Int=12,
 )
+    isempty(expt_dir) &&
+        (expt_dir = joinpath(@__DIR__, string(now(UTC)) * "_" * uppercase(randstring(4))))
     isdir(expt_dir) || mkpath(expt_dir)
 
-    @printf "[Info] Experiment directory: %s\n" expt_dir
+    @printf "[%s] [Info] Experiment directory: %s\n" now(UTC) expt_dir
 
     rng = Random.default_rng()
     Random.seed!(rng, 1234)
@@ -530,7 +559,7 @@ Comonicon.@main function main(;
     xdev = reactant_device(; force=true)
     cdev = cpu_device()
 
-    @printf "[Info] Building model\n"
+    @printf "[%s] [Info] Building model\n" now(UTC)
     model = DDIM(
         (image_size, image_size);
         channels,
@@ -544,43 +573,41 @@ Comonicon.@main function main(;
     ps, st = Lux.setup(rng, model) |> xdev
 
     if inference_mode
-        @assert saved_model_path !== nothing "`saved_model_path` must be specified for inference"
+        @assert saved_model_path !== nothing "`saved_model_path` must be specified for \
+                                              inference"
         @load saved_model_path parameters states
         ps, st = (parameters, states) |> xdev
 
-        generate_compiled = @compile generate(
-            model, ps, Lux.testmode(st), diffusion_steps, generate_n_images
-        )
-
-        generated_images = generate_compiled(
+        generated_images = @jit generate(
             model, ps, Lux.testmode(st), diffusion_steps, generate_n_images
         )
         generated_images = generated_images |> cdev
 
         path = joinpath(image_dir, "inference")
-        @printf "[Info] Saving generated images to %s\n" path
+        @printf "[%s] [Info] Saving generated images to %s\n" now(UTC) path
         imgs = create_image_list(generated_images)
         save_images(path, imgs)
-        if is_vscode
+        if IN_VSCODE
             display(create_image_grid(generated_images, 8, cld(length(imgs), 8)))
         end
         return nothing
     end
 
     tb_dir = joinpath(expt_dir, "tb_logs")
-    @printf "[Info] Tensorboard logs being saved to %s. Run tensorboard with \
-             `tensorboard --logdir %s`\n" tb_dir dirname(tb_dir)
+    @printf "[%s] [Info] Tensorboard logs being saved to %s. Run tensorboard with \
+             `tensorboard --logdir %s`\n" now(UTC) tb_dir dirname(tb_dir)
     tb_logger = TBLogger(tb_dir)
 
-    opt = AdamW(; eta=learning_rate_start, lambda=weight_decay)
+    opt = OptimiserChain(
+        ClipGrad(0.001f0),
+        AdamW(; eta=learning_rate_start, lambda=weight_decay),
+    )
     scheduler = CosAnneal(learning_rate_start, learning_rate_end, epochs)
     tstate = Training.TrainState(model, ps, st, opt)
 
-    @printf "[Info] Preparing dataset\n"
+    @printf "[%s] [Info] Preparing dataset\n" now(UTC)
     ds = FlowersDataset(image_size)
     data_loader = DataLoader(ds; batchsize, shuffle=true, partial=false) |> xdev
-
-    is_vscode = isdefined(Main, :VSCodeServer)
 
     pt = ProgressTable(;
         header=["Epoch", "Image Loss", "Noise Loss", "Time (s)", "Throughput (img/s)"],
@@ -591,34 +618,41 @@ Comonicon.@main function main(;
         alignment=[:center, :center, :center, :center, :center],
     )
 
-    @printf "[Info] Compiling generate function\n"
+    @printf "[%s] [Info] Compiling generate function\n" now(UTC)
     time_start = time()
     generate_compiled = @compile generate(
         model, ps, Lux.testmode(st), diffusion_steps, generate_n_images
     )
-    @printf "[Info] Compiled generate function in %.6f seconds\n" (time() - time_start)
+    @printf "[%s] [Info] Compiled generate function in %.6f seconds\n" now(UTC) (
+        time() - time_start
+    )
 
     image_losses = Vector{Float32}(undef, length(data_loader))
     noise_losses = Vector{Float32}(undef, length(data_loader))
     step = 1
 
-    @printf "[Info] Training model\n"
+    @printf "[%s] [Info] Training model\n" now(UTC)
     initialize(pt)
+
+    return_gradients = tb_log_gradients_freq > 0
 
     for epoch in 1:epochs
         total_time = 0.0
         total_samples = 0
 
-        eta = scheduler(epoch)
+        eta = Float32(scheduler(epoch))
         tstate = Optimisers.adjust!(tstate, eta)
 
-        log_value(tb_logger, "Learning Rate", eta; step)
+        log_value(tb_logger, "Training/Learning Rate", eta; step)
 
         start_time = time()
         for (i, data) in enumerate(data_loader)
-            step += 1
-            (_, loss, stats, tstate) = Training.single_train_step!(
-                AutoEnzyme(), loss_function, data, tstate
+            (gs, loss, stats, tstate) = Training.single_train_step!(
+                AutoEnzyme(),
+                loss_function,
+                data,
+                tstate;
+                return_gradients=Val(return_gradients),
             )
 
             isnan(loss) && error("NaN loss encountered!")
@@ -628,9 +662,24 @@ Comonicon.@main function main(;
             image_losses[i] = stats.image_loss
             noise_losses[i] = stats.noise_loss
 
-            log_value(tb_logger, "Image Loss", Float32(stats.image_loss); step)
-            log_value(tb_logger, "Noise Loss", Float32(stats.noise_loss); step)
-            log_value(tb_logger, "Throughput", total_samples / (time() - start_time); step)
+            log_value(tb_logger, "Training/Image Loss", Float32(stats.image_loss); step)
+            log_value(tb_logger, "Training/Noise Loss", Float32(stats.noise_loss); step)
+            log_value(
+                tb_logger,
+                "Training/Throughput",
+                total_samples / (time() - start_time);
+                step,
+            )
+
+            if tb_log_parameters_freq > 0 && mod(step, tb_log_parameters_freq) == 0
+                log_named_tuple(tb_logger, "Parameters", tstate.parameters |> cdev; step)
+            end
+
+            if tb_log_gradients_freq > 0 && mod(step, tb_log_gradients_freq) == 0
+                log_named_tuple(tb_logger, "Gradients", gs |> cdev; step)
+            end
+
+            step += 1
         end
 
         total_time = time() - start_time
@@ -649,7 +698,7 @@ Comonicon.@main function main(;
             generated_images = generate_compiled(
                 tstate.model,
                 tstate.parameters,
-                tstate.states,
+                Lux.testmode(tstate.states),
                 diffusion_steps,
                 generate_n_images,
             )
@@ -659,14 +708,14 @@ Comonicon.@main function main(;
             imgs = create_image_list(generated_images)
             save_images(path, imgs)
             log_images(tb_logger, "Generated Images", imgs; step)
-            if is_vscode
+            if IN_VSCODE
                 display(create_image_grid(generated_images, 8, cld(length(imgs), 8)))
             end
         end
 
         if epoch % checkpoint_interval == 0 || epoch == epochs
             path = joinpath(ckpt_dir, "model_$(epoch).jld2")
-            @printf "[Info] Saving checkpoint to %s\n" path
+            @printf "[%s] [Info] Saving checkpoint to %s\n" now(UTC) path
             parameters = tstate.parameters |> cdev
             states = tstate.states |> cdev
             @save path parameters states
@@ -674,7 +723,7 @@ Comonicon.@main function main(;
     end
 
     finalize(pt)
-    @printf "[Info] Finished training\n"
+    @printf "[%s] [Info] Saving final model\n" now(UTC)
 
     return tstate
 end
