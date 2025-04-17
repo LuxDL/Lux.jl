@@ -6,9 +6,26 @@
 
 # ## Package Imports
 
-using ConcreteStructs, Comonicon, DataAugmentation, DataDeps, Enzyme, FileIO, ImageCore,
-      ImageShow, JLD2, Lux, MLUtils, Optimisers, ParameterSchedulers, ProgressTables,
-      Printf, Random, Reactant, StableRNGs, Statistics, Wandb
+using ConcreteStructs,
+    Comonicon,
+    DataAugmentation,
+    DataDeps,
+    Enzyme,
+    FileIO,
+    ImageCore,
+    ImageShow,
+    JLD2,
+    Lux,
+    MLUtils,
+    Optimisers,
+    ParameterSchedulers,
+    ProgressTables,
+    Printf,
+    Random,
+    Reactant,
+    StableRNGs,
+    Statistics,
+    Wandb
 
 # ## Model Definition
 
@@ -17,7 +34,7 @@ using ConcreteStructs, Comonicon, DataAugmentation, DataDeps, Enzyme, FileIO, Im
 # embedding.
 
 function sinusoidal_embedding(
-        x::AbstractArray{T, 4}, min_freq, max_freq, embedding_dims::Int
+    x::AbstractArray{T,4}, min_freq, max_freq, embedding_dims::Int
 ) where {T}
     if size(x)[1:3] != (1, 1, 1)
         throw(DimensionMismatch("Input shape must be (1, 1, 1, batch)"))
@@ -34,15 +51,34 @@ end
 end
 
 function ResidualBlock(in_channels::Int, out_channels::Int)
-    return ResidualBlock(Parallel(+,
-        in_channels == out_channels ? NoOpLayer() :
-        Conv((1, 1), in_channels => out_channels; pad=SamePad(), cross_correlation=true),
-        Chain(BatchNorm(in_channels; affine=false),
-            Conv((3, 3), in_channels => out_channels, swish;
-                pad=SamePad(), cross_correlation=true),
-            Conv((3, 3), out_channels => out_channels;
-                pad=SamePad(), cross_correlation=true))
-    ))
+    return ResidualBlock(
+        Parallel(
+            +,
+            if in_channels == out_channels
+                NoOpLayer()
+            else
+                Conv(
+                (1, 1), in_channels => out_channels; pad=SamePad(), cross_correlation=true
+            )
+            end,
+            Chain(
+                BatchNorm(in_channels; affine=false),
+                Conv(
+                    (3, 3),
+                    in_channels => out_channels,
+                    swish;
+                    pad=SamePad(),
+                    cross_correlation=true,
+                ),
+                Conv(
+                    (3, 3),
+                    out_channels => out_channels;
+                    pad=SamePad(),
+                    cross_correlation=true,
+                ),
+            ),
+        ),
+    )
 end
 
 @concrete struct DownsampleBlock <: AbstractLuxContainerLayer{(:residual_blocks, :pool)}
@@ -51,9 +87,10 @@ end
 end
 
 function DownsampleBlock(in_channels::Int, out_channels::Int, block_depth::Int)
-    residual_blocks = Tuple([ResidualBlock(
-                                 ifelse(i == 1, in_channels, out_channels), out_channels)
-                             for i in 1:block_depth])
+    residual_blocks = Tuple([
+        ResidualBlock(ifelse(i == 1, in_channels, out_channels), out_channels) for
+        i in 1:block_depth
+    ])
     return DownsampleBlock(residual_blocks, MaxPool((2, 2)))
 end
 
@@ -69,7 +106,7 @@ function (d::DownsampleBlock)(x::AbstractArray, ps, st::NamedTuple)
     end
     y, st_pool = d.pool(last(skips), ps.pool, st.pool)
     st_new = (; residual_blocks=st_residual_blocks, pool=st_pool)
-    @assert typeof(st_new)==typeof(st) "$(typeof(st_new)) != $(typeof(st))"
+    @assert typeof(st_new) == typeof(st) "$(typeof(st_new)) != $(typeof(st))"
     return (y, skips), (; residual_blocks=st_residual_blocks, pool=st_pool)
 end
 
@@ -79,11 +116,11 @@ end
 end
 
 function UpsampleBlock(in_channels::Int, out_channels::Int, block_depth::Int)
-    residual_blocks = Tuple([ResidualBlock(
-                                 ifelse(
-                                     i == 1, in_channels + out_channels, out_channels * 2),
-                                 out_channels)
-                             for i in 1:block_depth])
+    residual_blocks = Tuple([
+        ResidualBlock(
+            ifelse(i == 1, in_channels + out_channels, out_channels * 2), out_channels
+        ) for i in 1:block_depth
+    ])
     return UpsampleBlock(residual_blocks, Upsample(:nearest; scale=2))
 end
 
@@ -98,12 +135,13 @@ function (u::UpsampleBlock)((x, skips), ps, st::NamedTuple)
         st_residual_blocks = (st_residual_blocks..., st_new)
     end
     st_new = (; residual_blocks=st_residual_blocks, upsample=st_upsample)
-    @assert typeof(st_new)==typeof(st) "$(typeof(st_new)) != $(typeof(st))"
+    @assert typeof(st_new) == typeof(st) "$(typeof(st_new)) != $(typeof(st))"
     return y, (; residual_blocks=st_residual_blocks, upsample=st_upsample)
 end
 
 @concrete struct UNet <: AbstractLuxContainerLayer{(
-    :conv_in, :conv_out, :down_blocks, :residual_blocks, :up_blocks, :upsample)}
+    :conv_in, :conv_out, :down_blocks, :residual_blocks, :up_blocks, :upsample
+)}
     upsample
     conv_in
     conv_out
@@ -116,29 +154,47 @@ end
 end
 
 function UNet(
-        image_size::Dims{2}; channels=[32, 64, 96, 128],
-        block_depth=2, min_freq=1.0f0, max_freq=1000.0f0, embedding_dims=32
+    image_size::Dims{2};
+    channels=[32, 64, 96, 128],
+    block_depth=2,
+    min_freq=1.0f0,
+    max_freq=1000.0f0,
+    embedding_dims=32,
 )
     upsample = Upsample(:nearest; size=image_size)
     conv_in = Conv((1, 1), 3 => channels[1]; cross_correlation=true)
     conv_out = Conv(
-        (1, 1), channels[1] => 3; init_weight=Lux.zeros32, cross_correlation=true)
+        (1, 1), channels[1] => 3; init_weight=Lux.zeros32, cross_correlation=true
+    )
 
     channel_input = embedding_dims + channels[1]
-    down_blocks = Tuple([DownsampleBlock(
-                             i == 1 ? channel_input : channels[i - 1], channels[i], block_depth)
-                         for i in 1:(length(channels) - 1)])
-    residual_blocks = Chain([ResidualBlock(
-                                 ifelse(i == 1, channels[end - 1], channels[end]),
-                                 channels[end]) for i in 1:block_depth]...)
+    down_blocks = Tuple([
+        DownsampleBlock(i == 1 ? channel_input : channels[i - 1], channels[i], block_depth)
+        for i in 1:(length(channels) - 1)
+    ])
+    residual_blocks = Chain(
+        [
+            ResidualBlock(ifelse(i == 1, channels[end - 1], channels[end]), channels[end])
+            for i in 1:block_depth
+        ]...,
+    )
 
     reverse!(channels)
-    up_blocks = Tuple([UpsampleBlock(in_chs, out_chs, block_depth)
-                       for (in_chs, out_chs) in zip(channels[1:(end - 1)], channels[2:end])])
+    up_blocks = Tuple([
+        UpsampleBlock(in_chs, out_chs, block_depth) for
+        (in_chs, out_chs) in zip(channels[1:(end - 1)], channels[2:end])
+    ])
 
     return UNet(
-        upsample, conv_in, conv_out, down_blocks, residual_blocks, up_blocks,
-        min_freq, max_freq, embedding_dims
+        upsample,
+        conv_in,
+        conv_out,
+        down_blocks,
+        residual_blocks,
+        up_blocks,
+        min_freq,
+        max_freq,
+        embedding_dims,
     )
 end
 
@@ -148,7 +204,9 @@ function (u::UNet)((noisy_images, noise_variances), ps, st::NamedTuple)
 
     emb, st_upsample = u.upsample(
         sinusoidal_embedding(noise_variances, u.min_freq, u.max_freq, u.embedding_dims),
-        ps.upsample, st.upsample)
+        ps.upsample,
+        st.upsample,
+    )
     tmp, st_conv_in = u.conv_in(noisy_images, ps.conv_in, st.conv_in)
     x = cat(tmp, emb; dims=Val(3))
 
@@ -164,8 +222,9 @@ function (u::UNet)((noisy_images, noise_variances), ps, st::NamedTuple)
 
     st_up_blocks = ()
     for i in eachindex(u.up_blocks)
-        x, st_new = u.up_blocks[i]((x, skips_at_each_stage[end - i + 1]),
-            ps.up_blocks[i], st.up_blocks[i])
+        x, st_new = u.up_blocks[i](
+            (x, skips_at_each_stage[end - i + 1]), ps.up_blocks[i], st.up_blocks[i]
+        )
         st_up_blocks = (st_up_blocks..., st_new)
     end
 
@@ -173,14 +232,19 @@ function (u::UNet)((noisy_images, noise_variances), ps, st::NamedTuple)
 
     return (
         x,
-        (; conv_in=st_conv_in, conv_out=st_conv_out,
-            down_blocks=st_down_blocks, residual_blocks=st_residual_blocks,
-            up_blocks=st_up_blocks, upsample=st_upsample)
+        (;
+            conv_in=st_conv_in,
+            conv_out=st_conv_out,
+            down_blocks=st_down_blocks,
+            residual_blocks=st_residual_blocks,
+            up_blocks=st_up_blocks,
+            upsample=st_upsample,
+        ),
     )
 end
 
 function diffusion_schedules(
-        diffusion_times::AbstractArray{T, 4}, min_signal_rate, max_signal_rate
+    diffusion_times::AbstractArray{T,4}, min_signal_rate, max_signal_rate
 ) where {T}
     start_angle = T(acos(max_signal_rate))
     end_angle = T(acos(min_signal_rate))
@@ -194,9 +258,11 @@ function diffusion_schedules(
 end
 
 function denoise(
-        unet, noisy_images::AbstractArray{T1, 4}, noise_rates::AbstractArray{T2, 4},
-        signal_rates::AbstractArray{T3, 4}
-) where {T1, T2, T3}
+    unet,
+    noisy_images::AbstractArray{T1,4},
+    noise_rates::AbstractArray{T2,4},
+    signal_rates::AbstractArray{T3,4},
+) where {T1,T2,T3}
     T = promote_type(T1, T2, T3)
     noisy_images = T.(noisy_images)
     noise_rates = T.(noise_rates)
@@ -216,8 +282,7 @@ end
 end
 
 function DDIM(
-        image_size::Dims{2}, args...;
-        min_signal_rate=0.02f0, max_signal_rate=0.95f0, kwargs...
+    image_size::Dims{2}, args...; min_signal_rate=0.02f0, max_signal_rate=0.95f0, kwargs...
 )
     unet = UNet(image_size, args...; kwargs...)
     bn = BatchNorm(3; affine=false, track_stats=true)
@@ -231,7 +296,7 @@ function Lux.initialstates(rng::AbstractRNG, ddim::DDIM)
     )
 end
 
-function (ddim::DDIM)(x::AbstractArray{T, 4}, ps, st::NamedTuple) where {T}
+function (ddim::DDIM)(x::AbstractArray{T,4}, ps, st::NamedTuple) where {T}
     images, st_bn = ddim.bn(x, ps.bn, st.bn)
 
     rng = Lux.replicate(st.rng)
@@ -252,9 +317,7 @@ end
 
 ## Helper Functions for Image Generation
 
-function generate(
-        model::DDIM, ps, st::NamedTuple, diffusion_steps::Int, num_samples::Int
-)
+function generate(model::DDIM, ps, st::NamedTuple, diffusion_steps::Int, num_samples::Int)
     rng = Lux.replicate(st.rng)
     μ, σ² = st.bn.running_mean, st.bn.running_var
     initial_noise = randn_like(rng, μ, (model.image_size..., num_samples))
@@ -263,7 +326,7 @@ function generate(
 end
 
 function reverse_diffusion_single_step(
-        step, step_size, unet, ps, st, noisy_images, ones, min_signal_rate, max_signal_rate
+    step, step_size, unet, ps, st, noisy_images, ones, min_signal_rate, max_signal_rate
 )
     diffusion_times = ones .- step_size * step
 
@@ -278,15 +341,13 @@ function reverse_diffusion_single_step(
     next_noisy_rates, next_signal_rates = diffusion_schedules(
         next_diffusion_times, min_signal_rate, max_signal_rate
     )
-    next_noisy_images = next_signal_rates .* pred_images .+
-                        next_noisy_rates .* pred_noises
+    next_noisy_images = next_signal_rates .* pred_images .+ next_noisy_rates .* pred_noises
 
     return next_noisy_images, pred_images
 end
 
 function reverse_diffusion(
-        model::DDIM, initial_noise::AbstractArray{T, 4}, ps,
-        st::NamedTuple, diffusion_steps::Int
+    model::DDIM, initial_noise::AbstractArray{T,4}, ps, st::NamedTuple, diffusion_steps::Int
 ) where {T}
     step_size = one(T) / diffusion_steps
     ones_dev = ones_like(initial_noise, (1, 1, 1, size(initial_noise, 4)))
@@ -295,15 +356,22 @@ function reverse_diffusion(
 
     @trace for step in 1:diffusion_steps
         next_noisy_images, pred_images = reverse_diffusion_single_step(
-            step, step_size, model.unet, ps.unet, st.unet,
-            next_noisy_images, ones_dev, model.min_signal_rate, model.max_signal_rate
+            step,
+            step_size,
+            model.unet,
+            ps.unet,
+            st.unet,
+            next_noisy_images,
+            ones_dev,
+            model.min_signal_rate,
+            model.max_signal_rate,
         )
     end
 
     return pred_images
 end
 
-function denormalize(x::AbstractArray{T, 4}, μ, σ², ϵ) where {T}
+function denormalize(x::AbstractArray{T,4}, μ, σ², ϵ) where {T}
     μ = reshape(μ, 1, 1, 3, 1)
     σ = sqrt.(reshape(σ², 1, 1, 3, 1) .+ ϵ)
     return σ .* x .+ μ
@@ -311,14 +379,17 @@ end
 
 function create_image_list(imgs::AbstractArray)
     return map(eachslice(imgs; dims=4)) do img
-        cimg = size(img, 3) == 1 ? colorview(Gray, view(img, :, :, 1)) :
-               colorview(RGB, permutedims(img, (3, 1, 2)))
+        cimg = if size(img, 3) == 1
+            colorview(Gray, view(img, :, :, 1))
+        else
+            colorview(RGB, permutedims(img, (3, 1, 2)))
+        end
         return cimg'
     end
 end
 
 function create_image_grid(
-        images::AbstractArray, grid_rows::Int, grid_cols::Union{Int, Nothing}=nothing
+    images::AbstractArray, grid_rows::Int, grid_cols::Union{Int,Nothing}=nothing
 )
     images = ndims(images) != 1 ? create_image_list(images) : images
     grid_cols = grid_cols === nothing ? length(images) ÷ grid_rows : grid_cols
@@ -382,17 +453,22 @@ function FlowersDataset(image_size::Dims{2})
         err isa KeyError || rethrow()
         register(
             DataDep(
-            "FlowersDataset",
-            "102 Category Flowers Dataset",
-            "https://www.robots.ox.ac.uk/~vgg/data/flowers/102/102flowers.tgz",
-            "2d01ecc807db462958cfe3d92f57a8c252b4abd240eb955770201e45f783b246";
-            post_fetch_method=file -> run(`tar -xzf $file`)
-        ))
+                "FlowersDataset",
+                "102 Category Flowers Dataset",
+                "https://www.robots.ox.ac.uk/~vgg/data/flowers/102/102flowers.tgz",
+                "2d01ecc807db462958cfe3d92f57a8c252b4abd240eb955770201e45f783b246";
+                post_fetch_method=file -> run(`tar -xzf $file`),
+            ),
+        )
         joinpath(datadep"FlowersDataset", "jpg")
     end
     image_files = joinpath.(dirpath, readdir(dirpath))
-    transform = ScaleKeepAspect(image_size) |> CenterResizeCrop(image_size) |>
-                Maybe(FlipX{2}()) |> ImageToTensor() |> ToEltype(Float32)
+    transform =
+        ScaleKeepAspect(image_size) |>
+        CenterResizeCrop(image_size) |>
+        Maybe(FlipX{2}()) |>
+        ImageToTensor() |>
+        ToEltype(Float32)
     return FlowersDataset(image_files, transform)
 end
 
@@ -456,13 +532,19 @@ Comonicon.@main function main(;
 
     @printf "[Info] Building model\n"
     model = DDIM(
-        (image_size, image_size); channels, block_depth, min_freq,
-        max_freq, embedding_dims, min_signal_rate, max_signal_rate
+        (image_size, image_size);
+        channels,
+        block_depth,
+        min_freq,
+        max_freq,
+        embedding_dims,
+        min_signal_rate,
+        max_signal_rate,
     )
     ps, st = Lux.setup(rng, model) |> xdev
 
     if inference_mode
-        @assert saved_model_path!==nothing "`saved_model_path` must be specified for inference"
+        @assert saved_model_path !== nothing "`saved_model_path` must be specified for inference"
         @load saved_model_path parameters states
         ps, st = (parameters, states) |> xdev
 
@@ -482,7 +564,7 @@ Comonicon.@main function main(;
         if is_vscode
             display(create_image_grid(generated_images, 8, cld(length(imgs), 8)))
         end
-        return
+        return nothing
     end
 
     tb_dir = joinpath(expt_dir, "tb_logs")
@@ -501,14 +583,12 @@ Comonicon.@main function main(;
     is_vscode = isdefined(Main, :VSCodeServer)
 
     pt = ProgressTable(;
-        header=[
-            "Epoch", "Image Loss", "Noise Loss", "Time (s)", "Throughput (img/s)"
-        ],
+        header=["Epoch", "Image Loss", "Noise Loss", "Time (s)", "Throughput (img/s)"],
         widths=[10, 24, 24, 24, 24],
         format=["%3d", "%.6f", "%.6f", "%.6f", "%.6f"],
         color=[:normal, :normal, :normal, :normal, :normal],
         border=true,
-        alignment=[:center, :center, :center, :center, :center]
+        alignment=[:center, :center, :center, :center, :center],
     )
 
     @printf "[Info] Compiling generate function\n"
@@ -516,7 +596,7 @@ Comonicon.@main function main(;
     generate_compiled = @compile generate(
         model, ps, Lux.testmode(st), diffusion_steps, generate_n_images
     )
-    @printf "[Info] Compiled generate function in %.6f seconds\n" (time()-time_start)
+    @printf "[Info] Compiled generate function in %.6f seconds\n" (time() - time_start)
 
     image_losses = Vector{Float32}(undef, length(data_loader))
     noise_losses = Vector{Float32}(undef, length(data_loader))
@@ -554,17 +634,24 @@ Comonicon.@main function main(;
         end
 
         total_time = time() - start_time
-        next(pt,
+        next(
+            pt,
             [
-                epoch, mean(image_losses), mean(noise_losses),
-                total_time, total_samples / total_time
-            ]
+                epoch,
+                mean(image_losses),
+                mean(noise_losses),
+                total_time,
+                total_samples / total_time,
+            ],
         )
 
         if epoch % generate_image_interval == 0 || epoch == epochs
             generated_images = generate_compiled(
-                tstate.model, tstate.parameters, tstate.states,
-                diffusion_steps, generate_n_images
+                tstate.model,
+                tstate.parameters,
+                tstate.states,
+                diffusion_steps,
+                generate_n_images,
             )
             generated_images = generated_images |> cdev
 
