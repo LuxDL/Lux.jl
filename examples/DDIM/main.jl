@@ -52,6 +52,37 @@ function sinusoidal_embedding(
     return cat(sinpi.(x_), cospi.(x_); dims=Val(3))
 end
 
+@kwdef struct Normalization <: AbstractLuxLayer
+    n::Int
+    momentum::Float32 = 0.1f0
+end
+
+function Lux.initialstates(::AbstractRNG, n::Normalization)
+    return (;
+        running_mean=zeros(Float32, n.n), running_var=ones(Float32, n.n), training=Val(true)
+    )
+end
+
+function (n::Normalization)(x::AbstractArray{T,4}, ps, st::NamedTuple) where {T}
+    if st.training isa Val{true}
+        batchμ = dropdims(mean(x; dims=(1, 2, 4)); dims=(1, 2, 4))
+        batchσ² = dropdims(var(x; dims=(1, 2, 4)); dims=(1, 2, 4))
+
+        μ = (1 - n.momentum) * st.running_mean + n.momentum * batchμ
+        σ² = (1 - n.momentum) * st.running_var + n.momentum * batchσ²
+
+        st = (; running_mean=μ, running_var=σ², training=Val(true))
+    else
+        batchμ = st.running_mean
+        batchσ² = st.running_var
+    end
+
+    batchμ = reshape(batchμ, 1, 1, n.n, 1)
+    batchσ² = reshape(batchσ², 1, 1, n.n, 1)
+
+    return (x .- batchμ) ./ sqrt.(batchσ² .+ eps(T)), st
+end
+
 @concrete struct ResidualBlock <: AbstractLuxWrapperLayer{:layer}
     layer
 end
@@ -66,7 +97,7 @@ function ResidualBlock(in_channels::Int, out_channels::Int)
                 Conv((1, 1), in_channels => out_channels; pad=SamePad())
             end,
             Chain(
-                BatchNorm(in_channels; affine=false),
+                # BatchNorm(in_channels; affine=false, track_stats=true),
                 Conv((3, 3), in_channels => out_channels, swish; pad=SamePad()),
                 Conv((3, 3), out_channels => out_channels; pad=SamePad()),
             ),
@@ -84,10 +115,7 @@ function DownsampleBlock(in_channels::Int, out_channels::Int, block_depth::Int)
         ResidualBlock(ifelse(i == 1, in_channels, out_channels), out_channels) for
         i in 1:block_depth
     ])
-    return DownsampleBlock(
-        residual_blocks,#  MeanPool((2, 2))
-        Conv((3, 3), out_channels => out_channels; stride=2, pad=1),
-    )
+    return DownsampleBlock(residual_blocks, MeanPool((2, 2)))
 end
 
 function (d::DownsampleBlock)(x::AbstractArray, ps, st::NamedTuple)
@@ -256,10 +284,9 @@ function denoise(
 ) where {T1,T2,T3}
     T = promote_type(T1, T2, T3)
     noisy_images = T.(noisy_images)
-    noise_rates = T.(noise_rates)
     signal_rates = T.(signal_rates)
 
-    pred_noises = unet((noisy_images, noise_rates .^ 2))
+    pred_noises = unet((noisy_images, noise_rates))
     pred_images = @. (noisy_images - pred_noises * noise_rates) / signal_rates
     return pred_noises, pred_images
 end
@@ -292,9 +319,13 @@ end
 function DDIM(
     image_size::Dims{2}, args...; min_signal_rate=0.02f0, max_signal_rate=0.95f0, kwargs...
 )
-    unet = UNet(image_size, args...; kwargs...)
-    bn = BatchNorm(3; affine=false, track_stats=true)
-    return DDIM(unet, bn, min_signal_rate, max_signal_rate, (image_size..., 3))
+    return DDIM(
+        UNet(image_size, args...; kwargs...),
+        Normalization(3, 0.1f0),
+        min_signal_rate,
+        max_signal_rate,
+        (image_size..., 3),
+    )
 end
 
 function Lux.initialstates(rng::AbstractRNG, ddim::DDIM)
@@ -308,13 +339,13 @@ function (ddim::DDIM)(x::AbstractArray{T,4}, ps, st::NamedTuple) where {T}
     images, st_bn = ddim.bn(x, ps.bn, st.bn)
 
     rng = Lux.replicate(st.rng)
-    noises = rand_like(rng, images)
     diffusion_times = rand_like(rng, images, (1, 1, 1, size(images, 4)))
 
     noise_rates, signal_rates = diffusion_schedules(
         diffusion_times, ddim.min_signal_rate, ddim.max_signal_rate
     )
 
+    noises = randn_like(rng, images)
     noisy_images = @. signal_rates * images + noise_rates * noises
 
     unet = StatefulLuxLayer{true}(ddim.unet, ps.unet, st.unet)
@@ -330,7 +361,7 @@ function generate(model::DDIM, ps, st::NamedTuple, diffusion_steps::Int, num_sam
     μ, σ² = st.bn.running_mean, st.bn.running_var
     initial_noise = randn_like(rng, μ, (model.image_size..., num_samples))
     generated_images = reverse_diffusion(model, initial_noise, ps, st, diffusion_steps)
-    return clamp01.(denormalize(generated_images, μ, σ², model.bn.epsilon))
+    return clamp01.(denormalize(generated_images, μ, σ²))
 end
 
 function reverse_diffusion_single_step!(
@@ -389,9 +420,9 @@ function reverse_diffusion(
     return pred_images
 end
 
-function denormalize(x::AbstractArray{T,4}, μ, σ², ϵ) where {T}
+function denormalize(x::AbstractArray{T,4}, μ, σ²) where {T}
     μ = reshape(μ, 1, 1, 3, 1)
-    σ = sqrt.(reshape(σ², 1, 1, 3, 1) .+ ϵ)
+    σ = sqrt.(reshape(σ², 1, 1, 3, 1) .+ T(eps(T)))
     return σ .* x .+ μ
 end
 
@@ -598,10 +629,7 @@ Comonicon.@main function main(;
              `tensorboard --logdir %s`\n" now(UTC) tb_dir dirname(tb_dir)
     tb_logger = TBLogger(tb_dir)
 
-    opt = OptimiserChain(
-        ClipGrad(0.001f0),
-        AdamW(; eta=learning_rate_start, lambda=weight_decay),
-    )
+    opt = AdamW(; eta=learning_rate_start, lambda=weight_decay)
     scheduler = CosAnneal(learning_rate_start, learning_rate_end, epochs)
     tstate = Training.TrainState(model, ps, st, opt)
 
@@ -649,13 +677,22 @@ Comonicon.@main function main(;
         for (i, data) in enumerate(data_loader)
             (gs, loss, stats, tstate) = Training.single_train_step!(
                 AutoEnzyme(),
+                # AutoZygote(),
                 loss_function,
                 data,
                 tstate;
                 return_gradients=Val(return_gradients),
             )
 
-            isnan(loss) && error("NaN loss encountered!")
+            # fmap_with_path(gs, tstate.parameters) do path, x, p
+            #     x isa AbstractArray || return nothing
+            #     println("$(path): $(mean(abs2, cdev(x))) $(mean(abs2, cdev(p)))")
+            #     return nothing
+            # end
+            # println()
+
+            # @show loss
+            @assert !isnan(loss) "NaN loss encountered!"
 
             total_samples += size(data, ndims(data))
 
