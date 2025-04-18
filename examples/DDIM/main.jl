@@ -557,7 +557,7 @@ Comonicon.@main function main(;
     checkpoint_interval::Int=25,
     expt_dir="",
     diffusion_steps::Int=80,
-    generate_image_interval::Int=1,
+    generate_image_interval::Int=5,
     # model hyper params
     channels::Vector{Int}=[32, 64, 96, 128],
     block_depth::Int=2,
@@ -679,21 +679,12 @@ Comonicon.@main function main(;
         for (i, data) in enumerate(data_loader)
             (gs, loss, stats, tstate) = Training.single_train_step!(
                 AutoEnzyme(),
-                # AutoZygote(),
                 loss_function,
                 data,
                 tstate;
                 return_gradients=Val(return_gradients),
             )
 
-            # fmap_with_path(gs, tstate.parameters) do path, x, p
-            #     x isa AbstractArray || return nothing
-            #     println("$(path): $(mean(abs2, cdev(x))) $(mean(abs2, cdev(p)))")
-            #     return nothing
-            # end
-            # println()
-
-            # @show loss
             @assert !isnan(loss) "NaN loss encountered!"
 
             total_samples += size(data, ndims(data))
