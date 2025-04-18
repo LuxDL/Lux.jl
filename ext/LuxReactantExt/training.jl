@@ -1,38 +1,24 @@
-mutable struct StatsAndNewStateWrapper
-    stats::Any
-    st::Any
-end
-
-function wrapped_objective_function(
-    fn::F, model, ps, data, cache::StatsAndNewStateWrapper
-) where {F}
-    loss, stₙ, stats = fn(model, ps, cache.st, data)
-    cache.stats = stats
-    cache.st = stₙ
-    return loss
-end
-
 function compute_gradients_internal(objective_function::F, model, data, ps, st) where {F}
-    st_stats_wrapper = StatsAndNewStateWrapper(nothing, st)
-    res = Enzyme.gradient(
+    (_, dps, _, _), (loss, stₙ, stats) = Enzyme.gradient(
         Enzyme.set_abi(Enzyme.ReverseWithPrimal, Reactant.ReactantABI),
-        Const(wrapped_objective_function),
         Const(objective_function),
         Const(model),
         ps,
+        Const(st),
         Const(data),
-        Const(st_stats_wrapper),
     )
-    loss, dps = res.val, res.derivs[3]
-    return dps, loss, st_stats_wrapper.stats, st_stats_wrapper.st
+    return dps, loss, stats, stₙ
 end
 
 function Lux.Training.compute_gradients_impl(
     backend::ReactantBackend, objective_function::F, data, ts::Training.TrainState
 ) where {F}
+    compile_start_time = time()
     compiled_gradient_function = @compile compute_gradients_internal(
         objective_function, ts.model, data, ts.parameters, ts.states
     )
+    compile_time = time() - compile_start_time
+    @debug "Compiling Reactant gradient function took $(compile_time) seconds"
 
     grads, loss, stats, st = compiled_gradient_function(
         objective_function, ts.model, data, ts.parameters, ts.states
@@ -71,9 +57,13 @@ for inplace in ("!", "")
         if hasfield(typeof(ts.cache.extras), :update_function)
             update_function = ts.cache.extras.update_function
         else
+            compile_start_time = time()
             update_function = @compile Optimisers.$(update_fn)(
                 ts.optimizer_state, ts.parameters, grads
             )
+            compile_time = time() - compile_start_time
+            @debug "Compiling Reactant update function took $(compile_time) seconds"
+
             @set! ts.cache.extras = merge(ts.cache.extras, (; update_function))
         end
 
@@ -88,6 +78,7 @@ for inplace in ("!", "")
     @eval function Lux.Training.$(fname)(
         backend::ReactantBackend, objective_function::F, data, ts::Training.TrainState
     ) where {F}
+        compile_start_time = time()
         compiled_grad_and_step_function = @compile $(internal_fn)(
             objective_function,
             ts.model,
@@ -97,6 +88,8 @@ for inplace in ("!", "")
             ts.optimizer_state,
             backend.return_gradients,
         )
+        compile_time = time() - compile_start_time
+        @debug "Compiling Reactant $(fname) function took $(compile_time) seconds"
 
         grads, ps, loss, stats, st, opt_state = compiled_grad_and_step_function(
             objective_function,
