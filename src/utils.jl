@@ -243,7 +243,7 @@ recursive_unthunk(x::CRC.AbstractTangent) = x
 recursive_unthunk(x::CRC.AbstractThunk) = CRC.unthunk(x)
 function recursive_unthunk(x::CRC.Tangent{A}) where {A}
     backing = recursive_unthunk(x.backing)
-    return CRC.Tangent{A, typeof(backing)}(backing)
+    return CRC.Tangent{A,typeof(backing)}(backing)
 end
 function recursive_unthunk(x)
     return Functors.fmap(x; exclude=thunk_leaf) do xᵢ

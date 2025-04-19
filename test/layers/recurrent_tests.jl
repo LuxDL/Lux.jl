@@ -626,11 +626,12 @@ end
         )
         ps, st = Lux.setup(rng, model) |> dev
 
-        x = (
-            randn(rng, Float32, 4, 10),
-            randn(rng, Float32, 4, 10),
-            randn(rng, Float32, 4, 10),
-        ) |> dev
+        x =
+            (
+                randn(rng, Float32, 4, 10),
+                randn(rng, Float32, 4, 10),
+                randn(rng, Float32, 4, 10),
+            ) |> dev
 
         _f = (model, x, ps, st) -> begin
             y, _ = model(x, ps, st)
