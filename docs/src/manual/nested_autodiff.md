@@ -1,16 +1,16 @@
 # [Nested Automatic Differentiation](@id nested_autodiff)
 
-!!! note
-
-    This is a relatively new feature in Lux, so there might be some rough edges. If you
-    encounter any issues, please let us know by opening an issue on the
-    [GitHub repository](https://github.com/LuxDL/Lux.jl).
-
 In this manual, we will explore how to use automatic differentiation (AD) inside your layers
 or loss functions and have Lux automatically switch the AD backend with a faster one when
 needed.
 
-!!! tip
+!!! tip "Reactant Support"
+
+    Reactant + Lux natively supports Nested AD (even higher dimensions). If you are using
+    Reactant, please see the [Nested AD with Reactant](@ref nested_autodiff_reactant)
+    manual. For most users, this should be the preferred way to use nested AD.
+
+!!! tip "Disabling Nested AD Switching"
 
     Don't wan't Lux to do this switching for you? You can disable it by setting the
     `automatic_nested_ad_switching` Preference to `false`.
@@ -46,9 +46,6 @@ work:
     - [`jacobian_vector_product`](@ref)
     - [`batched_jacobian`](@ref)
   - Switching only happens for `ChainRules` compatible AD libraries.
-
-We plan to capture `DifferentiationInterface`, and `Enzyme.autodiff` calls in the
-future (PRs are welcome).
 
 !!! tip
 
@@ -108,11 +105,12 @@ calculation.
 
 ### Using Batched Jacobian for Multiple Inputs
 
-Notice that in this example the Jacobian `J` consists on the full matrix of derivatives of `smodel` with respect
-the different inputs in `x`. In many cases, we are interested in computing the Jacobian with respect to each
-input individually, avoiding the unnecessary calculation of zero entries of the Jacobian. This can be achieved with
-[`batched_jacobian`](@ref) to parse the calculation of the Jacobian per each single input. Using the same example
-from the previous section:
+Notice that in this example the Jacobian `J` consists on the full matrix of derivatives of
+`smodel` with respect the different inputs in `x`. In many cases, we are interested in
+computing the Jacobian with respect to each input individually, avoiding the unnecessary
+calculation of zero entries of the Jacobian. This can be achieved with
+[`batched_jacobian`](@ref) to parse the calculation of the Jacobian per each single input.
+Using the same example from the previous section:
 
 ```@example nested_ad
 model = Chain(Dense(2 => 4, tanh), Dense(4 => 2))
@@ -134,9 +132,10 @@ end
 loss_function_batched(model, x, ps, st, y)
 ```
 
-Notice that in this last example we removed `BatchNorm()` from the neural network. This is done so outputs corresponding
-to different inputs don't have an algebraic dependency due to the batch normalization happening in the neural network.
-We can now verify again the value of the Jacobian:
+Notice that in this last example we removed `BatchNorm()` from the neural network. This is
+done so outputs corresponding to different inputs don't have an algebraic dependency due to
+the batch normalization happening in the neural network. We can now verify again the value
+of the Jacobian:
 
 ```@example nested_ad
 ∂x_fd = FiniteDiff.finite_difference_gradient(x -> loss_function_batched(model, x, ps, st, y), x)

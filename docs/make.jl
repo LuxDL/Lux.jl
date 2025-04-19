@@ -4,70 +4,6 @@ using LuxTestUtils, MLDataDevices
 
 using Optimisers # for some docstrings
 
-pages = [
-    "Lux.jl" => "index.md",
-    "Getting Started" => [
-        "Introduction" => "introduction/index.md",
-        "Overview" => "introduction/overview.md",
-        "Resources" => "introduction/resources.md",
-        "Updating to v1" => "introduction/updating_to_v1.md",
-        "Citation" => "introduction/citation.md",
-    ],
-    "Tutorials" => [
-        "Overview" => "tutorials/index.md",
-        "Beginner" => [
-            "tutorials/beginner/1_Basics.md",
-            "tutorials/beginner/2_PolynomialFitting.md",
-            "tutorials/beginner/3_SimpleRNN.md",
-            "tutorials/beginner/4_SimpleChains.md",
-            "tutorials/beginner/5_OptimizationIntegration.md",
-        ],
-        "Intermediate" => [
-            "tutorials/intermediate/1_NeuralODE.md",
-            "tutorials/intermediate/2_BayesianNN.md",
-            "tutorials/intermediate/3_HyperNet.md",
-            "tutorials/intermediate/4_PINN2DPDE.md",
-            "tutorials/intermediate/5_ConvolutionalVAE.md",
-            "tutorials/intermediate/6_GCN_Cora.md",
-            "tutorials/intermediate/7_RealNVP.md",
-        ],
-        "Advanced" => ["tutorials/advanced/1_GravitationalWaveForm.md"],
-    ],
-    "Manual" => [
-        "manual/interface.md",
-        "manual/debugging.md",
-        "manual/dispatch_custom_input.md",
-        "manual/freezing_model_parameters.md",
-        "manual/gpu_management.md",
-        "manual/migrate_from_flux.md",
-        "manual/weight_initializers.md",
-        "manual/distributed_utils.md",
-        "manual/nested_autodiff.md",
-        "manual/compiling_lux_models.md",
-    ],
-    "API Reference" => [
-        "Lux" => [
-            "api/Lux/layers.md",
-            "api/Lux/autodiff.md",
-            "api/Lux/utilities.md",
-            "api/Lux/contrib.md",
-            "api/Lux/interop.md",
-            "api/Lux/distributed_utils.md",
-        ],
-        "Accelerator Support" => ["api/Accelerator_Support/MLDataDevices.md"],
-        "NN Primitives" => [
-            "api/NN_Primitives/LuxLib.md",
-            "api/NN_Primitives/NNlib.md",
-            "api/NN_Primitives/ActivationFunctions.md",
-        ],
-        "Building Blocks" => [
-            "api/Building_Blocks/LuxCore.md",
-            "api/Building_Blocks/WeightInitializers.md",
-        ],
-        "Testing Functionality" => ["api/Testing_Functionality/LuxTestUtils.md"],
-    ],
-]
-
 deploy_config = Documenter.auto_detect_deploy_system()
 deploy_decision = Documenter.deploy_folder(
     deploy_config;
@@ -96,8 +32,7 @@ makedocs(;
         deploy_decision,
     ),
     plugins=[CitationBibliography(joinpath(@__DIR__, "references.bib"))],
-    draft=false,
-    pages,
+    draft=false
 )
 
 deploydocs(;
