@@ -235,7 +235,22 @@ end
 calculate_gain(::typeof(NNlib.leakyrelu), x) = typeof(x)(√(2 / (1 + x^2)))
 calculate_gain(::typeof(NNlib.selu), _) = 3.0f0 / 4
 
-recursive_unthunk(x) = Functors.fmap(CRC.unthunk, x; exclude=MLDataDevices.isleaf)
+thunk_leaf(x) = MLDataDevices.isleaf(x)
+thunk_leaf(x::CRC.AbstractTangent) = true
+thunk_leaf(x::CRC.AbstractThunk) = true
+
+recursive_unthunk(x::CRC.AbstractTangent) = x
+recursive_unthunk(x::CRC.AbstractThunk) = CRC.unthunk(x)
+function recursive_unthunk(x::CRC.Tangent{A}) where {A}
+    backing = recursive_unthunk(x.backing)
+    return CRC.Tangent{A, typeof(backing)}(backing)
+end
+function recursive_unthunk(x)
+    return Functors.fmap(x; exclude=thunk_leaf) do xᵢ
+        xᵢ isa CRC.AbstractTangent && return recursive_unthunk(xᵢ)
+        return CRC.unthunk(xᵢ)
+    end
+end
 
 end
 
