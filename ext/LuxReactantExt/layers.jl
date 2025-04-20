@@ -29,5 +29,5 @@ function (r::Lux.Recurrence)(x::AnyTracedRArray, ps, st::NamedTuple)
     end
 
     r.return_sequence isa False && return (out, st)
-    return (out, eachslice(sequence; dims=ndims(sequence))), st
+    return LuxOps.eachslice(sequence, r.ordering), st
 end
