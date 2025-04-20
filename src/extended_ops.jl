@@ -183,7 +183,9 @@ function CRC.rrule(
     project = CRC.ProjectTo.(x)
     ∇foldl_init =
         Δ -> begin
-            trio = accumulate(accum_func_inner, reverse(hobbits); init=(0, Δ, 0))
+            trio = accumulate(
+                accum_func_inner, reverse(hobbits); init=(0, recursive_unthunk(Δ), 0)
+            )
             ∂op = sum(first, trio)
             ∂x = reshape(map(last, reverse(trio)), ax)
             return (

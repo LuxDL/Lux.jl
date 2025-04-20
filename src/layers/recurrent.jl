@@ -126,7 +126,7 @@ function (r::Recurrence{False})(x::Union{AbstractVector,NTuple}, ps, st::NamedTu
     return out, st
 end
 
-function (r::Recurrence{True})(x::Union{AbstractVector,NTuple}, ps, st::NamedTuple)
+function (r::Recurrence{True})(x::AbstractVector, ps, st::NamedTuple)
     function recur_op(::Nothing, input)
         (out, carry), state = apply(r.cell, input, ps, st)
         return [out], carry, state
@@ -134,6 +134,19 @@ function (r::Recurrence{True})(x::Union{AbstractVector,NTuple}, ps, st::NamedTup
     function recur_op((outputs, carry, state), input)
         (out, carry), state = apply(r.cell, (input, carry), ps, state)
         return vcat(outputs, [out]), carry, state
+    end
+    results = foldl_init(recur_op, x)
+    return first(results), last(results)
+end
+
+function (r::Recurrence{True})(x::NTuple, ps, st::NamedTuple)
+    function recur_op(::Nothing, input)
+        (out, carry), state = apply(r.cell, input, ps, st)
+        return (out,), carry, state
+    end
+    function recur_op((outputs, carry, state), input)
+        (out, carry), state = apply(r.cell, (input, carry), ps, state)
+        return (outputs..., out), carry, state
     end
     results = foldl_init(recur_op, x)
     return first(results), last(results)
