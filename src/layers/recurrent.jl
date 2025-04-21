@@ -22,6 +22,22 @@ abstract type AbstractTimeSeriesDataBatchOrdering end
 struct TimeLastIndex <: AbstractTimeSeriesDataBatchOrdering end
 struct BatchLastIndex <: AbstractTimeSeriesDataBatchOrdering end
 
+function time_dimension_size(x::AbstractArray, ::BatchLastIndex)
+    ndims(x) == 2 && return size(x, ndims(x))
+    return size(x, ndims(x) - 1)
+end
+time_dimension_size(x::AbstractArray, ::TimeLastIndex) = size(x, ndims(x))
+
+function get_time_dimension(x::AbstractArray, i::Number, ::BatchLastIndex)
+    ndims(x) == 2 && return x[:, i]
+    idxs = ntuple(Returns(Colon()), ndims(x) - 2)
+    return x[idxs..., i, :]
+end
+function get_time_dimension(x::AbstractArray, i::Number, ::TimeLastIndex)
+    idxs = ntuple(Returns(Colon()), ndims(x) - 1)
+    return x[idxs..., i]
+end
+
 LuxOps.eachslice(x::AbstractArray, ::TimeLastIndex) = LuxOps.eachslice(x, Val(ndims(x)))
 function LuxOps.eachslice(x::AbstractArray, ::BatchLastIndex)
     return LuxOps.eachslice(x, Val(ndims(x) - 1))
