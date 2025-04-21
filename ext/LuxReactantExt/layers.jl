@@ -13,7 +13,7 @@ function (r::Lux.Recurrence)(x::AnyTracedRArray, ps, st::NamedTuple)
 
     sequence[idxs..., 1] = out
     @trace for i in 2:N
-        (out, carry), st = r.cell(Lux.get_time_dimension(x, i, r.ordering), ps, st)
+        (out, carry), st = r.cell((Lux.get_time_dimension(x, i, r.ordering), carry), ps, st)
         sequence[idxs..., i] = out
     end
 
