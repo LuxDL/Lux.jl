@@ -6,14 +6,14 @@ end
 # Recurrent Layers
 function (r::Lux.Recurrence)(x::AnyTracedRArray, ps, st::NamedTuple)
     idxs = ntuple(Returns(Colon()), ndims(x) - 1)
-    N = size(x, r.ordering)
+    N = Lux.time_dimension_size(x, r.ordering)
 
-    (out, carry), st = r.cell(x[1, r.ordering], ps, st)
+    (out, carry), st = r.cell(Lux.get_time_dimension(x, 1, r.ordering), ps, st)
     sequence = similar(x, size(out)..., N)
 
     sequence[idxs..., 1] = out
     @trace for i in 2:N
-        (out, carry), st = r.cell((x[i, r.ordering], carry), ps, st)
+        (out, carry), st = r.cell(Lux.get_time_dimension(x, i, r.ordering), ps, st)
         sequence[idxs..., i] = out
     end
 

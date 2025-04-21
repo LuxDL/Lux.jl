@@ -22,18 +22,18 @@ abstract type AbstractTimeSeriesDataBatchOrdering end
 struct TimeLastIndex <: AbstractTimeSeriesDataBatchOrdering end
 struct BatchLastIndex <: AbstractTimeSeriesDataBatchOrdering end
 
-function Base.size(x::AbstractArray, ::BatchLastIndex)
+function time_dimension_size(x::AbstractArray, ::BatchLastIndex)
     ndims(x) == 2 && return size(x, ndims(x))
     return size(x, ndims(x) - 1)
 end
-Base.size(x::AbstractArray, ::TimeLastIndex) = size(x, ndims(x))
+time_dimension_size(x::AbstractArray, ::TimeLastIndex) = size(x, ndims(x))
 
-function Base.getindex(x::AbstractArray, i::Number, ::BatchLastIndex)
+function get_time_dimension(x::AbstractArray, i::Number, ::BatchLastIndex)
     ndims(x) == 2 && return x[:, i]
     idxs = ntuple(Returns(Colon()), ndims(x) - 2)
     return x[idxs..., i, :]
 end
-function Base.getindex(x::AbstractArray, i::Number, ::TimeLastIndex)
+function get_time_dimension(x::AbstractArray, i::Number, ::TimeLastIndex)
     idxs = ntuple(Returns(Colon()), ndims(x) - 1)
     return x[idxs..., i]
 end
