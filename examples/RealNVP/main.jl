@@ -214,7 +214,7 @@ end
 
 function main(;
     maxiters::Int=10_000,
-    n_train_samples::Int=100_000,
+    n_train_samples::Int=parse(Bool, get(ENV, "CI", "false")) ? 5_000 : 100_000,
     batchsize::Int=128,
     n_transforms::Int=6,
     hidden_dims::Int=16,
