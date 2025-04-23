@@ -1,34 +1,45 @@
+#! format: off
 const BEGINNER_TUTORIALS = [
-    "Basics/main.jl" => "CPU",
-    "PolynomialFitting/main.jl" => "CUDA",
-    "SimpleRNN/main.jl" => "CUDA",
-    # Technically this is run on CPU but we need a better machine to run it
-    "SimpleChains/main.jl" => "CUDA",
-    "OptimizationIntegration/main.jl" => "CPU",
+    ("Basics",                  "CPU",   true),
+    ("PolynomialFitting",       "CUDA",  true),
+    ("SimpleRNN",               "CUDA",  true),
+    ("SimpleChains",            "CUDA",  true),
+    ("OptimizationIntegration", "CPU",   true),
 ]
 const INTERMEDIATE_TUTORIALS = [
-    "NeuralODE/main.jl" => "CUDA",
-    "BayesianNN/main.jl" => "CPU", # This is an empty tutorial, left to redirect to Turing
-    "HyperNet/main.jl" => "CUDA",
-    "PINN2DPDE/main.jl" => "CUDA",
-    "ConvolutionalVAE/main.jl" => "CUDA",
-    "GCN_Cora/main.jl" => "CUDA",
-    "RealNVP/main.jl" => "CPU",    # This is not run on CI
+    ("NeuralODE",               "CUDA", true),
+    ("BayesianNN",              "CPU",  false),
+    ("HyperNet",                "CUDA", true),
+    ("PINN2DPDE",               "CUDA", true),
+    ("ConvolutionalVAE",        "CUDA", true),
+    ("GCN_Cora",                "CUDA", true),
+    ("RealNVP",                 "CPU",  false),
 ]
-const ADVANCED_TUTORIALS = ["GravitationalWaveForm/main.jl" => "CPU"]
+const ADVANCED_TUTORIALS = [
+    ("GravitationalWaveForm",   "CPU",  true),
+]
+#! format: on
+
+get_name_and_run(list) = getindex.(list, ([1, 3],))
 
 const TUTORIALS = [
-    collect(enumerate(Iterators.product(["beginner"], first.(BEGINNER_TUTORIALS))))...,
     collect(
-        enumerate(Iterators.product(["intermediate"], first.(INTERMEDIATE_TUTORIALS)))
+        enumerate(Iterators.product(["beginner"], get_name_and_run(BEGINNER_TUTORIALS)))
     )...,
-    collect(enumerate(Iterators.product(["advanced"], first.(ADVANCED_TUTORIALS))))...,
+    collect(
+        enumerate(
+            Iterators.product(["intermediate"], get_name_and_run(INTERMEDIATE_TUTORIALS))
+        ),
+    )...,
+    collect(
+        enumerate(Iterators.product(["advanced"], get_name_and_run(ADVANCED_TUTORIALS)))
+    )...,
 ]
 const BACKEND_LIST =
     lowercase.([
-        last.(BEGINNER_TUTORIALS)...,
-        last.(INTERMEDIATE_TUTORIALS)...,
-        last.(ADVANCED_TUTORIALS)...,
+        getindex.(BEGINNER_TUTORIALS, 2)...,
+        getindex.(INTERMEDIATE_TUTORIALS, 2)...,
+        getindex.(ADVANCED_TUTORIALS, 2)...,
     ])
 
 const BACKEND_GROUP = lowercase(get(ENV, "TUTORIAL_BACKEND_GROUP", "all"))
@@ -72,9 +83,9 @@ run(
     `$(Base.julia_cmd()) --startup=no --code-coverage=user --threads=$(Threads.nthreads()) --project=@literate -e 'import Pkg; Pkg.add(["Literate", "InteractiveUtils"])'`,
 )
 
-asyncmap(TUTORIALS_BUILDING; ntasks=NTASKS) do (i, (d, p))
+asyncmap(TUTORIALS_BUILDING; ntasks=NTASKS) do (i, (d, (p, should_run)))
     @info "Running Tutorial $(i): $(p) on task $(current_task())"
-    path = joinpath(@__DIR__, "..", "examples", p)
+    path = joinpath(@__DIR__, "..", "examples", p, "main.jl")
     name = "$(i)_$(first(rsplit(p, "/")))"
     output_directory = joinpath(@__DIR__, "src", "tutorials", d)
     tutorial_proj = dirname(path)
@@ -87,7 +98,7 @@ asyncmap(TUTORIALS_BUILDING; ntasks=NTASKS) do (i, (d, p))
         "JULIA_DEBUG" => "Literate",
     ) do
         run(
-            `$(Base.julia_cmd()) --startup=no --code-coverage=user --threads=$(Threads.nthreads()) --project=$(tutorial_proj) "$(file)" "$(name)" "$(output_directory)" "$(path)"`,
+            `$(Base.julia_cmd()) --startup=no --code-coverage=user --threads=$(Threads.nthreads()) --project=$(tutorial_proj) "$(file)" "$(name)" "$(output_directory)" "$(path)" "$(should_run)"`,
         )
     end
 

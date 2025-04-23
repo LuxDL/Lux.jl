@@ -4,11 +4,6 @@
 # [RealNVP](https://arxiv.org/abs/1605.08803). This is based on the
 # [RealNVP implementation in MLX](https://github.com/ml-explore/mlx-examples/blob/main/normalizing_flow/).
 
-# !!!warning "Not Run on CI"
-#
-#    To cut down on CI time, this example is not run on CI. If you find any issues, please
-#    open an issue on the [Lux.jl](https://github.com/LuxDL/Lux.jl) repository.
-
 using Lux,
     Reactant,
     Random,
@@ -22,8 +17,6 @@ using Lux,
 
 const xdev = reactant_device(; force=true)
 const cdev = cpu_device()
-
-const RUN = !parse(Bool, get(ENV, "CI", "false"))
 
 # ## Define & Load the Moons Dataset
 
@@ -53,15 +46,13 @@ end
 
 # Let's visualize the dataset
 
-if RUN
-    fig = Figure()
-    ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
+fig = Figure()
+ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
 
-    z = make_moons(Random.default_rng(), Float32, 10_000; noise=0.1)
-    scatter!(ax, z[1, :], z[2, :]; markersize=2)
+z = make_moons(Random.default_rng(), Float32, 10_000; noise=0.1)
+scatter!(ax, z[1, :], z[2, :]; markersize=2)
 
-    fig
-end
+fig
 
 # ---
 
@@ -268,30 +259,26 @@ function main(;
     )
 end
 
-if RUN
-    trained_model = main()
-end
+trained_model = main()
 nothing #hide
 
 # ## Visualizing the Results
-if RUN
-    z_stages = Matrix{Float32}[]
-    for i in 1:(trained_model.model.n_transforms)
-        z = @jit sample(Random.default_rng(), Float32, trained_model, 10_000, i)
-        push!(z_stages, Array(z))
+z_stages = Matrix{Float32}[]
+for i in 1:(trained_model.model.n_transforms)
+    z = @jit sample(Random.default_rng(), Float32, trained_model, 10_000, i)
+    push!(z_stages, Array(z))
+end
+
+begin
+    fig = Figure(; size=(1200, 800))
+
+    for (idx, z) in enumerate(z_stages)
+        i, j = (idx - 1) ÷ 3, (idx - 1) % 3
+        ax = Axis(fig[i, j]; title="$(idx) transforms")
+        scatter!(ax, z[1, :], z[2, :]; markersize=2)
     end
 
-    begin
-        fig = Figure(; size=(1200, 800))
-
-        for (idx, z) in enumerate(z_stages)
-            i, j = (idx - 1) ÷ 3, (idx - 1) % 3
-            ax = Axis(fig[i, j]; title="$(idx) transforms")
-            scatter!(ax, z[1, :], z[2, :]; markersize=2)
-        end
-
-        fig
-    end
+    fig
 end
 
 # ![](https://raw.githubusercontent.com/LuxDL/Lux.jl/main/docs/src/public/realnvp.png)
