@@ -222,6 +222,7 @@ function main(;
     lr::Float64=0.0004,
     noise::Float64=0.06,
 )
+    @info "Here 1"
     rng = Random.default_rng()
     Random.seed!(rng, 0)
 
@@ -229,11 +230,14 @@ function main(;
         xdev(load_moons_dataloader(rng, Float32, n_train_samples; batchsize, noise))
     )
 
+    @info "Here 2"
+
     model = RealNVP(; n_transforms, dist_dims=2, hidden_dims, n_layers)
     ps, st = xdev(Lux.setup(rng, model))
     opt = Adam(lr)
 
     train_state = Training.TrainState(model, ps, st, opt)
+    @info "Here 3"
     @printf "Total Trainable Parameters: %d\n" Lux.parameterlength(ps)
 
     total_samples = 0
@@ -245,6 +249,7 @@ function main(;
             AutoEnzyme(), loss_function, x, train_state; return_gradients=Val(false)
         )
 
+        @info "Iter: $iter, Loss: $loss"
         isnan(loss) && error("NaN loss encountered in iter $(iter)!")
 
         if iter == 1 || iter == maxiters || iter % 1000 == 0
