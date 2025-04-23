@@ -89,7 +89,7 @@ Literate.markdown(
     output_directory;
     execute=should_run,
     name,
-    flavor=should_run ? Literate.CommonMarkFlavor() : Literate.DocumenterFlavor(),
+    flavor=should_run ? Literate.DocumenterFlavor() : Literate.CommonMarkFlavor(),
     preprocess=Base.Fix1(preprocess, path),
     postprocess=Base.Fix1(postprocess, path),
 )
