@@ -13,7 +13,7 @@ const INTERMEDIATE_TUTORIALS = [
     "PINN2DPDE/main.jl" => "CUDA",
     "ConvolutionalVAE/main.jl" => "CUDA",
     "GCN_Cora/main.jl" => "CUDA",
-    "RealNVP/main.jl" => "CUDA",
+    "RealNVP/main.jl" => "CPU",    # This is not run on CI
 ]
 const ADVANCED_TUTORIALS = ["GravitationalWaveForm/main.jl" => "CPU"]
 

@@ -4,6 +4,11 @@
 # [RealNVP](https://arxiv.org/abs/1605.08803). This is based on the
 # [RealNVP implementation in MLX](https://github.com/ml-explore/mlx-examples/blob/main/normalizing_flow/).
 
+# !!!warning "Not Run on CI"
+#
+#    To cut down on CI time, this example is not run on CI. If you find any issues, please
+#    open an issue on the [Lux.jl](https://github.com/LuxDL/Lux.jl) repository.
+
 using Lux,
     Reactant,
     Random,
@@ -17,6 +22,8 @@ using Lux,
 
 const xdev = reactant_device(; force=true)
 const cdev = cpu_device()
+
+const RUN = !parse(Bool, get(ENV, "CI", "false"))
 
 # ## Define & Load the Moons Dataset
 
@@ -46,7 +53,7 @@ end
 
 # Let's visualize the dataset
 
-begin
+if RUN
     fig = Figure()
     ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
 
@@ -214,7 +221,7 @@ end
 
 function main(;
     maxiters::Int=10_000,
-    n_train_samples::Int=parse(Bool, get(ENV, "CI", "false")) ? 5_000 : 100_000,
+    n_train_samples::Int=100_000,
     batchsize::Int=128,
     n_transforms::Int=6,
     hidden_dims::Int=16,
@@ -222,7 +229,6 @@ function main(;
     lr::Float64=0.0004,
     noise::Float64=0.06,
 )
-    @info "Here 1"
     rng = Random.default_rng()
     Random.seed!(rng, 0)
 
@@ -230,14 +236,11 @@ function main(;
         xdev(load_moons_dataloader(rng, Float32, n_train_samples; batchsize, noise))
     )
 
-    @info "Here 2"
-
     model = RealNVP(; n_transforms, dist_dims=2, hidden_dims, n_layers)
     ps, st = xdev(Lux.setup(rng, model))
     opt = Adam(lr)
 
     train_state = Training.TrainState(model, ps, st, opt)
-    @info "Here 3"
     @printf "Total Trainable Parameters: %d\n" Lux.parameterlength(ps)
 
     total_samples = 0
@@ -249,7 +252,6 @@ function main(;
             AutoEnzyme(), loss_function, x, train_state; return_gradients=Val(false)
         )
 
-        @info "Iter: $iter, Loss: $loss"
         isnan(loss) && error("NaN loss encountered in iter $(iter)!")
 
         if iter == 1 || iter == maxiters || iter % 1000 == 0
@@ -266,24 +268,30 @@ function main(;
     )
 end
 
-trained_model = main()
+if RUN
+    trained_model = main()
+end
 nothing #hide
 
 # ## Visualizing the Results
-z_stages = Matrix{Float32}[]
-for i in 1:(trained_model.model.n_transforms)
-    z = @jit sample(Random.default_rng(), Float32, trained_model, 10_000, i)
-    push!(z_stages, Array(z))
-end
-
-begin
-    fig = Figure(; size=(1200, 800))
-
-    for (idx, z) in enumerate(z_stages)
-        i, j = (idx - 1) ÷ 3, (idx - 1) % 3
-        ax = Axis(fig[i, j]; title="$(idx) transforms")
-        scatter!(ax, z[1, :], z[2, :]; markersize=2)
+if RUN
+    z_stages = Matrix{Float32}[]
+    for i in 1:(trained_model.model.n_transforms)
+        z = @jit sample(Random.default_rng(), Float32, trained_model, 10_000, i)
+        push!(z_stages, Array(z))
     end
 
-    fig
+    begin
+        fig = Figure(; size=(1200, 800))
+
+        for (idx, z) in enumerate(z_stages)
+            i, j = (idx - 1) ÷ 3, (idx - 1) % 3
+            ax = Axis(fig[i, j]; title="$(idx) transforms")
+            scatter!(ax, z[1, :], z[2, :]; markersize=2)
+        end
+
+        fig
+    end
 end
+
+# ![](https://raw.githubusercontent.com/LuxDL/Lux.jl/main/docs/src/public/realnvp.png)
