@@ -59,6 +59,8 @@ steps:
           - sv-oss/node-n#v0.1.2:
               node-version: v20
         command: |
+          export LD_LIBRARY_PATH=/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
+
           echo "+++ :node: Instantiate NPM"
           cd docs/
           npm i
