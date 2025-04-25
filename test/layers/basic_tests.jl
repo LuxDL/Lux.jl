@@ -366,3 +366,23 @@ end
         end
     end
 end
+
+@testitem "Dense cuBLASLt failures with views #1298" setup = [SharedTestSetup] tags = [
+    :core_layers
+] begin
+    using LinearAlgebra
+
+    rng = StableRNG(12345)
+
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
+        mode == "cuda" || continue
+
+        model = Dense(1 => 1, relu; use_bias=false)
+        ps, st = dev(Lux.setup(rng, model))
+        x = ones(Float32, 1, 2) |> aType
+        x = selectdim(x, 2, 1:1) |> transpose
+
+        @test x isa LinearAlgebra.Transpose
+        @test size(model(x, ps, st)[1]) == (1, 1)
+    end
+end

@@ -1,6 +1,6 @@
 module LuxLibCUDAExt
 
-using CUDA: CUDA, CUBLAS, CuArray, StridedCuMatrix, StridedCuVector, CuPtr
+using CUDA: CUDA, CUBLAS, CuArray, CuMatrix, CuVector, CuPtr
 using ForwardDiff: ForwardDiff
 using LinearAlgebra: LinearAlgebra, Transpose, Adjoint
 using LuxLib: LuxLib, Impl, Optional
