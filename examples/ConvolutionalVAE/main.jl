@@ -21,6 +21,8 @@ using Lux,
 const xdev = reactant_device(; force=true)
 const cdev = cpu_device()
 
+const IN_VSCODE = isdefined(Main, :VSCodeServer)
+
 # ## Model Definition
 
 # First we will define the encoder.It maps the input to a normal distribution in latent
@@ -63,8 +65,7 @@ function cvae_encoder(
         σ = exp.(logσ² .* T(0.5))
 
         ## Generate a tensor of random values from a normal distribution
-        rng = Lux.replicate(rng)
-        ϵ = randn_like(rng, σ)
+        ϵ = randn_like(Lux.replicate(rng), σ)
 
         ## Reparameterization trick to brackpropagate through sampling
         z = ϵ .* σ .+ μ
@@ -105,9 +106,9 @@ function cvae_decoder(; num_latent_dims::Int, image_shape::Dims{3}, max_num_filt
     end
 end
 
-@concrete struct CVAE <: Lux.AbstractLuxContainerLayer{(:encoder, :decoder)}
-    encoder <: Lux.AbstractLuxLayer
-    decoder <: Lux.AbstractLuxLayer
+@concrete struct CVAE <: AbstractLuxContainerLayer{(:encoder, :decoder)}
+    encoder <: AbstractLuxLayer
+    decoder <: AbstractLuxLayer
 end
 
 function CVAE(
@@ -155,7 +156,7 @@ end
 function loadmnist(batchsize, image_size::Dims{2})
     ## Load MNIST: Only 1500 for demonstration purposes on CI
     train_dataset = MNIST(; split=:train)
-    N = parse(Bool, get(ENV, "CI", "false")) ? 1500 : length(train_dataset)
+    N = parse(Bool, get(ENV, "CI", "false")) ? 5000 : length(train_dataset)
 
     train_transform = ScaleKeepAspect(image_size) |> ImageToTensor()
     trainset = TensorDataset(train_dataset, train_transform, N)
@@ -267,7 +268,6 @@ function main(;
 
     @printf "Total Trainable Parameters: %0.4f M\n" (Lux.parameterlength(ps) / 1.0e6)
 
-    is_vscode = isdefined(Main, :VSCodeServer)
     empty_row, model_img_full = nothing, nothing
 
     for epoch in 1:epochs
@@ -294,7 +294,7 @@ function main(;
         throughput = total_samples / total_time
         @printf "Epoch %d, Train Loss: %.7f, Time: %.4fs, Throughput: %.6f im/s\n" epoch train_loss total_time throughput
 
-        if is_vscode || epoch == epochs
+        if IN_VSCODE || epoch == epochs
             recon_images = reconstruct_images(
                 cvae_compiled,
                 train_state.parameters,
@@ -314,7 +314,7 @@ function main(;
                 fill!(empty_row, 0)
             end
             model_img_full = vcat(recon_images, empty_row, gen_images)
-            is_vscode && display(model_img_full)
+            IN_VSCODE && display(model_img_full)
         end
     end
 

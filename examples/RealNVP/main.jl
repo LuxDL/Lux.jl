@@ -46,15 +46,13 @@ end
 
 # Let's visualize the dataset
 
-begin
-    fig = Figure()
-    ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
+fig = Figure()
+ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
 
-    z = make_moons(Random.default_rng(), Float32, 10_000; noise=0.1)
-    scatter!(ax, z[1, :], z[2, :]; markersize=2)
+z = make_moons(Random.default_rng(), Float32, 10_000; noise=0.1)
+scatter!(ax, z[1, :], z[2, :]; markersize=2)
 
-    fig
-end
+fig
 
 # ---
 
@@ -282,3 +280,5 @@ begin
 
     fig
 end
+
+# ![](https://raw.githubusercontent.com/LuxDL/Lux.jl/main/docs/src/public/realnvp.png)

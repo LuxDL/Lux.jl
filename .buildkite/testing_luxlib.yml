@@ -36,7 +36,7 @@ steps:
         env:
           BACKEND_GROUP: "CUDA"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
-        timeout_in_minutes: 240
+        timeout_in_minutes: 120
         matrix:
           setup:
             julia:
@@ -80,7 +80,7 @@ steps:
         env:
           BACKEND_GROUP: "AMDGPU"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
-        timeout_in_minutes: 240
+        timeout_in_minutes: 120
         matrix:
           setup:
             julia:

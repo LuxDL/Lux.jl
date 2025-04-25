@@ -8,11 +8,12 @@ name = ARGS[1]
 pkg_log_path = joinpath(storage_dir, "$(name)_pkg.log")
 output_directory = ARGS[2]
 path = ARGS[3]
+should_run = parse(Bool, ARGS[4])
 push!(LOAD_PATH, "@literate")  # Should have the Literate and InteractiveUtils packages
 
 io = open(pkg_log_path, "w")
 warn_old_version = try
-    Pkg.develop(; path=joinpath(@__DIR__, ".."), io)
+    should_run && Pkg.develop(; path=joinpath(@__DIR__, ".."), io)
     false
 catch err
     err isa Pkg.Resolve.ResolverError || rethrow()
@@ -21,7 +22,7 @@ catch err
         err
     true
 end
-Pkg.instantiate(; io)
+should_run && Pkg.instantiate(; io)
 close(io)
 
 using Literate
@@ -37,28 +38,43 @@ function preprocess(path, str)
 
             \n\n""" * str
     end
-    new_str = replace(str, "__DIR = @__DIR__" => "__DIR = \"$(dirname(path))\"")
-    appendix_code = """
-    # ## Appendix
 
-    using InteractiveUtils
-    InteractiveUtils.versioninfo()
+    str = replace(str, "__DIR = @__DIR__" => "__DIR = \"$(dirname(path))\"")
 
-    if @isdefined(MLDataDevices)
-        if @isdefined(CUDA) && MLDataDevices.functional(CUDADevice)
-            println()
-            CUDA.versioninfo()
+    if !should_run
+        str =
+            """
+            # !!! danger "Not Run on CI"
+
+            #     This tutorial is not run on CI to reduce the computational burden. If you
+            #     encounter any issues, please open an issue on the
+            #     [Lux.jl](https://github.com/LuxDL/Lux.jl) repository.
+
+            \n\n""" * str
+    else
+        str = str * """
+        # ## Appendix
+
+        using InteractiveUtils
+        InteractiveUtils.versioninfo()
+
+        if @isdefined(MLDataDevices)
+            if @isdefined(CUDA) && MLDataDevices.functional(CUDADevice)
+                println()
+                CUDA.versioninfo()
+            end
+
+            if @isdefined(AMDGPU) && MLDataDevices.functional(AMDGPUDevice)
+                println()
+                AMDGPU.versioninfo()
+            end
         end
 
-        if @isdefined(AMDGPU) && MLDataDevices.functional(AMDGPUDevice)
-            println()
-            AMDGPU.versioninfo()
-        end
+        nothing #hide
+        """
     end
 
-    nothing #hide
-    """
-    return new_str * appendix_code
+    return str
 end
 
 # For displaying generated Latex
@@ -71,9 +87,9 @@ end
 Literate.markdown(
     path,
     output_directory;
-    execute=true,
+    execute=should_run,
     name,
-    flavor=Literate.DocumenterFlavor(),
+    flavor=should_run ? Literate.DocumenterFlavor() : Literate.CommonMarkFlavor(),
     preprocess=Base.Fix1(preprocess, path),
     postprocess=Base.Fix1(postprocess, path),
 )
