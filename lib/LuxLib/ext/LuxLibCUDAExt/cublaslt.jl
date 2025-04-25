@@ -1,36 +1,37 @@
-const TransOrAdjOrRegStridedCuMatrix{T} = Union{
-    Transpose{T,<:StridedCuMatrix{T}},Adjoint{T,<:StridedCuMatrix{T}},StridedCuMatrix{T}
+const TransOrAdjOrRegCuMatrix{T} = Union{
+    Transpose{T,<:CuMatrix{T}},Adjoint{T,<:CuMatrix{T}},CuMatrix{T}
 }
 
 prepare_transposed(arr) = arr, false
-prepare_transposed(arr::Union{Transpose, Adjoint}) = parent(arr), true
+prepare_transposed(arr::Union{Transpose,Adjoint}) = parent(arr), true
+
+# fail if dispatch is not available
+cublaslt_matmul_fused!(args...) = -1
 
 function cublaslt_matmul_fused!(
-    @nospecialize(y::TransOrAdjOrRegStridedCuMatrix{<:Real}),
+    @nospecialize(y::TransOrAdjOrRegCuMatrix{<:Real}),
     σ::F,
-    @nospecialize(w::TransOrAdjOrRegStridedCuMatrix{<:Real}),
-    @nospecialize(x::TransOrAdjOrRegStridedCuMatrix{<:Real}),
-    b::Optional{<:StridedCuVector{<:Real}},
-    aux::Optional{<:StridedCuMatrix{<:Real}}=nothing,
+    @nospecialize(w::TransOrAdjOrRegCuMatrix{<:Real}),
+    @nospecialize(x::TransOrAdjOrRegCuMatrix{<:Real}),
+    b::Optional{<:CuVector{<:Real}},
+    aux::Optional{<:CuMatrix{<:Real}}=nothing,
 ) where {F}
-    y, transy = prepare_transposed(y) 
-    x, transx = prepare_transposed(x) 
-    w, transw = prepare_transposed(w) 
-    return cublaslt_matmul_fused!(
-        transy, y, σ, transw, w, transx, x, b, aux
-    )
+    y, transy = prepare_transposed(y)
+    x, transx = prepare_transposed(x)
+    w, transw = prepare_transposed(w)
+    return cublaslt_matmul_fused!(transy, y, σ, transw, w, transx, x, b, aux)
 end
 
 function cublaslt_matmul_fused!(
     transy::Bool,
-    @nospecialize(y::StridedCuMatrix{yT}),
+    @nospecialize(y::CuMatrix{yT}),
     σ::F,
     transw::Bool,
-    @nospecialize(w::StridedCuMatrix{wT}),
+    @nospecialize(w::CuMatrix{wT}),
     transx::Bool,
-    @nospecialize(x::StridedCuMatrix{xT}),
-    b::Optional{<:StridedCuVector},
-    aux::Optional{<:StridedCuMatrix},
+    @nospecialize(x::CuMatrix{xT}),
+    b::Optional{<:CuVector},
+    aux::Optional{<:CuMatrix},
 ) where {F,yT,wT,xT}
     bT = b === nothing ? Bool : eltype(b)
     auxT = aux === nothing ? Bool : eltype(aux)
@@ -59,14 +60,14 @@ end
 # Returns: 0 if successful, -1 if unsuccessful
 function cublaslt_matmul_fused!(
     transy::Bool,
-    @nospecialize(y::StridedCuMatrix{yT}),
+    @nospecialize(y::CuMatrix{yT}),
     σ::F,
     transw::Bool,
-    @nospecialize(w::StridedCuMatrix{wxT}),
+    @nospecialize(w::CuMatrix{wxT}),
     transx::Bool,
-    @nospecialize(x::StridedCuMatrix{wxT}),
-    b::Optional{<:StridedCuVector},
-    aux::Optional{<:StridedCuMatrix},
+    @nospecialize(x::CuMatrix{wxT}),
+    b::Optional{<:CuVector},
+    aux::Optional{<:CuMatrix},
 ) where {F,yT,wxT}
     m = size(y, 1)
     n = size(y, 2)
