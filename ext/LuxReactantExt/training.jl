@@ -14,7 +14,7 @@ function Lux.Training.compute_gradients_impl(
     backend::ReactantBackend, objective_function::F, data, ts::Training.TrainState
 ) where {F}
     compile_start_time = time()
-    compiled_gradient_function = @compile compute_gradients_internal(
+    compiled_gradient_function = @compile cudnn_hlo_optimize = true compute_gradients_internal(
         objective_function, ts.model, data, ts.parameters, ts.states
     )
     compile_time = time() - compile_start_time
@@ -58,7 +58,7 @@ for inplace in ("!", "")
             update_function = ts.cache.extras.update_function
         else
             compile_start_time = time()
-            update_function = @compile Optimisers.$(update_fn)(
+            update_function = @compile cudnn_hlo_optimize = true Optimisers.$(update_fn)(
                 ts.optimizer_state, ts.parameters, grads
             )
             compile_time = time() - compile_start_time
@@ -79,7 +79,7 @@ for inplace in ("!", "")
         backend::ReactantBackend, objective_function::F, data, ts::Training.TrainState
     ) where {F}
         compile_start_time = time()
-        compiled_grad_and_step_function = @compile $(internal_fn)(
+        compiled_grad_and_step_function = @compile cudnn_hlo_optimize = true $(internal_fn)(
             objective_function,
             ts.model,
             data,
