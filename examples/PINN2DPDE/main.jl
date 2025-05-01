@@ -47,7 +47,7 @@ function PINN(; hidden_dims::Int=32)
             Dense(hidden_dims => hidden_dims, tanh),
             Dense(hidden_dims => hidden_dims, tanh),
             Dense(hidden_dims => 1),
-        )
+        ),
     )
 end
 
