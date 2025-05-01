@@ -36,26 +36,18 @@ const cdev = cpu_device()
 # a wrapper over the 3 networks, so that we can train them using
 # [`Training.TrainState`](@ref).
 
-struct PINN{U,V,W} <: AbstractLuxContainerLayer{(:u, :v, :w)}
-    u::U
-    v::V
-    w::W
-end
-
-function create_mlp(act, hidden_dims)
-    return Chain(
-        Dense(3 => hidden_dims, act),
-        Dense(hidden_dims => hidden_dims, act),
-        Dense(hidden_dims => hidden_dims, act),
-        Dense(hidden_dims => 1),
-    )
+struct PINN{M} <: AbstractLuxWrapperLayer{:model}
+    model::M
 end
 
 function PINN(; hidden_dims::Int=32)
     return PINN(
-        create_mlp(tanh, hidden_dims),
-        create_mlp(tanh, hidden_dims),
-        create_mlp(tanh, hidden_dims),
+        Chain(
+            Dense(3 => hidden_dims, tanh),
+            Dense(hidden_dims => hidden_dims, tanh),
+            Dense(hidden_dims => hidden_dims, tanh),
+            Dense(hidden_dims => 1),
+        ),
     )
 end
 
@@ -64,39 +56,45 @@ end
 # We will define a custom loss function to compute the loss using 2nd order AD. We
 # will use the following loss function
 
-@views function physics_informed_loss_function(
-    u::StatefulLuxLayer, v::StatefulLuxLayer, w::StatefulLuxLayer, xyt::AbstractArray
-)
-    ∂u_∂xyt = Enzyme.gradient(Enzyme.Reverse, sum ∘ u, xyt)[1]
-    ∂u_∂x, ∂u_∂y, ∂u_∂t = ∂u_∂xyt[1:1, :], ∂u_∂xyt[2:2, :], ∂u_∂xyt[3:3, :]
-    ∂v_∂x = Enzyme.gradient(Enzyme.Reverse, sum ∘ v, xyt)[1][1:1, :]
-    v_xyt = v(xyt)
-    ∂w_∂y = Enzyme.gradient(Enzyme.Reverse, sum ∘ w, xyt)[1][2:2, :]
-    w_xyt = w(xyt)
-    return (
-        mean(abs2, ∂u_∂t .- ∂v_∂x .- ∂w_∂y) +
-        mean(abs2, v_xyt .- ∂u_∂x) +
-        mean(abs2, w_xyt .- ∂u_∂y)
-    )
+function ∂u_∂t(model::StatefulLuxLayer, xyt::AbstractArray)
+    return Enzyme.gradient(Enzyme.Reverse, sum ∘ model, xyt)[1][3, :]
+end
+
+function ∂u_∂x(model::StatefulLuxLayer, xyt::AbstractArray)
+    return Enzyme.gradient(Enzyme.Reverse, sum ∘ model, xyt)[1][1, :]
+end
+
+function ∂u_∂y(model::StatefulLuxLayer, xyt::AbstractArray)
+    return Enzyme.gradient(Enzyme.Reverse, sum ∘ model, xyt)[1][2, :]
+end
+
+function ∂²u_∂x²(model::StatefulLuxLayer, xyt::AbstractArray)
+    return Enzyme.gradient(Enzyme.Reverse, sum ∘ ∂u_∂x, Enzyme.Const(model), xyt)[2][1, :]
+end
+
+function ∂²u_∂y²(model::StatefulLuxLayer, xyt::AbstractArray)
+    return Enzyme.gradient(Enzyme.Reverse, sum ∘ ∂u_∂y, Enzyme.Const(model), xyt)[2][2, :]
+end
+
+function physics_informed_loss_function(model::StatefulLuxLayer, xyt::AbstractArray)
+    return mean(abs2, ∂u_∂t(model, xyt) .- ∂²u_∂x²(model, xyt) .- ∂²u_∂y²(model, xyt))
 end
 
 # Additionally, we need to compute the loss wrt the boundary conditions.
 
-function mse_loss_function(u::StatefulLuxLayer, target::AbstractArray, xyt::AbstractArray)
-    return MSELoss()(u(xyt), target)
+function mse_loss_function(
+    model::StatefulLuxLayer, target::AbstractArray, xyt::AbstractArray
+)
+    return MSELoss()(model(xyt), target)
 end
 
 function loss_function(model, ps, st, (xyt, target_data, xyt_bc, target_bc))
-    u_net = StatefulLuxLayer{true}(model.u, ps.u, st.u)
-    v_net = StatefulLuxLayer{true}(model.v, ps.v, st.v)
-    w_net = StatefulLuxLayer{true}(model.w, ps.w, st.w)
-    physics_loss = physics_informed_loss_function(u_net, v_net, w_net, xyt)
-    data_loss = mse_loss_function(u_net, target_data, xyt)
-    bc_loss = mse_loss_function(u_net, target_bc, xyt_bc)
+    smodel = StatefulLuxLayer{true}(model, ps, st)
+    physics_loss = physics_informed_loss_function(smodel, xyt)
+    data_loss = mse_loss_function(smodel, target_data, xyt)
+    bc_loss = mse_loss_function(smodel, target_bc, xyt_bc)
     loss = physics_loss + data_loss + bc_loss
-    return (
-        loss, (; u=u_net.st, v=v_net.st, w=w_net.st), (; physics_loss, data_loss, bc_loss)
-    )
+    return loss, smodel.st, (; physics_loss, data_loss, bc_loss)
 end
 
 # ## Generate the Data
@@ -152,7 +150,7 @@ function train_model(
     target_bc;
     seed::Int=0,
     maxiters::Int=50000,
-    hidden_dims::Int=32,
+    hidden_dims::Int=128,
 )
     rng = Random.default_rng()
     Random.seed!(rng, seed)
@@ -161,13 +159,13 @@ function train_model(
     ps, st = Lux.setup(rng, pinn) |> xdev
 
     bc_dataloader =
-        DataLoader((xyt_bc, target_bc); batchsize=32, shuffle=true, partial=false) |> xdev
+        DataLoader((xyt_bc, target_bc); batchsize=128, shuffle=true, partial=false) |> xdev
     pde_dataloader =
-        DataLoader((xyt, target_data); batchsize=32, shuffle=true, partial=false) |> xdev
+        DataLoader((xyt, target_data); batchsize=128, shuffle=true, partial=false) |> xdev
 
-    train_state = Training.TrainState(pinn, ps, st, Adam(0.05f0))
+    train_state = Training.TrainState(pinn, ps, st, Adam(0.005f0))
 
-    lr = i -> i < 5000 ? 0.05f0 : (i < 10000 ? 0.005f0 : 0.0005f0)
+    lr = i -> i < 5000 ? 0.005f0 : (i < 10000 ? 0.0005f0 : 0.00005f0)
 
     total_loss_tracker, physics_loss_tracker, data_loss_tracker, bc_loss_tracker = ntuple(
         _ -> OnlineStats.CircBuff(Float32, 32; rev=true), 4
@@ -214,9 +212,6 @@ function train_model(
 end
 
 trained_model = train_model(xyt, target_data, xyt_bc, target_bc)
-trained_u = Lux.testmode(
-    StatefulLuxLayer{true}(trained_model.model.u, trained_model.ps.u, trained_model.st.u)
-)
 nothing #hide
 
 # ## Visualizing the Results
@@ -226,7 +221,7 @@ grid = stack([[elem...] for elem in vec(collect(Iterators.product(xs, ys, ts)))]
 u_real = reshape(analytical_solution(grid), length(xs), length(ys), length(ts))
 
 grid_normalized = (grid .- minimum(grid)) ./ (maximum(grid) .- minimum(grid))
-u_pred = reshape(trained_u(grid_normalized), length(xs), length(ys), length(ts))
+u_pred = reshape(trained_model(grid_normalized), length(xs), length(ys), length(ts))
 u_pred = u_pred .* (max_pde_val - min_pde_val) .+ min_pde_val
 
 begin

@@ -1,10 +1,9 @@
 # [Nested Automatic Differentiation](@id nested_autodiff)
 
-!!! note
+!!! note "Reactant"
 
-    This is a relatively new feature in Lux, so there might be some rough edges. If you
-    encounter any issues, please let us know by opening an issue on the
-    [GitHub repository](https://github.com/LuxDL/Lux.jl).
+    Reactant.jl natively supports nested AD (with orders greater than 2nd order). For more
+    robust nested AD, use Lux with Reactant.jl.
 
 In this manual, we will explore how to use automatic differentiation (AD) inside your layers
 or loss functions and have Lux automatically switch the AD backend with a faster one when
