@@ -202,7 +202,7 @@ SelectDim(dim::Integer, index::AbstractVector) = SelectDim(static(dim), index)
 function (s::SelectDim{D,<:StaticInt})(x, _, st::NamedTuple) where {D}
     return selectdim(x, known(s.dim), known(s.index)), st
 end
-(s::SelectDim)(x, _, st::NamedTuple) = selectdim(x, known(s.dim), s.index)
+(s::SelectDim)(x, _, st::NamedTuple) = selectdim(x, known(s.dim), s.index), st
 
 function Base.show(io::IO, s::SelectDim)
     return print(io, "SelectDim(dim = ", s.dim, ", index = ", s.index, ")")
