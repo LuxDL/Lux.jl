@@ -173,12 +173,14 @@ end
     SelectDim(dim, i)
 
 Return a view of all the data of the input `x` where the index for dimension `dim` equals
-`i`. Equivalent to `view(x,:,:,...,i,:,:,...)` where `i` is in position `d`.
+`i`. Equivalent to `view(x,:,:,...,i,:,:,...)` where `i` is any valid index for index slot `d`
+(e.g. an integer or a unit range).  Note that it may be inefficient to use non-contiguous
+views.
 
 ## Arguments
 
   - `dim`: Dimension for indexing
-  - `i`: Index for dimension `dim`
+  - `i`: Index or indices for dimension `dim`
 
 ## Inputs
 
@@ -191,12 +193,16 @@ Return a view of all the data of the input `x` where the index for dimension `di
 """
 @concrete struct SelectDim <: AbstractLuxLayer
     dim <: StaticInt
-    index <: StaticInt
+    index <: Union{StaticInt,AbstractVector}
 end
 
-SelectDim(dim, index) = SelectDim(static(dim), static(index))
+SelectDim(dim::Integer, index::Integer) = SelectDim(static(dim), static(index))
+SelectDim(dim::Integer, index::AbstractVector) = SelectDim(static(dim), index)
 
-(s::SelectDim)(x, _, st::NamedTuple) = selectdim(x, known(s.dim), known(s.index)), st
+function (s::SelectDim{D,<:StaticInt})(x, _, st::NamedTuple) where {D}
+    return selectdim(x, known(s.dim), known(s.index)), st
+end
+(s::SelectDim)(x, _, st::NamedTuple) = selectdim(x, known(s.dim), s.index)
 
 function Base.show(io::IO, s::SelectDim)
     return print(io, "SelectDim(dim = ", s.dim, ", index = ", s.index, ")")
