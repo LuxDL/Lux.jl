@@ -75,6 +75,13 @@
             @test size(layer(x, ps, st)[1]) == (6, 4, 2)
             @jet layer(x, ps, st)
             @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+
+            layer = SelectDim(2, 1:2)
+            display(layer)
+            ps, st = dev(Lux.setup(rng, layer))
+            x = aType(randn(rng, 6, 4, 3, 2))
+            @test size(layer(x, ps, st)[1]) == (6, 2, 3, 2)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "WrappedFunction" begin
