@@ -82,7 +82,7 @@ LuxCore.parameterlength(l::Linear) = l.out_dims * l.in_dims + l.out_dims
 LuxCore.statelength(::Linear) = 0
 ```
 
-!!! tip "No RNG in `initialparameters` and `initialstates`"
+!!! tip "No RNG in `parameterlength` and `statelength`"
 
     You might notice that we don't pass in a `RNG` for these functions. If your parameter
     length and/or state length depend on a random number generator, you should think
