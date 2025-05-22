@@ -14,6 +14,7 @@ const INTERMEDIATE_TUTORIALS = [
     ("ConvolutionalVAE",        "CUDA", true),
     ("GCN_Cora",                "CUDA", true),
     ("RealNVP",                 "CPU",  false),
+    ("LSTMEncoderDecoder",      "CPU",  true),
 ]
 const ADVANCED_TUTORIALS = [
     ("GravitationalWaveForm",   "CPU",  true),

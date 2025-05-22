@@ -77,6 +77,12 @@ const intermediate = [
     src: "../realnvp.png",
     caption: "Normalizing Flows for Density Estimation",
     desc: "Train a normalizing flow for density estimation on the Moons dataset.",
+  },
+  {
+    href: "intermediate/8_LSTMEncoderDecoder",
+    src: "../lstm_encoder_decoder.png",
+    caption: "LSTM Encoder-Decoder",
+    desc: "Train an LSTM Encoder-Decoder for sequence-to-sequence tasks."
   }
 ];
 
