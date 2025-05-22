@@ -7,7 +7,7 @@ const BEGINNER_TUTORIALS = [
     ("OptimizationIntegration", "CPU",   true),
 ]
 const INTERMEDIATE_TUTORIALS = [
-    ("NeuralODE",               "CUDA", true),
+    ("NeuralODE",               "CUDA", false),
     ("BayesianNN",              "CPU",  false),
     ("HyperNet",                "CUDA", true),
     ("PINN2DPDE",               "CUDA", true),
