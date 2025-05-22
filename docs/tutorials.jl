@@ -7,13 +7,14 @@ const BEGINNER_TUTORIALS = [
     ("OptimizationIntegration", "CPU",   true),
 ]
 const INTERMEDIATE_TUTORIALS = [
-    ("NeuralODE",               "CUDA", true),
+    ("NeuralODE",               "CUDA", false),
     ("BayesianNN",              "CPU",  false),
     ("HyperNet",                "CUDA", true),
     ("PINN2DPDE",               "CUDA", true),
     ("ConvolutionalVAE",        "CUDA", true),
     ("GCN_Cora",                "CUDA", true),
     ("RealNVP",                 "CPU",  false),
+    ("LSTMEncoderDecoder",      "CPU",  true),
 ]
 const ADVANCED_TUTORIALS = [
     ("GravitationalWaveForm",   "CPU",  true),

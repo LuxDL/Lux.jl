@@ -246,6 +246,10 @@ export default defineConfig({
                 text: "Normalizing Flows for Density Estimation",
                 link: "/tutorials/intermediate/7_RealNVP",
               },
+              {
+                text: "LSTM Encoder-Decoder",
+                link: "/tutorials/intermediate/8_LSTMEncoderDecoder",
+              }
             ],
           },
           {
