@@ -321,8 +321,6 @@ Y_pred = trained_model((X_test, 20, nothing))
 begin
     fig = Figure(; size=(1200, 800))
 
-    # linestyles = [:solid, :dash, :dot, :dashdot, :dashdotdot]
-
     for i in 1:4, j in 1:2
         b = i + j * 4
         ax = Axis(fig[i, j]; xlabel="t", ylabel="y")
