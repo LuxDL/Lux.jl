@@ -62,7 +62,49 @@ julia> using Pkg
 julia> Pkg.add(url="https://github.com/LuxDL/Lux.jl")
 ```
 
+## Want Reactant (XLA) Support?
+
+Install the following package:
+
+```julia
+using Pkg;
+Pkg.add("Reactant")
+```
+
+Run the following to access a device (Reactant automatically selects the best backend by
+default):
+
+:::code-group
+
+```julia [CPU Backend]
+using Reactant, Lux
+Reactant.set_default_backend("cpu")
+
+const dev = reactant_device()
+```
+
+```julia [GPU Backend]
+using Reactant, Lux
+Reactant.set_default_backend("gpu")
+
+const dev = reactant_device()
+```
+
+```julia [TPU Backend]
+using Reactant, Lux
+Reactant.set_default_backend("tpu")
+
+const dev = reactant_device()
+```
+
+:::
+
 ## Want GPU Support?
+
+!!! tip "Prefer using Reactant"
+
+    In almost all cases, we recommend using Reactant.jl for GPU support.
+
 
 Install the following package(s):
 
@@ -118,43 +160,6 @@ const dev = gpu_device()
 using Lux, oneAPI
 
 const dev = gpu_device()
-```
-
-:::
-
-## Want Reactant (XLA) Support?
-
-Install the following package:
-
-```julia
-using Pkg;
-Pkg.add("Reactant")
-```
-
-Run the following to access a device (Reactant automatically selects the best backend by
-default):
-
-:::code-group
-
-```julia [CPU Backend]
-using Reactant, Lux
-Reactant.set_default_backend("cpu")
-
-const dev = reactant_device()
-```
-
-```julia [GPU Backend]
-using Reactant, Lux
-Reactant.set_default_backend("gpu")
-
-const dev = reactant_device()
-```
-
-```julia [TPU Backend]
-using Reactant, Lux
-Reactant.set_default_backend("tpu")
-
-const dev = reactant_device()
 ```
 
 :::

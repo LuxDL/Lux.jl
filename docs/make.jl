@@ -101,6 +101,6 @@ makedocs(;
     pages,
 )
 
-deploydocs(;
+DocumenterVitepress.deploydocs(;
     repo="github.com/LuxDL/Lux.jl.git", push_preview=true, target="build", devbranch="main"
 )
