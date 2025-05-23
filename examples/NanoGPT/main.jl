@@ -1,3 +1,5 @@
+ENV["XLA_REACTANT_GPU_MEM_FRACTION"] = "0.98"
+
 using ConcreteStructs,
     MLUtils,
     Lux,
@@ -120,25 +122,35 @@ function (model::GPT2)(x, ps, st)
     return outputs, (; tok_emb=st_tok_emb, pos_emb=st_pos_emb, gpt_blocks=st_gpt_blocks)
 end
 
+#=
 dev = reactant_device(; force=true)
 rng = Random.default_rng()
 
 model = GPT2(;
     n_vocab=50304,
-    embed_dim=768,
+    embed_dim=1024,
     hidden_dim=3072,
     block_size=1024,
     n_layers=3,
     dropout_rate=0.0,
-    num_heads=12,
+    num_heads=16,
 )
 ps, st = Lux.setup(rng, model) |> dev;
 
-x = rand(1:50304, 1024, 32) |> dev;
+x = rand(1:50304, 48, 32) |> dev;
 
 @code_hlo model(x, ps, st)
 
+sumabs2first(layer, x, ps, st) = sum(abs2, first(layer(x, ps, st)))
+
+@code_hlo Enzyme.gradient(Reverse, sumabs2first, Const(model), x, ps, Const(st))
+=#
+
 # Use the model to generate some text.
+# function weighted_sample(items::AbstractVector, weights::AbstractVector)
+
+# end
+
 function generate_text(model, ps, st, seed; alphabet, output_length, sequence_length)
     dev = get_device((ps, st))
     @assert !(dev isa ReactantDevice) "Currently we don't support running inference of \
