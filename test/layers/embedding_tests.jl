@@ -16,21 +16,49 @@
             @test size(layer(x, ps, st)[1]) == (embed_size,)
             @test y == ps.weight[:, x]
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(
+                sumabs2first,
+                layer,
+                x,
+                ps,
+                st;
+                atol=1.0f-3,
+                rtol=1.0f-3,
+                skip_backends=[AutoTracker()]
+            )
 
             x = aType(rand(1:vocab_size, 3))
             y, st_ = layer(x, ps, st)
             @test y isa aType{Float32}
             @test y == ps.weight[:, x]
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(
+                sumabs2first,
+                layer,
+                x,
+                ps,
+                st;
+                atol=1.0f-3,
+                rtol=1.0f-3,
+                skip_backends=[AutoTracker()]
+            )
 
             x = aType(rand(1:vocab_size, 3, 4))
             y, st_ = layer(x, ps, st)
             @test y isa aType{Float32,3}
             @test size(y) == (embed_size, 3, 4)
+            @test y == reshape(ps.weight[:, vec(x)], embed_size, 3, 4)
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(
+                sumabs2first,
+                layer,
+                x,
+                ps,
+                st;
+                atol=1.0f-3,
+                rtol=1.0f-3,
+                skip_backends=[AutoTracker()]
+            )
         end
 
         @testset "Cartesian indices" begin

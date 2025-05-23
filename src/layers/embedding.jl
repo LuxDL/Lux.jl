@@ -31,6 +31,11 @@ This layer is often used to store word embeddings and retrieve them using indice
   - Returns the embedding corresponding to each index in the input. For an N dimensional
     input, an N + 1 dimensional output is returned.
   - Empty `NamedTuple()`
+
+!!! warning "Gradients with Tracker.jl
+
+    Tracker.jl produces incorrect gradients for this layer if indices in the input are
+    repeated. Don't use this layer with Tracker.jl if you need to compute gradients.
 """
 @concrete struct Embedding <: AbstractLuxLayer
     in_dims <: Union{IntegerType,Tuple{Vararg{IntegerType}}}
@@ -52,13 +57,9 @@ end
 
 outputsize(e::Embedding, _, ::AbstractRNG) = (e.out_dims,)
 
-function (e::Embedding)(x::Number, ps, st::NamedTuple)
+function (e::Embedding)(x::Union{Number,AbstractVector}, ps, st::NamedTuple)
     @argcheck Utils.eltype(x) <: Integer
-    return view(ps.weight, :, x), st
-end
-function (e::Embedding)(x::AbstractVector, ps, st::NamedTuple)
-    @argcheck Utils.eltype(x) <: Integer
-    return NNlib.gather(ps.weight, x), st
+    return ps.weight[:, x], st
 end
 function (e::Embedding)(x::AbstractArray, ps, st::NamedTuple)
     @argcheck Utils.eltype(x) <: Integer
