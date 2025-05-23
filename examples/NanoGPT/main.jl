@@ -9,13 +9,14 @@ using ConcreteStructs,
     OneHotArrays,
     Reactant,
     Enzyme,
-    BytePairEncoding
+    BytePairEncoding,
+    NNlib
 using Comonicon: @main
 
-if !haskey(DataDeps.registry, "nanogpt_shakespeare_input")
+if !haskey(DataDeps.registry, "shakespeare_char")
     register(
         DataDep(
-            "nanogpt_shakespeare_input",
+            "shakespeare_char",
             "Shakespeare Input Text for training NanoGPT",
             "https://cs.stanford.edu/people/karpathy/char-rnn/shakespeare_input.txt",
             "59a0ad62833b2e15ec811c548618876359e902717431236e52699a0e2bc253ca",
@@ -27,31 +28,51 @@ end
 
 @concrete struct CausalSelfAttention <: AbstractLuxWrapperLayer{:mha}
     mha
+
+    function CausalSelfAttention(args...; kwargs...)
+        mha = MultiHeadAttention(args...; kwargs...)
+        return new{typeof(mha)}(mha)
+    end
 end
 
 function (attn::CausalSelfAttention)(x::AbstractArray{T,3}, ps, st) where {T}
-    return attn.mha((x, x, x, NNlib.make_causal_mask(x)), ps, st)
+    (y, α), stₙ = attn.mha((x, x, x, NNlib.make_causal_mask(x)), ps, st)
+    return y, stₙ
 end
 
-@concrete struct GPTBlock <: AbstractLuxWrapperLayer{:block}
+@concrete struct GPT2Block <: AbstractLuxWrapperLayer{:block}
     block
 end
 
-function GPTBlock(; n_embed, n_heads, dropout_rate, use_bias)
-    return GPTBlock(
+function GPT2Block(; embed_dim, num_heads, hidden_dim, dropout_rate)
+    return GPT2Block(
         Chain(
             SkipConnection(
                 Chain(
-                    LayerNorm((n_embed, 1)),
-                    CausalSelfAttention(; n_embed, n_heads, dropout_rate, use_bias),
+                    LayerNorm(embed_dim; dims=nothing),
+                    CausalSelfAttention(
+                        embed_dim;
+                        nheads=num_heads,
+                        attention_dropout_probability=dropout_rate,
+                        dense_kwargs=(; init_weight=glorot_uniform, init_bias=zeros32),
+                    ),
                 ),
                 +,
             ),
             SkipConnection(
                 Chain(
-                    LayerNorm((n_embed, 1)),
-                    Dense(n_embed => 4 * n_embed, gelu; use_bias),
-                    Dense(4 * n_embed => n_embed; use_bias),
+                    LayerNorm(embed_dim; dims=nothing),
+                    Dense(
+                        embed_dim => hidden_dim,
+                        gelu;
+                        init_weight=glorot_uniform,
+                        init_bias=zeros32,
+                    ),
+                    Dense(
+                        hidden_dim => embed_dim;
+                        init_weight=glorot_uniform,
+                        init_bias=zeros32,
+                    ),
                     Dropout(dropout_rate),
                 ),
                 +,
@@ -60,51 +81,62 @@ function GPTBlock(; n_embed, n_heads, dropout_rate, use_bias)
     )
 end
 
-struct PositionalEmbedding{E} <: AbstractLuxWrapperLayer{:embedding}
-    embedding::E
-
-    function PositionalEmbedding(args...; kwargs...)
-        embed = Embedding(args...; kwargs...)
-        return new{typeof(embed)}(embed)
-    end
+@concrete struct GPT2 <: AbstractLuxContainerLayer{(:tok_emb, :pos_emb, :gpt_blocks)}
+    tok_emb
+    pos_emb
+    gpt_blocks
 end
 
-(pe::PositionalEmbedding)(x, ps, st) = pe.embedding(1:size(x, 1), ps, st)
-
-@concrete struct GPT <: AbstractLuxWrapperLayer{:layer}
-    layer
-end
-
-function GPT(; n_vocab, n_embed, block_size, n_layers, dropout_rate, n_heads, use_bias)
-    return GPT(
+function GPT2(;
+    n_vocab, embed_dim, num_heads, hidden_dim, dropout_rate, block_size, n_layers
+)
+    return GPT2(
+        Embedding(n_vocab => embed_dim),
+        Embedding(block_size => embed_dim),
         Chain(
-            Parallel(
-                +, Embedding(n_vocab => n_embed), PositionalEmbedding(block_size => n_embed)
-            ),
             Dropout(dropout_rate),
             Chain(
                 ntuple(
-                    Returns(GPTBlock(; n_embed, n_heads, dropout_rate, use_bias)), n_layers
+                    Returns(GPT2Block(; embed_dim, num_heads, dropout_rate, hidden_dim)),
+                    n_layers,
                 )...,
             ),
-            LayerNorm((n_embed, 1)),
-            Dense(n_embed => n_vocab; use_bias),
+            LayerNorm(embed_dim; dims=nothing),
         ),
     )
 end
 
-#=
+function (model::GPT2)(x, ps, st)
+    token_embeddings, st_tok_emb = model.tok_emb(x, ps.tok_emb, st.tok_emb)
+    pos_embeddings, st_pos_emb = model.pos_emb(1:size(x, 1), ps.pos_emb, st.pos_emb)
+    embedding_output = token_embeddings .+ pos_embeddings
+
+    query, st_gpt_blocks = model.gpt_blocks(embedding_output, ps.gpt_blocks, st.gpt_blocks)
+    _, seq_len, batch_size = size(query)
+    outputs = reshape(
+        ps.tok_emb.weight' * reshape(query, :, seq_len * batch_size), :, seq_len, batch_size
+    )
+
+    return outputs, (; tok_emb=st_tok_emb, pos_emb=st_pos_emb, gpt_blocks=st_gpt_blocks)
+end
 
 dev = reactant_device(; force=true)
 rng = Random.default_rng()
 
-model = GPT(;
-    n_vocab=50304, n_embed=768, block_size=1024, n_layers=12, dropout_rate=0.0, n_heads=12,
-    use_bias=true
+model = GPT2(;
+    n_vocab=50304,
+    embed_dim=768,
+    hidden_dim=3072,
+    block_size=1024,
+    n_layers=3,
+    dropout_rate=0.0,
+    num_heads=12,
 )
-ps, st = Lux.setup(rng, model) |> dev
+ps, st = Lux.setup(rng, model) |> dev;
 
-=#
+x = rand(1:50304, 1024, 32) |> dev;
+
+@code_hlo model(x, ps, st)
 
 # Use the model to generate some text.
 function generate_text(model, ps, st, seed; alphabet, output_length, sequence_length)
@@ -180,7 +212,7 @@ function get_nanogpt_data(; sequence_length, test_split)
 end
 
 @main function main(;
-    n_embed::Int=64,
+    embed_dim::Int=64,
     n_hidden::Int=256,
     n_heads::Int=4,
     qk_dim::Int=16,
@@ -238,7 +270,7 @@ end
 
     model_config = (;
         n_vocab=length(alphabet),
-        n_embed,
+        embed_dim,
         sequence_length,
         n_hidden,
         n_layers,
