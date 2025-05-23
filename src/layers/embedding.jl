@@ -63,12 +63,12 @@ function (e::Embedding)(x::Union{Number,AbstractVector}, ps, st::NamedTuple)
 end
 function (e::Embedding)(x::AbstractArray, ps, st::NamedTuple)
     @argcheck Utils.eltype(x) <: Integer
-    y, stₙ = e(vec(x), ps, st)
+    y, stₙ = e(Utils.vec(x), ps, st)
     return reshape(y, :, size(x)...), stₙ
 end
 function (e::Embedding)(x::NTuple{N,T}, ps, st::NamedTuple) where {N,T}
     @argcheck Utils.eltype(T) <: Integer
-    return view(ps.weight, :, x...), st
+    return ps.weight[:, x...], st
 end
 function (e::Embedding)(x::NTuple{N,<:AbstractVector{T}}, ps, st::NamedTuple) where {N,T}
     @argcheck Utils.eltype(T) <: Integer
