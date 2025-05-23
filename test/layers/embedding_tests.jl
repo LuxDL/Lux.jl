@@ -24,7 +24,7 @@
                 st;
                 atol=1.0f-3,
                 rtol=1.0f-3,
-                skip_gradients=[AutoTracker()]
+                skip_backends=[AutoTracker()]
             )
 
             x = aType(rand(1:vocab_size, 3))
@@ -40,7 +40,7 @@
                 st;
                 atol=1.0f-3,
                 rtol=1.0f-3,
-                skip_gradients=[AutoTracker()]
+                skip_backends=[AutoTracker()]
             )
 
             x = aType(rand(1:vocab_size, 3, 4))
@@ -57,7 +57,7 @@
                 st;
                 atol=1.0f-3,
                 rtol=1.0f-3,
-                skip_gradients=[AutoTracker()]
+                skip_backends=[AutoTracker()]
             )
         end
 
