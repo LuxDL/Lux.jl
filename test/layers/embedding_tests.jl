@@ -29,6 +29,7 @@
             y, st_ = layer(x, ps, st)
             @test y isa aType{Float32,3}
             @test size(y) == (embed_size, 3, 4)
+            @test y == reshape(ps.weight[:, vec(x)], embed_size, 3, 4)
             @jet layer(x, ps, st)
             @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end

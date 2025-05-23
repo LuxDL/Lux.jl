@@ -52,13 +52,9 @@ end
 
 outputsize(e::Embedding, _, ::AbstractRNG) = (e.out_dims,)
 
-function (e::Embedding)(x::Number, ps, st::NamedTuple)
+function (e::Embedding)(x::Union{Number,AbstractVector}, ps, st::NamedTuple)
     @argcheck Utils.eltype(x) <: Integer
-    return view(ps.weight, :, x), st
-end
-function (e::Embedding)(x::AbstractVector, ps, st::NamedTuple)
-    @argcheck Utils.eltype(x) <: Integer
-    return NNlib.gather(ps.weight, x), st
+    return ps.weight[:, x], st
 end
 function (e::Embedding)(x::AbstractArray, ps, st::NamedTuple)
     @argcheck Utils.eltype(x) <: Integer

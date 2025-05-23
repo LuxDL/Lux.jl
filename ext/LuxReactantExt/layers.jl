@@ -1,8 +1,3 @@
-# Embedding
-function (e::Lux.Embedding)(x::TracedRNumber{<:Reactant.ReactantInt}, ps, st::NamedTuple)
-    return ps.weight[:, x], st
-end
-
 # Recurrent Layers
 function (r::Lux.Recurrence)(x::AnyTracedRArray, ps, st::NamedTuple)
     idxs = ntuple(Returns(Colon()), ndims(x) - 1)
