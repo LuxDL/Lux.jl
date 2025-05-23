@@ -1,50 +1,36 @@
-# Taken from https://github.com/FluxML/model-zoo/pull/410
-using ConcreteStructs, MLUtils, Lux, Random, Optimisers, Printf, Statistics, NNlib,
-      DataDeps, StatsBase, OneHotArrays, JLD2, Reactant, Enzyme, BytePairEncoding
+using ConcreteStructs,
+    MLUtils,
+    Lux,
+    Random,
+    Optimisers,
+    Printf,
+    Statistics,
+    DataDeps,
+    OneHotArrays,
+    Reactant,
+    Enzyme,
+    BytePairEncoding
 using Comonicon: @main
 
-if !haskey(DataDeps.registry, "nanogpt")
-    register(DataDep(
-        "nanogpt",
-        "Shakespeare Input Text for training NanoGPT",
-        "https://cs.stanford.edu/people/karpathy/char-rnn/shakespeare_input.txt",
-        "59a0ad62833b2e15ec811c548618876359e902717431236e52699a0e2bc253ca"
-    ))
+if !haskey(DataDeps.registry, "nanogpt_shakespeare_input")
+    register(
+        DataDep(
+            "nanogpt_shakespeare_input",
+            "Shakespeare Input Text for training NanoGPT",
+            "https://cs.stanford.edu/people/karpathy/char-rnn/shakespeare_input.txt",
+            "59a0ad62833b2e15ec811c548618876359e902717431236e52699a0e2bc253ca",
+        ),
+    )
 end
 
 # Setup the model definition
-@concrete struct CausalSelfAttention <:
-                 AbstractLuxContainerLayer{(:causal_attn, :proj, :attn_drop)}
-    causal_attn
-    proj
-    attn_drop
-    n_embed::Int
-    n_heads::Int
+
+@concrete struct CausalSelfAttention <: AbstractLuxWrapperLayer{:mha}
+    mha
 end
 
-function CausalSelfAttention(; n_embed, n_heads, dropout_rate, use_bias)
-    causal_attn = Dense(n_embed, 3 * n_embed; use_bias)
-    proj = Chain(
-        Dense(n_embed, n_embed; use_bias),
-        Dropout(dropout_rate)
-    )
-    attn_drop = Dropout(dropout_rate)
-    return CausalSelfAttention(causal_attn, proj, attn_drop, n_embed, n_heads)
-end
-
-function (attn::CausalSelfAttention)(x::AbstractArray{T, 3}, ps, st) where {T}
-    qkv, qkv_st = attn.causal_attn(x, ps.causal_attn, st.causal_attn)
-    q, k, v = (
-        selectdim(qkv, 1, 1:(attn.n_heads)),
-        selectdim(qkv, 1, (attn.n_heads + 1):(2 * attn.n_heads)),
-        selectdim(qkv, 1, (2 * attn.n_heads + 1):(3 * attn.n_heads))
-    )
-    dp = StatefulLuxLayer{true}(attn.attn_drop, ps.attn_drop, st.attn_drop)
-    mha, _ = NNlib.dot_product_attention(
-        q, k, v, nothing; mask=NNlib.make_causal_mask(x), fdrop=dp, nheads=attn.n_heads
-    )
-    proj, proj_st = attn.proj(mha, ps.proj, st.proj)
-    return proj, (; causal_attn=qkv_st, proj=proj_st, attn_drop=dp.attn_drop)
+function (attn::CausalSelfAttention)(x::AbstractArray{T,3}, ps, st) where {T}
+    return attn.mha((x, x, x, NNlib.make_causal_mask(x)), ps, st)
 end
 
 @concrete struct GPTBlock <: AbstractLuxWrapperLayer{:block}
@@ -52,24 +38,26 @@ end
 end
 
 function GPTBlock(; n_embed, n_heads, dropout_rate, use_bias)
-    return GPTBlock(Chain(
-        SkipConnection(
-            Chain(
-                LayerNorm((n_embed, 1)),
-                CausalSelfAttention(; n_embed, n_heads, dropout_rate, use_bias)
+    return GPTBlock(
+        Chain(
+            SkipConnection(
+                Chain(
+                    LayerNorm((n_embed, 1)),
+                    CausalSelfAttention(; n_embed, n_heads, dropout_rate, use_bias),
+                ),
+                +,
             ),
-            +
+            SkipConnection(
+                Chain(
+                    LayerNorm((n_embed, 1)),
+                    Dense(n_embed => 4 * n_embed, gelu; use_bias),
+                    Dense(4 * n_embed => n_embed; use_bias),
+                    Dropout(dropout_rate),
+                ),
+                +,
+            ),
         ),
-        SkipConnection(
-            Chain(
-                LayerNorm((n_embed, 1)),
-                Dense(n_embed => 4 * n_embed, gelu; use_bias),
-                Dense(4 * n_embed => n_embed; use_bias),
-                Dropout(dropout_rate)
-            ),
-            +
-        )
-    ))
+    )
 end
 
 struct PositionalEmbedding{E} <: AbstractLuxWrapperLayer{:embedding}
@@ -88,19 +76,21 @@ end
 end
 
 function GPT(; n_vocab, n_embed, block_size, n_layers, dropout_rate, n_heads, use_bias)
-    return GPT(Chain(
-        Parallel(
-            +,
-            Embedding(n_vocab => n_embed),
-            PositionalEmbedding(block_size => n_embed)
+    return GPT(
+        Chain(
+            Parallel(
+                +, Embedding(n_vocab => n_embed), PositionalEmbedding(block_size => n_embed)
+            ),
+            Dropout(dropout_rate),
+            Chain(
+                ntuple(
+                    Returns(GPTBlock(; n_embed, n_heads, dropout_rate, use_bias)), n_layers
+                )...,
+            ),
+            LayerNorm((n_embed, 1)),
+            Dense(n_embed => n_vocab; use_bias),
         ),
-        Dropout(dropout_rate),
-        Chain(ntuple(
-            Returns(GPTBlock(; n_embed, n_heads, dropout_rate, use_bias)), n_layers
-        )...),
-        LayerNorm((n_embed, 1)),
-        Dense(n_embed => n_vocab; use_bias)
-    ))
+    )
 end
 
 #=
@@ -117,9 +107,7 @@ ps, st = Lux.setup(rng, model) |> dev
 =#
 
 # Use the model to generate some text.
-function generate_text(
-        model, ps, st, seed; alphabet, output_length, sequence_length
-)
+function generate_text(model, ps, st, seed; alphabet, output_length, sequence_length)
     dev = get_device((ps, st))
     @assert !(dev isa ReactantDevice) "Currently we don't support running inference of \
                                        dynamically sized tensors."
@@ -192,14 +180,23 @@ function get_nanogpt_data(; sequence_length, test_split)
 end
 
 @main function main(;
-        n_embed::Int=64, n_hidden::Int=256, n_heads::Int=4, qk_dim::Int=16,
-        v_dim::Int=16, n_layers::Int=6, sequence_length::Int=64, batchsize::Int=128,
-        dropout_rate::Float32=0.0f0, test_split::Float64=0.1, lr::Float64=1e-2,
-        epochs::Int=100,
-        # Only inference options
-        inference::Bool=false, model_path::String="",
-        seed::Union{String, Vector{String}}=["_", "The", "Julia", "Lux.jl"],
-        output_length::Int=1024
+    n_embed::Int=64,
+    n_hidden::Int=256,
+    n_heads::Int=4,
+    qk_dim::Int=16,
+    v_dim::Int=16,
+    n_layers::Int=6,
+    sequence_length::Int=64,
+    batchsize::Int=128,
+    dropout_rate::Float32=0.0f0,
+    test_split::Float64=0.1,
+    lr::Float64=1e-2,
+    epochs::Int=100,
+    # Only inference options
+    inference::Bool=false,
+    model_path::String="",
+    seed::Union{String,Vector{String}}=["_", "The", "Julia", "Lux.jl"],
+    output_length::Int=1024,
 )
     rng = Random.default_rng()
     Random.seed!(rng, 1234)
@@ -220,16 +217,14 @@ end
         alphabet = JLD2.load(model_path, "alphabet")
         sequence_length = model_config.sequence_length
 
-        texts = generate_text(
-            model, ps, st, seed; alphabet, output_length, sequence_length
-        )
+        texts = generate_text(model, ps, st, seed; alphabet, output_length, sequence_length)
 
         for (i, (text, s)) in enumerate(zip(texts, seed))
             @printf "[Info] Seed [%d]: %s\n" i s
             @printf "[Generated Text] %s\n\n" text
         end
 
-        return
+        return nothing
     end
 
     alphabet, trainX, trainY, testX, testY = get_nanogpt_data(; sequence_length, test_split)
@@ -238,13 +233,19 @@ end
     @printf "[Info] Training size: %d sequences.\n" size(trainX, 2)
     @printf "[Info] Testing  size: %d sequences.\n\n" size(testX, 2)
 
-    train_loader = DataLoader(
-        (trainX, trainY); batchsize, shuffle=true, parallel=true
-    ) |> dev
+    train_loader =
+        DataLoader((trainX, trainY); batchsize, shuffle=true, parallel=true) |> dev
 
     model_config = (;
-        n_vocab=length(alphabet), n_embed, sequence_length, n_hidden,
-        n_layers, dropout_rate, n_heads, qk_dim, v_dim
+        n_vocab=length(alphabet),
+        n_embed,
+        sequence_length,
+        n_hidden,
+        n_layers,
+        dropout_rate,
+        n_heads,
+        qk_dim,
+        v_dim,
     )
     model = GPT(; model_config...)
     ps, st = Lux.setup(rng, model) |> dev
@@ -290,8 +291,7 @@ end
 
         # Generate some text here...
         texts = generate_text(
-            model, ps |> cdev, st |> cdev, seed;
-            alphabet, output_length, sequence_length
+            model, ps |> cdev, st |> cdev, seed; alphabet, output_length, sequence_length
         )
         for (i, (text, s)) in enumerate(zip(texts, seed))
             @printf "[Info] Seed [%d]: %s\n" i s
@@ -307,7 +307,7 @@ end
                 parameters=train_state.parameters |> cdev,
                 states=train_state.states |> cdev,
                 alphabet=alphabet,
-                model_config=model_config
+                model_config=model_config,
             )
         end
     end
