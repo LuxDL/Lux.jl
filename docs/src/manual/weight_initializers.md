@@ -35,7 +35,7 @@ weights = weights_cl(2, 5)
 To generate weights directly on GPU, pass in a `CUDA.RNG`. For a complete list of supported
 RNG types, see [Supported RNG Types](@ref Supported-RNG-Types-WeightInit).
 
-```@example weight-init
+```julia
 using LuxCUDA
 
 weights = kaiming_normal(CUDA.default_rng(), 2, 5)
@@ -43,7 +43,7 @@ weights = kaiming_normal(CUDA.default_rng(), 2, 5)
 
 You can also generate Complex Numbers:
 
-```@example weight-init
+```julia
 weights = kaiming_normal(CUDA.default_rng(), ComplexF32, 2, 5)
 ```
 

@@ -4,7 +4,7 @@
 
 ```@example gpu_management
 # Important to load trigger packages
-using Lux, LuxCUDA #, AMDGPU, Metal, oneAPI
+using Lux #, LuxCUDA, AMDGPU, Metal, oneAPI
 
 supported_gpu_backends()
 ```
