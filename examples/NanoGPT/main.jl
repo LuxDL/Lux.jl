@@ -147,9 +147,17 @@ sumabs2first(layer, x, ps, st) = sum(abs2, first(layer(x, ps, st)))
 =#
 
 # Use the model to generate some text.
-# function weighted_sample(items::AbstractVector, weights::AbstractVector)
 
-# end
+function weighted_sample!(rng, items::AbstractVector, weights::AbstractVector, n::Int)
+    @assert length(items) == length(weights)
+
+    weights = weights ./ sum(weights)
+    cumprobs = reshape(cumsum(weights), :, 1)
+    random_vals = rand(rng, 1, n)
+
+    indices = dropdims(sum(cumprobs .< random_vals; dims=1); dims=1) .+ 1
+    return items[indices]
+end
 
 function generate_text(model, ps, st, seed; alphabet, output_length, sequence_length)
     dev = get_device((ps, st))
