@@ -9,7 +9,9 @@ using ConcreteStructs,
     ProgressTables,
     Random,
     BFloat16s
-using Reactant, LuxCUDA
+using Reactant
+
+# using LuxCUDA # uncomment this line to enable CUDA backend
 
 @concrete struct TensorDataset
     dataset
@@ -107,7 +109,12 @@ function train_model(
         x_ra = accelerator_device(rand(rng, prec_jl, size(first(trainloader)[1])))
         @printf "[Info] Compiling model with Reactant.jl\n"
         st_test = Lux.testmode(st)
-        model_compiled = Reactant.compile(model, (x_ra, ps, st_test))
+        model_compiled = Reactant.with_config(;
+            dot_general_precision=PrecisionConfig.HIGH,
+            convolution_precision=PrecisionConfig.HIGH,
+        ) do
+            @compile model(x_ra, ps, st_test)
+        end
         @printf "[Info] Model compiled!\n"
     else
         model_compiled = model
