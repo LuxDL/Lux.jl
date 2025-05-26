@@ -255,7 +255,7 @@ function denoise(
     noisy_images = T.(noisy_images)
     signal_rates = T.(signal_rates)
 
-    pred_noises = unet((noisy_images, noise_rates))
+    pred_noises = unet((noisy_images, noise_rates .^ 2))
     pred_images = @. (noisy_images - pred_noises * noise_rates) / signal_rates
     return pred_noises, pred_images
 end
@@ -499,19 +499,10 @@ end
 Base.getindex(ds::FlowersDataset, idxs) = stack(Base.Fix1(getindex, ds), idxs)
 
 function loss_function(model, ps, st, data)
-    (noises, images, pred_noises, pred_images), st = Lux.apply(model, data, ps, st)
+    (noises, images, pred_noises, pred_images), stₙ = Lux.apply(model, data, ps, st)
     noise_loss = MAELoss()(pred_noises, noises)
     image_loss = MAELoss()(pred_images, images)
-    return noise_loss, st, (; image_loss, noise_loss)
-end
-
-function log_named_tuple(tb_logger, name, ps::NamedTuple; step)
-    fmap_with_path(ps) do path, x
-        x isa AbstractArray || return nothing
-        log_vector(tb_logger, join([name, join(path, "/")], "/"), vec(x); step)
-        return nothing
-    end
-    return nothing
+    return noise_loss, stₙ, (; image_loss, noise_loss)
 end
 
 # ## Entry Point for our code
@@ -526,7 +517,7 @@ Comonicon.@main function main(;
     checkpoint_interval::Int=25,
     expt_dir="",
     diffusion_steps::Int=80,
-    generate_image_interval::Int=5,
+    generate_image_interval::Int=1,
     # model hyper params
     channels::Vector{Int}=[32, 64, 96, 128],
     block_depth::Int=2,
@@ -539,9 +530,6 @@ Comonicon.@main function main(;
     inference_mode::Bool=false,
     saved_model_path=nothing,
     generate_n_images::Int=64,
-    # logging specific
-    tb_log_parameters_freq::Int=1000,
-    tb_log_gradients_freq::Int=1000,
 )
     isempty(expt_dir) &&
         (expt_dir = joinpath(@__DIR__, string(now(UTC)) * "_" * uppercase(randstring(4))))
@@ -606,7 +594,8 @@ Comonicon.@main function main(;
 
     @printf "[%s] [Info] Preparing dataset\n" now(UTC)
     ds = FlowersDataset(image_size)
-    data_loader = DataLoader(ds; batchsize, shuffle=true, partial=false) |> xdev
+    data_loader =
+        DataLoader(ds; batchsize, shuffle=true, partial=false, parallel=false) |> xdev
 
     pt = ProgressTable(;
         header=["Epoch", "Image Loss", "Noise Loss", "Time (s)", "Throughput (img/s)"],
@@ -633,8 +622,6 @@ Comonicon.@main function main(;
     @printf "[%s] [Info] Training model\n" now(UTC)
     initialize(pt)
 
-    return_gradients = tb_log_gradients_freq > 0
-
     for epoch in 1:epochs
         total_time = 0.0
         total_samples = 0
@@ -646,17 +633,9 @@ Comonicon.@main function main(;
 
         start_time = time()
         for (i, data) in enumerate(data_loader)
-            (gs, loss, stats, tstate) = Training.single_train_step!(
-                AutoEnzyme(),
-                loss_function,
-                data,
-                tstate;
-                return_gradients=Val(return_gradients),
+            (_, loss, stats, tstate) = Training.single_train_step!(
+                AutoEnzyme(), loss_function, data, tstate; return_gradients=Val(false)
             )
-
-            @show tstate.states
-
-            @show loss
 
             @assert !isnan(loss) "NaN loss encountered!"
 
@@ -673,14 +652,6 @@ Comonicon.@main function main(;
                 total_samples / (time() - start_time);
                 step,
             )
-
-            if tb_log_parameters_freq > 0 && mod(step, tb_log_parameters_freq) == 0
-                log_named_tuple(tb_logger, "Parameters", tstate.parameters |> cdev; step)
-            end
-
-            if tb_log_gradients_freq > 0 && mod(step, tb_log_gradients_freq) == 0
-                log_named_tuple(tb_logger, "Gradients", gs |> cdev; step)
-            end
 
             step += 1
         end
