@@ -52,37 +52,6 @@ function sinusoidal_embedding(
     return cat(sinpi.(x_), cospi.(x_); dims=Val(3))
 end
 
-@kwdef struct Normalization <: AbstractLuxLayer
-    n::Int
-    momentum::Float32 = 0.1f0
-end
-
-function Lux.initialstates(::AbstractRNG, n::Normalization)
-    return (;
-        running_mean=zeros(Float32, n.n), running_var=ones(Float32, n.n), training=Val(true)
-    )
-end
-
-function (n::Normalization)(x::AbstractArray{T,4}, ps, st::NamedTuple) where {T}
-    if st.training isa Val{true}
-        batchμ = dropdims(mean(x; dims=(1, 2, 4)); dims=(1, 2, 4))
-        batchσ² = dropdims(var(x; dims=(1, 2, 4)); dims=(1, 2, 4))
-
-        μ = (1 - n.momentum) * st.running_mean + n.momentum * batchμ
-        σ² = (1 - n.momentum) * st.running_var + n.momentum * batchσ²
-
-        st = (; running_mean=μ, running_var=σ², training=Val(true))
-    else
-        batchμ = st.running_mean
-        batchσ² = st.running_var
-    end
-
-    batchμ = reshape(batchμ, 1, 1, n.n, 1)
-    batchσ² = reshape(batchσ², 1, 1, n.n, 1)
-
-    return (x .- batchμ) ./ sqrt.(batchσ² .+ eps(T)), st
-end
-
 @concrete struct ResidualBlock <: AbstractLuxWrapperLayer{:layer}
     layer
 end
@@ -97,7 +66,7 @@ function ResidualBlock(in_channels::Int, out_channels::Int)
                 Conv((1, 1), in_channels => out_channels; pad=SamePad())
             end,
             Chain(
-                # BatchNorm(in_channels; affine=false, track_stats=true),
+                BatchNorm(in_channels; affine=false),
                 Conv((3, 3), in_channels => out_channels, swish; pad=SamePad()),
                 Conv((3, 3), out_channels => out_channels; pad=SamePad()),
             ),
@@ -321,7 +290,7 @@ function DDIM(
 )
     return DDIM(
         UNet(image_size, args...; kwargs...),
-        Normalization(3, 0.1f0),
+        BatchNorm(3; affine=false, track_stats=true),
         min_signal_rate,
         max_signal_rate,
         (image_size..., 3),
@@ -682,6 +651,10 @@ Comonicon.@main function main(;
                 tstate;
                 return_gradients=Val(return_gradients),
             )
+
+            @show tstate.states
+
+            @show loss
 
             @assert !isnan(loss) "NaN loss encountered!"
 
