@@ -1,22 +1,34 @@
 function compute_gradients_internal(objective_function::F, model, data, ps, st) where {F}
-    (_, dps, _, _), (loss, stₙ, stats) = Enzyme.gradient(
+    stats, stₙ = Ref{Any}(nothing), Ref{Any}(nothing)
+    function objective_function_wrapper(model, ps, st, data)
+        loss, stₙ_int, stats_int = objective_function(model, ps, st, data)
+        stats[] = stats_int
+        stₙ[] = stₙ_int
+        return loss
+    end
+    (_, dps, _, _), loss = Enzyme.gradient(
         Enzyme.set_abi(Enzyme.ReverseWithPrimal, Reactant.ReactantABI),
-        Const(objective_function),
+        Const(objective_function_wrapper),
         Const(model),
         ps,
         Const(st),
         Const(data),
     )
-    return dps, loss, stats, stₙ
+    return dps, loss, stats[], stₙ[]
 end
 
 function Lux.Training.compute_gradients_impl(
     backend::ReactantBackend, objective_function::F, data, ts::Training.TrainState
 ) where {F}
     compile_start_time = time()
-    compiled_gradient_function = @compile compute_gradients_internal(
-        objective_function, ts.model, data, ts.parameters, ts.states
-    )
+    compiled_gradient_function = Reactant.with_config(;
+        dot_general_precision=PrecisionConfig.HIGH,
+        convolution_precision=PrecisionConfig.HIGH,
+    ) do
+        @compile compute_gradients_internal(
+            objective_function, ts.model, data, ts.parameters, ts.states
+        )
+    end
     compile_time = time() - compile_start_time
     @debug "Compiling Reactant gradient function took $(compile_time) seconds"
 
@@ -58,9 +70,12 @@ for inplace in ("!", "")
             update_function = ts.cache.extras.update_function
         else
             compile_start_time = time()
-            update_function = @compile Optimisers.$(update_fn)(
-                ts.optimizer_state, ts.parameters, grads
-            )
+            update_function = Reactant.with_config(;
+                dot_general_precision=PrecisionConfig.HIGH,
+                convolution_precision=PrecisionConfig.HIGH,
+            ) do
+                @compile Optimisers.$(update_fn)(ts.optimizer_state, ts.parameters, grads)
+            end
             compile_time = time() - compile_start_time
             @debug "Compiling Reactant update function took $(compile_time) seconds"
 
@@ -79,15 +94,20 @@ for inplace in ("!", "")
         backend::ReactantBackend, objective_function::F, data, ts::Training.TrainState
     ) where {F}
         compile_start_time = time()
-        compiled_grad_and_step_function = @compile $(internal_fn)(
-            objective_function,
-            ts.model,
-            data,
-            ts.parameters,
-            ts.states,
-            ts.optimizer_state,
-            backend.return_gradients,
-        )
+        compiled_grad_and_step_function = Reactant.with_config(;
+            dot_general_precision=PrecisionConfig.HIGH,
+            convolution_precision=PrecisionConfig.HIGH,
+        ) do
+            @compile $(internal_fn)(
+                objective_function,
+                ts.model,
+                data,
+                ts.parameters,
+                ts.states,
+                ts.optimizer_state,
+                backend.return_gradients,
+            )
+        end
         compile_time = time() - compile_start_time
         @debug "Compiling Reactant $(fname) function took $(compile_time) seconds"
 
