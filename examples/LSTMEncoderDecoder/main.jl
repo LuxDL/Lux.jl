@@ -61,6 +61,8 @@ begin
     fig
 end
 
+# ---
+
 t_train, y_train, t_test, y_test = train_test_split(t, y)
 
 begin
@@ -79,6 +81,8 @@ begin
 
     fig
 end
+
+# ---
 
 X_train, Y_train = windowed_dataset(y_train; input_window=80, output_window=20, stride=5)
 X_test, Y_test = windowed_dataset(y_test; input_window=80, output_window=20, stride=5)

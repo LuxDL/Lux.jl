@@ -17,8 +17,8 @@ function Impl.batchnorm(
         μ, σ² = Impl.mean_var(
             x; dims=Utils.unsafe_known(Impl.batchnorm_reduce_dims(x)), corrected=false
         )
-        μ = TracedUtils.materialize_traced_array(vec(μ))
-        σ² = TracedUtils.materialize_traced_array(vec(σ²))
+        μ = Reactant.materialize_traced_array(vec(μ))
+        σ² = Reactant.materialize_traced_array(vec(σ²))
     else
         @assert rμ !== nothing && rσ² !== nothing
         μ = Reactant.materialize_traced_array(rμ)
