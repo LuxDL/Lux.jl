@@ -269,7 +269,12 @@ function train(
     train_state = Training.TrainState(model, ps, st, Optimisers.Adam(learning_rate))
 
     stime = time()
-    model_compiled = @compile model((X_test, target_len, nothing), ps, Lux.testmode(st))
+    model_compiled = Reactant.with_config(;
+        dot_general_precision=PrecisionConfig.HIGH,
+        convolution_precision=PrecisionConfig.HIGH,
+    ) do
+        @compile model((X_test, target_len, nothing), ps, Lux.testmode(st))
+    end
     ttime = time() - stime
     @printf "Compilation time: %.4f seconds\n\n" ttime
 

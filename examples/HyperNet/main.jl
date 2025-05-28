@@ -116,7 +116,12 @@ function train()
 
     x = first(first(dataloaders[1][1]))
     data_idx = ConcreteRNumber(1)
-    model_compiled = @compile model((data_idx, x), ps, Lux.testmode(st))
+    model_compiled = Reactant.with_config(;
+        dot_general_precision=PrecisionConfig.HIGH,
+        convolution_precision=PrecisionConfig.HIGH,
+    ) do
+        @compile model((data_idx, x), ps, Lux.testmode(st))
+    end
 
     ### Lets train the model
     nepochs = 50

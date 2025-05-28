@@ -82,7 +82,12 @@ function train(model, dev=cpu_device(); rng=Random.default_rng(), kwargs...)
 
     if dev isa ReactantDevice
         x_ra = first(test_dataloader)[1]
-        model_compiled = @compile model(x_ra, ps, Lux.testmode(st))
+        model_compiled = Reactant.with_config(;
+            dot_general_precision=PrecisionConfig.HIGH,
+            convolution_precision=PrecisionConfig.HIGH,
+        ) do
+            @compile model(x_ra, ps, Lux.testmode(st))
+        end
     else
         model_compiled = model
     end
