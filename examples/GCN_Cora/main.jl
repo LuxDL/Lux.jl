@@ -97,12 +97,25 @@ function main(;
 
     @printf "Total Trainable Parameters: %0.4f M\n" (Lux.parameterlength(ps) / 1.0e6)
 
-    val_loss_compiled = @compile loss_function(
-        gcn, ps, Lux.testmode(st), (features, targets, adj, val_idx)
-    )
+    val_loss_compiled = Reactant.with_config(;
+        dot_general_precision=PrecisionConfig.HIGH,
+        convolution_precision=PrecisionConfig.HIGH,
+    ) do
+        @compile loss_function(gcn, ps, Lux.testmode(st), (features, targets, adj, val_idx))
+    end
 
-    train_model_compiled = @compile gcn((features, adj, train_idx), ps, Lux.testmode(st))
-    val_model_compiled = @compile gcn((features, adj, val_idx), ps, Lux.testmode(st))
+    train_model_compiled = Reactant.with_config(;
+        dot_general_precision=PrecisionConfig.HIGH,
+        convolution_precision=PrecisionConfig.HIGH,
+    ) do
+        @compile gcn((features, adj, train_idx), ps, Lux.testmode(st))
+    end
+    val_model_compiled = Reactant.with_config(;
+        dot_general_precision=PrecisionConfig.HIGH,
+        convolution_precision=PrecisionConfig.HIGH,
+    ) do
+        @compile gcn((features, adj, val_idx), ps, Lux.testmode(st))
+    end
 
     best_loss_val = Inf
     cnt = 0
