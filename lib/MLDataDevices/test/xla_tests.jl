@@ -46,7 +46,7 @@ using FillArrays, Zygote  # Extensions
     device = reactant_device()
     aType = MLDataDevices.functional(ReactantDevice) ? Reactant.ConcreteRArray : Array
     rngType =
-        MLDataDevices.functional(ReactantDevice) ? Reactant.ConcreteRNG : Random.AbstractRNG
+        MLDataDevices.functional(ReactantDevice) ? Reactant.ReactantRNG : Random.AbstractRNG
 
     ps_xpu = device(ps)
     @test get_device(ps_xpu) isa ReactantDevice
