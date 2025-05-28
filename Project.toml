@@ -58,6 +58,7 @@ LuxCore = {path = "lib/LuxCore"}
 LuxLib = {path = "lib/LuxLib"}
 MLDataDevices = {path = "lib/MLDataDevices"}
 WeightInitializers = {path = "lib/WeightInitializers"}
+Reactant = {url = "https://github.com/EnzymeAD/Reactant.jl/", rev = "ap/random_wrapper"}
 
 [extensions]
 LuxComponentArraysExt = "ComponentArrays"
