@@ -5,9 +5,9 @@ readme = "../README.md"
 package-mode = false
 
 [tool.poetry.dependencies]
-python = "~3.10"
-jax = {extras = ["cuda12"], version = "^0.4.35"}
-flax = "~0.10.1"
+python = "^3.10"
+jax = {extras = ["cuda12"], version = "^0.6"}
+flax = "^0.10.1"
 einops = "^0.8.0"
 
 
