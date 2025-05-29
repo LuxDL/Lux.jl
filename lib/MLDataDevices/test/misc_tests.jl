@@ -271,7 +271,7 @@ end
         rdev = reactant_device()
         x_rd = rdev(x)
         @test get_device(x_rd) isa ReactantDevice
-        @test x_rd isa Reactant.ConcreteRArray{Bool,2}
+        @test x_rd isa OneHotArray
     end
 end
 
