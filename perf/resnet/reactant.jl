@@ -1,4 +1,4 @@
-using Comonicon, BenchmarkTools
+using Comonicon, BenchmarkTools, JSON3
 using Lux, Enzyme, Reactant, Random
 
 Reactant.set_default_backend("gpu")
@@ -33,9 +33,17 @@ Comonicon.@main function main(;
             x = rand(Float32, 224, 224, 3, b) |> dev
             y = rand(Float32, 1000, b) |> dev
 
-            model_compiled = Reactant.compile(
-                model, (x, ps, Lux.testmode(st)); sync=true, optimize=Symbol(optimize)
-            )
+            model_compiled = Reactant.with_config(;
+                dot_general_precision=PrecisionConfig.HIGH,
+                convolution_precision=PrecisionConfig.HIGH,
+            ) do
+                Reactant.compile(
+                    model,
+                    (x, ps, Lux.testmode(st));
+                    sync=true,
+                    optimize=Symbol(optimize),
+                )
+            end
 
             fwd_time = @belapsed begin
                 $(model_compiled)($(x), $(ps), $(Lux.testmode(st)))
@@ -46,20 +54,25 @@ Comonicon.@main function main(;
             if b == 1
                 bwd_time = 0.0 # batchnorm cannot support batch size 1
             else
-                grad_compiled = Reactant.compile(
-                    Enzyme.gradient,
-                    (
-                        Reverse,
-                        toy_loss_function,
-                        Const(model),
-                        ps,
-                        Const(st),
-                        Const(x),
-                        Const(y),
-                    );
-                    sync=true,
-                    optimize=Symbol(optimize),
-                )
+                grad_compiled = Reactant.with_config(;
+                    dot_general_precision=PrecisionConfig.HIGH,
+                    convolution_precision=PrecisionConfig.HIGH,
+                ) do
+                    Reactant.compile(
+                        Enzyme.gradient,
+                        (
+                            Reverse,
+                            toy_loss_function,
+                            Const(model),
+                            ps,
+                            Const(st),
+                            Const(x),
+                            Const(y),
+                        );
+                        sync=true,
+                        optimize=Symbol(optimize),
+                    )
+                end
                 bwd_time = @belapsed $(grad_compiled)(
                     $Reverse,
                     $(toy_loss_function),
@@ -73,11 +86,21 @@ Comonicon.@main function main(;
                 end
             end
 
-            timings[m][b] = Dict{String,Float64}("fwd" => fwd_time, "bwd" => bwd_time)
+            timings[m][b] = Dict{String,Float64}(
+                "forward" => fwd_time, "backward" => bwd_time
+            )
         end
 
         println(timings[m])
     end
 
-    return display(timings)
+    results_path = joinpath(@__DIR__, "../results/resnet/")
+    mkpath(results_path)
+
+    open(joinpath(results_path, "reactant.json"), "w") do io
+        JSON3.write(io, timings)
+    end
+
+    display(timings)
+    return nothing
 end

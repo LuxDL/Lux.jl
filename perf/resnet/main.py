@@ -1,5 +1,8 @@
 import argparse
 import time
+import os
+import json
+
 from functools import partial
 from typing import Any, Tuple
 from collections.abc import Callable, Sequence
@@ -131,6 +134,12 @@ ResNet152 = partial(ResNet, stage_sizes=[3, 8, 36, 3], block_cls=BottleneckResNe
 
 ResNet200 = partial(ResNet, stage_sizes=[3, 24, 36, 3], block_cls=BottleneckResNetBlock)
 
+
+def loss_fn(p, x, y):
+    y_pred, _ = model.apply(p, x, train=True, mutable=["batch_stats"])
+    return jnp.mean((y_pred - y) ** 2)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--batch-size", type=list, default=[1, 4, 32, 128])
@@ -171,17 +180,7 @@ if __name__ == "__main__":
                 jax.jit(partial(model.apply, train=False)).lower(params, x).compile()
             )
             grad_fn_compiled = (
-                jax.jit(
-                    jax.grad(
-                        lambda p, x, y: jnp.mean(
-                            # XXX: train=True???
-                            (model.apply(p, x, train=False) - y)
-                            ** 2
-                        )
-                    )
-                )
-                .lower(params, x, y_true)
-                .compile()
+                jax.jit(jax.grad(loss_fn)).lower(params, x, y_true).compile()
             )
 
             best_forward_timing = np.inf
@@ -209,3 +208,9 @@ if __name__ == "__main__":
             print(f"Best backward timing: {best_backward_timing:.5f} s")
 
     print(timings)
+
+    results_path = os.path.join(os.path.dirname(__file__), "../results/resnet/")
+    os.makedirs(results_path, exist_ok=True)
+
+    with open(os.path.join(results_path, "jax.json"), "w") as f:
+        json.dump(timings, f, indent=4)

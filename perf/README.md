@@ -2,7 +2,7 @@
 
 ## ResNet
 
-Benchmark was run on a single NVIDIA RTX 3060 Ti GPU with 12GB of memory.
+Benchmark was run on a single A100 GPU with 40GB of memory.
 
 ### ResNet18 (Forward Pass)
 

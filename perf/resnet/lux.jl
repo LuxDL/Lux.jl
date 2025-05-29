@@ -1,4 +1,4 @@
-using Comonicon, BenchmarkTools
+using Comonicon, BenchmarkTools, JSON3
 using Lux, LuxCUDA, Random, Zygote
 
 include("resnet.jl")
@@ -52,13 +52,23 @@ Comonicon.@main function main(;
                 end
             end
 
-            timings[m][b] = Dict{String,Float64}("fwd" => fwd_time, "bwd" => bwd_time)
+            timings[m][b] = Dict{String,Float64}(
+                "forward" => fwd_time, "backward" => bwd_time
+            )
         end
 
         println(timings[m])
     end
 
-    return display(timings)
+    results_path = joinpath(@__DIR__, "../results/resnet/")
+    mkpath(results_path)
+
+    open(joinpath(results_path, "cudajl.json"), "w") do io
+        JSON3.write(io, timings)
+    end
+
+    display(timings)
+    return nothing
 end
 
 main()
