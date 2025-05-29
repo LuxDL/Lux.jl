@@ -12,7 +12,7 @@ end
 Comonicon.@main function main(;
     optimize::String="all",
     batch_size::Vector{Int}=[1, 4, 32, 128],
-    model_size::Vector{Int}=[18, 34, 50, 101, 152, 200],
+    model_size::Vector{Int}=[18, 34, 50, 101, 152],
 )
     dev = reactant_device(; force=true)
 
