@@ -68,6 +68,6 @@ function Adapt.adapt_storage(dev::ReactantDevice, x::AbstractArray)
     return ConcreteRArray(x; kwargs...)
 end
 
-Adapt.adapt_storage(::CPUDevice, ::Reactant.ConcreteRNG) = Random.default_rng()
+Adapt.adapt_storage(::CPUDevice, ::Reactant.ReactantRNG) = Random.default_rng()
 
 end

@@ -90,13 +90,13 @@ end
             ps, st = dev(Lux.setup(Random.default_rng(), model))
             x = dev(randn(Float32, 10, 10))
 
-            @test st.rng isa Reactant.ConcreteRNG
+            @test st.rng isa Reactant.ReactantRNG
 
             hlo = @code_hlo model(x, ps, st)
             @test contains(repr(hlo), "stablehlo.rng_bit_generator")
 
             y, st2 = @jit model(x, ps, st)
-            @test st2.rng isa Reactant.ConcreteRNG
+            @test st2.rng isa Reactant.ReactantRNG
             @test st.rng.seed != st2.rng.seed
         end
     end

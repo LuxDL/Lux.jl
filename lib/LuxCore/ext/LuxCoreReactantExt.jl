@@ -21,7 +21,6 @@ function Reactant.traced_type_inner(
     return T
 end
 
-LuxCore.replicate(rng::Reactant.TracedRNG) = copy(rng)
-LuxCore.replicate(rng::Reactant.ConcreteRNG) = copy(rng)
+LuxCore.replicate(rng::Reactant.ReactantRNG) = copy(rng)
 
 end
