@@ -20,7 +20,7 @@ end
     push!(EXTRA_PKGS, PackageSpec(; name="oneAPI"))
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "metal") &&
     push!(EXTRA_PKGS, PackageSpec(; name="Metal"))
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "xla") &&
+(BACKEND_GROUP == "all" || BACKEND_GROUP == "reactant") &&
     push!(EXTRA_PKGS, PackageSpec(; name="Reactant"))
 
 if !isempty(EXTRA_PKGS) || !isempty(EXTRA_DEV_PKGS)

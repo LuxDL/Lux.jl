@@ -38,7 +38,7 @@ for name in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI)
         get_triggerpkg_name(::Union{$ldev,Type{<:$ldev}}) = $(tpkg)
     end
 end
-get_device_name(::ReactantDevice) = "XLA"
+get_device_name(::ReactantDevice) = "Reactant"
 get_triggerpkg_name(::ReactantDevice) = "Reactant"
 
 for T in (
