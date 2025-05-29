@@ -142,8 +142,7 @@ const RETESTITEMS_NWORKER_THREADS = parse(
 @testset "Lux.jl Tests" begin
     @testset "[$(tag)] [$(i)/$(length(LUX_TEST_GROUP))]" for (i, tag) in
                                                              enumerate(LUX_TEST_GROUP)
-        nworkers =
-            (tag == "reactant") || (BACKEND_GROUP == "amdgpu") ? 0 : RETESTITEMS_NWORKERS
+        nworkers = (tag == "reactant") ? 0 : RETESTITEMS_NWORKERS
 
         ReTestItems.runtests(
             Lux;
