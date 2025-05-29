@@ -2,7 +2,7 @@
 
 ## ResNet
 
-Benchmark was run on a single A100 GPU with 40GB of memory.
+Benchmarks were run on a single A100 GPU with 40GB of memory.
 
 ### ResNet18 (Forward Pass)
 
