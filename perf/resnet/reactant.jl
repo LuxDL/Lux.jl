@@ -10,12 +10,13 @@ function toy_loss_function(model, ps, st, x, y)
 end
 
 Comonicon.@main function main(;
-        optimize::String = "all", batch_size::Vector{Int} = [1, 4, 32, 128],
-        model_size::Vector{Int} = [18, 34, 50],
-    )
-    dev = reactant_device(; force = true)
+    optimize::String="all",
+    batch_size::Vector{Int}=[1, 4, 32, 128],
+    model_size::Vector{Int}=[18, 34, 50],
+)
+    dev = reactant_device(; force=true)
 
-    timings = Dict{Int, Dict{Int, Dict{String, Float64}}}()
+    timings = Dict{Int,Dict{Int,Dict{String,Float64}}}()
 
     for m in model_size
         println("model_size=$m")
@@ -26,14 +27,14 @@ Comonicon.@main function main(;
         println("Param count: $(Lux.parameterlength(ps))")
         println("State count: $(Lux.statelength(st))")
 
-        timings[m] = Dict{Int, Dict{String, Float64}}()
+        timings[m] = Dict{Int,Dict{String,Float64}}()
 
         for b in batch_size
             x = rand(Float32, 224, 224, 3, b) |> dev
             y = rand(Float32, 1000, b) |> dev
 
             model_compiled = Reactant.compile(
-                model, (x, ps, Lux.testmode(st)); sync = true, optimize = Symbol(optimize)
+                model, (x, ps, Lux.testmode(st)); sync=true, optimize=Symbol(optimize)
             )
 
             fwd_time = @belapsed begin
@@ -48,27 +49,35 @@ Comonicon.@main function main(;
                 grad_compiled = Reactant.compile(
                     Enzyme.gradient,
                     (
-                        Reverse, toy_loss_function, Const(model),
-                        ps, Const(st), Const(x), Const(y),
+                        Reverse,
+                        toy_loss_function,
+                        Const(model),
+                        ps,
+                        Const(st),
+                        Const(x),
+                        Const(y),
                     );
-                    sync = true, optimize = Symbol(optimize)
+                    sync=true,
+                    optimize=Symbol(optimize),
                 )
                 bwd_time = @belapsed $(grad_compiled)(
-                    $Reverse, $(toy_loss_function), $(Const(model)), $(ps),
-                    $(Const(st)), $(Const(x)), $(Const(y))
+                    $Reverse,
+                    $(toy_loss_function),
+                    $(Const(model)),
+                    $(ps),
+                    $(Const(st)),
+                    $(Const(x)),
+                    $(Const(y)),
                 ) setup = begin
                     GC.gc(true)
                 end
             end
 
-            timings[m][b] = Dict{String, Float64}(
-                "fwd" => fwd_time,
-                "bwd" => bwd_time,
-            )
+            timings[m][b] = Dict{String,Float64}("fwd" => fwd_time, "bwd" => bwd_time)
         end
 
         println(timings[m])
     end
 
-    display(timings)
+    return display(timings)
 end

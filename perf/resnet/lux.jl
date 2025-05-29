@@ -8,12 +8,11 @@ function toy_loss_function(model, ps, st, x, y)
 end
 
 Comonicon.@main function main(;
-        batch_size::Vector{Int} = [1, 4, 32, 128],
-        model_size::Vector{Int} = [18, 34, 50],
-    )
-    dev = gpu_device(; force = true)
+    batch_size::Vector{Int}=[1, 4, 32, 128], model_size::Vector{Int}=[18, 34, 50]
+)
+    dev = gpu_device(; force=true)
 
-    timings = Dict{Int, Dict{Int, Dict{String, Float64}}}()
+    timings = Dict{Int,Dict{Int,Dict{String,Float64}}}()
 
     for m in model_size
         println("model_size=$m")
@@ -23,7 +22,7 @@ Comonicon.@main function main(;
         println("Param count: $(Lux.parameterlength(ps))")
         println("State count: $(Lux.statelength(st))")
 
-        timings[m] = Dict{Int, Dict{String, Float64}}()
+        timings[m] = Dict{Int,Dict{String,Float64}}()
 
         for b in batch_size
             x = rand(Float32, 224, 224, 3, b) |> dev
@@ -52,16 +51,13 @@ Comonicon.@main function main(;
                 end
             end
 
-            timings[m][b] = Dict{String, Float64}(
-                "fwd" => fwd_time,
-                "bwd" => bwd_time,
-            )
+            timings[m][b] = Dict{String,Float64}("fwd" => fwd_time, "bwd" => bwd_time)
         end
 
         println(timings[m])
     end
 
-    display(timings)
+    return display(timings)
 end
 
 main()
