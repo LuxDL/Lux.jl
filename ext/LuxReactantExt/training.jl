@@ -1,6 +1,4 @@
-function objective_function_wrapper(
-    objective_function::F, model, ps, st, data
-) where {F}
+function objective_function_wrapper(objective_function::F, model, ps, st, data) where {F}
     loss, stₙ, stats = objective_function(model, ps, st, data)
     return loss, Const(stₙ), Const(stats)
 end
