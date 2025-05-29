@@ -52,7 +52,7 @@ Comonicon.@main function main(;
             end
 
             if b == 1
-                bwd_time = 0.0 # batchnorm cannot support batch size 1
+                bwd_time = -1.0 # batchnorm cannot support batch size 1
             else
                 grad_compiled = Reactant.with_config(;
                     dot_general_precision=PrecisionConfig.DEFAULT,

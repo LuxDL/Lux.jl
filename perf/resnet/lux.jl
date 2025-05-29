@@ -41,7 +41,7 @@ Comonicon.@main function main(;
             fn = (ps, x) -> toy_loss_function(model, ps, st, x, y)
 
             if b == 1
-                bwd_time = 0.0 # batchnorm cannot support batch size 1
+                bwd_time = -1.0 # batchnorm cannot support batch size 1
             else
                 bwd_time = @belapsed begin
                     Zygote.gradient($(fn), $(ps), $(x))
