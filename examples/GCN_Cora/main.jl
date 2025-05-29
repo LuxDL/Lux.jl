@@ -8,7 +8,6 @@ using Lux,
     MLDatasets,
     Random,
     Statistics,
-    Enzyme,
     GNNGraphs,
     ConcreteStructs,
     Printf,
@@ -173,28 +172,33 @@ function main(;
         end
     end
 
-    test_loss = @jit(
-        loss_function(
-            gcn,
-            train_state.parameters,
-            Lux.testmode(train_state.states),
-            (features, targets, adj, test_idx),
+    Reactant.with_config(;
+        dot_general_precision=PrecisionConfig.HIGH,
+        convolution_precision=PrecisionConfig.HIGH,
+    ) do
+        test_loss = @jit(
+            loss_function(
+                gcn,
+                train_state.parameters,
+                Lux.testmode(train_state.states),
+                (features, targets, adj, test_idx),
+            )
+        )[1]
+        test_acc = accuracy(
+            Array(
+                @jit(
+                    gcn(
+                        (features, adj, test_idx),
+                        train_state.parameters,
+                        Lux.testmode(train_state.states),
+                    )
+                )[1],
+            ),
+            Array(targets)[:, test_idx],
         )
-    )[1]
-    test_acc = accuracy(
-        Array(
-            @jit(
-                gcn(
-                    (features, adj, test_idx),
-                    train_state.parameters,
-                    Lux.testmode(train_state.states),
-                )
-            )[1],
-        ),
-        Array(targets)[:, test_idx],
-    )
 
-    @printf "Test Loss: %.6f\tTest Acc: %.4f%%\n" test_loss test_acc
+        @printf "Test Loss: %.6f\tTest Acc: %.4f%%\n" test_loss test_acc
+    end
     return nothing
 end
 
