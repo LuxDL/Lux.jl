@@ -34,8 +34,8 @@ Comonicon.@main function main(;
             y = rand(Float32, 1000, b) |> dev
 
             model_compiled = Reactant.with_config(;
-                dot_general_precision=PrecisionConfig.HIGH,
-                convolution_precision=PrecisionConfig.HIGH,
+                dot_general_precision=PrecisionConfig.DEFAULT,
+                convolution_precision=PrecisionConfig.DEFAULT,
             ) do
                 Reactant.compile(
                     model,
@@ -55,8 +55,8 @@ Comonicon.@main function main(;
                 bwd_time = 0.0 # batchnorm cannot support batch size 1
             else
                 grad_compiled = Reactant.with_config(;
-                    dot_general_precision=PrecisionConfig.HIGH,
-                    convolution_precision=PrecisionConfig.HIGH,
+                    dot_general_precision=PrecisionConfig.DEFAULT,
+                    convolution_precision=PrecisionConfig.DEFAULT,
                 ) do
                     Reactant.compile(
                         Enzyme.gradient,
