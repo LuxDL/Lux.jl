@@ -44,14 +44,18 @@ end
 end
 
 # Some of the tests are flaky on prereleases
-@testitem "doctests: Quality Assurance" tags = [:misc] begin
+@testitem "doctests: Quality Assurance" setup = [SharedTestSetup] tags = [:misc] begin
     using Documenter
 
-    doctestexpr = quote
-        using SimpleChains: static
-        using Adapt, Lux, Random, Optimisers, Zygote, NNlib
-    end
+    @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
+        ongpu && continue
 
-    DocMeta.setdocmeta!(Lux, :DocTestSetup, doctestexpr; recursive=true)
-    doctest(Lux; manual=false)
+        doctestexpr = quote
+            using SimpleChains: static
+            using Adapt, Lux, Random, Optimisers, Zygote, NNlib
+        end
+
+        DocMeta.setdocmeta!(Lux, :DocTestSetup, doctestexpr; recursive=true)
+        doctest(Lux; manual=false)
+    end
 end

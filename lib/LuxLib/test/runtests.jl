@@ -61,7 +61,7 @@ using LuxLib
 ReTestItems.runtests(
     LuxLib;
     tags=(LUXLIB_TEST_GROUP == "all" ? nothing : [Symbol(LUXLIB_TEST_GROUP)]),
-    nworkers=BACKEND_GROUP == "amdgpu" ? 0 : RETESTITEMS_NWORKERS,
+    nworkers=RETESTITEMS_NWORKERS,
     nworker_threads=RETESTITEMS_NWORKER_THREADS,
     testitem_timeout=3600,
 )
