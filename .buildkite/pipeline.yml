@@ -8,8 +8,8 @@ steps:
           diff: ".buildkite/scripts/diff.sh $BUILDKITE_COMMIT"
           interpolation: false
           watch:
-            # Core Lux Testing
-            - path:
+            - label: "Lux"
+              path:
                 - "src/"
                 - "ext/"
                 - "test/"
@@ -21,8 +21,8 @@ steps:
                 agents:
                   queue: "juliagpu"
 
-            # LuxCUDA Testing
-            - path:
+            - label: "LuxCUDA"
+              path:
                 - "lib/LuxCUDA/"
                 - ".buildkite/"
               config:
@@ -30,8 +30,8 @@ steps:
                 agents:
                   queue: "juliagpu"
 
-            # WeightInitializers Testing
-            - path:
+            - label: "WeightInitializers"
+              path:
                 - "lib/WeightInitializers/"
                 - ".buildkite/"
               config:
@@ -39,8 +39,8 @@ steps:
                 agents:
                   queue: "juliagpu"
 
-            # MLDataDevices Testing
-            - path:
+            - label: "MLDataDevices"
+              path:
                 - "lib/MLDataDevices/"
                 - ".buildkite/"
               config:
@@ -48,8 +48,8 @@ steps:
                 agents:
                   queue: "juliagpu"
 
-            # LuxLib Testing
-            - path:
+            - label: "LuxLib"
+              path:
                 - "lib/LuxLib/"
                 - ".buildkite/"
                 - "lib/LuxTestUtils/"
@@ -60,8 +60,8 @@ steps:
                 agents:
                   queue: "juliagpu"
 
-            # LuxTestUtils Testing
-            - path:
+            - label: "LuxTestUtils"
+              path:
                 - "lib/LuxTestUtils/"
                 - ".buildkite/"
               config:
@@ -69,8 +69,8 @@ steps:
                 agents:
                   queue: "juliagpu"
 
-            # # Benchmarks
-            # - path:
+            # - label: "Benchmarks"
+            #   path:
             #     - "src/"
             #     - "ext/"
             #     - "test/"
@@ -83,8 +83,8 @@ steps:
             #     agents:
             #       queue: "juliagpu"
 
-            # Documentation
-            - path:
+            - label: "Documentation"
+              path:
                 - "src/"
                 - "ext/"
                 - "test/"
@@ -98,8 +98,8 @@ steps:
                 agents:
                   queue: "juliagpu"
 
-            # Downstream
-            - path:
+            - label: "Downstream"
+              path:
                 - "src/"
                 - "ext/"
                 - "lib/"

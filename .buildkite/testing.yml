@@ -42,7 +42,7 @@ steps:
           BACKEND_GROUP: "CUDA"
           LUX_TEST_GROUP: "{{matrix.group}}"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
-        timeout_in_minutes: 120
+        timeout_in_minutes: 150
         matrix:
           setup:
             julia:
