@@ -40,10 +40,10 @@ function get_cifar10_dataloaders(::Type{T}, batchsize; kwargs...) where {T}
     test_transform = ImageToTensor() |> Normalize(cifar10_mean, cifar10_std) |> ToEltype(T)
 
     trainset = TensorDataset(CIFAR10(; Tx=T, split=:train), train_transform)
-    trainloader = DataLoader(trainset; batchsize, shuffle=true, kwargs...)
+    trainloader = DataLoader(trainset; batchsize, shuffle=true, parallel=true, kwargs...)
 
     testset = TensorDataset(CIFAR10(; Tx=T, split=:test), test_transform)
-    testloader = DataLoader(testset; batchsize, shuffle=false, kwargs...)
+    testloader = DataLoader(testset; batchsize, shuffle=false, parallel=true, kwargs...)
 
     return trainloader, testloader
 end
