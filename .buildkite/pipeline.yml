@@ -111,8 +111,8 @@ steps:
                 agents:
                   queue: "juliagpu"
 
-  - label: "Triggering Pipelines (Main Branch / Tag)"
-    if: build.branch == "main" || build.tag != null
+  - label: "Triggering Pipelines (Main Branch)"
+    if: build.branch == "main"
     agents:
       queue: "juliagpu"
     command: |
@@ -126,9 +126,14 @@ steps:
       buildkite-agent pipeline upload .buildkite/testing_mldatadevices.yml
       buildkite-agent pipeline upload .buildkite/testing_luxtestutils.yml
 
-      # Documentation
-      buildkite-agent pipeline upload .buildkite/documentation.yml
-
       # Disable benchmarks for now
       # # Benchmarks
       # buildkite-agent pipeline upload .buildkite/benchmarks.yml
+
+  - label: "Triggering Documentation Pipeline (Main Branch / Tag)"
+    if: build.tag != null || build.branch == "main"
+    agents:
+      queue: "juliagpu"
+    command: |
+      # Documentation
+      buildkite-agent pipeline upload .buildkite/documentation.yml
