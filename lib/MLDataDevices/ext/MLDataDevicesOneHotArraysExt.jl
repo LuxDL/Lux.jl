@@ -22,10 +22,4 @@ for dev in (CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice)
     end
 end
 
-# Reactant doesn't pay very nicely with OneHotArrays at the moment
-function Adapt.adapt_structure(dev::ReactantDevice, x::OneHotArray)
-    x_cpu = Adapt.adapt_structure(CPUDevice(), x)
-    return Adapt.adapt_storage(dev, convert(Array, x_cpu))
-end
-
 end
