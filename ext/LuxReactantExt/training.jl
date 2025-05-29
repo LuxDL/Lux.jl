@@ -1,15 +1,12 @@
 function objective_function_wrapper(
-    objective_function::F, model, ps, st, data, stats::Ref, stₙ::Ref
+    objective_function::F, model, ps, st, data
 ) where {F}
-    loss, stₙ_int, stats_int = objective_function(model, ps, st, data)
-    stats[] = stats_int
-    stₙ[] = stₙ_int
-    return loss
+    loss, stₙ, stats = objective_function(model, ps, st, data)
+    return loss, Const(stₙ), Const(stats)
 end
 
 function compute_gradients_internal(objective_function::F, model, data, ps, st) where {F}
-    stats, stₙ = Ref{Any}(nothing), Ref{Any}(nothing)
-    (_, _, dps, _, _, _, _), loss = Enzyme.gradient(
+    (_, _, dps, _, _), (loss, stₙ, stats) = Enzyme.gradient(
         Enzyme.set_abi(Enzyme.ReverseWithPrimal, Reactant.ReactantABI),
         Const(objective_function_wrapper),
         Const(objective_function),
@@ -17,10 +14,8 @@ function compute_gradients_internal(objective_function::F, model, data, ps, st) 
         ps,
         Const(st),
         Const(data),
-        Const(stats),
-        Const(stₙ),
     )
-    return dps, loss, stats[], stₙ[]
+    return dps, loss, stats.val, stₙ.val
 end
 
 function Lux.Training.compute_gradients_impl(
