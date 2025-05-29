@@ -18,7 +18,7 @@ if BACKEND_GROUP == "oneapi" || BACKEND_GROUP == "all"
     using oneAPI
 end
 
-if BACKEND_GROUP == "xla" || BACKEND_GROUP == "all"
+if BACKEND_GROUP == "reactant" || BACKEND_GROUP == "all"
     using Reactant
 end
 

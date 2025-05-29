@@ -243,7 +243,7 @@ function reactant_device(;
         functional(ReactantDevice) && return ReactantDevice(client, device, sharding)
         msg = "`ReactantDevice` is loaded but not functional. Defaulting to CPU."
     end
-    force && throw(Internal.DeviceSelectionException("XLA"))
+    force && throw(Internal.DeviceSelectionException("Reactant"))
     @warn msg maxlog = 1
     return cpu_device()
 end

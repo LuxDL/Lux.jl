@@ -29,7 +29,7 @@ steps:
               - "1"
             group:
               - "CUDA"
-              - "XLA"
+              - "reactant"
 
   - group: ":julia: (MLDataDevices) AMD GPU"
     steps:

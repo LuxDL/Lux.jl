@@ -31,10 +31,10 @@ jobs:
           - windows-latest
         group:
           - CPU
-          - XLA
+          - reactant
         exclude:
           - os: windows-latest
-            group: XLA
+            group: reactant
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
