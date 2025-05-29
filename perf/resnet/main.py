@@ -134,7 +134,7 @@ ResNet200 = partial(ResNet, stage_sizes=[3, 24, 36, 3], block_cls=BottleneckResN
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--batch-size", type=list, default=[1, 4, 32, 128])
-    parser.add_argument("--model-size", type=list, default=[18, 34, 50])
+    parser.add_argument("--model-size", type=list, default=[18, 34, 50, 101, 152, 200])
     args = parser.parse_args()
 
     timings = dict()
