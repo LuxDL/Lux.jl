@@ -9,7 +9,7 @@ end
 
 Comonicon.@main function main(;
     batch_size::Vector{Int}=[1, 4, 32, 128],
-    model_size::Vector{Int}=[18, 34, 50, 101, 152],
+    model_size::Vector{Int}=[18, 34, 50, 101], # 152 is too large for even for 40GB GPU
 )
     dev = gpu_device(; force=true)
 
