@@ -4,6 +4,12 @@
 
 Benchmarks were run on a single A100 GPU with 40GB of memory.
 
-![ResNet Runtimes](results/resnet/resnet_runtimes.svg)
+<p align="center">
+    <img src="results/resnet/resnet_runtimes.svg#gh-light-mode-only"/>
+    <img src="results/resnet/resnet_runtimes_dark.svg#gh-dark-mode-only"/>
+</p>
 
-![ResNet Speedups](results/resnet/resnet_speedups.svg)
+<p align="center">
+    <img src="results/resnet/resnet_speedups.svg#gh-light-mode-only"/>
+    <img src="results/resnet/resnet_speedups_dark.svg#gh-dark-mode-only"/>
+</p>
