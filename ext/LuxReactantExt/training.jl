@@ -1,6 +1,6 @@
 function objective_function_wrapper(objective_function::F, model, ps, st, data) where {F}
     loss, stₙ, stats = objective_function(model, ps, st, data)
-    return loss, Const(stₙ), Const(stats)
+    return loss, Reactant.ignore_derivatives(stₙ), Reactant.ignore_derivatives(stats)
 end
 
 function compute_gradients_internal(objective_function::F, model, data, ps, st) where {F}
@@ -13,7 +13,7 @@ function compute_gradients_internal(objective_function::F, model, data, ps, st) 
         Const(st),
         Const(data),
     )
-    return dps, loss, stats.val, stₙ.val
+    return dps, loss, stats, stₙ
 end
 
 function Lux.Training.compute_gradients_impl(
