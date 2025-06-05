@@ -42,9 +42,11 @@ SLEEFPirates = "476501e8-09a2-5ece-8869-fb82de89a1fa"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
 
-[sources]
-LuxCore = {path = "../LuxCore"}
-MLDataDevices = {path = "../MLDataDevices"}
+[sources.LuxCore]
+path = "../LuxCore"
+
+[sources.MLDataDevices]
+path = "../MLDataDevices"
 
 [extensions]
 LuxLibAppleAccelerateExt = "AppleAccelerate"
@@ -80,7 +82,7 @@ KernelAbstractions = "0.9.27"
 LinearAlgebra = "1.10"
 LoopVectorization = "0.12.171"
 LuxCore = "1.2"
-MKL = "0.7, 0.8"
+MKL = "0.7, 0.8, 0.9"
 MLDataDevices = "1.6.10"
 Markdown = "1.10"
 NNlib = "0.9.26"
