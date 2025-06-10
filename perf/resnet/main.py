@@ -1,3 +1,14 @@
+#!/usr/bin/env -S uv run --script
+
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#     "einops>=0.8",
+#     "flax>0.10",
+#     "jax[cuda12]>=0.6",
+# ]
+# ///
+
 import argparse
 import time
 import os
