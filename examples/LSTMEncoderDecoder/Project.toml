@@ -8,7 +8,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
 
 [compat]
-CairoMakie = "0.13.6, 0.14"
+CairoMakie = "0.13.6, 0.14, 0.15"
 Enzyme = "0.13.44"
 Lux = "1.12.4"
 MLUtils = "0.4.8"
