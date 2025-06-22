@@ -29,7 +29,7 @@ function loadcora()
         gph.node_data.features,
         onehotbatch(gph.node_data.targets, data.metadata["classes"]),
         ## We use a dense matrix here to avoid incompatibility with Reactant
-        Matrix(adjacency_matrix(gnngraph)),
+        Matrix{Int32}(adjacency_matrix(gnngraph)),
         ## We use this since Reactant doesn't yet support gather adjoint
         (1:140, 141:640, 1709:2708),
     )
