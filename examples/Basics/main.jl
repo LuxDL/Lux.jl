@@ -106,7 +106,7 @@ W * x
 # see the manual section.
 
 # You can manually add `CUDA`. Once CUDA is loaded you can move any array to the GPU with
-# the `cu` function (or the `gpu` function exported by `Lux``), and it supports all of the
+# the `cu` function (or the `gpu` function exported by `Lux`), and it supports all of the
 # above operations with the same syntax.
 
 # ```julia
