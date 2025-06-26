@@ -59,34 +59,34 @@ end
 
 * Create a Custom Layer storing the time.
 
-```@example dispatch
-struct ArrayAndTime{A <: AbstractArray, T <: Real}
-    array::A
-    time::T
-end
-```
+  ```@example dispatch
+  struct ArrayAndTime{A <: AbstractArray, T <: Real}
+      array::A
+      time::T
+  end
+  ```
 
 * Define the dispatch on `Lux.apply(::AbstractLuxLayer, x::ArrayAndTime, ps, st::NamedTuple)`.
 
-```@example dispatch
-function Lux.apply(layer::Lux.AbstractLuxLayer, x::ArrayAndTime, ps, st::NamedTuple)
-    y, st = layer(x.array, ps, st)
-    return ArrayAndTime(y, x.time), st
-end
+  ```@example dispatch
+  function Lux.apply(layer::Lux.AbstractLuxLayer, x::ArrayAndTime, ps, st::NamedTuple)
+      y, st = layer(x.array, ps, st)
+      return ArrayAndTime(y, x.time), st
+  end
 
-function Lux.apply(layer::TDChain, x::ArrayAndTime, ps, st::NamedTuple)
-    y, st = layer((x.array, x.time), ps, st)
-    return ArrayAndTime(y, x.time), st
-end
-```
+  function Lux.apply(layer::TDChain, x::ArrayAndTime, ps, st::NamedTuple)
+      y, st = layer((x.array, x.time), ps, st)
+      return ArrayAndTime(y, x.time), st
+  end
+  ```
 
 * Run the model.
 
-```@example dispatch
-xt = ArrayAndTime(x, 10.0f0)
+  ```@example dispatch
+  xt = ArrayAndTime(x, 10.0f0)
 
-model(xt, ps, st)[1]
-```
+  model(xt, ps, st)[1]
+  ```
 
 ### Using the Same Input for Non-TD Models
 
