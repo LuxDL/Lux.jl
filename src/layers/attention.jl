@@ -28,9 +28,11 @@ The multi-head dot-product attention layer used in Transformer architectures
 
 ## Forward Pass Signature(s)
 
-    (m::MultiHeadAttention)(qkv, ps, st::NamedTuple)
-    (m::MultiHeadAttention)((q, kv), ps, st::NamedTuple)
-    (m::MultiHeadAttention)((q, k, v, [mask = nothing]), ps, st::NamedTuple)
+```julia
+(m::MultiHeadAttention)(qkv, ps, st::NamedTuple)
+(m::MultiHeadAttention)((q, kv), ps, st::NamedTuple)
+(m::MultiHeadAttention)((q, k, v, [mask = nothing]), ps, st::NamedTuple)
+```
 
 ## Inputs
 

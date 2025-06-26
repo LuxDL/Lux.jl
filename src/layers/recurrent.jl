@@ -107,12 +107,14 @@ automatically operate over a sequence of inputs.
     to handle sequentially composed RNN Cells. In Lux, one can simple stack multiple
     `Recurrence` blocks in a `Chain` to achieve the same.
 
-        Chain(
-            Recurrence(RNNCell(inputsize => latentsize); return_sequence=true),
-            Recurrence(RNNCell(latentsize => latentsize); return_sequence=true),
-            :
-            x -> stack(x; dims=2)
-        )
+    ```julia
+    Chain(
+        Recurrence(RNNCell(inputsize => latentsize); return_sequence=true),
+        Recurrence(RNNCell(latentsize => latentsize); return_sequence=true),
+        :
+        x -> stack(x; dims=2)
+    )
+    ```
 
     For some discussion on this topic, see https://github.com/LuxDL/Lux.jl/issues/472.
 """
