@@ -32,7 +32,7 @@ This layer is often used to store word embeddings and retrieve them using indice
     input, an N + 1 dimensional output is returned.
   - Empty `NamedTuple()`
 
-!!! warning "Gradients with Tracker.jl
+!!! warning "Gradients with Tracker.jl"
 
     Tracker.jl produces incorrect gradients for this layer if indices in the input are
     repeated. Don't use this layer with Tracker.jl if you need to compute gradients.
