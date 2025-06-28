@@ -107,12 +107,14 @@ automatically operate over a sequence of inputs.
     to handle sequentially composed RNN Cells. In Lux, one can simple stack multiple
     `Recurrence` blocks in a `Chain` to achieve the same.
 
-        Chain(
-            Recurrence(RNNCell(inputsize => latentsize); return_sequence=true),
-            Recurrence(RNNCell(latentsize => latentsize); return_sequence=true),
-            :
-            x -> stack(x; dims=2)
-        )
+    ```julia
+    Chain(
+        Recurrence(RNNCell(inputsize => latentsize); return_sequence=true),
+        Recurrence(RNNCell(latentsize => latentsize); return_sequence=true),
+        :
+        x -> stack(x; dims=2)
+    )
+    ```
 
     For some discussion on this topic, see https://github.com/LuxDL/Lux.jl/issues/472.
 """
@@ -375,10 +377,10 @@ Long Short-Term (LSTM) Cell
 \begin{align}
   i &= \sigma(W_{ii} \times x + W_{hi} \times h_{prev} + b_{i})\\
   f &= \sigma(W_{if} \times x + W_{hf} \times h_{prev} + b_{f})\\
-  g &= tanh(W_{ig} \times x + W_{hg} \times h_{prev} + b_{g})\\
+  g &= \tanh(W_{ig} \times x + W_{hg} \times h_{prev} + b_{g})\\
   o &= \sigma(W_{io} \times x + W_{ho} \times h_{prev} + b_{o})\\
   c_{new} &= f \cdot c_{prev} + i \cdot g\\
-  h_{new} &= o \cdot tanh(c_{new})
+  h_{new} &= o \cdot \tanh(c_{new})
 \end{align}
 ```
 

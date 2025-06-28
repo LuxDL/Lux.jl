@@ -25,7 +25,7 @@ multiple operations.
     medium sized matrices. This is overridden if special BLAS implementations are loaded
     (currently `MKL`, `AppleAccelerate`, and `BLISBLAS`).
 
-!!! tip "Load `Octavian.jl`
+!!! tip "Load `Octavian.jl`"
 
     Loading `Octavian.jl` enables a polyalgorithm that uses different backends based on the
     input sizes.
