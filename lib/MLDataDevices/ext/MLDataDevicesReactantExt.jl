@@ -1,12 +1,30 @@
 module MLDataDevicesReactantExt
 
 using Adapt: Adapt
-using MLDataDevices: MLDataDevices, Internal, ReactantDevice, CPUDevice
+using MLDataDevices: MLDataDevices, Internal, ReactantDevice, CPUDevice, AbstractDevice
 using Random: Random
 using Reactant: Reactant, ConcreteRArray, ConcreteRNumber, TracedRArray, TracedRNumber
 
 MLDataDevices.loaded(::Union{ReactantDevice,Type{<:ReactantDevice}}) = true
 MLDataDevices.functional(::Union{ReactantDevice,Type{<:ReactantDevice}}) = true
+
+# Tracing API Overloads
+function Reactant.traced_type_inner(
+    @nospecialize(T::Type{<:AbstractDevice}),
+    seen,
+    @nospecialize(mode::Reactant.TraceMode),
+    @nospecialize(track_numbers::Type),
+    @nospecialize(sharding),
+    @nospecialize(runtime)
+)
+    return T
+end
+
+function Reactant.make_tracer(
+    seen, @nospecialize(prev::AbstractDevice), @nospecialize(path), mode; kwargs...
+)
+    return prev
+end
 
 # Default RNG
 MLDataDevices.default_device_rng(::ReactantDevice) = Reactant.TracedRandom.default_rng()
