@@ -11,7 +11,7 @@ using Static: StaticBool, Static, False, True, static
 
 using ..Lux: Lux, Utils, ReactantCompatibleOptimisers
 using LuxCore: LuxCore, AbstractLuxLayer
-using MLDataDevices: MLDataDevices, ReactantDevice, get_device_type
+using MLDataDevices: MLDataDevices, ReactantDevice, get_device, get_device_type
 
 """
     TrainState
@@ -63,8 +63,9 @@ Constructor for [`TrainState`](@ref).
 [`TrainState`](@ref) object.
 """
 function TrainState(model::AbstractLuxLayer, ps, st, optimizer::Optimisers.AbstractRule)
-    if get_device_type(ps) <: ReactantDevice
-        optimizer = ReactantCompatibleOptimisers.make_reactant_compatible(optimizer)
+    dev = get_device(ps)
+    if dev isa ReactantDevice
+        optimizer = ReactantCompatibleOptimisers.make_reactant_compatible(optimizer, dev)
         st_opt = ReactantCompatibleOptimisers.optimisers_setup_with_jit(optimizer, ps)
     else
         st_opt = Optimisers.setup(optimizer, ps)
