@@ -139,3 +139,35 @@ function NNlib.∇meanpool(
     partials = ForwardDiff.Partials.(tuple.(dysᵢ...))
     return ForwardDiff.Dual{Tag,eltype(dx),P}.(dx, partials)
 end
+
+function NNlib.gather(
+    src::AbstractArray{<:ForwardDiff.Dual{Tag,T,P}}, inds::AbstractArray
+) where {Tag,T,P}
+    value_fn(x) = ForwardDiff.value(Tag, x)
+    partial_fn(x, i) = ForwardDiff.partials(Tag, x, i)
+
+    inds_data = ForwardDiff.value.(inds)
+
+    dst_data = NNlib.gather(value_fn.(src), inds_data)
+    dst_partials = ntuple(i -> NNlib.gather(partial_fn.(src, i), inds_data), P)
+
+    partials = ForwardDiff.Partials.(tuple.(dst_partials...))
+    return ForwardDiff.Dual{Tag,eltype(dst_data),P}.(dst_data, partials)
+end
+
+function NNlib.scatter(
+    op::OP, src::AbstractArray{<:ForwardDiff.Dual{Tag,T,P}}, idx::AbstractArray; kwargs...
+) where {OP,Tag,T,P}
+    value_fn(x) = ForwardDiff.value(Tag, x)
+    partial_fn(x, i) = ForwardDiff.partials(Tag, x, i)
+
+    idx_data = ForwardDiff.value.(idx)
+
+    dst_data = NNlib.scatter(op, value_fn.(src), idx_data; kwargs...)
+    dst_partials = ntuple(
+        i -> NNlib.scatter(op, partial_fn.(src, i), idx_data; kwargs...), P
+    )
+
+    partials = ForwardDiff.Partials.(tuple.(dst_partials...))
+    return ForwardDiff.Dual{Tag,eltype(dst_data),P}.(dst_data, partials)
+end
