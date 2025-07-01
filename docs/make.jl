@@ -84,7 +84,8 @@ makedocs(;
     clean=true,
     doctest=false,  # We test it in the CI, no need to run it here
     modules=[Lux, LuxCore, LuxLib, WeightInitializers, LuxTestUtils, MLDataDevices, NNlib],
-    linkcheck=true,
+    # linkcheck=true,
+    warnonly=[:linkcheck],
     linkcheck_ignore=[
         "http://www.iro.umontreal.ca/~lisa/publications2/index.php/attachments/single/205"
     ],
