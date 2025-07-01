@@ -232,7 +232,7 @@ end
         ∂a = [-10, -200, -3000]
         a_dual = ForwardDiff.Dual.(a, ∂a)
 
-        res = NNlib.scatter(*, a_dual, [1, 4, 2]; init = 10, dstsize = 6)
+        res = NNlib.scatter(*, a_dual, [1, 4, 2]; init=10, dstsize=6)
         @test ForwardDiff.value.(res) == [100, 30000, 10, 2000, 10, 10]
         @test ForwardDiff.partials.(res, 1) == [-100, -30000, 10, -2000, 10, 10]
     end
