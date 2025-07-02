@@ -34,6 +34,12 @@ or [TensorFlow Hub](https://tensorflow.org/hub). Refer to the
     Currently we don't support saving a dynamically shaped tensor. Hence, for inference the
     input must be the same shape as the one used during export.
 
+!!! warning "Transposed Inputs"
+
+    When providing inputs to the loaded model, ensure that the input tensors are transposed,
+    i.e. if the inputs was `[S₁, S₂, ..., Sₙ]` during export, then the input to the loaded
+    model should be `[Sₙ, ..., S₂, S₁]`.
+
 ## Arguments
 
   - `model_dir`: The directory where the model will be saved.
@@ -50,6 +56,46 @@ or [TensorFlow Hub](https://tensorflow.org/hub). Refer to the
   - `force`: If `true`, the function will overwrite existing files in the specified
     directory. Defaults to `false`. If the directory is not empty and `force` is `false`,
     the function will throw an error.
+
+## Example
+
+Export the model to a TensorFlow SavedModel format.
+
+```julia
+using Lux, Reactant, PythonCall, Random
+
+dev = reactant_device()
+
+model = Chain(
+    Conv((5, 5), 1 => 6, relu),
+    BatchNorm(6),
+    MaxPool((2, 2)),
+    Conv((5, 5), 6 => 16, relu),
+    BatchNorm(16),
+    MaxPool((2, 2)),
+    FlattenLayer(3),
+    Chain(Dense(256 => 128, relu), Dense(128 => 84, relu), Dense(84 => 10)),
+)
+
+rng = Random.default_rng()
+ps, st = Lux.setup(rng, model) |> dev;
+
+x = rand(Float32, 28, 28, 1, 4) |> dev;
+
+Lux.Serialization.export_as_tf_saved_model("/tmp/testing_tf_saved_model", model, x, ps, st)
+```
+
+Load the model and run inference on a random input tensor.
+
+```python
+import tensorflow as tf
+import numpy as np
+
+x_tf = tf.constant(np.random.rand(4, 1, 28, 28), dtype=tf.float32)
+
+restored_model = tf.saved_model.load("/tmp/testing_tf_saved_model")
+restored_model.f(x_tf)[0]
+```
 """
 function export_as_tf_saved_model(
     model_dir::String,

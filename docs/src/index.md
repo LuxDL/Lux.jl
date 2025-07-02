@@ -6,7 +6,7 @@ layout: home
 hero:
   name: LuxDL Docs
   text: Elegant & Performant Deep Learning in JuliaLang
-  tagline: Implement Models with the elegance of Julia, and run them with the performance of XLA.
+  tagline: Model with the elegance of Julia, and the performance of XLA.
   actions:
     - theme: brand
       text: Tutorials

@@ -26,8 +26,8 @@
 </div>
 
 <div align="center">
-    <h2>Elegant & Performant Scientific Machine Learning in Julia</h2>
-    <h3>A Pure Julia Deep Learning Framework designed for Scientific Machine Learning</h3>
+    <h2>Elegant & Performant Deep Learning in JuliaLang</h2>
+    <h3>Model with the elegance of Julia, and the performance of XLA.</h3>
 </div>
 
 ## 💻 Installation
