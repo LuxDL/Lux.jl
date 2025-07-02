@@ -5,8 +5,8 @@ layout: home
 
 hero:
   name: LuxDL Docs
-  text: Elegant & Performant Scientific Machine Learning in JuliaLang
-  tagline: A Pure Julia Deep Learning Framework designed for Scientific Machine Learning
+  text: Elegant & Performant Deep Learning in JuliaLang
+  tagline: Model with the elegance of Julia, and the performance of XLA.
   actions:
     - theme: brand
       text: Tutorials
@@ -37,10 +37,10 @@ features:
     details: Lux is the default choice for all SciML packages, including DiffEqFlux.jl, NeuralPDE.jl, and more.
     link: https://sciml.ai/
 
-  - icon: 🧩
-    title: Uniquely Composable
-    details: Lux.jl natively supports Arbitrary Parameter Types, making it uniquely composable with other Julia packages (and even Non-Julia packages).
-    link: /api/Lux/contrib#Training
+  - icon: 🏭
+    title: Production-Ready
+    details: Seamlessly deploy models to servers and edge devices by leveraging the rich tensoflow ecosystem.
+    link: /api/Lux/serialization
 ---
 ```
 

@@ -54,6 +54,7 @@ pages = [
             "api/Lux/contrib.md",
             "api/Lux/interop.md",
             "api/Lux/distributed_utils.md",
+            "api/Lux/serialization.md",
         ],
         "Accelerator Support" => ["api/Accelerator_Support/MLDataDevices.md"],
         "NN Primitives" => [

@@ -128,6 +128,7 @@ export default defineConfig({
               { text: "Experimental", link: "/api/Lux/contrib" },
               { text: "InterOp", link: "/api/Lux/interop" },
               { text: "DistributedUtils", link: "/api/Lux/distributed_utils" },
+              { text: "Serialization", link: "/api/Lux/serialization" },
             ],
           },
           {
@@ -407,6 +408,7 @@ export default defineConfig({
               { text: "Experimental Features", link: "/api/Lux/contrib" },
               { text: "Interoperability", link: "/api/Lux/interop" },
               { text: "DistributedUtils", link: "/api/Lux/distributed_utils" },
+              { text: "Serialization", link: "/api/Lux/serialization" },
             ],
           },
           {
