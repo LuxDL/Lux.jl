@@ -109,6 +109,9 @@ include("transform/simplechains.jl")
 include("distributed/backend.jl")
 include("distributed/public_api.jl")
 
+# Serialization
+include("serialization/serialization.jl")
+
 # Deprecations for v2
 include("deprecations.jl")
 
@@ -175,6 +178,7 @@ export LuxOps
 # Unexported functions that are part of the public API
 @compat public Experimental
 @compat public set_dispatch_doctor_preferences!
+@compat public Serialization
 
 # NNlib.jl reexports
 ## Functional API for common layers. Recommended to use the LuxLib versions

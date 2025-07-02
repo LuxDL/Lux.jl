@@ -17,7 +17,7 @@ using Static: True, False
 
 using Lux: Lux, LuxOps, Training, Utils, StatefulLuxLayer
 using Lux.Training: TrainingBackendCache, ReactantBackend
-using LuxCore: LuxCore
+using LuxCore: LuxCore, AbstractLuxLayer
 
 Lux.is_extension_loaded(::Val{:Reactant}) = true
 
@@ -38,5 +38,6 @@ include("patches.jl")
 include("training.jl")
 include("layers.jl")
 include("tracing.jl")
+include("saved_model.jl")
 
 end
