@@ -108,7 +108,7 @@ for inplace in ("!", "")
             )
         end
         compile_time = time() - compile_start_time
-        @debug "Compiling Reactant $(fname) function took $(compile_time) seconds"
+        @debug "Compiling Reactant function took $(compile_time) seconds"
 
         grads, ps, loss, stats, st, opt_state = compiled_grad_and_step_function(
             objective_function,
