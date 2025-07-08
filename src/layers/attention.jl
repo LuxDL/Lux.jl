@@ -185,8 +185,8 @@ function apply_multiheadattention(mha::MultiHeadAttention, ps, st, q, k, v, mask
             q_proj=q_st,
             k_proj=k_st,
             v_proj=v_st,
-            out_proj=out_st,
             attention_dropout=dropout.st,
+            out_proj=out_st,
         ),
     )
 end
