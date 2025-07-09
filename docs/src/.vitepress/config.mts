@@ -347,6 +347,10 @@ export default defineConfig({
                 text: "Exporting Lux Models to Jax",
                 link: "/manual/exporting_to_jax",
               },
+              {
+                text: "Profiling Lux Training Loops",
+                link: "/manual/profiling_training_loop",
+              }
             ],
           },
           {

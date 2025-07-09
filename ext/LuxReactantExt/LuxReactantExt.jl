@@ -4,6 +4,7 @@ using Enzyme: Enzyme, Const
 using Optimisers: Optimisers
 using Reactant:
     Reactant,
+    Profiler,
     @compile,
     @code_hlo,
     @jit,
