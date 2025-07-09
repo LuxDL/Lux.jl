@@ -52,3 +52,4 @@ poetry.lock
 .venv
 .python-version
 __pycache__
+*.jld2
