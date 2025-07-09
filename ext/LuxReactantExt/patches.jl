@@ -4,6 +4,8 @@ Utils.vec(x::AnyTracedRArray) = ReactantCore.materialize_traced_array(vec(x))
 Lux.calculate_pool_dims(g::Lux.GlobalPoolMode, ::TracedRArray) = g
 
 # Optimisers setup
-function Lux.ReactantCompatibleOptimisers.optimisers_setup_with_jit(opt, ps)
+Profiler.@annotate "Optimisers Setup" function Lux.ReactantCompatibleOptimisers.optimisers_setup_with_jit(
+    opt, ps
+)
     return @jit Optimisers.setup(opt, ps)
 end

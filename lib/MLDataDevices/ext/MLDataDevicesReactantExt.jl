@@ -3,7 +3,8 @@ module MLDataDevicesReactantExt
 using Adapt: Adapt
 using MLDataDevices: MLDataDevices, Internal, ReactantDevice, CPUDevice, AbstractDevice
 using Random: Random
-using Reactant: Reactant, ConcreteRArray, ConcreteRNumber, TracedRArray, TracedRNumber
+using Reactant:
+    Reactant, Profiler, ConcreteRArray, ConcreteRNumber, TracedRArray, TracedRNumber
 
 MLDataDevices.loaded(::Union{ReactantDevice,Type{<:ReactantDevice}}) = true
 MLDataDevices.functional(::Union{ReactantDevice,Type{<:ReactantDevice}}) = true
@@ -65,7 +66,9 @@ Internal.get_device_type(::Union{TracedRArray,TracedRNumber}) = ReactantDevice
 Internal.unsafe_free_internal!(::Type{ReactantDevice}, x::AbstractArray) = nothing
 
 # Device Transfer
-function Adapt.adapt_storage(dev::ReactantDevice, x::AbstractArray)
+Profiler.@annotate "Device Transfer (Reactant)" function Adapt.adapt_storage(
+    dev::ReactantDevice, x::AbstractArray
+)
     kwargs = (;)
     dev.client === missing || (kwargs = (; kwargs..., client=dev.client))
     dev.device === missing || (kwargs = (; kwargs..., device=dev.device))

@@ -16,10 +16,9 @@ function compute_gradients_internal(objective_function::F, model, data, ps, st) 
     return dps, loss, stats, stₙ
 end
 
-function Lux.Training.compute_gradients_impl(
+Profiler.@annotate "Compile Compute Gradients" function Lux.Training.compute_gradients_impl(
     backend::ReactantBackend, objective_function::F, data, ts::Training.TrainState
 ) where {F}
-    compile_start_time = time()
     compiled_gradient_function = Reactant.with_config(;
         dot_general_precision=PrecisionConfig.HIGH,
         convolution_precision=PrecisionConfig.HIGH,
@@ -28,8 +27,6 @@ function Lux.Training.compute_gradients_impl(
             objective_function, ts.model, data, ts.parameters, ts.states
         )
     end
-    compile_time = time() - compile_start_time
-    @debug "Compiling Reactant gradient function took $(compile_time) seconds"
 
     grads, loss, stats, st = compiled_gradient_function(
         objective_function, ts.model, data, ts.parameters, ts.states
@@ -42,7 +39,7 @@ function Lux.Training.compute_gradients_impl(
     return grads, loss, stats, ts
 end
 
-function Lux.Training.compute_gradients_impl(
+Profiler.@annotate "Compute Gradients" function Lux.Training.compute_gradients_impl(
     ::ReactantBackend,
     obj_fn::F,
     data,
@@ -62,21 +59,20 @@ for inplace in ("!", "")
     update_fn = Symbol(:update, inplace)
 
     # Ideally users never hit this dispatch but it is still good to have as a fallback
-    @eval function Lux.Training.$(apply_gradients_fn)(
+    @eval Profiler.@annotate "Optimisers Apply Gradients" function Lux.Training.$(
+        apply_gradients_fn
+    )(
         ts::Training.TrainState{<:TrainingBackendCache{<:ReactantBackend}}, grads
     )
         if hasfield(typeof(ts.cache.extras), :update_function)
             update_function = ts.cache.extras.update_function
         else
-            compile_start_time = time()
             update_function = Reactant.with_config(;
                 dot_general_precision=PrecisionConfig.HIGH,
                 convolution_precision=PrecisionConfig.HIGH,
             ) do
                 @compile Optimisers.$(update_fn)(ts.optimizer_state, ts.parameters, grads)
             end
-            compile_time = time() - compile_start_time
-            @debug "Compiling Reactant update function took $(compile_time) seconds"
 
             @set! ts.cache.extras = merge(ts.cache.extras, (; update_function))
         end
@@ -89,10 +85,9 @@ for inplace in ("!", "")
     end
 
     # XXX: recompile with a warning if new input types are used
-    @eval function Lux.Training.$(fname)(
+    @eval Profiler.@annotate "Compile Train Step" function Lux.Training.$(fname)(
         backend::ReactantBackend, objective_function::F, data, ts::Training.TrainState
     ) where {F}
-        compile_start_time = time()
         compiled_grad_and_step_function = Reactant.with_config(;
             dot_general_precision=PrecisionConfig.HIGH,
             convolution_precision=PrecisionConfig.HIGH,
@@ -107,8 +102,6 @@ for inplace in ("!", "")
                 backend.return_gradients,
             )
         end
-        compile_time = time() - compile_start_time
-        @debug "Compiling Reactant function took $(compile_time) seconds"
 
         grads, ps, loss, stats, st, opt_state = compiled_grad_and_step_function(
             objective_function,
@@ -133,7 +126,7 @@ for inplace in ("!", "")
         return grads, loss, stats, ts
     end
 
-    @eval function Lux.Training.$(fname)(
+    @eval Profiler.@annotate "Train Step" function Lux.Training.$(fname)(
         backend::ReactantBackend,
         obj_fn::F,
         data,
