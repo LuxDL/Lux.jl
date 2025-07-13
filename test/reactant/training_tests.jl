@@ -34,9 +34,12 @@
                     ŷᵢ, _ = model(xᵢ, ps, Lux.testmode(st))
                     return MSELoss()(ŷᵢ, yᵢ)
                 end
-            inference_loss_fn_compiled = @compile inference_loss_fn(
-                x_ra, y_ra, model, ps, st
-            )
+            inference_loss_fn_compiled = Reactant.with_config(;
+                dot_general_precision=PrecisionConfig.HIGH,
+                convolution_precision=PrecisionConfig.HIGH,
+            ) do
+                @compile inference_loss_fn(x_ra, y_ra, model, ps, st)
+            end
 
             x = [rand(Float32, 2, 32) for _ in 1:32]
             y = [xᵢ .^ 2 for xᵢ in x]
