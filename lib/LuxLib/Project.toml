@@ -35,6 +35,7 @@ CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 LoopVectorization = "bdcacae8-1622-11e9-2a5c-532679323890"
 MKL = "33e6dc65-8f57-5167-99aa-e5a354878fb2"
+Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
 Octavian = "6fd5a793-0b7e-452c-907f-f8bfe9c57db4"
 Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
 ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
@@ -42,11 +43,9 @@ SLEEFPirates = "476501e8-09a2-5ece-8869-fb82de89a1fa"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
 
-[sources.LuxCore]
-path = "../LuxCore"
-
-[sources.MLDataDevices]
-path = "../MLDataDevices"
+[sources]
+LuxCore = {path = "../LuxCore"}
+MLDataDevices = {path = "../MLDataDevices"}
 
 [extensions]
 LuxLibAppleAccelerateExt = "AppleAccelerate"
@@ -55,6 +54,7 @@ LuxLibCUDAExt = "CUDA"
 LuxLibEnzymeExt = "Enzyme"
 LuxLibLoopVectorizationExt = "LoopVectorization"
 LuxLibMKLExt = "MKL"
+LuxLibMooncakeExt = "Mooncake"
 LuxLibOctavianExt = ["Octavian", "LoopVectorization"]
 LuxLibReactantExt = "Reactant"
 LuxLibReverseDiffExt = "ReverseDiff"
