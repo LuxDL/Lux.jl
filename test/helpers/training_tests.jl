@@ -52,6 +52,7 @@ end
 
 @testitem "Training API" setup = [SharedTestSetup] tags = [:misc] begin
     using ADTypes, Optimisers
+    using Mooncake
 
     mse = MSELoss()
 
@@ -73,9 +74,12 @@ end
         dataset_ = [dev((x, y)) for (x, y) in dataset]
         opt = Adam(0.001f0)
 
-        @testset "$(ad)" for ad in
-                             (AutoZygote(), AutoTracker(), AutoReverseDiff(), AutoEnzyme())
-            ongpu && (ad isa AutoReverseDiff || ad isa AutoEnzyme) && continue
+        @testset "$(ad)" for ad in (
+            AutoZygote(), AutoTracker(), AutoReverseDiff(), AutoEnzyme(), AutoMooncake()
+        )
+            ongpu &&
+                (ad isa AutoReverseDiff || ad isa AutoEnzyme || ad isa AutoMooncake) &&
+                continue
             !LuxTestUtils.ENZYME_TESTING_ENABLED && ad isa AutoEnzyme && continue
 
             broken = ad isa AutoEnzyme && VERSION ≥ v"1.11-"

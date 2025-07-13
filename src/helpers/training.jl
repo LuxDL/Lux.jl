@@ -1,6 +1,7 @@
 module Training
 
-using ADTypes: AbstractADType, AutoEnzyme, AutoReverseDiff, AutoTracker, AutoZygote
+using ADTypes:
+    AbstractADType, AutoEnzyme, AutoReverseDiff, AutoTracker, AutoZygote, AutoMooncake
 using Compat: @compat
 using ConcreteStructs: @concrete
 using FastClosures: @closure
@@ -163,6 +164,7 @@ Compute the gradients of the objective function wrt parameters stored in `ts`.
 | `AutoTracker`                | `Tracker.jl`     |
 | `AutoEnzyme`                 | `Enzyme.jl`      |
 | `AutoForwardDiff`            |                  |
+| `AutoMooncake`               | `Mooncake.jl`    |
 
 ## Arguments
 
@@ -228,7 +230,7 @@ function check_if_compute_gradients_implemented(::ReactantBackend)
     )
 end
 
-for package in (:Zygote, :Tracker, :ReverseDiff, :Enzyme)
+for package in (:Zygote, :Tracker, :ReverseDiff, :Enzyme, :Mooncake)
     adtype = Symbol(:Auto, package)
     msg = "Load `$(package)` with `using $(package)`/`import $(package)` before using this \
            function!"
@@ -369,6 +371,6 @@ end
     )
 )
 
-export AutoEnzyme, AutoReverseDiff, AutoTracker, AutoZygote
+export AutoEnzyme, AutoReverseDiff, AutoTracker, AutoZygote, AutoMooncake
 
 end

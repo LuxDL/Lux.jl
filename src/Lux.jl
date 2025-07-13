@@ -1,7 +1,13 @@
 module Lux
 
 using ADTypes:
-    AbstractADType, AutoEnzyme, AutoForwardDiff, AutoReverseDiff, AutoTracker, AutoZygote
+    AbstractADType,
+    AutoEnzyme,
+    AutoForwardDiff,
+    AutoMooncake,
+    AutoReverseDiff,
+    AutoTracker,
+    AutoZygote
 using Adapt: Adapt, adapt
 using ArgCheck: @argcheck
 using ArrayInterface: ArrayInterface
@@ -145,7 +151,7 @@ export Training
 export jacobian_vector_product, vector_jacobian_product
 export batched_jacobian
 export AutoEnzyme,
-    AutoForwardDiff, AutoReverseDiff, AutoTracker, AutoZygote, AutoForwardDiff
+    AutoForwardDiff, AutoMooncake, AutoReverseDiff, AutoTracker, AutoZygote, AutoForwardDiff
 
 export BinaryCrossEntropyLoss,
     BinaryFocalLoss,
