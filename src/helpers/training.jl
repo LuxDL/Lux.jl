@@ -371,6 +371,6 @@ end
     )
 )
 
-export AutoEnzyme, AutoReverseDiff, AutoTracker, AutoZygote
+export AutoEnzyme, AutoReverseDiff, AutoTracker, AutoZygote, AutoMooncake
 
 end
