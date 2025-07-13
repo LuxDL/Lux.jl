@@ -267,3 +267,33 @@ end
         end
     end
 end
+
+@testitem "Mooncake Support: https://github.com/chalk-lab/Mooncake.jl/issues/622" tags = [
+    :dense
+] setup = [SharedTestSetup] begin
+    using Mooncake, LuxLib, NNlib, Zygote, Random
+
+    @testset for wT in (Float32, Float64),
+        xT in (Float32, Float64),
+        has_bias in (true, false)
+
+        x = randn(xT, 3, 6)
+        weight = randn(wT, 2, 3)
+        bias = has_bias ? randn(wT, 2) : nothing
+
+        fn = sum ∘ fused_dense_bias_activation
+
+        cache = Mooncake.build_rrule(fn, gelu, weight, x, bias)
+        _, (_, _, ∂weight, ∂x, ∂bias) = value_and_gradient!!(
+            cache, fn, gelu, weight, x, bias
+        )
+
+        _, ∂weight_zyg, ∂x_zyg, ∂bias_zyg = Zygote.gradient(fn, gelu, weight, x, bias)
+
+        @test ∂x ≈ ∂x_zyg atol = 1.0e-3 rtol = 1.0e-3
+        @test ∂weight ≈ ∂weight_zyg atol = 1.0e-3 rtol = 1.0e-3
+        if has_bias
+            @test ∂bias ≈ ∂bias_zyg atol = 1.0e-3 rtol = 1.0e-3
+        end
+    end
+end
