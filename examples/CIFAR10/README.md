@@ -11,10 +11,6 @@ We have the following scripts to train vision models on CIFAR-10:
 To get the options for each script, run the script with the `--help` flag.
 
 > [!NOTE]
-> To train the model using Reactant.jl pass in `--backend=reactant` to the script. This is
-> the recommended approach to train the models present in this directory.
-
-> [!NOTE]
 > Passing `--bfloat16` will use BFloat16 precision for training. This needs Julia 1.11 or
 > above.
 
@@ -24,12 +20,11 @@ To get the options for each script, run the script with the `--help` flag.
 julia --startup-file=no \
     --project=. \
     --threads=auto \
-    simple_cnn.jl \
-    --backend=reactant
+    simple_cnn.jl
 ```
 
 On a RTX 4050 6GB Laptop GPU the training takes approximately 3 mins and the final training
-and test accuracies are 97% and 65%, respectively.
+and test accuracies are 95% and 68%, respectively.
 
 ## ResNet 20
 
@@ -37,8 +32,7 @@ and test accuracies are 97% and 65%, respectively.
 julia --startup-file=no \
     --project=. \
     --threads=auto \
-    resnet20.jl \
-    --backend=reactant
+    resnet20.jl
 ```
 
 On a RTX 3060 GPU, each epoch takes about 4.5 seconds and the final training and testing
@@ -59,8 +53,7 @@ following arguments, which trains a ConvMixer-256/8 with kernel size 5 and patch
 julia --startup-file=no \
     --project=. \
     --threads=auto \
-    conv_mixer.jl \
-    --backend=reactant
+    conv_mixer.jl
 ```
 
 ### Notes

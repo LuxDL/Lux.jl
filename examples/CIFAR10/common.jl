@@ -1,3 +1,6 @@
+XLA_FLAGS = get(ENV, "XLA_FLAGS", "")
+ENV["XLA_FLAGS"] = "$(XLA_FLAGS) --xla_gpu_enable_cublaslt=true"
+
 using ConcreteStructs,
     DataAugmentation,
     ImageShow,
@@ -10,8 +13,6 @@ using ConcreteStructs,
     Random,
     BFloat16s
 using Reactant
-
-# using LuxCUDA # uncomment this line to enable CUDA backend
 
 @concrete struct TensorDataset
     dataset
@@ -60,26 +61,10 @@ function accuracy(model, ps, st, dataloader)
     return total_correct / total
 end
 
-function get_accelerator_device(backend::String)
-    if backend == "gpu_if_available"
-        return gpu_device()
-    elseif backend == "gpu"
-        return gpu_device(; force=true)
-    elseif backend == "reactant"
-        return reactant_device(; force=true)
-    elseif backend == "cpu"
-        return cpu_device()
-    else
-        error("Invalid backend: $(backend). Valid Options are: `gpu_if_available`, `gpu`, \
-               `reactant`, and `cpu`.")
-    end
-end
-
 function train_model(
     model,
     opt,
     scheduler=nothing;
-    backend::String,
     batchsize::Int=512,
     seed::Int=1234,
     epochs::Int=25,
@@ -93,32 +78,24 @@ function train_model(
     prec_str = bfloat16 ? "BFloat16" : "Float32"
     @printf "[Info] Using %s precision\n" prec_str
 
-    accelerator_device = get_accelerator_device(backend)
-    kwargs = accelerator_device isa ReactantDevice ? (; partial=false) : ()
-    trainloader, testloader = accelerator_device(
-        get_cifar10_dataloaders(prec_jl, batchsize; kwargs...)
-    )
+    dev = reactant_device(; force=true)
 
-    ps, st = accelerator_device(prec(Lux.setup(rng, model)))
+    trainloader, testloader =
+        get_cifar10_dataloaders(prec_jl, batchsize; partial=false) |> dev
+
+    ps, st = prec(Lux.setup(rng, model)) |> dev
 
     train_state = Training.TrainState(model, ps, st, opt)
 
-    adtype = backend == "reactant" ? AutoEnzyme() : AutoZygote()
-
-    if backend == "reactant"
-        x_ra = accelerator_device(rand(rng, prec_jl, size(first(trainloader)[1])))
-        @printf "[Info] Compiling model with Reactant.jl\n"
-        st_test = Lux.testmode(st)
-        model_compiled = Reactant.with_config(;
-            dot_general_precision=PrecisionConfig.HIGH,
-            convolution_precision=PrecisionConfig.HIGH,
-        ) do
-            @compile model(x_ra, ps, st_test)
-        end
-        @printf "[Info] Model compiled!\n"
-    else
-        model_compiled = model
+    x_ra = rand(rng, prec_jl, size(first(trainloader)[1])) |> dev
+    @printf "[Info] Compiling model with Reactant.jl\n"
+    model_compiled = Reactant.with_config(;
+        dot_general_precision=PrecisionConfig.HIGH,
+        convolution_precision=PrecisionConfig.HIGH,
+    ) do
+        @compile model(x_ra, ps, Lux.testmode(st))
     end
+    @printf "[Info] Model compiled!\n"
 
     loss_fn = CrossEntropyLoss(; logits=Val(true))
 
@@ -145,7 +122,7 @@ function train_model(
                 train_state = Optimisers.adjust!(train_state, lr)
             end
             (_, loss, _, train_state) = Training.single_train_step!(
-                adtype, loss_fn, (x, y), train_state
+                AutoEnzyme(), loss_fn, (x, y), train_state; return_gradients=Val(false)
             )
             isnan(loss) && error("NaN loss encountered!")
         end
