@@ -1,22 +1,22 @@
-using Comonicon, Lux, Optimisers, Printf, Random, Statistics, Zygote, Enzyme
+using Comonicon, Lux, Optimisers, Printf, Random, Statistics, Enzyme
 
 include("common.jl")
 
 function SimpleCNN()
     return Chain(
-        Conv((3, 3), 3 => 16, gelu; stride=2, pad=1),
-        BatchNorm(16),
-        Conv((3, 3), 16 => 32, gelu; stride=2, pad=1),
-        BatchNorm(32),
-        Conv((3, 3), 32 => 64, gelu; stride=2, pad=1),
-        BatchNorm(64),
-        Conv((3, 3), 64 => 128, gelu; stride=2, pad=1),
-        BatchNorm(128),
+        Chain(
+            Conv((3, 3), 3 => 16, relu; stride=2, pad=1),
+            BatchNorm(16),
+            Conv((3, 3), 16 => 32, relu; stride=2, pad=1),
+            BatchNorm(32),
+            Conv((3, 3), 32 => 64, relu; stride=2, pad=1),
+            BatchNorm(64),
+            Conv((3, 3), 64 => 128, relu; stride=2, pad=1),
+            BatchNorm(128),
+        ),
         GlobalMeanPool(),
         FlattenLayer(),
-        Dense(128 => 64, gelu),
-        BatchNorm(64),
-        Dense(64 => 10),
+        Chain(Dense(128 => 64, relu), BatchNorm(64), Dense(64 => 10)),
     )
 end
 
@@ -27,7 +27,6 @@ Comonicon.@main function main(;
     seed::Int=1234,
     epochs::Int=50,
     lr::Float64=0.003,
-    backend::String="reactant",
     bfloat16::Bool=false,
 )
     model = SimpleCNN()
@@ -35,5 +34,5 @@ Comonicon.@main function main(;
     opt = AdamW(; eta=lr, lambda=weight_decay)
     clip_norm && (opt = OptimiserChain(ClipNorm(), opt))
 
-    return train_model(model, opt, nothing; backend, batchsize, seed, epochs, bfloat16)
+    return train_model(model, opt, nothing; batchsize, seed, epochs, bfloat16)
 end

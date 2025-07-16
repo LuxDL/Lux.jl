@@ -1,10 +1,10 @@
-using Comonicon, Interpolations, Lux, Optimisers, Printf, Random, Statistics, Zygote
+using Comonicon, Interpolations, Lux, Optimisers, Printf, Random, Statistics
 
 include("common.jl")
 
 function ConvMixer(; dim, depth, kernel_size=5, patch_size=2)
     return Chain(
-        Conv((patch_size, patch_size), 3 => dim, gelu; stride=patch_size),
+        Conv((patch_size, patch_size), 3 => dim, relu; stride=patch_size),
         BatchNorm(dim),
         [
             Chain(
@@ -13,7 +13,7 @@ function ConvMixer(; dim, depth, kernel_size=5, patch_size=2)
                         Conv(
                             (kernel_size, kernel_size),
                             dim => dim,
-                            gelu;
+                            relu;
                             groups=dim,
                             pad=SamePad(),
                         ),
@@ -21,7 +21,7 @@ function ConvMixer(; dim, depth, kernel_size=5, patch_size=2)
                     ),
                     +,
                 ),
-                Conv((1, 1), dim => dim, gelu),
+                Conv((1, 1), dim => dim, relu),
                 BatchNorm(dim),
             ) for _ in 1:depth
         ]...,
@@ -42,7 +42,6 @@ Comonicon.@main function main(;
     seed::Int=1234,
     epochs::Int=25,
     lr_max::Float64=0.05,
-    backend::String="reactant",
     bfloat16::Bool=false,
 )
     model = ConvMixer(; dim=hidden_dim, depth, kernel_size, patch_size)
@@ -54,5 +53,5 @@ Comonicon.@main function main(;
         [0, epochs * 2 ÷ 5, epochs * 4 ÷ 5, epochs + 1], [0, lr_max, lr_max / 20, 0]
     )
 
-    return train_model(model, opt, lr_schedule; backend, batchsize, seed, epochs, bfloat16)
+    return train_model(model, opt, lr_schedule; batchsize, seed, epochs, bfloat16)
 end

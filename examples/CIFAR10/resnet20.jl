@@ -1,4 +1,4 @@
-using Comonicon, Lux, Optimisers, Printf, Random, Statistics, Zygote
+using Comonicon, Lux, Optimisers, Printf, Random, Statistics
 
 include("common.jl")
 
@@ -66,7 +66,6 @@ Comonicon.@main function main(;
     seed::Int=1234,
     epochs::Int=100,
     lr::Float64=0.001,
-    backend::String="reactant",
     bfloat16::Bool=false,
 )
     model = ResNet20()
@@ -76,5 +75,5 @@ Comonicon.@main function main(;
 
     lr_schedule = nothing
 
-    return train_model(model, opt, lr_schedule; backend, batchsize, seed, epochs, bfloat16)
+    return train_model(model, opt, lr_schedule; batchsize, seed, epochs, bfloat16)
 end
