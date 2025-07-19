@@ -51,7 +51,7 @@ MLDataDevicescuDNNExt = ["CUDA", "cuDNN"]
 MLDataDevicesoneAPIExt = ["GPUArrays", "oneAPI"]
 
 [compat]
-AMDGPU = "1"
+AMDGPU = "1, 2"
 Adapt = "4.1"
 CUDA = "5.2"
 ChainRules = "1.51"
