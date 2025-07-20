@@ -85,9 +85,10 @@ function NeuralODE(
     return NeuralODE(model, solver, tspan, kwargs)
 end
 
-# OrdinaryDiffEq.jl can deal with non-Vector Inputs! However, certain discrete sensitivities
-# like `ReverseDiffAdjoint` can't handle non-Vector inputs. Hence, we need to convert the
-# input and output of the ODE solver to a Vector.
+# [OrdinaryDiffEq.jl](https://docs.sciml.ai/OrdinaryDiffEq/stable/) can deal with non-Vector
+# Inputs! However, certain discrete sensitivities like `ReverseDiffAdjoint` can't handle
+# non-Vector inputs. Hence, we need to convert the input and output of the ODE solver to a
+# Vector.
 function (n::NeuralODE)(x, ps, st)
     function dudt(u, p, t)
         u_, st = n.model(reshape(u, size(x)), p, st)

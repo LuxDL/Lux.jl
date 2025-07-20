@@ -51,7 +51,7 @@ model = Chain(Dense(1 => 16, relu), Dense(16 => 1))
 
 # ## Optimizer
 
-# We will use Adam from Optimisers.jl
+# We will use Adam from [Optimisers.jl](https://fluxml.ai/Optimisers.jl)
 opt = Adam(0.03f0)
 
 # ## Loss Function
