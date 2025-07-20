@@ -1,8 +1,8 @@
 # Resources to Get Started
 
-* Go through the [Quickstart Example](@ref getting-started).
+* Go through the [Quickstart Example](@ref Quickstart).
 * Read the introductory tutorials on
-  [Julia](https://jump.dev/JuMP.jl/stable/tutorials/getting_started/getting_started_with_julia/#Getting-started-with-Julia)
+  [Julia](https://jump.dev/JuMP.jl/stable/tutorials/getting_started/getting_started_with_julia)
   and Lux.
 * Go through the examples sorted based on their complexity in the documentation.
 
