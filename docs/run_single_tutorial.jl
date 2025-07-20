@@ -22,7 +22,10 @@ catch err
         err
     true
 end
-should_run && Pkg.instantiate(; io)
+if should_run
+    Pkg.instantiate(; io)
+    Pkg.precompile(; io)
+end
 close(io)
 
 using Literate
