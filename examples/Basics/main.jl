@@ -208,7 +208,7 @@ println("Computed Gradient via Forward Mode AD (ForwardDiff): ", ForwardDiff.gra
 # ### Jacobian-Vector Product
 
 # I will defer the discussion on forward-mode AD to
-# [https://book.sciml.ai/notes/08-Forward-Mode_Automatic_Differentiation_(AD)_via_High_Dimensional_Algebras/](https://book.sciml.ai/notes/08-Forward-Mode_Automatic_Differentiation_(AD)_via_High_Dimensional_Algebras/).
+# <https://book.sciml.ai/notes/08-Forward-Mode_Automatic_Differentiation_(AD)_via_High_Dimensional_Algebras/>.
 # Here let us just look at a mini example on how to use it.
 
 f(x) = x .* x ./ 2
