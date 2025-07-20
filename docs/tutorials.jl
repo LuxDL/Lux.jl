@@ -1,5 +1,6 @@
 #! format: off
 const BEGINNER_TUTORIALS = [
+    # tutorial name             device   should_run?
     ("Basics",                  "CPU",   true),
     ("PolynomialFitting",       "CUDA",  true),
     ("SimpleRNN",               "CUDA",  true),
