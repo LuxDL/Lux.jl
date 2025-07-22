@@ -14,46 +14,46 @@ DDP Training using `Lux.DistributedUtils` is a spiritual successor to
   in a backend type. It is important that you pass in the type, i.e. `NCCLBackend` and not
   the object `NCCLBackend()`.
 
-```julia
-DistributedUtils.initialize(NCCLBackend)
-```
+  ```julia
+  DistributedUtils.initialize(NCCLBackend)
+  ```
 
 * Obtain the backend via [`DistributedUtils.get_distributed_backend`](@ref) by passing in
   the type of the backend (same note as last point applies here again).
 
-```julia
-backend = DistributedUtils.get_distributed_backend(NCCLBackend)
-```
+  ```julia
+  backend = DistributedUtils.get_distributed_backend(NCCLBackend)
+  ```
 
-It is important that you use this function instead of directly constructing the backend,
-since there are certain internal states that need to be synchronized.
+  It is important that you use this function instead of directly constructing the backend,
+  since there are certain internal states that need to be synchronized.
 
 * Next synchronize the parameters and states of the model. This is done by calling
   [`DistributedUtils.synchronize!!`](@ref) with the backend and the respective input.
 
-```julia
-ps = DistributedUtils.synchronize!!(backend, ps)
-st = DistributedUtils.synchronize!!(backend, st)
-```
+  ```julia
+  ps = DistributedUtils.synchronize!!(backend, ps)
+  st = DistributedUtils.synchronize!!(backend, st)
+  ```
 
 * To split the data uniformly across the processes use
   [`DistributedUtils.DistributedDataContainer`](@ref). Alternatively, one can manually
   split the data. For the provided container to work
   [`MLUtils.jl`](https://github.com/JuliaML/MLUtils.jl) must be installed and loaded.
 
-```julia
-data = DistributedUtils.DistributedDataContainer(backend, data)
-```
+  ```julia
+  data = DistributedUtils.DistributedDataContainer(backend, data)
+  ```
 
 * Wrap the optimizer in [`DistributedUtils.DistributedOptimizer`](@ref) to ensure that the
   optimizer is correctly synchronized across all processes before parameter updates. After
   initializing the state of the optimizer, synchronize the state across all processes.
 
-```julia
-opt = DistributedUtils.DistributedOptimizer(backend, opt)
-opt_state = Optimisers.setup(opt, ps)
-opt_state = DistributedUtils.synchronize!!(backend, opt_state)
-```
+  ```julia
+  opt = DistributedUtils.DistributedOptimizer(backend, opt)
+  opt_state = Optimisers.setup(opt, ps)
+  opt_state = DistributedUtils.synchronize!!(backend, opt_state)
+  ```
 
 * Finally change all logging and serialization code to trigger on
   `local_rank(backend) == 0`. This ensures that only the master process logs and serializes
