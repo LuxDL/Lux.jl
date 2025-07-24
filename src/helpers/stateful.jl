@@ -9,7 +9,7 @@
 A convenience wrapper over Lux layers which stores the parameters and states internally.
 This is meant to be used in internal implementation of layers.
 
-When using the defination of `StatefulLuxLayer` without `FT` specified, make sure that all
+When using the definition of `StatefulLuxLayer` without `FT` specified, make sure that all
 of the layers in the model define [`LuxCore.preserves_state_type`](@ref). Else we implicitly
 assume that the state type is preserved.
 
@@ -123,9 +123,13 @@ end
 function set_state!(
     ::StatefulLuxLayer{True,<:Any,<:Any,stType}, ::stType2
 ) where {stType,stType2}
-    throw(ArgumentError("Output state from the model has type `$(stType2)`, but expected \
-                         `$(stType)`. Construct the Stateful layer as \
-                         `StatefulLuxLayer{false}` instead of `StatefulLuxLayer{true}`."))
+    throw(
+        ArgumentError("Output state from the model has type `$(stType2)`, but expected \
+                       `$(stType)`. Construct the Stateful layer as \
+                       `StatefulLuxLayer{false}` instead of `StatefulLuxLayer{true}`.\n \
+                       Additionally ensure `LuxCore.preserves_state_type` is properly \
+                       defined for all the layers in the model.")
+    )
 end
 set_state!(s::StatefulLuxLayer{False}, st) = (s.st_any = st)
 
