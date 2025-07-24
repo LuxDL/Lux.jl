@@ -616,12 +616,6 @@ function extract_reserved_kwarg(kwexs, sym::Symbol)
     return val, kwexs
 end
 
-Lux.get_state(st_new::AbstractArray{<:Number}) = st_new
-function Lux.get_state(st_new::Union{AbstractArray,Tuple,NamedTuple})
-    return map(Lux.get_state, st_new)
-end
-Lux.get_state(st_new) = st_new
-
 @concrete struct NonTrainable
     value
 end
