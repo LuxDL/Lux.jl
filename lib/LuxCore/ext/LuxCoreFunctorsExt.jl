@@ -34,4 +34,17 @@ function Functors.functor(::Type{<:LuxCore.AbstractLuxWrapperLayer{layer}}, x) w
     return children, layer_reconstructor
 end
 
+# StatefulLuxLayer
+function Functors.functor(
+    ::Type{<:LuxCore.StatefulLuxLayerImpl.StatefulLuxLayer},
+    x::LuxCore.StatefulLuxLayerImpl.StatefulLuxLayer,
+)
+    recon = let ft = x.fixed_state_type
+        nt -> LuxCore.StatefulLuxLayerImpl.StatefulLuxLayer(
+            nt.model, nt.ps, nt.st, nt.st_any, ft
+        )
+    end
+    return (; x.model, x.ps, x.st, x.st_any), recon
+end
+
 end
