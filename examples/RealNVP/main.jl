@@ -154,7 +154,7 @@ log_prob(x::AbstractArray{T}) where {T} = -T(0.5 * log(2π)) .- T(0.5) .* abs2.(
 
 function log_prob(l::StatefulRealNVP, x::AbstractArray{T}) where {T}
     smodels = [
-        StatefulLuxLayer{true}(conditioner, l.ps.conditioners[i], l.st.conditioners[i]) for
+        StatefulLuxLayer(conditioner, l.ps.conditioners[i], l.st.conditioners[i]) for
         (i, conditioner) in enumerate(l.model.conditioners)
     ]
 
@@ -186,7 +186,7 @@ function sample(
     @assert 1 ≤ nsteps ≤ length(d.model.conditioners)
 
     smodels = [
-        StatefulLuxLayer{true}(conditioner, d.ps.conditioners[i], d.st.conditioners[i]) for
+        StatefulLuxLayer(conditioner, d.ps.conditioners[i], d.st.conditioners[i]) for
         (i, conditioner) in enumerate(d.model.conditioners)
     ]
 
@@ -203,7 +203,7 @@ end
 dsum(x; dims) = dropdims(sum(x; dims); dims)
 
 function loss_function(model, ps, st, x)
-    smodel = StatefulLuxLayer{true}(model, ps, st)
+    smodel = StatefulLuxLayer(model, ps, st)
     lprob = log_prob(smodel, x)
     return -mean(lprob), smodel.st, (;)
 end
@@ -254,9 +254,7 @@ function main(;
         iter ≥ maxiters && break
     end
 
-    return StatefulLuxLayer{true}(
-        model, train_state.parameters, Lux.testmode(train_state.states)
-    )
+    return StatefulLuxLayer(model, train_state.parameters, Lux.testmode(train_state.states))
 end
 
 trained_model = main()

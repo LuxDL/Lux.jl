@@ -246,7 +246,7 @@ ps, st = Lux.setup(Random.default_rng(), nn)
 
 const params = ComponentArray(f64(ps))
 
-const nn_model = StatefulLuxLayer{true}(nn, nothing, st)
+const nn_model = StatefulLuxLayer(nn, nothing, st)
 
 # Now we define a system of odes which describes motion of point like particle with
 # Newtonian physics, uses
