@@ -340,8 +340,8 @@ end
     preserves_state_type(l::AbstractLuxLayer)
 
 Return `true` if the layer `l` preserves the state type of the layer. For example, if the
-input state type for your layer is T1 and the output state type is T2, then this function
-should return `T1 == T2`.
+input state type for your layer is `T1` and the output state type is `T2`, then this
+function should return `T1 == T2`.
 
 By default this function returns `true` for `AbstractLuxLayer`. For container layers, this
 function returns `true` if all the layers in the container preserve the state type.
