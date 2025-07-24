@@ -1,5 +1,6 @@
 """
     StatefulLuxLayer{FT}(model, ps, st)
+    StatefulLuxLayer(model, ps, st)
 
 !!! warning
 
@@ -7,6 +8,10 @@
 
 A convenience wrapper over Lux layers which stores the parameters and states internally.
 This is meant to be used in internal implementation of layers.
+
+When using the defination of `StatefulLuxLayer` without `FT` specified, make sure that all
+of the layers in the model define [`LuxCore.preserves_state_type`](@ref). Else we implicitly
+assume that the state type is preserved.
 
 ## Usecases
 
@@ -67,6 +72,10 @@ function StatefulLuxLayer{false}(model::AbstractLuxLayer, ps, st::NamedTuple)
     return StatefulLuxLayer{false}(model, ps, nothing, st)
 end
 
+function StatefulLuxLayer(model::AbstractLuxLayer, ps, st)
+    return StatefulLuxLayer{LuxCore.preserves_state_type(model)}(model, ps, st)
+end
+
 for op in (:trainmode, :testmode)
     @eval function LuxCore.$(op)(s::StatefulLuxLayer)
         return StatefulLuxLayer{dynamic(s.fixed_state_type)}(
@@ -76,9 +85,12 @@ for op in (:trainmode, :testmode)
 end
 
 function LuxCore.update_state(s::StatefulLuxLayer, key::Symbol, value; kwargs...)
-    st = LuxCore.update_state(get_state(s), key, value; kwargs...)
-    return StatefulLuxLayer{dynamic(s.fixed_state_type)}(s.model, s.ps, st)
+    return StatefulLuxLayer{dynamic(s.fixed_state_type)}(
+        s.model, s.ps, LuxCore.update_state(get_state(s), key, value; kwargs...)
+    )
 end
+
+LuxCore.preserves_state_type(::StatefulLuxLayer) = dynamic(s.fixed_state_type)
 
 function Base.show(io::IO, ::MIME"text/plain", s::StatefulLuxLayer)
     return PrettyPrinting.print_wrapper_model(
