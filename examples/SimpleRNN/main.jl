@@ -21,7 +21,7 @@ using ADTypes, Lux, JLD2, MLUtils, Optimisers, Printf, Reactant, Random
 # us sequences of size 2 × seq_len × batch_size and we need to predict a binary value
 # whether the sequence is clockwise or anticlockwise.
 
-function get_dataloaders(; dataset_size=1000, sequence_length=50)
+function create_dataset(; dataset_size=1000, sequence_length=50)
     ## Create the spirals
     data = [MLUtils.Datasets.make_spiral(sequence_length) for _ in 1:dataset_size]
     ## Get the labels
@@ -35,6 +35,11 @@ function get_dataloaders(; dataset_size=1000, sequence_length=50)
         d in data[((dataset_size ÷ 2) + 1):end]
     ]
     x_data = Float32.(cat(clockwise_spirals..., anticlockwise_spirals...; dims=3))
+    return x_data, labels
+end
+
+function get_dataloaders(; dataset_size=1000, sequence_length=50)
+    x_data, labels = create_dataset(; dataset_size, sequence_length)
     ## Split the dataset
     (x_train, y_train), (x_val, y_val) = splitobs((x_data, labels); at=0.8, shuffle=true)
     ## Create DataLoaders
