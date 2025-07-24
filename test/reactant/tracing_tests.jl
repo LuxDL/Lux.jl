@@ -4,7 +4,7 @@
     model = Chain(Dense(2 => 3, relu), BatchNorm(3), Dense(3 => 2))
     ps, st = Lux.setup(Random.default_rng(), model)
 
-    smodel = StatefulLuxLayer{true}(model, ps, st)
+    smodel = StatefulLuxLayer(model, ps, st)
     smodel_ra = Reactant.to_rarray(smodel)
 
     @test get_device_type(smodel_ra.ps) <: ReactantDevice

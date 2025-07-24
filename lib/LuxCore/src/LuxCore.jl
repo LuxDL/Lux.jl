@@ -353,6 +353,8 @@ end
 function preserves_state_type(l::AbstractLuxContainerLayer{layers}) where {layers}
     return all(preserves_state_type, getfield.((l,), layers))
 end
+preserves_state_type(l::Tuple) = all(preserves_state_type, l)
+preserves_state_type(l::NamedTuple) = all(preserves_state_type, values(l))
 
 module Internal
 
