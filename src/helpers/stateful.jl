@@ -90,7 +90,7 @@ function LuxCore.update_state(s::StatefulLuxLayer, key::Symbol, value; kwargs...
     )
 end
 
-preserves_state_type(::StatefulLuxLayer) = dynamic(s.fixed_state_type)
+LuxCore.preserves_state_type(::StatefulLuxLayer) = dynamic(s.fixed_state_type)
 
 function Base.show(io::IO, ::MIME"text/plain", s::StatefulLuxLayer)
     return PrettyPrinting.print_wrapper_model(
