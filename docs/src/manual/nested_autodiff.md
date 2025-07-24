@@ -64,7 +64,7 @@ with a standard neural network.
 ```@example nested_ad
 function loss_function1(model, x, ps, st, y)
     # Make it a stateful layer
-    smodel = StatefulLuxLayer{true}(model, ps, st)
+    smodel = StatefulLuxLayer(model, ps, st)
     ŷ = smodel(x)
     loss_emp = sum(abs2, ŷ .- y)
     # You can use `Zygote.jacobian` as well but ForwardDiff tends to be more efficient here
@@ -121,7 +121,7 @@ y = randn(StableRNG(11), Float32, 2, 10)
 
 function loss_function_batched(model, x, ps, st, y)
     # Make it a stateful layer
-    smodel = StatefulLuxLayer{true}(model, ps, st)
+    smodel = StatefulLuxLayer(model, ps, st)
     ŷ = smodel(x)
     loss_emp = sum(abs2, ŷ .- y)
     # You can use `AutoZygote()` as well but `AutoForwardDiff()` tends to be more efficient here
@@ -162,7 +162,7 @@ Note that in the example there, the user uses `ForwardDiff.derivative` but we wi
 
 ```@example nested_ad
 function loss_function2(model, t, ps, st)
-    smodel = StatefulLuxLayer{true}(model, ps, st)
+    smodel = StatefulLuxLayer(model, ps, st)
     ŷ = only(Zygote.gradient(Base.Fix1(sum, abs2) ∘ smodel, t)) # Zygote returns a tuple
     return sum(abs2, ŷ .- cos.(t))
 end
@@ -203,7 +203,7 @@ fixing the input to the stateful layer.
 
 ```@example nested_ad
 function loss_function3(model, x, ps, st)
-    smodel = StatefulLuxLayer{true}(model, ps, st)
+    smodel = StatefulLuxLayer(model, ps, st)
     J = only(Zygote.jacobian(Base.Fix1(smodel, x), ps)) # Zygote returns a tuple
     return sum(abs2, J)
 end
@@ -268,7 +268,7 @@ are not affected by the randomness in the sample.
 
 ```@example nested_ad
 function hutchinson_trace_vjp(model, x, ps, st, v)
-    smodel = StatefulLuxLayer{true}(model, ps, st)
+    smodel = StatefulLuxLayer(model, ps, st)
     vjp = vector_jacobian_product(smodel, AutoZygote(), x, v)
     return sum(batched_matmul(reshape(vjp, 1, :, size(vjp, ndims(vjp))),
                reshape(v, :, 1, size(v, ndims(v)))))
@@ -282,7 +282,7 @@ computing hutchinson trace.
 
 ```@example nested_ad
 function hutchinson_trace_jvp(model, x, ps, st, v)
-    smodel = StatefulLuxLayer{true}(model, ps, st)
+    smodel = StatefulLuxLayer(model, ps, st)
     jvp = jacobian_vector_product(smodel, AutoForwardDiff(), x, v)
     return sum(batched_matmul(reshape(v, 1, :, size(v, ndims(v))),
                reshape(jvp, :, 1, size(jvp, ndims(jvp)))))
@@ -295,7 +295,7 @@ This is definitely not recommended, but we are showing it for completeness.
 
 ```@example nested_ad
 function hutchinson_trace_full_jacobian(model, x, ps, st, v)
-    smodel = StatefulLuxLayer{true}(model, ps, st)
+    smodel = StatefulLuxLayer(model, ps, st)
     J = ForwardDiff.jacobian(smodel, x)
     return vec(v)' * J * vec(v)
 end

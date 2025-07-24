@@ -307,7 +307,7 @@ function train(
         )
     end
 
-    return StatefulLuxLayer{true}(
+    return StatefulLuxLayer(
         model, train_state.parameters |> cdev, train_state.states |> cdev
     )
 end

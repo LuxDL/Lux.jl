@@ -17,7 +17,7 @@
 
         for (model, X) in zip(models, Xs)
             ps, st = dev(Lux.setup(rng, model))
-            smodel = StatefulLuxLayer{true}(model, ps, st)
+            smodel = StatefulLuxLayer(model, ps, st)
 
             J1 = allow_unstable() do
                 ForwardDiff.jacobian(smodel, X)
@@ -38,7 +38,7 @@
 
                 ps = dev(ComponentArray(cpu_device()(ps)))
 
-                smodel = StatefulLuxLayer{true}(model, ps, st)
+                smodel = StatefulLuxLayer(model, ps, st)
 
                 J3 = allow_unstable() do
                     batched_jacobian(smodel, backend, X)
@@ -118,13 +118,13 @@ end
             ps, st = dev(Lux.setup(rng, model))
 
             function loss_function_batched(model, x, ps, st)
-                smodel = StatefulLuxLayer{true}(model, ps, st)
+                smodel = StatefulLuxLayer(model, ps, st)
                 J = batched_jacobian(smodel, backend, x)
                 return sum(abs2, J)
             end
 
             function loss_function_simple(model, x, ps, st)
-                smodel = StatefulLuxLayer{true}(model, ps, st)
+                smodel = StatefulLuxLayer(model, ps, st)
                 J = ForwardDiff.jacobian(smodel, x)
                 return sum(abs2, J)
             end

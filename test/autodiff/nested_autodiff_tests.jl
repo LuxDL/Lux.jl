@@ -70,25 +70,25 @@ const models = (
 
 # smodel | ForwardDiff.jacobian
 function loss_function1(model, x, ps, st)
-    smodel = StatefulLuxLayer{true}(model, ps, st)
+    smodel = StatefulLuxLayer(model, ps, st)
     return sum(abs2, ForwardDiff.jacobian(smodel, x) .* 0.01f0)
 end
 
 # smodel | Zygote.jacobian
 function loss_function2(model, x, ps, st)
-    smodel = StatefulLuxLayer{true}(model, ps, st)
+    smodel = StatefulLuxLayer(model, ps, st)
     return sum(abs2, only(Zygote.jacobian(smodel, x)) .* 0.01f0)
 end
 
 # sum(abs2) ∘ smodel | ForwardDiff.gradient
 function loss_function3(model, x, ps, st)
-    smodel = StatefulLuxLayer{true}(model, ps, st)
+    smodel = StatefulLuxLayer(model, ps, st)
     return sum(abs2, ForwardDiff.gradient(Base.Fix1(sum, abs2) ∘ smodel, x) .* 0.01f0)
 end
 
 # sum(abs2) ∘ smodel | Zygote.gradient
 function loss_function4(model, x, ps, st)
-    smodel = StatefulLuxLayer{true}(model, ps, st)
+    smodel = StatefulLuxLayer(model, ps, st)
     return sum(abs2, only(Zygote.gradient(Base.Fix1(sum, abs2) ∘ smodel, x)) .* 0.01f0)
 end
 
@@ -222,19 +222,19 @@ const models = (
 
 # smodel | ForwardDiff.jacobian
 function loss_function1(model, x, ps, st)
-    smodel = StatefulLuxLayer{true}(model, ps, st)
+    smodel = StatefulLuxLayer(model, ps, st)
     return sum(abs2, ForwardDiff.jacobian(Base.Fix1(smodel, x), ps) .* 0.01f0)
 end
 
 # smodel | Zygote.jacobian
 function loss_function2(model, x, ps, st)
-    smodel = StatefulLuxLayer{true}(model, ps, st)
+    smodel = StatefulLuxLayer(model, ps, st)
     return sum(abs2, only(Zygote.jacobian(Base.Fix1(smodel, x), ps)) .* 0.01f0)
 end
 
 # sum(abs2) ∘ smodel | ForwardDiff.gradient
 function loss_function3(model, x, ps, st)
-    smodel = StatefulLuxLayer{true}(model, ps, st)
+    smodel = StatefulLuxLayer(model, ps, st)
     return sum(
         abs2,
         ForwardDiff.gradient(Base.Fix1(sum, abs2) ∘ Base.Fix1(smodel, x), ps) .* 0.01f0,
@@ -243,7 +243,7 @@ end
 
 # sum(abs2) ∘ smodel | Zygote.gradient
 function loss_function4(model, x, ps, st)
-    smodel = StatefulLuxLayer{true}(model, ps, st)
+    smodel = StatefulLuxLayer(model, ps, st)
     return sum(
         abs2,
         only(Zygote.gradient(Base.Fix1(sum, abs2) ∘ Base.Fix1(smodel, x), ps)) .* 0.01f0,
@@ -358,25 +358,25 @@ end
             jvp_input = aType(randn(rng, Float32, size(X)...))
 
             function loss_function_vjp(model, X, ps, st, vjp_input)
-                smodel = StatefulLuxLayer{true}(model, ps, st)
+                smodel = StatefulLuxLayer(model, ps, st)
                 vjp = vector_jacobian_product(smodel, AutoZygote(), X, vjp_input)
                 return sum(vjp)
             end
 
             function loss_function_vjp_jacobian(model, X, ps, st, vjp_input)
-                smodel = StatefulLuxLayer{true}(model, ps, st)
+                smodel = StatefulLuxLayer(model, ps, st)
                 J = only(Zygote.jacobian(smodel, X))
                 return sum(J' * vec(vjp_input))
             end
 
             function loss_function_jvp(model, X, ps, st, jvp_input)
-                smodel = StatefulLuxLayer{true}(model, ps, st)
+                smodel = StatefulLuxLayer(model, ps, st)
                 jvp = jacobian_vector_product(smodel, AutoForwardDiff(), X, jvp_input)
                 return sum(jvp)
             end
 
             function loss_function_jvp_jacobian(model, X, ps, st, jvp_input)
-                smodel = StatefulLuxLayer{true}(model, ps, st)
+                smodel = StatefulLuxLayer(model, ps, st)
                 J = only(Zygote.jacobian(smodel, X))
                 return sum(J * vec(jvp_input))
             end
@@ -463,7 +463,7 @@ end
     :autodiff
 ] begin
     function loss_function(model, ps, st, x)
-        smodel = StatefulLuxLayer{true}(model, ps, st)
+        smodel = StatefulLuxLayer(model, ps, st)
         y_pred = smodel(x)
         dy_pred = only(Zygote.gradient(sum ∘ smodel, x))
         loss = sum(dy_pred .+ y_pred .^ 2 / 2)
