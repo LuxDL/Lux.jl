@@ -1,4 +1,4 @@
-# [Getting Started](@id getting-started)
+# [Introduction](@id getting-started)
 
 ## Installation
 
