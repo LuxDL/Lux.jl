@@ -104,7 +104,7 @@ jobs:
       - uses: julia-actions/setup-julia@v2
         with:
           version: "1.10"
-      - uses: julia-actions/julia-downgrade-compat@v1
+      - uses: julia-actions/julia-downgrade-compat@v2
         with:
           skip: "LuxCore,MLDataDevices"
       - uses: julia-actions/julia-buildpkg@v1
