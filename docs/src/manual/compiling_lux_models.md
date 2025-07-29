@@ -42,6 +42,7 @@ We then create a random input and output data:
 ```@example compile_lux_model
 x = randn(Float32, 2, 32)
 y = x .^ 2
+nothing # hide
 ```
 
 We will use [`reactant_device`](@ref) similar to [`gpu_device`](@ref) to move the arrays to
@@ -54,7 +55,7 @@ x_ra = x |> xdev
 y_ra = y |> xdev
 ps_ra = ps |> xdev
 st_ra = st |> xdev
-nothing
+nothing # hide
 ```
 
 First let's run the model as we would normally:
@@ -87,6 +88,7 @@ function loss_function(model, ps, st, x, y)
     pred, _ = model(x, ps, st)
     return MSELoss()(pred, y)
 end
+nothing # hide
 ```
 
 We will use `Zygote.jl` to compute the gradient of the loss function for the vanilla model.

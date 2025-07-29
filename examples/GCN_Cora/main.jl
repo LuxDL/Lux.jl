@@ -16,6 +16,7 @@ using Lux,
 
 const xdev = reactant_device(; force=true)
 const cdev = cpu_device()
+nothing #hide
 
 # ## Loading Cora Dataset
 
@@ -34,6 +35,7 @@ function loadcora()
         (1:140, 141:640, 1709:2708),
     )
 end
+nothing #hide
 
 # ## Model Definition
 
@@ -60,6 +62,7 @@ function GCN(x_dim, h_dim, out_dim; nb_layers=2, dropout=0.5, kwargs...)
         @return last_layer((x, adj))[:, mask]
     end
 end
+nothing #hide
 
 # ## Helper Functions
 
@@ -70,6 +73,7 @@ function loss_function(model, ps, st, (x, y, adj, mask))
 end
 
 accuracy(y_pred, y) = mean(onecold(y_pred) .== onecold(y)) * 100
+nothing #hide
 
 # ## Training the Model
 

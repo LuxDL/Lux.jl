@@ -34,6 +34,7 @@ hlo = @code_hlo model(x, ps, Lux.testmode(st))
 open("exported_lux_model.mlir", "w") do io
     write(io, string(hlo))
 end
+nothing # hide
 ```
 
 ![model-explorer-screenshot](../public/model_explorer_graph_forward_pass.png)
@@ -51,6 +52,7 @@ hlo = @code_hlo ∇sumabs2_enzyme(model, x, ps, st)
 open("exported_lux_model_gradients.mlir", "w") do io
     write(io, string(hlo))
 end
+nothing # hide
 ```
 
 This is going to be hard to read, but you get the idea.
