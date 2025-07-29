@@ -39,7 +39,7 @@ features:
 
   - icon: 🏭
     title: Production-Ready
-    details: Seamlessly deploy models to servers and edge devices by leveraging the rich tensoflow ecosystem.
+    details: Seamlessly deploy models to servers and edge devices by leveraging the rich tensorflow ecosystem.
     link: /api/Lux/serialization
 ---
 ```
