@@ -46,6 +46,7 @@ function load_datasets(batchsize=32)
     n_eval = parse(Bool, get(ENV, "CI", "false")) ? 32 : nothing
     return load_dataset.((MNIST, FashionMNIST), n_train, n_eval, batchsize)
 end
+nothing #hide
 
 # ## Implement a HyperNet Layer
 function HyperNet(weight_generator::AbstractLuxLayer, core_network::AbstractLuxLayer)
@@ -58,6 +59,7 @@ function HyperNet(weight_generator::AbstractLuxLayer, core_network::AbstractLuxL
         @return core_network(y, ps_new)
     end
 end
+nothing #hide
 
 # Defining functions on the CompactLuxLayer requires some understanding of how the layer
 # is structured, as such we don't recommend doing it unless you are familiar with the
@@ -87,6 +89,7 @@ function create_model()
         core_network,
     )
 end
+nothing #hide
 
 # ## Define Utility Functions
 function accuracy(model, ps, st, dataloader, data_idx)
@@ -101,6 +104,7 @@ function accuracy(model, ps, st, dataloader, data_idx)
     end
     return total_correct / total
 end
+nothing #hide
 
 # ## Training
 function train()

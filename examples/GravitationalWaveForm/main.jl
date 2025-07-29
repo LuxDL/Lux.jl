@@ -35,6 +35,7 @@ function one2two(path, m₁, m₂)
     r₂ = -m₁ / M .* path
     return r₁, r₂
 end
+nothing #hide
 
 # Next we define a function to perform the change of variables:
 # $$(\chi(t),\phi(t)) \mapsto (x(t),y(t))$$
@@ -62,6 +63,7 @@ end
     orbit = vcat(x', y')
     return orbit
 end
+nothing #hide
 
 # This function uses second-order one-sided difference stencils at the endpoints;
 # see https://doi.org/10.1090/S0025-5718-1988-0935077-0
@@ -72,6 +74,7 @@ function d_dt(v::AbstractVector, dt)
     c = 3 / 2 * v[end] - 2 * v[end - 1] + 1 / 2 * v[end - 2]
     return [a; b; c] / dt
 end
+nothing #hide
 
 # This function uses second-order one-sided difference stencils at the endpoints;
 # see https://doi.org/10.1090/S0025-5718-1988-0935077-0
@@ -82,6 +85,7 @@ function d2_dt2(v::AbstractVector, dt)
     c = 2 * v[end] - 5 * v[end - 1] + 4 * v[end - 2] - v[end - 3]
     return [a; b; c] / (dt^2)
 end
+nothing #hide
 
 # Now we define a function to compute the trace-free moment tensor from the orbit
 
@@ -167,6 +171,7 @@ function compute_waveform(dt::T, soln, mass_ratio, model_params=nothing) where {
     end
     return waveform
 end
+nothing #hide
 
 # ## Simulating the True Model
 
@@ -267,6 +272,7 @@ function ODE_model(u, nn_params, t)
 
     return [χ̇, ϕ̇]
 end
+nothing #hide
 
 # Let us now simulate the neural network model and plot the results. We'll use the untrained
 # neural network parameters to simulate the model.
@@ -310,6 +316,7 @@ function loss(θ)
     pred_waveform = first(compute_waveform(dt_data, pred, mass_ratio, ode_model_params))
     return mseloss(pred_waveform, waveform)
 end
+nothing #hide
 
 # Warmup the loss function
 loss(params)
@@ -322,6 +329,7 @@ function callback(θ, l)
     @printf "Training \t Iteration: %5d \t Loss: %.10f\n" θ.iter l
     return false
 end
+nothing #hide
 
 # ## Training the Neural Network
 

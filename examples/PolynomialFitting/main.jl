@@ -18,6 +18,7 @@ function generate_data(rng::AbstractRNG)
     y .+= randn(rng, Float32, (1, 128)) .* 0.1f0
     return (x, y)
 end
+nothing #hide
 
 # Initialize the random number generator and fetch the dataset.
 rng = MersenneTwister()
@@ -80,6 +81,7 @@ tstate = Training.TrainState(model, ps, st, opt)
 # Now we will use Enzyme (Reactant) for our AD requirements.
 
 vjp_rule = AutoEnzyme()
+nothing #hide
 
 # Finally the training loop.
 

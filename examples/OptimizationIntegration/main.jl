@@ -30,6 +30,7 @@ using Lux,
 
 const gdev = gpu_device()
 const cdev = cpu_device()
+nothing #hide
 
 # ## Generate some training data
 
@@ -78,6 +79,7 @@ Base.length(t::TimeWrapper) = length(t.t)
 Base.getindex(t::TimeWrapper, i) = TimeWrapper(t.t[i])
 
 dataloader = gdev(DataLoader((ode_data, TimeWrapper(t)); batchsize=8))
+nothing #hide
 
 # ## Training the model
 
