@@ -260,7 +260,9 @@ n_samples = 20
 x_dim = 10
 y_dim = 5
 
-# Generate random ground truth W and b.
+# We're going to generate a random set of weights `W` and biases `b` that will act as our
+# true model (also known as the ground truth). The neural network we'll train will be to try
+# and approximate `W` and `b` from example data.
 W = randn(rng, Float32, y_dim, x_dim)
 b = randn(rng, Float32, y_dim)
 
