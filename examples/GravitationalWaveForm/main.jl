@@ -25,7 +25,7 @@ using CairoMakie
 #     This section can be skipped. It defines functions to simulate the model, however,
 #     from a scientific machine learning perspective, isn't super relevant.
 
-# We need a very crude 2-body path. Assume the 1-body motion is a newtonian 2-body position
+# We need a very crude 2-body path. Assume the 1-body motion is a Newtonian 2-body position
 # vector $r = r_1 - r_2$ and use Newtonian formulas to get $r_1$, $r_2$ (e.g. Theoretical
 # Mechanics of Particles and Continua 4.3)
 
@@ -142,7 +142,7 @@ function h_22_quadrupole_two_body(dt, orbit1, mass1, orbit2, mass2)
 end
 
 function h_22_strain_two_body(dt::T, orbit1, mass1, orbit2, mass2) where {T}
-    ## compute (2,2) mode strain from orbits of BH 1 of mass1 and BH2 of mass 2
+    ## compute (2,2) mode strain from orbits of BH1 of mass1 and BH2 of mass 2
 
     @assert abs(mass1 + mass2 - 1.0) < 1.0e-12 "Masses do not sum to unity"
 
@@ -176,7 +176,7 @@ nothing #hide
 # ## Simulating the True Model
 
 # `RelativisticOrbitModel` defines system of odes which describes motion of point like
-# particle in schwarzschild background, uses
+# particle in Schwarzschild background, uses
 
 # $$u[1] = \chi$$
 # $$u[2] = \phi$$
@@ -222,13 +222,13 @@ begin
     fig
 end
 
-# ## Defiing a Neural Network Model
+# ## Defining a Neural Network Model
 
 # Next, we define the neural network model that takes 1 input (time) and has two outputs.
 # We'll make a function `ODE_model` that takes the initial conditions, neural network
 # parameters and a time as inputs and returns the derivatives.
 
-# It is typically never recommended to use globals but incase you do use them, make sure
+# It is typically never recommended to use globals but in case you do use them, make sure
 # to mark them as `const`.
 
 # We will deviate from the standard Neural Network initialization and use
@@ -241,8 +241,8 @@ const nn = Chain(
 )
 ps, st = Lux.setup(Random.default_rng(), nn)
 
-# Similar to most DL frameworks, Lux defaults to using `Float32`, however, in this case we
-# need Float64
+# Similar to most deep learning frameworks, Lux defaults to using `Float32`.
+# However, in this case we need Float64
 
 const params = ComponentArray(f64(ps))
 

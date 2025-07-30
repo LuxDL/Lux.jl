@@ -186,7 +186,7 @@ nothing #hide
 train(NeuralODE)
 nothing #hide
 
-# We can also change the sensealg and train the model! `GaussAdjoint` allows you to use
+# We can also change the `sensealg` and train the model! `GaussAdjoint` allows you to use
 # any arbitrary parameter structure and not just a flat vector (`ComponentArray`).
 
 train(NeuralODE; sensealg=GaussAdjoint(; autojacvec=ZygoteVJP()), use_named_tuple=true)

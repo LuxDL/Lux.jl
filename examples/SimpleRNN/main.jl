@@ -9,7 +9,7 @@
 
 # ## Package Imports
 
-# Note: If you wish to use AutoZygote() for automatic differentiation,
+# Note: If you wish to use `AutoZygote()` for automatic differentiation,
 # add Zygote to your project dependencies and include `using Zygote`.
 
 using ADTypes, Lux, JLD2, MLUtils, Optimisers, Printf, Reactant, Random
@@ -27,12 +27,12 @@ function create_dataset(; dataset_size=1000, sequence_length=50)
     ## Get the labels
     labels = vcat(repeat([0.0f0], dataset_size ÷ 2), repeat([1.0f0], dataset_size ÷ 2))
     clockwise_spirals = [
-        reshape(d[1][:, 1:sequence_length], :, sequence_length, 1) for
-        d in data[1:(dataset_size ÷ 2)]
+        reshape(d[1][:, 1:sequence_length], :, sequence_length, 1)
+        for d in data[1:(dataset_size ÷ 2)]
     ]
     anticlockwise_spirals = [
-        reshape(d[1][:, (sequence_length + 1):end], :, sequence_length, 1) for
-        d in data[((dataset_size ÷ 2) + 1):end]
+        reshape(d[1][:, (sequence_length + 1):end], :, sequence_length, 1)
+        for d in data[((dataset_size ÷ 2) + 1):end]
     ]
     x_data = Float32.(cat(clockwise_spirals..., anticlockwise_spirals...; dims=3))
     return x_data, labels
@@ -57,9 +57,9 @@ nothing #hide
 # ## Creating a Classifier
 
 # We will be extending the `Lux.AbstractLuxContainerLayer` type for our custom model
-# since it will contain a lstm block and a classifier head.
+# since it will contain a LSTM block and a classifier head.
 
-# We pass the fieldnames `lstm_cell` and `classifier` to the type to ensure that the
+# We pass the field names `lstm_cell` and `classifier` to the type to ensure that the
 # parameters and states are automatically populated and we don't have to define
 # `Lux.initialparameters` and `Lux.initialstates`.
 
@@ -130,7 +130,7 @@ nothing #hide
 
 # ## Defining Accuracy, Loss and Optimiser
 
-# Now let's define the binarycrossentropy loss. Typically it is recommended to use
+# Now let's define the binary cross-entropy loss. Typically it is recommended to use
 # `logitbinarycrossentropy` since it is more numerically stable, but for the sake of
 # simplicity we will use `binarycrossentropy`.
 const lossfn = BinaryCrossEntropyLoss()

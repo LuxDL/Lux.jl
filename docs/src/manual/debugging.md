@@ -42,7 +42,7 @@ catch e
 end
 ```
 
-Ofcourse, this error will come with a detailed stacktrace, but it is still not very useful.
+Of course, this error will come with a detailed stacktrace, but it is still not very useful.
 Now let's try using the debug mode model:
 
 ```@example manual_debugging

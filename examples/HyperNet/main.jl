@@ -127,7 +127,7 @@ function train()
         @compile model((data_idx, x), ps, Lux.testmode(st))
     end
 
-    ### Lets train the model
+    ### Let's train the model
     nepochs = 50
     for epoch in 1:nepochs, data_idx in 1:2
         train_dataloader, test_dataloader = dev.(dataloaders[data_idx])
