@@ -175,14 +175,14 @@ dimensions for efficiency.
 
 ## Input
 
-  - 4D AbstractArray such that
+  - 4D `AbstractArray` such that
 
       + `size(x, 1) == dim`
       + `size(x, 3) ≤ max_sequence_length`
 
 ## Returns
 
-  - 4D AbstractArray of the same size as the input.
+  - 4D `AbstractArray` of the same size as the input.
 
 ## States
 
