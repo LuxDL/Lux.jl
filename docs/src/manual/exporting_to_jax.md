@@ -47,9 +47,7 @@ hlo_code = @code_hlo model(x, ps, st)
 Now we just save this into an `mlir` file.
 
 ```@example exporting_to_stablehlo
-open("exported_lux_model.mlir", "w") do io
-    write(io, string(hlo_code))
-end
+write("exported_lux_model.mlir", string(hlo_code))
 nothing # hide
 ```
 
