@@ -27,12 +27,12 @@ function create_dataset(; dataset_size=1000, sequence_length=50)
     ## Get the labels
     labels = vcat(repeat([0.0f0], dataset_size ÷ 2), repeat([1.0f0], dataset_size ÷ 2))
     clockwise_spirals = [
-        reshape(d[1][:, 1:sequence_length], :, sequence_length, 1)
-        for d in data[1:(dataset_size ÷ 2)]
+        reshape(d[1][:, 1:sequence_length], :, sequence_length, 1) for
+        d in data[1:(dataset_size ÷ 2)]
     ]
     anticlockwise_spirals = [
-        reshape(d[1][:, (sequence_length + 1):end], :, sequence_length, 1)
-        for d in data[((dataset_size ÷ 2) + 1):end]
+        reshape(d[1][:, (sequence_length + 1):end], :, sequence_length, 1) for
+        d in data[((dataset_size ÷ 2) + 1):end]
     ]
     x_data = Float32.(cat(clockwise_spirals..., anticlockwise_spirals...; dims=3))
     return x_data, labels
@@ -198,8 +198,11 @@ function main(model_type)
             total_samples += length(y)
         end
 
-        @printf("Validation:\tLoss %4.5f\tAccuracy %4.5f\n",
-            total_loss / total_samples, total_acc / total_samples)
+        @printf(
+            "Validation:\tLoss %4.5f\tAccuracy %4.5f\n",
+            total_loss / total_samples,
+            total_acc / total_samples
+        )
     end
 
     return cpu_device()((train_state.parameters, train_state.states))
