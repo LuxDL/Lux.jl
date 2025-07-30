@@ -83,7 +83,7 @@ function physics_informed_loss_function(model::StatefulLuxLayer, xyt::AbstractAr
 end
 nothing #hide
 
-# Additionally, we need to compute the loss wrt the boundary conditions.
+# Additionally, we need to compute the loss with respect to the boundary conditions.
 
 function mse_loss_function(
     model::StatefulLuxLayer, target::AbstractArray, xyt::AbstractArray

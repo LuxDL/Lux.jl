@@ -241,8 +241,8 @@ const nn = Chain(
 )
 ps, st = Lux.setup(Random.default_rng(), nn)
 
-# Similar to most DL frameworks, Lux defaults to using `Float32`, however, in this case we
-# need Float64
+# Similar to most deep learning frameworks, Lux defaults to using `Float32`.
+# However, in this case we need Float64
 
 const params = ComponentArray(f64(ps))
 
