@@ -213,7 +213,7 @@ Returns the binary cross entropy loss computed as:
 
 - If `logits` is `true` or `Val(true)`:
 
-  $$\text{agg}\left((1 - \tilde{y}) * \hat{y} - log\sigma(\hat{y})\right)$$
+  $$\text{agg}\left((1 - \tilde{y}) * \hat{y} - \log\sigma(\hat{y})\right)$$
 
 The value of $\tilde{y}$ is computed using label smoothing. If `label_smoothing` is
 `nothing`, then no label smoothing is applied. If `label_smoothing` is a real number
@@ -422,7 +422,7 @@ end
 Return the Dice Coefficient loss [milletari2016v](@cite) which is used in segmentation
 tasks. The dice coefficient is similar to the F1_score. Loss calculated as:
 
-$$agg\left(1 - \frac{2 \sum y \hat{y} + \alpha}{\sum y^2 + \sum \hat{y}^2 + \alpha}\right)$$
+$$\text{agg}\left(1 - \frac{2 \sum y \hat{y} + \alpha}{\sum y^2 + \sum \hat{y}^2 + \alpha}\right)$$
 
 where $\alpha$ is the smoothing factor (`smooth`).
 
