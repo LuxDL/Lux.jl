@@ -55,8 +55,8 @@ nothing #hide
 
 # ## Define the Loss Functions
 
-# We will define a custom loss function to compute the loss using 2nd order AD. We
-# will use the following loss function
+# We will define a custom loss function to compute the loss using 2nd order AD.
+# For that, first we'll need to define the derivatives of our model:
 
 function ∂u_∂t(model::StatefulLuxLayer, xyt::AbstractArray)
     return Enzyme.gradient(Enzyme.Reverse, sum ∘ model, xyt)[1][3, :]
@@ -77,6 +77,9 @@ end
 function ∂²u_∂y²(model::StatefulLuxLayer, xyt::AbstractArray)
     return Enzyme.gradient(Enzyme.Reverse, sum ∘ ∂u_∂y, Enzyme.Const(model), xyt)[2][2, :]
 end
+nothing #hide
+
+# We will use the following loss function
 
 function physics_informed_loss_function(model::StatefulLuxLayer, xyt::AbstractArray)
     return mean(abs2, ∂u_∂t(model, xyt) .- ∂²u_∂x²(model, xyt) .- ∂²u_∂y²(model, xyt))
@@ -110,6 +113,8 @@ nothing #hide
 
 analytical_solution(x, y, t) = @. exp(x + y) * cos(x + y + 4t)
 analytical_solution(xyt) = analytical_solution(xyt[1, :], xyt[2, :], xyt[3, :])
+nothing #hide
+#-
 
 begin
     grid_len = 16
