@@ -1,6 +1,7 @@
 # # [Graph Convolutional Networks on Cora](@id GCN-Tutorial-Cora)
 
-# This example is based on [GCN MLX tutorial](https://github.com/ml-explore/mlx-examples/blob/main/gcn/). While we are doing this manually, we recommend directly using
+# This example is based on [GCN MLX tutorial](https://github.com/ml-explore/mlx-examples/blob/main/gcn/).
+# While we are doing this manually, we recommend directly using
 # [GNNLux.jl](https://juliagraphs.org/GraphNeuralNetworks.jl/docs/GNNLux.jl/stable/).
 
 using Lux,
