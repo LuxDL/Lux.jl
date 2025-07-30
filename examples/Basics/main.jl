@@ -222,7 +222,7 @@ v = ones(Float32, 5)
 #     here come with additional goodies like
 #     [fast second-order derivatives](@ref nested_autodiff).
 
-# Compute the jvp. `AutoForwardDiff` specifies that we want to use `ForwardDiff.jl` for the
+# Compute the JVP. `AutoForwardDiff` specifies that we want to use `ForwardDiff.jl` for the
 # Jacobian-Vector Product
 
 jvp = jacobian_vector_product(f, AutoForwardDiff(), x, v)

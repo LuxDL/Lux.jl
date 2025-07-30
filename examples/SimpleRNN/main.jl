@@ -57,9 +57,9 @@ nothing #hide
 # ## Creating a Classifier
 
 # We will be extending the `Lux.AbstractLuxContainerLayer` type for our custom model
-# since it will contain a lstm block and a classifier head.
+# since it will contain a LSTM block and a classifier head.
 
-# We pass the fieldnames `lstm_cell` and `classifier` to the type to ensure that the
+# We pass the field names `lstm_cell` and `classifier` to the type to ensure that the
 # parameters and states are automatically populated and we don't have to define
 # `Lux.initialparameters` and `Lux.initialstates`.
 
@@ -130,7 +130,7 @@ nothing #hide
 
 # ## Defining Accuracy, Loss and Optimiser
 
-# Now let's define the binarycrossentropy loss. Typically it is recommended to use
+# Now let's define the binary cross-entropy loss. Typically it is recommended to use
 # `logitbinarycrossentropy` since it is more numerically stable, but for the sake of
 # simplicity we will use `binarycrossentropy`.
 const lossfn = BinaryCrossEntropyLoss()

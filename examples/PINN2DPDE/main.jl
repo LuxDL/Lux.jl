@@ -5,7 +5,7 @@
 # However, we will be using our custom loss function and use nested AD capabilities of
 # Lux.jl.
 
-# This is a demonstration of Lux.jl. For serious usecases of PINNs, please refer to
+# This is a demonstration of Lux.jl. For serious use cases of PINNs, please refer to
 # the package: [NeuralPDE.jl](https://github.com/SciML/NeuralPDE.jl).
 
 # ## Package Imports
@@ -33,7 +33,7 @@ nothing #hide
 
 # ## Define the Neural Networks
 
-# All the networks take 3 input variables and output a scalar value. Here, we will define a
+# All the networks take 3 input variables and output a scalar value. Here, we will define
 # a wrapper over the 3 networks, so that we can train them using
 # [`Training.TrainState`](@ref).
 

@@ -67,7 +67,7 @@ function cvae_encoder(
         ## Generate a tensor of random values from a normal distribution
         ϵ = randn_like(Lux.replicate(rng), σ)
 
-        ## Reparameterization trick to brackpropagate through sampling
+        ## Reparameterization trick to backpropagate through sampling
         z = ϵ .* σ .+ μ
 
         @return z, μ, logσ²
