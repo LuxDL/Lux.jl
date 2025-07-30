@@ -182,7 +182,7 @@ function main(model_type)
             total_loss += loss * length(y)
             total_samples += length(y)
         end
-        @printf "Epoch [%3d]: Loss %4.5f\n" epoch (total_loss / total_samples)
+        @printf("Epoch [%3d]: Loss %4.5f\n", epoch, total_loss / total_samples)
 
         ## Validate the model
         total_acc = 0.0f0
@@ -198,9 +198,8 @@ function main(model_type)
             total_samples += length(y)
         end
 
-        @printf "Validation:\tLoss %4.5f\tAccuracy %4.5f\n" (total_loss / total_samples) (
-            total_acc / total_samples
-        )
+        @printf("Validation:\tLoss %4.5f\tAccuracy %4.5f\n",
+            total_loss / total_samples, total_acc / total_samples)
     end
 
     return cpu_device()((train_state.parameters, train_state.states))
