@@ -41,8 +41,13 @@ jobs:
   test:
     if: ${{ !contains(github.event.head_commit.message, '[skip tests]') }}
     runs-on: ${{ inputs.os }}
+    env:
+      TMPDIR: ${{ github.workspace }}/tmp
     steps:
       - uses: actions/checkout@v4
+      - name: Create TMPDIR
+        run: |
+          mkdir -p ${{ env.TMPDIR }}
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ inputs.julia_version }}
@@ -105,6 +110,16 @@ jobs:
         env:
           PROJECT: ${{ inputs.project }}
           TEST_ARGS: ${{ inputs.test_args }}
+
+      - name: "Upload MLIR modules"
+        uses: actions/upload-artifact@v4
+        timeout-minutes: 10
+        if: ${{ always() }}
+        with:
+          name: "mlir-${{ inputs.julia_version }}-${{ inputs.test_args }}-${{ inputs.os }}-${{ github.event_name }}"
+          path: "**/*.mlir"
+          retention-days: 90
+          overwrite: false
 
       - name: "Generate coverage"
         run: |

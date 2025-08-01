@@ -28,6 +28,3 @@ jobs:
     with:
       julia_version: "1"
       project: "lib/LuxTestUtils"
-
-env:
-  BACKEND_GROUP: "CPU"

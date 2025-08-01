@@ -61,6 +61,3 @@ jobs:
       julia_version: "1"
       project: "lib/LuxLib"
       test_args: "BACKEND_GROUP=${{ matrix.test_group }} LUXLIB_BLAS_BACKEND=${{ matrix.blas_backend }} LUXLIB_LOAD_LOOPVEC=${{ matrix.loopvec }}"
-
-env:
-  BACKEND_GROUP: "CPU"

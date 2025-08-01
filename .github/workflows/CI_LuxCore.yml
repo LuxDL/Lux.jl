@@ -29,6 +29,3 @@ jobs:
     with:
       julia_version: "1"
       project: "lib/LuxCore"
-
-env:
-  BACKEND_GROUP: "CPU"

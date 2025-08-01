@@ -27,6 +27,3 @@ jobs:
     with:
       julia_version: "1"
       project: "lib/LuxCUDA"
-
-env:
-  BACKEND_GROUP: "CPU"

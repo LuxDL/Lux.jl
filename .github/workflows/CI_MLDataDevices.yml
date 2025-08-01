@@ -24,7 +24,7 @@ jobs:
           - macos-latest
           - windows-latest
         group:
-          - CPU
+          - cpu
           - reactant
         exclude:
           - os: windows-latest
@@ -41,7 +41,7 @@ jobs:
       fail-fast: false
       matrix:
         group:
-          - CPU
+          - cpu
           - reactant
     uses: ./.github/workflows/CommonCI.yml
     with:
@@ -49,6 +49,3 @@ jobs:
       project: "lib/MLDataDevices"
       downgrade_testing: true
       test_args: "BACKEND_GROUP=${{ matrix.group }}"
-
-env:
-  BACKEND_GROUP: "CPU"
