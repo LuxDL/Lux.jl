@@ -65,3 +65,7 @@ Statistics = "1.10"
 Test = "1.10"
 Tracker = "0.2.36"
 Zygote = "0.6.70, 0.7"
+
+[sources]
+LuxTestUtils = { path = "../../LuxTestUtils" }
+MLDataDevices = { path = "../../MLDataDevices" }

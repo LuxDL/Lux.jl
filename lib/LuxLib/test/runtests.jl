@@ -3,11 +3,27 @@ using InteractiveUtils, CPUSummary
 
 @info sprint(versioninfo)
 
-const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "all"))
+function parse_test_args()
+    test_args_from_env = @isdefined(TEST_ARGS) ? TEST_ARGS : ARGS
+    test_args = Dict{String,String}()
+    for arg in test_args_from_env
+        if contains(arg, "=")
+            key, value = split(arg, "="; limit=2)
+            test_args[key] = value
+        end
+    end
+    return test_args
+end
+
+const PARSED_TEST_ARGS = parse_test_args()
+
+const BACKEND_GROUP = lowercase(get(PARSED_TEST_ARGS, "BACKEND_GROUP", "all"))
 const EXTRA_PKGS = PackageSpec[]
 const EXTRA_DEV_PKGS = PackageSpec[]
 
-const LUXLIB_BLAS_BACKEND = lowercase(get(ENV, "LUXLIB_BLAS_BACKEND", "default"))
+const LUXLIB_BLAS_BACKEND = lowercase(
+    get(PARSED_TEST_ARGS, "LUXLIB_BLAS_BACKEND", "default")
+)
 @assert LUXLIB_BLAS_BACKEND in ("default", "appleaccelerate", "blis", "mkl")
 @info "Running tests with BLAS backend: $(LUXLIB_BLAS_BACKEND)"
 
@@ -34,7 +50,7 @@ if !isempty(EXTRA_PKGS) || !isempty(EXTRA_DEV_PKGS)
     Pkg.instantiate()
 end
 
-const LUXLIB_TEST_GROUP = get(ENV, "LUXLIB_TEST_GROUP", "all")
+const LUXLIB_TEST_GROUP = get(PARSED_TEST_ARGS, "LUXLIB_TEST_GROUP", "all")
 
 const RETESTITEMS_NWORKERS = parse(
     Int,
