@@ -95,7 +95,7 @@ jobs:
           Pkg.activate(joinpath(project, "test"))
           include(joinpath(project, "test", "runtests.jl"))
         shell: julia --color=yes --code-coverage=user --depwarn=yes {0}
-        if: ${{ inputs.julia_version != '1.10' }}
+        if: ${{ inputs.julia_version == '1.10' }}
         env:
           PROJECT: ${{ inputs.project }}
 
