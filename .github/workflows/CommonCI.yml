@@ -9,8 +9,9 @@ on:
         type: string
       os:
         description: "OS"
-        required: true
+        required: false
         type: string
+        default: "ubuntu-latest"
       project:
         description: "Project Directory"
         required: true
@@ -74,7 +75,7 @@ jobs:
             push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
           end
           length(dev_pkgs) > 0 && Pkg.develop(dev_pkgs)
-        shell: julia --color=yes --code-coverage=user --depwarn=yes {0}
+        shell: julia --color=yes --threads=auto {0}
         if: ${{ inputs.julia_version == '1.10' }}
         env:
           PROJECT: ${{ inputs.project }}
@@ -89,7 +90,7 @@ jobs:
             push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
           end
           length(dev_pkgs) > 0 && Pkg.develop(dev_pkgs)
-        shell: julia --color=yes --code-coverage=user --depwarn=yes {0}
+        shell: julia --color=yes --threads=auto {0}
         if: ${{ inputs.julia_version == '1.10' }}
         env:
           PROJECT: ${{ inputs.project }}
@@ -101,15 +102,37 @@ jobs:
           Pkg.activate(joinpath(project, "test"))
           const TEST_ARGS = filter(!isempty, split(get(ENV, "TEST_ARGS", "")))
           include(joinpath(project, "test", "runtests.jl"))
-        shell: julia --color=yes --code-coverage=user --depwarn=yes {0}
+        shell: julia --color=yes --code-coverage=user --depwarn=yes --threads=auto --check-bounds=yes {0}
         if: ${{ inputs.julia_version == '1.10' }}
         env:
           PROJECT: ${{ inputs.project }}
           TEST_ARGS: ${{ inputs.test_args }}
 
-      - uses: julia-actions/julia-processcoverage@v1
-        with:
-          directories: ${{ inputs.project }}/src,${{ inputs.project }}/ext
+      - name: "Generate coverage"
+        run: |
+          using Pkg
+          Pkg.activate("coveragetempenv", shared=true)
+
+          Pkg.add(PackageSpec(name="CoverageTools"))
+
+          using CoverageTools
+
+          projectdirs = [readdir("lib/"; join=true)..., "."]
+
+          directories = []
+          for projectdir in projectdirs
+              if isdir(joinpath(projectdir, "src"))
+                  push!(directories, joinpath(projectdir, "src"))
+              end
+              if isdir(joinpath(projectdir, "ext"))
+                  push!(directories, joinpath(projectdir, "ext"))
+              end
+          end
+          filter!(isdir, directories)
+
+          pfs = mapreduce(process_folder, vcat, dirs)
+          LCOV.writefile("lcov.info", pfs)
+        shell: julia --color=yes --threads=auto {0}
 
       - uses: codecov/codecov-action@v5
         with:

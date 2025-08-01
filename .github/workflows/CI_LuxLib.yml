@@ -29,7 +29,6 @@ jobs:
     uses: ./.github/workflows/CommonCI.yml
     with:
       julia_version: "1.10"
-      os: "ubuntu-latest"
       project: "lib/LuxLib"
       downgrade_testing: true
       local_dependencies: "lib/LuxCore,lib/MLDataDevices"
@@ -58,10 +57,7 @@ jobs:
     uses: ./.github/workflows/CommonCI.yml
     with:
       julia_version: "1"
-      os: "ubuntu-latest"
       project: "lib/LuxLib"
-      local_dependencies: "lib/LuxCore,lib/MLDataDevices"
-      local_test_dependencies: "lib/LuxTestUtils,lib/MLDataDevices"
       test_args: "BACKEND_GROUP=${{ matrix.test_group }} LUXLIB_BLAS_BACKEND=${{ matrix.blas_backend }} LUXLIB_LOAD_LOOPVEC=${{ matrix.loopvec }}"
 
 env:

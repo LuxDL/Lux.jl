@@ -19,7 +19,6 @@ jobs:
     uses: ./.github/workflows/CommonCI.yml
     with:
       julia_version: "1.10"
-      os: "ubuntu-latest"
       project: "lib/LuxCUDA"
       downgrade_testing: true
 
@@ -27,7 +26,6 @@ jobs:
     uses: ./.github/workflows/CommonCI.yml
     with:
       julia_version: "1"
-      os: "ubuntu-latest"
       project: "lib/LuxCUDA"
 
 env:

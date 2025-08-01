@@ -20,7 +20,6 @@ jobs:
     uses: ./.github/workflows/CommonCI.yml
     with:
       julia_version: "1.10"
-      os: "ubuntu-latest"
       project: "lib/LuxCore"
       downgrade_testing: true
       local_test_dependencies: "lib/MLDataDevices"
@@ -29,7 +28,6 @@ jobs:
     uses: ./.github/workflows/CommonCI.yml
     with:
       julia_version: "1"
-      os: "ubuntu-latest"
       project: "lib/LuxCore"
 
 env:
