@@ -1,7 +1,22 @@
 using Pkg: Pkg, PackageSpec
 using SafeTestsets, Test
 
-const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "none"))
+function parse_test_args()
+    test_args_from_env = @isdefined(TEST_ARGS) ? TEST_ARGS : ARGS
+    test_args = Dict{String,String}()
+    for arg in test_args_from_env
+        if contains(arg, "=")
+            key, value = split(arg, "="; limit=2)
+            test_args[key] = value
+        end
+    end
+    @info "Parsed test args" test_args
+    return test_args
+end
+
+const PARSED_TEST_ARGS = parse_test_args()
+
+const BACKEND_GROUP = lowercase(get(PARSED_TEST_ARGS, "BACKEND_GROUP", "none"))
 
 const EXTRA_PKGS = PackageSpec[]
 const EXTRA_DEV_PKGS = PackageSpec[]

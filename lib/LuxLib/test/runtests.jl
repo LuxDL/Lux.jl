@@ -12,6 +12,7 @@ function parse_test_args()
             test_args[key] = value
         end
     end
+    @info "Parsed test args" test_args
     return test_args
 end
 

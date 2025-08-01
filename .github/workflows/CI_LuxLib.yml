@@ -20,6 +20,7 @@ concurrency:
 jobs:
   downgrade:
     strategy:
+      fail-fast: false
       matrix:
         test_group:
           - "conv"
@@ -37,6 +38,7 @@ jobs:
 
   test:
     strategy:
+      fail-fast: false
       matrix:
         test_group:
           - "conv"
