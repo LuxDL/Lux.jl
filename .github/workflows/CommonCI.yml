@@ -1,0 +1,155 @@
+name: "Common Lux CI Workflow"
+
+on:
+  workflow_call:
+    inputs:
+      julia_version:
+        description: "Julia version"
+        required: true
+        type: string
+      os:
+        description: "OS"
+        required: false
+        type: string
+        default: "ubuntu-latest"
+      project:
+        description: "Project Directory"
+        required: true
+        type: string
+      downgrade_testing:
+        description: "Downgrade Testing"
+        required: false
+        type: boolean
+        default: false
+      local_dependencies:
+        description: "Local Dependencies"
+        required: false
+        type: string
+        default: ""
+      local_test_dependencies:
+        description: "Local Test Dependencies"
+        required: false
+        type: string
+        default: ""
+      test_args:
+        description: "Test Arguments"
+        required: false
+        type: string
+        default: ""
+
+jobs:
+  test:
+    if: ${{ !contains(github.event.head_commit.message, '[skip tests]') }}
+    runs-on: ${{ inputs.os }}
+    env:
+      TMPDIR: ${{ github.workspace }}/tmp
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create TMPDIR
+        run: |
+          mkdir -p ${{ env.TMPDIR }}
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ inputs.julia_version }}
+      - uses: julia-actions/julia-downgrade-compat@v2
+        if: ${{ inputs.downgrade_testing }}
+      - uses: julia-actions/cache@v2
+        if: ${{ !inputs.downgrade_testing }}
+
+      # For 1.11 and beyond we can use sources. For older versions we need to
+      # manually develop the packages.
+      - uses: julia-actions/julia-buildpkg@v1
+        with:
+          project: ${{ inputs.project }}
+        if: ${{ inputs.julia_version != '1.10' }}
+      - uses: julia-actions/julia-runtest@v1
+        with:
+          project: ${{ inputs.project }}
+          test_args: ${{ inputs.test_args }}
+        if: ${{ inputs.julia_version != '1.10' }}
+
+      # For 1.10 we need to manually develop the packages.
+      - name: "Develop Dependencies"
+        run: |
+          import Pkg
+          Pkg.activate(joinpath(pwd(), get(ENV, "PROJECT", "")))
+          dev_pkgs = Pkg.PackageSpec[]
+          for pkg in filter(!isempty, split(get(ENV, "DEV_DEPS", ""), ","))
+            push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
+          end
+          length(dev_pkgs) > 0 && Pkg.develop(dev_pkgs)
+        shell: julia --color=yes --threads=auto {0}
+        if: ${{ inputs.julia_version == '1.10' }}
+        env:
+          PROJECT: ${{ inputs.project }}
+          DEV_DEPS: ${{ inputs.local_dependencies }}
+      - name: "Develop Test Dependencies"
+        run: |
+          import Pkg
+          project = joinpath(pwd(), get(ENV, "PROJECT", ""))
+          Pkg.activate(joinpath(project, "test"))
+          dev_pkgs = Pkg.PackageSpec[Pkg.PackageSpec(path=project)]
+          for pkg in filter(!isempty, split(get(ENV, "TEST_DEPS", ""), ","))
+            push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
+          end
+          length(dev_pkgs) > 0 && Pkg.develop(dev_pkgs)
+        shell: julia --color=yes --threads=auto {0}
+        if: ${{ inputs.julia_version == '1.10' }}
+        env:
+          PROJECT: ${{ inputs.project }}
+          TEST_DEPS: ${{ inputs.local_test_dependencies }}
+      - name: "Run Tests"
+        run: |
+          import Pkg
+          project = joinpath(pwd(), get(ENV, "PROJECT", ""))
+          Pkg.activate(joinpath(project, "test"))
+          const TEST_ARGS = filter(!isempty, split(get(ENV, "TEST_ARGS", "")))
+          include(joinpath(project, "test", "runtests.jl"))
+        shell: julia --color=yes --code-coverage=user --depwarn=yes --threads=auto --check-bounds=yes {0}
+        if: ${{ inputs.julia_version == '1.10' }}
+        env:
+          PROJECT: ${{ inputs.project }}
+          TEST_ARGS: ${{ inputs.test_args }}
+
+      - name: "Upload MLIR modules"
+        uses: actions/upload-artifact@v4
+        timeout-minutes: 10
+        if: ${{ always() }}
+        with:
+          name: "mlir-${{ inputs.julia_version }}-${{ inputs.test_args }}-${{ inputs.os }}-${{ github.event_name }}"
+          path: "**/*.mlir"
+          retention-days: 90
+          overwrite: false
+
+      - name: "Generate coverage"
+        run: |
+          using Pkg
+          Pkg.activate("coveragetempenv", shared=true)
+
+          Pkg.add(PackageSpec(name="CoverageTools"))
+
+          using CoverageTools
+
+          projectdirs = [readdir("lib/"; join=true)..., "."]
+
+          directories = []
+          for projectdir in projectdirs
+              if isdir(joinpath(projectdir, "src"))
+                  push!(directories, joinpath(projectdir, "src"))
+              end
+              if isdir(joinpath(projectdir, "ext"))
+                  push!(directories, joinpath(projectdir, "ext"))
+              end
+          end
+          filter!(isdir, directories)
+
+          pfs = mapreduce(process_folder, vcat, directories)
+          LCOV.writefile("lcov.info", pfs)
+        shell: julia --color=yes --threads=auto {0}
+
+      - uses: codecov/codecov-action@v5
+        with:
+          files: lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
+          fail_ci_if_error: false

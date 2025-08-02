@@ -3,14 +3,29 @@ using InteractiveUtils, CPUSummary
 
 @info sprint(versioninfo)
 
-const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "all"))
+function parse_test_args()
+    test_args_from_env = @isdefined(TEST_ARGS) ? TEST_ARGS : ARGS
+    test_args = Dict{String,String}()
+    for arg in test_args_from_env
+        if contains(arg, "=")
+            key, value = split(arg, "="; limit=2)
+            test_args[key] = value
+        end
+    end
+    @info "Parsed test args" test_args
+    return test_args
+end
+
+const PARSED_TEST_ARGS = parse_test_args()
+
+const BACKEND_GROUP = lowercase(get(PARSED_TEST_ARGS, "BACKEND_GROUP", "all"))
 const ALL_LUX_TEST_GROUPS = [
     "core_layers", "normalize_layers", "autodiff", "recurrent_layers", "misc"
 ]
 
 Sys.iswindows() || push!(ALL_LUX_TEST_GROUPS, "reactant")
 
-INPUT_TEST_GROUP = lowercase(get(ENV, "LUX_TEST_GROUP", "all"))
+INPUT_TEST_GROUP = lowercase(get(PARSED_TEST_ARGS, "LUX_TEST_GROUP", "all"))
 const LUX_TEST_GROUP = if startswith("!", INPUT_TEST_GROUP[1])
     exclude_group = lowercase.(split(INPUT_TEST_GROUP[2:end], ","))
     filter(x -> x ∉ exclude_group, ALL_LUX_TEST_GROUPS)
@@ -102,9 +117,13 @@ if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP)
                                                     ("none", "warn", "convert", "error")
         set_preferences!(Lux, "eltype_mismatch_handling" => option; force=true)
         try
-            run(`$(Base.julia_cmd()) --color=yes --project=$(dirname(Pkg.project().path))
-                --startup-file=no --code-coverage=user $(@__DIR__)/eltype_matching.jl`)
-            @test true
+            withenv("BACKEND_GROUP" => BACKEND_GROUP) do
+                run(
+                    `$(Base.julia_cmd()) --color=yes --project=$(dirname(Pkg.project().path))
+                    --startup-file=no --code-coverage=user $(@__DIR__)/eltype_matching.jl`,
+                )
+                @test true
+            end
         catch
             @test false
         end
@@ -135,13 +154,15 @@ const RETESTITEMS_NWORKER_THREADS = parse(
                                                              enumerate(LUX_TEST_GROUP)
         nworkers = (tag == "reactant") ? 0 : RETESTITEMS_NWORKERS
 
-        ReTestItems.runtests(
-            Lux;
-            tags=(tag == "all" ? nothing : [Symbol(tag)]),
-            testitem_timeout=2400,
-            nworkers,
-            nworker_threads=RETESTITEMS_NWORKER_THREADS,
-        )
+        withenv("BACKEND_GROUP" => BACKEND_GROUP) do
+            ReTestItems.runtests(
+                Lux;
+                tags=(tag == "all" ? nothing : [Symbol(tag)]),
+                testitem_timeout=2400,
+                nworkers,
+                nworker_threads=RETESTITEMS_NWORKER_THREADS,
+            )
+        end
     end
 end
 
@@ -149,7 +170,7 @@ end
 if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP)
     using MPI
 
-    nprocs_str = get(ENV, "JULIA_MPI_TEST_NPROCS", "")
+    nprocs_str = get(PARSED_TEST_ARGS, "JULIA_MPI_TEST_NPROCS", "")
     nprocs = nprocs_str == "" ? clamp(Sys.CPU_THREADS, 2, 4) : parse(Int, nprocs_str)
     testdir = @__DIR__
     isdistributedtest(f) = endswith(f, "_distributedtest.jl")

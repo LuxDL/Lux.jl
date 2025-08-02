@@ -1,4 +1,4 @@
-using MLDataDevices, MLUtils
+using MLDataDevices, MLUtils, Test
 
 const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "none"))
 

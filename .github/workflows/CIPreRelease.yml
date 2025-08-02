@@ -19,68 +19,23 @@
 #       - main
 
 # concurrency:
-#   # Skip intermediate builds: always.
-#   # Cancel intermediate builds: only if it is a pull request build.
 #   group: ${{ github.workflow }}-${{ github.ref }}
 #   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 
 # jobs:
-#   ci:
-#     if: ${{ !contains(github.event.head_commit.message, '[skip tests]') }}
-#     runs-on: ${{ matrix.os }}
+#   test:
 #     strategy:
 #       fail-fast: false
 #       matrix:
-#         version:
-#           - "pre"
-#         os:
-#           - ubuntu-latest
 #         test_group:
 #           - "core_layers"
 #           - "normalize_layers"
 #           - "recurrent_layers"
 #           - "autodiff"
 #           - "misc"
-#           - "reactant"
-#     steps:
-#       - uses: actions/checkout@v4
-#       - uses: julia-actions/setup-julia@v2
-#         with:
-#           version: ${{ matrix.version }}
-#       - uses: julia-actions/cache@v2
-#       - name: "Install Dependencies"
-#         run: |
-#           import Pkg
-#           dev_pkgs = Pkg.PackageSpec[]
-#           for pkg in ("lib/LuxCore", "lib/MLDataDevices", "lib/WeightInitializers", "lib/LuxLib",)
-#             push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
-#           end
-#           Pkg.develop(dev_pkgs)
-#           Pkg.Registry.update()
-#           Pkg.instantiate()
-#           Pkg.activate("test")
-#           dev_pkgs = Pkg.PackageSpec[]
-#           for pkg in ("lib/LuxTestUtils", "lib/LuxLib", "lib/MLDataDevices", "lib/LuxCore", ".")
-#             push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
-#           end
-#           Pkg.develop(dev_pkgs)
-#           Pkg.instantiate()
-#         shell: julia --color=yes --code-coverage=user --depwarn=yes --project=. {0}
-#       - name: "Run Tests"
-#         run: |
-#           import Pkg, Lux
-#           dir = dirname(pathof(Lux))
-#           include(joinpath(dir, "../test/runtests.jl"))
-#         shell: julia --color=yes --code-coverage=user --depwarn=yes --project=test {0}
-#         env:
-#           LUX_TEST_GROUP: ${{ matrix.test_group }}
-#           BACKEND_GROUP: "CPU"
-#       - uses: julia-actions/julia-processcoverage@v1
-#         with:
-#           directories: src,ext
-#       - uses: codecov/codecov-action@v5
-#         with:
-#           files: lcov.info
-#           token: ${{ secrets.CODECOV_TOKEN }}
-#           verbose: true
-#           fail_ci_if_error: false
+#         #   - "reactant"
+#     uses: ./.github/workflows/CommonCI.yml
+#     with:
+#       julia_version: "pre"
+#       project: "."
+#       test_args: "BACKEND_GROUP=${{ matrix.test_group }} LUX_TEST_GROUP=${{ matrix.test_group }}"

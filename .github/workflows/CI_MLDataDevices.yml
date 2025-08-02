@@ -11,87 +11,41 @@ on:
       - main
 
 concurrency:
-  # Skip intermediate builds: always.
-  # Cancel intermediate builds: only if it is a pull request build.
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 
 jobs:
   test:
-    if: ${{ !contains(github.event.head_commit.message, '[skip tests]') }}
-    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        version:
-          - "1"
         os:
           - ubuntu-latest
           - macos-latest
           - windows-latest
         group:
-          - CPU
+          - cpu
           - reactant
         exclude:
           - os: windows-latest
             group: reactant
-    steps:
-      - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v2
-        with:
-          version: ${{ matrix.version }}
-      - uses: julia-actions/cache@v2
-      - uses: julia-actions/julia-buildpkg@v1
-        with:
-          project: "lib/MLDataDevices"
-      - name: "Run Tests"
-        run: |
-          import Pkg
-          Pkg.test(; coverage="user")
-        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/MLDataDevices {0}
-        env:
-          BACKEND_GROUP: ${{ matrix.group }}
-      - uses: julia-actions/julia-processcoverage@v1
-        with:
-          directories: lib/MLDataDevices/src,lib/MLDataDevices/ext
-      - uses: codecov/codecov-action@v5
-        with:
-          files: lcov.info
-          token: ${{ secrets.CODECOV_TOKEN }}
-          verbose: true
-          fail_ci_if_error: false
+    uses: ./.github/workflows/CommonCI.yml
+    with:
+      julia_version: "1"
+      project: "lib/MLDataDevices"
+      test_args: "BACKEND_GROUP=${{ matrix.group }}"
+      os: ${{ matrix.os }}
 
   downgrade:
-    if: ${{ !contains(github.event.head_commit.message, '[skip tests]') && github.base_ref == github.event.repository.default_branch }}
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        version:
-          - "1.10"
-    steps:
-      - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v2
-        with:
-          version: ${{ matrix.version }}
-      - uses: julia-actions/julia-downgrade-compat@v2
-      - uses: julia-actions/julia-buildpkg@v1
-        with:
-          project: "lib/MLDataDevices"
-      - name: "Run Tests"
-        run: |
-          import Pkg
-          Pkg.test(; coverage="user")
-        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/MLDataDevices {0}
-      - uses: julia-actions/julia-processcoverage@v1
-        with:
-          directories: lib/MLDataDevices/src,lib/MLDataDevices/ext
-      - uses: codecov/codecov-action@v5
-        with:
-          files: lcov.info
-          token: ${{ secrets.CODECOV_TOKEN }}
-          verbose: true
-          fail_ci_if_error: false
-
-env:
-  BACKEND_GROUP: "CPU"
+        group:
+          - cpu
+          - reactant
+    uses: ./.github/workflows/CommonCI.yml
+    with:
+      julia_version: "1.10"
+      project: "lib/MLDataDevices"
+      downgrade_testing: true
+      test_args: "BACKEND_GROUP=${{ matrix.group }}"

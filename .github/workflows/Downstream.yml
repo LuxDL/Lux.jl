@@ -14,8 +14,6 @@ on:
       - "lib/WeightInitializers/**"
 
 concurrency:
-  # Skip intermediate builds: always.
-  # Cancel intermediate builds: only if it is a pull request build.
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 
@@ -41,18 +39,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
         with:
-          version: "1.10"
-      - name: "Build Lux"
-        run: |
-          import Pkg
-          dev_pkgs = Pkg.PackageSpec[]
-          for pkg in ("lib/LuxCore", "lib/LuxLib", "lib/MLDataDevices", "lib/WeightInitializers")
-            push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
-          end
-          Pkg.develop(dev_pkgs)
-          Pkg.instantiate()
-          Pkg.update()
-        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=. {0}
+          version: "1"
+      - uses: julia-actions/julia-buildpkg@v1
       - name: "Clone Downstream"
         uses: actions/checkout@v4
         with:

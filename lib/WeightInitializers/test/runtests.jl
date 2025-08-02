@@ -3,7 +3,22 @@ using InteractiveUtils, CPUSummary
 
 @info sprint(versioninfo)
 
-const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "All"))
+function parse_test_args()
+    test_args_from_env = @isdefined(TEST_ARGS) ? TEST_ARGS : ARGS
+    test_args = Dict{String,String}()
+    for arg in test_args_from_env
+        if contains(arg, "=")
+            key, value = split(arg, "="; limit=2)
+            test_args[key] = value
+        end
+    end
+    @info "Parsed test args" test_args
+    return test_args
+end
+
+const PARSED_TEST_ARGS = parse_test_args()
+
+const BACKEND_GROUP = lowercase(get(PARSED_TEST_ARGS, "BACKEND_GROUP", "All"))
 
 const EXTRA_PKGS = PackageSpec[]
 
@@ -35,8 +50,10 @@ const RETESTITEMS_NWORKER_THREADS = parse(
     ),
 )
 
-ReTestItems.runtests(
-    WeightInitializers;
-    nworkers=RETESTITEMS_NWORKERS,
-    nworker_threads=RETESTITEMS_NWORKER_THREADS,
-)
+withenv("BACKEND_GROUP" => BACKEND_GROUP) do
+    ReTestItems.runtests(
+        WeightInitializers;
+        nworkers=RETESTITEMS_NWORKERS,
+        nworker_threads=RETESTITEMS_NWORKER_THREADS,
+    )
+end
