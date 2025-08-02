@@ -43,7 +43,7 @@ jobs:
     with:
       julia_version: ${{ matrix.version }}
       project: "."
-      test_args: "BACKEND_GROUP=${{ matrix.test_group }} LUX_TEST_GROUP=${{ matrix.test_group }}"
+      test_args: "BACKEND_GROUP=CPU LUX_TEST_GROUP=${{ matrix.test_group }}"
       os: ${{ matrix.os }}
       local_dependencies: "lib/MLDataDevices,lib/WeightInitializers,lib/LuxLib,lib/LuxCore"
       local_test_dependencies: "lib/MLDataDevices,lib/LuxTestUtils,lib/LuxLib,lib/LuxCore"
@@ -66,6 +66,6 @@ jobs:
       julia_version: "1.10"
       project: "."
       downgrade_testing: true
-      test_args: "BACKEND_GROUP=${{ matrix.test_group }} LUX_TEST_GROUP=${{ matrix.test_group }}"
+      test_args: "BACKEND_GROUP=CPU LUX_TEST_GROUP=${{ matrix.test_group }}"
       local_dependencies: "lib/MLDataDevices,lib/WeightInitializers,lib/LuxLib,lib/LuxCore"
       local_test_dependencies: "lib/MLDataDevices,lib/LuxTestUtils,lib/LuxLib,lib/LuxCore"
