@@ -44,6 +44,7 @@ LuxCore.statelength
 LuxCore.testmode
 LuxCore.trainmode
 LuxCore.update_state
+LuxCore.preserves_state_type
 ```
 
 ## Layer size

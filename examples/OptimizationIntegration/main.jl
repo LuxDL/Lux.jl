@@ -109,7 +109,7 @@ function train_model(dataloader)
         return l < 1.0e-8 ## Terminate if loss is small
     end
 
-    smodel = StatefulLuxLayer{true}(model, nothing, st)
+    smodel = StatefulLuxLayer(model, nothing, st)
 
     function loss_adjoint(θ, (u_batch, t_batch))
         t_batch = t_batch.t
@@ -140,7 +140,7 @@ function train_model(dataloader)
     opt_prob = remake(opt_prob; u0=res_lbfgs.u)
     res = solve(opt_prob, Optimisers.Adam(0.005); maxiters=500, callback)
 
-    return StatefulLuxLayer{true}(model, res.u, smodel.st)
+    return StatefulLuxLayer(model, res.u, smodel.st)
 end
 
 trained_model = train_model(dataloader)
