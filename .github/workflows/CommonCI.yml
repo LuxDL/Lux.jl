@@ -130,7 +130,8 @@ jobs:
 
           using CoverageTools
 
-          projectdirs = [readdir("lib/"; join=true)..., "."]
+          projectdirs = ["."]
+          isdir("lib") && append!(projectdirs, readdir("lib/"; join=true))
 
           directories = []
           for projectdir in projectdirs
