@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en-US" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Training a Simple LSTM | Lux.jl Documentation</title>
+    <meta name="description" content="Documentation for LuxDL Repositories">
+    <meta name="generator" content="VitePress v1.1.4">
+    <link rel="preload stylesheet" href="/v0.5.40/assets/style.C1dS2cOl.css" as="style">
+    
+    <script type="module" src="/v0.5.40/assets/app.BGYW0HNW.js"></script>
+    <link rel="preload" href="/v0.5.40/assets/inter-roman-latin.Di8DUHzh.woff2" as="font" type="font/woff2" crossorigin="">
+    <link rel="modulepreload" href="/v0.5.40/assets/chunks/framework.BksySIuR.js">
+    <link rel="modulepreload" href="/v0.5.40/assets/chunks/theme.DEk49SDK.js">
+    <link rel="modulepreload" href="/v0.5.40/assets/tutorials_beginner_3_SimpleRNN.md.lV3jXKxG.lean.js">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q8GYTEVTZ2"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-Q8GYTEVTZ2");</script>
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="icon" href="/favicon.ico">
+    <link rel="manifest" href="/site.webmanifest">
+    <script id="check-dark-mode">(()=>{const e=localStorage.getItem("vitepress-theme-appearance")||"auto",a=window.matchMedia("(prefers-color-scheme: dark)").matches;(!e||e==="auto"?a:e==="dark")&&document.documentElement.classList.add("dark")})();</script>
+    <script id="check-mac-os">document.documentElement.classList.toggle("mac",/Mac|iPhone|iPod|iPad/i.test(navigator.platform));</script>
+  </head>
+  <body>
+    <div id="app"><div class="Layout" data-v-a9a9e638><!--[--><!--]--><!--[--><span tabindex="-1" data-v-c3508ec8></span><a href="#VPContent" class="VPSkipLink visually-hidden" data-v-c3508ec8> Skip to content </a><!--]--><!----><header class="VPNav" data-v-a9a9e638 data-v-f1e365da><div class="VPNavBar has-sidebar top" data-v-f1e365da data-v-40788ea0><div class="wrapper" data-v-40788ea0><div class="container" data-v-40788ea0><div class="title" data-v-40788ea0><div class="VPNavBarTitle has-sidebar" data-v-40788ea0 data-v-28a961f9><a class="title" href="/v0.5.40/" data-v-28a961f9><!--[--><!--]--><!--[--><!--[--><!--[--><img class="VPImage dark logo" src="/v0.5.40/lux-logo-dark.svg" alt data-v-35a7d0b8><!--]--><!--[--><img class="VPImage light logo" src="/v0.5.40/lux-logo.svg" alt data-v-35a7d0b8><!--]--><!--]--><!--]--><span data-v-28a961f9>Lux.jl Documentation</span><!--[--><!--]--></a></div></div><div class="content" data-v-40788ea0><div class="content-body" data-v-40788ea0><!--[--><!--]--><div class="VPNavBarSearch search" data-v-40788ea0><!--[--><!----><div id="local-search"><button type="button" class="DocSearch DocSearch-Button" aria-label="Search"><span class="DocSearch-Button-Container"><span class="vp-icon DocSearch-Search-Icon"></span><span class="DocSearch-Button-Placeholder">Search</span></span><span class="DocSearch-Button-Keys"><kbd class="DocSearch-Button-Key"></kbd><kbd class="DocSearch-Button-Key">K</kbd></span></button></div><!--]--></div><nav aria-labelledby="main-nav-aria-label" class="VPNavBarMenu menu" data-v-40788ea0 data-v-492ea56d><span id="main-nav-aria-label" class="visually-hidden" data-v-492ea56d>Main Navigation</span><!--[--><!--[--><a class="VPLink link VPNavBarMenuLink" href="/v0.5.40/" tabindex="0" data-v-492ea56d data-v-ed5ac1f6><!--[--><span data-v-ed5ac1f6>Home</span><!--]--></a><!--]--><!--[--><a class="VPLink link VPNavBarMenuLink" href="/v0.5.40/introduction" tabindex="0" data-v-492ea56d data-v-ed5ac1f6><!--[--><span data-v-ed5ac1f6>Getting Started</span><!--]--></a><!--]--><!--[--><a class="VPLink link vp-external-link-icon VPNavBarMenuLink" href="https://lux.csail.mit.edu/benchmarks/" target="_blank" rel="noreferrer" tabindex="0" data-v-492ea56d data-v-ed5ac1f6><!--[--><span data-v-ed5ac1f6>Benchmarks</span><!--]--></a><!--]--><!--[--><a class="VPLink link VPNavBarMenuLink" href="/v0.5.40/tutorials/" tabindex="0" data-v-492ea56d data-v-ed5ac1f6><!--[--><span data-v-ed5ac1f6>Tutorials</span><!--]--></a><!--]--><!--[--><a class="VPLink link VPNavBarMenuLink" href="/v0.5.40/manual/interface" tabindex="0" data-v-492ea56d data-v-ed5ac1f6><!--[--><span data-v-ed5ac1f6>Manual</span><!--]--></a><!--]--><!--[--><div class="VPFlyout VPNavBarMenuGroup" data-v-492ea56d data-v-e5380155><button type="button" class="button" aria-haspopup="true" aria-expanded="false" data-v-e5380155><span class="text" data-v-e5380155><!----><span data-v-e5380155>API</span><span class="vpi-chevron-down text-icon" data-v-e5380155></span></span></button><div class="menu" data-v-e5380155><div class="VPMenu" data-v-e5380155 data-v-97491713><div class="items" data-v-97491713><!--[--><!--[--><div class="VPMenuGroup" data-v-97491713 data-v-48c802d0><p class="title" data-v-48c802d0>Lux</p><!--[--><!--[--><div class="VPMenuLink" data-v-48c802d0 data-v-8b74d055><a class="VPLink link" href="/v0.5.40/api/Lux/layers" data-v-8b74d055><!--[-->Built-In Layers<!--]--></a></div><!--]--><!--[--><div class="VPMenuLink" data-v-48c802d0 data-v-8b74d055><a class="VPLink link" href="/v0.5.40/api/Lux/utilities" data-v-8b74d055><!--[-->Utilities<!--]--></a></div><!--]--><!--[--><div class="VPMenuLink" data-v-48c802d0 data-v-8b74d055><a class="VPLink link" href="/v0.5.40/api/Lux/contrib" data-v-8b74d055><!--[-->Experimental<!--]--></a></div><!--]--><!--[--><div class="VPMenuLink" data-v-48c802d0 data-v-8b74d055><a class="VPLink link" href="/v0.5.40/api/Lux/interop" data-v-8b74d055><!--[-->InterOp<!--]--></a></div><!--]--><!--[--><div class="VPMenuLink" data-v-48c802d0 data-v-8b74d055><a class="VPLink link" href="/v0.5.40/api/Lux/distributed_utils" data-v-8b74d055><!--[-->DistributedUtils<!--]--></a></div><!--]--><!--]--></div><!--]--><!--[--><div class="VPMenuGroup" data-v-97491713 data-v-48c802d0><p class="title" data-v-48c802d0>Accelerator Support</p><!--[--><!--[--><div class="VPMenuLink" data-v-48c802d0 data-v-8b74d055><a class="VPLink link" href="/v0.5.40/api/Accelerator_Support/LuxAMDGPU" data-v-8b74d055><!--[-->LuxAMDGPU<!--]--></a></div><!--]--><!--[--><div class="VPMenuLink" data-v-48c802d0 data-v-8b74d055><a class="VPLink link" href="/v0.5.40/api/Accelerator_Support/LuxCUDA" data-v-8b74d055><!--[-->LuxCUDA<!--]--></a></div><!--]--><!--[--><div class="VPMenuLink" data-v-48c802d0 data-v-8b74d055><a class="VPLink link" href="/v0.5.40/api/Accelerator_Support/LuxDeviceUtils" data-v-8b74d055><!--[-->LuxDeviceUtils<!--]--></a></div><!--]--><!--]--></div><!--]--><!--[--><div class="VPMenuGroup" data-v-97491713 data-v-48c802d0><p class="title" data-v-48c802d0>Building Blocks</p><!--[--><!--[--><div class="VPMenuLink" data-v-48c802d0 data-v-8b74d055><a class="VPLink link" href="/v0.5.40/api/Building_Blocks/LuxCore" data-v-8b74d055><!--[-->LuxCore<!--]--></a></div><!--]--><!--[--><div class="VPMenuLink" data-v-48c802d0 data-v-8b74d055><a class="VPLink link" href="/v0.5.40/api/Building_Blocks/LuxLib" data-v-8b74d055><!--[-->LuxLib<!--]--></a></div><!--]--><!--[--><div class="VPMenuLink" data-v-48c802d0 data-v-8b74d055><a class="VPLink link" href="/v0.5.40/api/Building_Blocks/WeightInitializers" data-v-8b74d055><!--[-->WeightInitializers<!--]--></a></div><!--]--><!--]--></div><!--]--><!--[--><div class="VPMenuGroup" data-v-97491713 data-v-48c802d0><p class="title" data-v-48c802d0>Domain Specific Modeling</p><!--[--><!--[--><div class="VPMenuLink" data-v-48c802d0 data-v-8b74d055><a class="VPLink link" href="/v0.5.40/api/Domain_Specific_Modeling/Boltz" data-v-8b74d055><!--[-->Boltz<!--]--></a></div><!--]--><!--]--></div><!--]--><!--[--><div class="VPMenuGroup" data-v-97491713 data-v-48c802d0><p class="title" data-v-48c802d0>Testing Functionality</p><!--[--><!--[--><div class="VPMenuLink" data-v-48c802d0 data-v-8b74d055><a class="VPLink link" href="/v0.5.40/api/Testing_Functionality/LuxTestUtils" data-v-8b74d055><!--[-->LuxTestUtils<!--]--></a></div><!--]--><!--]--></div><!--]--><!--]--></div><!--[--><!--]--></div></div></div><!--]--><!--[--><div class="VPFlyout VPNavBarMenuGroup" data-v-492ea56d data-v-e5380155><button type="button" class="button" aria-haspopup="true" aria-expanded="false" data-v-e5380155><span class="text" data-v-e5380155><!----><span data-v-e5380155>Versions</span><span class="vpi-chevron-down text-icon" data-v-e5380155></span></span></button><div class="menu" data-v-e5380155><div class="VPMenu" data-v-e5380155 data-v-97491713><div class="items" data-v-97491713><!--[--><!--[--><div class="VPMenuLink" data-v-97491713 data-v-8b74d055><a class="VPLink link vp-external-link-icon" href="https://lux.csail.mit.edu/stable" target="_blank" rel="noreferrer" data-v-8b74d055><!--[-->Stable<!--]--></a></div><!--]--><!--[--><div class="VPMenuLink" data-v-97491713 data-v-8b74d055><a class="VPLink link vp-external-link-icon" href="https://lux.csail.mit.edu/dev" target="_blank" rel="noreferrer" data-v-8b74d055><!--[-->Dev<!--]--></a></div><!--]--><!--]--></div><!--[--><!--]--></div></div></div><!--]--><!--]--></nav><!----><div class="VPNavBarAppearance appearance" data-v-40788ea0 data-v-ead91a81><button class="VPSwitch VPSwitchAppearance" type="button" role="switch" title="Switch to dark theme" aria-checked="false" data-v-ead91a81 data-v-b79b56d4 data-v-4a1c76db><span class="check" data-v-4a1c76db><span class="icon" data-v-4a1c76db><!--[--><span class="vpi-sun sun" data-v-b79b56d4></span><span class="vpi-moon moon" data-v-b79b56d4></span><!--]--></span></span></button></div><div class="VPSocialLinks VPNavBarSocialLinks social-links" data-v-40788ea0 data-v-164c457f data-v-ee7a9424><!--[--><a class="VPSocialLink no-icon" href="https://github.com/LuxDL/Lux.jl" aria-label="github" target="_blank" rel="noopener" data-v-ee7a9424 data-v-717b8b75><span class="vpi-social-github" /></a><a class="VPSocialLink no-icon" href="https://twitter.com/avikpal1410" aria-label="twitter" target="_blank" rel="noopener" data-v-ee7a9424 data-v-717b8b75><span class="vpi-social-twitter" /></a><a class="VPSocialLink no-icon" href="https://julialang.org/slack/" aria-label="slack" target="_blank" rel="noopener" data-v-ee7a9424 data-v-717b8b75><span class="vpi-social-slack" /></a><!--]--></div><div class="VPFlyout VPNavBarExtra extra" data-v-40788ea0 data-v-9b536d0b data-v-e5380155><button type="button" class="button" aria-haspopup="true" aria-expanded="false" aria-label="extra navigation" data-v-e5380155><span class="vpi-more-horizontal icon" data-v-e5380155></span></button><div class="menu" data-v-e5380155><div class="VPMenu" data-v-e5380155 data-v-97491713><!----><!--[--><!--[--><!----><div class="group" data-v-9b536d0b><div class="item appearance" data-v-9b536d0b><p class="label" data-v-9b536d0b>Appearance</p><div class="appearance-action" data-v-9b536d0b><button class="VPSwitch VPSwitchAppearance" type="button" role="switch" title="Switch to dark theme" aria-checked="false" data-v-9b536d0b data-v-b79b56d4 data-v-4a1c76db><span class="check" data-v-4a1c76db><span class="icon" data-v-4a1c76db><!--[--><span class="vpi-sun sun" data-v-b79b56d4></span><span class="vpi-moon moon" data-v-b79b56d4></span><!--]--></span></span></button></div></div></div><div class="group" data-v-9b536d0b><div class="item social-links" data-v-9b536d0b><div class="VPSocialLinks social-links-list" data-v-9b536d0b data-v-ee7a9424><!--[--><a class="VPSocialLink no-icon" href="https://github.com/LuxDL/Lux.jl" aria-label="github" target="_blank" rel="noopener" data-v-ee7a9424 data-v-717b8b75><span class="vpi-social-github" /></a><a class="VPSocialLink no-icon" href="https://twitter.com/avikpal1410" aria-label="twitter" target="_blank" rel="noopener" data-v-ee7a9424 data-v-717b8b75><span class="vpi-social-twitter" /></a><a class="VPSocialLink no-icon" href="https://julialang.org/slack/" aria-label="slack" target="_blank" rel="noopener" data-v-ee7a9424 data-v-717b8b75><span class="vpi-social-slack" /></a><!--]--></div></div></div><!--]--><!--]--></div></div></div><!--[--><!--]--><button type="button" class="VPNavBarHamburger hamburger" aria-label="mobile navigation" aria-expanded="false" aria-controls="VPNavScreen" data-v-40788ea0 data-v-5dea55bf><span class="container" data-v-5dea55bf><span class="top" data-v-5dea55bf></span><span class="middle" data-v-5dea55bf></span><span class="bottom" data-v-5dea55bf></span></span></button></div></div></div></div><div class="divider" data-v-40788ea0><div class="divider-line" data-v-40788ea0></div></div></div><!----></header><div class="VPLocalNav has-sidebar empty" data-v-a9a9e638 data-v-070ab83d><div class="container" data-v-070ab83d><button class="menu" aria-expanded="false" aria-controls="VPSidebarNav" data-v-070ab83d><span class="vpi-align-left menu-icon" data-v-070ab83d></span><span class="menu-text" data-v-070ab83d>Menu</span></button><div class="VPLocalNavOutlineDropdown" style="--vp-vh:0px;" data-v-070ab83d data-v-bc9dc845><button data-v-bc9dc845>Return to top</button><!----></div></div></div><aside class="VPSidebar" data-v-a9a9e638 data-v-ec846e01><div class="curtain" data-v-ec846e01></div><nav class="nav" id="VPSidebarNav" aria-labelledby="sidebar-aria-label" tabindex="-1" data-v-ec846e01><span class="visually-hidden" id="sidebar-aria-label" data-v-ec846e01> Sidebar Navigation </span><!--[--><!--]--><!--[--><div class="group" data-v-ec846e01><section class="VPSidebarItem level-0" data-v-ec846e01 data-v-2ea20db7><!----><div class="items" data-v-2ea20db7><!--[--><div class="VPSidebarItem level-1 is-link" data-v-2ea20db7 data-v-2ea20db7><div class="item" data-v-2ea20db7><div class="indicator" data-v-2ea20db7></div><a class="VPLink link link" href="/v0.5.40/tutorials/" data-v-2ea20db7><!--[--><p class="text" data-v-2ea20db7>Overview</p><!--]--></a><!----></div><!----></div><!--]--></div></section></div><div class="group" data-v-ec846e01><section class="VPSidebarItem level-0 collapsible has-active" data-v-ec846e01 data-v-2ea20db7><div class="item" role="button" tabindex="0" data-v-2ea20db7><div class="indicator" data-v-2ea20db7></div><h2 class="text" data-v-2ea20db7>Beginner</h2><div class="caret" role="button" aria-label="toggle section" tabindex="0" data-v-2ea20db7><span class="vpi-chevron-right caret-icon" data-v-2ea20db7></span></div></div><div class="items" data-v-2ea20db7><!--[--><div class="VPSidebarItem level-1 is-link" data-v-2ea20db7 data-v-2ea20db7><div class="item" data-v-2ea20db7><div class="indicator" data-v-2ea20db7></div><a class="VPLink link link" href="/v0.5.40/tutorials/beginner/1_Basics" data-v-2ea20db7><!--[--><p class="text" data-v-2ea20db7>Julia & Lux for the Uninitiated</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-2ea20db7 data-v-2ea20db7><div class="item" data-v-2ea20db7><div class="indicator" data-v-2ea20db7></div><a class="VPLink link link" href="/v0.5.40/tutorials/beginner/2_PolynomialFitting" data-v-2ea20db7><!--[--><p class="text" data-v-2ea20db7>Fitting a Polynomial using MLP</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-2ea20db7 data-v-2ea20db7><div class="item" data-v-2ea20db7><div class="indicator" data-v-2ea20db7></div><a class="VPLink link link" href="/v0.5.40/tutorials/beginner/3_SimpleRNN" data-v-2ea20db7><!--[--><p class="text" data-v-2ea20db7>Training a Simple LSTM</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-2ea20db7 data-v-2ea20db7><div class="item" data-v-2ea20db7><div class="indicator" data-v-2ea20db7></div><a class="VPLink link link" href="/v0.5.40/tutorials/beginner/4_SimpleChains" data-v-2ea20db7><!--[--><p class="text" data-v-2ea20db7>MNIST Classification with SimpleChains</p><!--]--></a><!----></div><!----></div><!--]--></div></section></div><div class="group" data-v-ec846e01><section class="VPSidebarItem level-0 collapsible" data-v-ec846e01 data-v-2ea20db7><div class="item" role="button" tabindex="0" data-v-2ea20db7><div class="indicator" data-v-2ea20db7></div><h2 class="text" data-v-2ea20db7>Intermediate</h2><div class="caret" role="button" aria-label="toggle section" tabindex="0" data-v-2ea20db7><span class="vpi-chevron-right caret-icon" data-v-2ea20db7></span></div></div><div class="items" data-v-2ea20db7><!--[--><div class="VPSidebarItem level-1 is-link" data-v-2ea20db7 data-v-2ea20db7><div class="item" data-v-2ea20db7><div class="indicator" data-v-2ea20db7></div><a class="VPLink link link" href="/v0.5.40/tutorials/intermediate/1_NeuralODE" data-v-2ea20db7><!--[--><p class="text" data-v-2ea20db7>MNIST Classification using Neural ODEs</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-2ea20db7 data-v-2ea20db7><div class="item" data-v-2ea20db7><div class="indicator" data-v-2ea20db7></div><a class="VPLink link link" href="/v0.5.40/tutorials/intermediate/2_BayesianNN" data-v-2ea20db7><!--[--><p class="text" data-v-2ea20db7>Bayesian Neural Network</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-2ea20db7 data-v-2ea20db7><div class="item" data-v-2ea20db7><div class="indicator" data-v-2ea20db7></div><a class="VPLink link link" href="/v0.5.40/tutorials/intermediate/3_HyperNet" data-v-2ea20db7><!--[--><p class="text" data-v-2ea20db7>Training a HyperNetwork on MNIST and FashionMNIST</p><!--]--></a><!----></div><!----></div><!--]--></div></section></div><div class="group" data-v-ec846e01><section class="VPSidebarItem level-0 collapsible" data-v-ec846e01 data-v-2ea20db7><div class="item" role="button" tabindex="0" data-v-2ea20db7><div class="indicator" data-v-2ea20db7></div><h2 class="text" data-v-2ea20db7>Advanced</h2><div class="caret" role="button" aria-label="toggle section" tabindex="0" data-v-2ea20db7><span class="vpi-chevron-right caret-icon" data-v-2ea20db7></span></div></div><div class="items" data-v-2ea20db7><!--[--><div class="VPSidebarItem level-1 is-link" data-v-2ea20db7 data-v-2ea20db7><div class="item" data-v-2ea20db7><div class="indicator" data-v-2ea20db7></div><a class="VPLink link link" href="/v0.5.40/tutorials/advanced/1_GravitationalWaveForm" data-v-2ea20db7><!--[--><p class="text" data-v-2ea20db7>Training a Neural ODE to Model Gravitational Waveforms</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-2ea20db7 data-v-2ea20db7><div class="item" data-v-2ea20db7><div class="indicator" data-v-2ea20db7></div><a class="VPLink link link" href="/v0.5.40/tutorials/advanced/2_SymbolicOptimalControl" data-v-2ea20db7><!--[--><p class="text" data-v-2ea20db7>Solving Optimal Control Problems with Symbolic UDEs</p><!--]--></a><!----></div><!----></div><!--]--></div></section></div><div class="group" data-v-ec846e01><section class="VPSidebarItem level-0 collapsible collapsed" data-v-ec846e01 data-v-2ea20db7><div class="item" role="button" tabindex="0" data-v-2ea20db7><div class="indicator" data-v-2ea20db7></div><h2 class="text" data-v-2ea20db7>3rd Party Tutorials</h2><div class="caret" role="button" aria-label="toggle section" tabindex="0" data-v-2ea20db7><span class="vpi-chevron-right caret-icon" data-v-2ea20db7></span></div></div><div class="items" data-v-2ea20db7><!--[--><div class="VPSidebarItem level-1 is-link" data-v-2ea20db7 data-v-2ea20db7><div class="item" data-v-2ea20db7><div class="indicator" data-v-2ea20db7></div><a class="VPLink link vp-external-link-icon link" href="https://docs.sciml.ai/NeuralPDE/stable/tutorials/pdesystem/" target="_blank" rel="noreferrer" data-v-2ea20db7><!--[--><p class="text" data-v-2ea20db7>PINNs (NeuralPDE.jl)</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-2ea20db7 data-v-2ea20db7><div class="item" data-v-2ea20db7><div class="indicator" data-v-2ea20db7></div><a class="VPLink link vp-external-link-icon link" href="https://docs.sciml.ai/SciMLSensitivity/stable/tutorials/data_parallel/" target="_blank" rel="noreferrer" data-v-2ea20db7><!--[--><p class="text" data-v-2ea20db7>UDEs (SciMLSensitivity.jl)</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-2ea20db7 data-v-2ea20db7><div class="item" data-v-2ea20db7><div class="indicator" data-v-2ea20db7></div><a class="VPLink link vp-external-link-icon link" href="https://docs.sciml.ai/DiffEqFlux/stable/examples/neural_ode/" target="_blank" rel="noreferrer" data-v-2ea20db7><!--[--><p class="text" data-v-2ea20db7>Neural DEs (DiffEqFlux.jl)</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-2ea20db7 data-v-2ea20db7><div class="item" data-v-2ea20db7><div class="indicator" data-v-2ea20db7></div><a class="VPLink link vp-external-link-icon link" href="https://docs.sciml.ai/DeepEquilibriumNetworks/stable/tutorials/basic_mnist_deq/" target="_blank" rel="noreferrer" data-v-2ea20db7><!--[--><p class="text" data-v-2ea20db7>DEQs (DeepEquilibriumNetworks.jl)</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-2ea20db7 data-v-2ea20db7><div class="item" data-v-2ea20db7><div class="indicator" data-v-2ea20db7></div><a class="VPLink link vp-external-link-icon link" href="https://github.com/Dale-Black/ComputerVisionTutorials.jl/" target="_blank" rel="noreferrer" data-v-2ea20db7><!--[--><p class="text" data-v-2ea20db7>Medical Image Segmentation</p><!--]--></a><!----></div><!----></div><!--]--></div></section></div><!--]--><!--[--><!--]--></nav></aside><div class="VPContent has-sidebar" id="VPContent" data-v-a9a9e638 data-v-91765379><div class="VPDoc has-sidebar has-aside" data-v-91765379 data-v-83890dd9><!--[--><!--]--><div class="container" data-v-83890dd9><div class="aside" data-v-83890dd9><div class="aside-curtain" data-v-83890dd9></div><div class="aside-container" data-v-83890dd9><div class="aside-content" data-v-83890dd9><div class="VPDocAside" data-v-83890dd9 data-v-6d7b3c46><!--[--><!--]--><!--[--><!--]--><nav aria-labelledby="doc-outline-aria-label" class="VPDocAsideOutline" role="navigation" data-v-6d7b3c46 data-v-b6ca177b><div class="content" data-v-b6ca177b><div class="outline-marker" data-v-b6ca177b></div><div aria-level="2" class="outline-title" id="doc-outline-aria-label" role="heading" data-v-b6ca177b>On this page</div><ul class="VPDocOutlineItem root" data-v-b6ca177b data-v-3f927ebe><!--[--><!--]--></ul></div></nav><!--[--><!--]--><div class="spacer" data-v-6d7b3c46></div><!--[--><!--[--><!--[--><!--[--><!--[--><br><h2> Trusted by </h2><a class="enjoyer" href="https://sciml.ai/" target="_blank"><img width="32" height="32" src="https://avatars.githubusercontent.com/u/21238080?v=4"><span><p class="extra-info">Scientific Computing</p><p class="heading">SciML.ai</p><p class="extra-info">Machine Learning</p></span></a><a class="enjoyer" href="https://juliagni.github.io/GeometricMachineLearning.jl/latest/" target="_blank"><img width="32" height="32" src="https://juliagni.github.io/GeometricMachineLearning.jl/latest/assets/logo-dark.png"><span><p class="extra-info">Structure Preserving</p><p class="heading">GeometricML.jl</p><p class="extra-info">Machine Learning</p></span></a><a class="enjoyer" href="https://una-auxme.github.io/MeshGraphNets.jl/dev/" target="_blank"><img width="32" height="32" src="https://raw.githubusercontent.com/una-auxme/MeshGraphNets.jl/main/logo/meshgraphnetsjl_logo.png"><span><p class="extra-info">Physical Systems</p><p class="heading">MeshGraphNets.jl</p><p class="extra-info">Graph Neural Nets</p></span></a><!--]--><!--]--><!--]--><!--]--><!--]--><!----><!--[--><!--]--><!--[--><!--]--></div></div></div></div><div class="content" data-v-83890dd9><div class="content-container" data-v-83890dd9><!--[--><!--]--><main class="main" data-v-83890dd9><div style="position:relative;" class="vp-doc _v0_5_40_tutorials_beginner_3_SimpleRNN" data-v-83890dd9><div><h1 id="Training-a-Simple-LSTM" tabindex="-1">Training a Simple LSTM <a class="header-anchor" href="#Training-a-Simple-LSTM" aria-label="Permalink to &quot;Training a Simple LSTM {#Training-a-Simple-LSTM}&quot;">​</a></h1><p>In this tutorial we will go over using a recurrent neural network to classify clockwise and anticlockwise spirals. By the end of this tutorial you will be able to:</p><ol><li><p>Create custom Lux models.</p></li><li><p>Become familiar with the Lux recurrent neural network API.</p></li><li><p>Training using Optimisers.jl and Zygote.jl.</p></li></ol><h2 id="Package-Imports" tabindex="-1">Package Imports <a class="header-anchor" href="#Package-Imports" aria-label="Permalink to &quot;Package Imports {#Package-Imports}&quot;">​</a></h2><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">using</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> ADTypes, Lux, LuxAMDGPU, LuxCUDA, JLD2, MLUtils, Optimisers, Zygote, Printf, Random,</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">      Statistics</span></span></code></pre></div><h2 id="Dataset" tabindex="-1">Dataset <a class="header-anchor" href="#Dataset" aria-label="Permalink to &quot;Dataset {#Dataset}&quot;">​</a></h2><p>We will use MLUtils to generate 500 (noisy) clockwise and 500 (noisy) anticlockwise spirals. Using this data we will create a <code>MLUtils.DataLoader</code>. Our dataloader will give us sequences of size 2 × seq_len × batch_size and we need to predict a binary value whether the sequence is clockwise or anticlockwise.</p><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> get_dataloaders</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(; dataset_size</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1000</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, sequence_length</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">50</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    # Create the spirals</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    data </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> [MLUtils</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">Datasets</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">make_spiral</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(sequence_length) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">for</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> _ </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">in</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">dataset_size]</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    # Get the labels</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    labels </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> vcat</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">repeat</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">([</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0.0f0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">], dataset_size </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">÷</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 2</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">), </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">repeat</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">([</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1.0f0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">], dataset_size </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">÷</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 2</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">))</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    clockwise_spirals </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> [</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">reshape</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(d[</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">][:, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">sequence_length], :, sequence_length, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">                         for</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> d </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">in</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> data[</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(dataset_size </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">÷</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 2</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)]]</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    anticlockwise_spirals </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> [</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">reshape</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                                 d[</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">][:, (sequence_length </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">+</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">end</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">], :, sequence_length, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">                             for</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> d </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">in</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> data[((dataset_size </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">÷</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 2</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">+</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">end</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">]]</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    x_data </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> Float32</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">cat</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(clockwise_spirals</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">...</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, anticlockwise_spirals</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">...</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">; dims</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">3</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">))</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    # Split the dataset</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    (x_train, y_train), (x_val, y_val) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> splitobs</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">((x_data, labels); at</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0.8</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, shuffle</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">true</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    # Create DataLoaders</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    return</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">        # Use DataLoader to automatically minibatch and shuffle the data</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        DataLoader</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">collect</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.((x_train, y_train)); batchsize</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, shuffle</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">true</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">),</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">        # Don&#39;t shuffle the validation data</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        DataLoader</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">collect</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.((x_val, y_val)); batchsize</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">128</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, shuffle</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">false</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">))</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">end</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code"><code><span class="line"><span>get_dataloaders (generic function with 1 method)</span></span></code></pre></div><h2 id="Creating-a-Classifier" tabindex="-1">Creating a Classifier <a class="header-anchor" href="#Creating-a-Classifier" aria-label="Permalink to &quot;Creating a Classifier {#Creating-a-Classifier}&quot;">​</a></h2><p>We will be extending the <code>Lux.AbstractExplicitContainerLayer</code> type for our custom model since it will contain a lstm block and a classifier head.</p><p>We pass the fieldnames <code>lstm_cell</code> and <code>classifier</code> to the type to ensure that the parameters and states are automatically populated and we don&#39;t have to define <code>Lux.initialparameters</code> and <code>Lux.initialstates</code>.</p><p>To understand more about container layers, please look at <a href="/v0.5.40/manual/interface#Container-Layer">Container Layer</a>.</p><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> SpiralClassifier{L, C} </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&lt;:</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">       Lux</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">AbstractExplicitContainerLayer{(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">:lstm_cell</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">:classifier</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)}</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    lstm_cell</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">::</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">L</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    classifier</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">::</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">C</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">end</span></span></code></pre></div><p>We won&#39;t define the model from scratch but rather use the <a href="/v0.5.40/api/Lux/layers#Lux.LSTMCell"><code>Lux.LSTMCell</code></a> and <a href="/v0.5.40/api/Lux/layers#Lux.Dense"><code>Lux.Dense</code></a>.</p><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> SpiralClassifier</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(in_dims, hidden_dims, out_dims)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    return</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> SpiralClassifier</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        LSTMCell</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(in_dims </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=&gt;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> hidden_dims), </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">Dense</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(hidden_dims </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=&gt;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> out_dims, sigmoid))</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">end</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code"><code><span class="line"><span>Main.var&quot;##225&quot;.SpiralClassifier</span></span></code></pre></div><p>We can use default Lux blocks – <code>Recurrence(LSTMCell(in_dims =&gt; hidden_dims)</code> – instead of defining the following. But let&#39;s still do it for the sake of it.</p><p>Now we need to define the behavior of the Classifier when it is invoked.</p><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (s</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">::</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">SpiralClassifier</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)(</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        x</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">::</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">AbstractArray{T, 3}</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, ps</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">::</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">NamedTuple</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, st</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">::</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">NamedTuple</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">where</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {T}</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    # First we will have to run the sequence through the LSTM Cell</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    # The first call to LSTM Cell will create the initial hidden state</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    # See that the parameters and states are automatically populated into a field called</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    # `lstm_cell` We use `eachslice` to get the elements in the sequence without copying,</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    # and `Iterators.peel` to split out the first element for LSTM initialization.</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    x_init, x_rest </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> Iterators</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">peel</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(Lux</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">_eachslice</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(x, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">Val</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">2</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)))</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    (y, carry), st_lstm </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> s</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">lstm_cell</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(x_init, ps</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">lstm_cell, st</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">lstm_cell)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    # Now that we have the hidden state and memory in `carry` we will pass the input and</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    # `carry` jointly</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    for</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">in</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> x_rest</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        (y, carry), st_lstm </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> s</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">lstm_cell</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">((x, carry), ps</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">lstm_cell, st_lstm)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    end</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    # After running through the sequence we will pass the output through the classifier</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    y, st_classifier </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> s</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">classifier</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(y, ps</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">classifier, st</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">classifier)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    # Finally remember to create the updated state</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    st </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> merge</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(st, (classifier</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">st_classifier, lstm_cell</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">st_lstm))</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    return</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> vec</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(y), st</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">end</span></span></code></pre></div><h2 id="Using-the-@compact-API" tabindex="-1">Using the <code>@compact</code> API <a class="header-anchor" href="#Using-the-@compact-API" aria-label="Permalink to &quot;Using the `@compact` API {#Using-the-@compact-API}&quot;">​</a></h2><p>We can also define the model using the <a href="/v0.5.40/api/Lux/utilities#Lux.@compact"><code>Lux.@compact</code></a> API, which is a more concise way of defining models. This macro automatically handles the boilerplate code for you and as such we recommend this way of defining custom layers</p><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> SpiralClassifierCompact</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(in_dims, hidden_dims, out_dims)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    lstm_cell </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> LSTMCell</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(in_dims </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=&gt;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> hidden_dims)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    classifier </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> Dense</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(hidden_dims </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=&gt;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> out_dims, sigmoid)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    return</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> @compact</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(; lstm_cell, classifier) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">do</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> x</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">::</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">AbstractArray{T, 3}</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> where</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {T}</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        x_init, x_rest </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> Iterators</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">peel</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(Lux</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">_eachslice</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(x, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">Val</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">2</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)))</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        y, carry </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> lstm_cell</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(x_init)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">        for</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">in</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> x_rest</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">            y, carry </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> lstm_cell</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">((x, carry))</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">        end</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">        return</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> vec</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">classifier</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(y))</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    end</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">end</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code"><code><span class="line"><span>SpiralClassifierCompact (generic function with 1 method)</span></span></code></pre></div><h2 id="Defining-Accuracy,-Loss-and-Optimiser" tabindex="-1">Defining Accuracy, Loss and Optimiser <a class="header-anchor" href="#Defining-Accuracy,-Loss-and-Optimiser" aria-label="Permalink to &quot;Defining Accuracy, Loss and Optimiser {#Defining-Accuracy,-Loss-and-Optimiser}&quot;">​</a></h2><p>Now let&#39;s define the binarycrossentropy loss. Typically it is recommended to use <code>logitbinarycrossentropy</code> since it is more numerically stable, but for the sake of simplicity we will use <code>binarycrossentropy</code>.</p><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> xlogy</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(x, y)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    result </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> log</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(y)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    return</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> ifelse</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">iszero</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(x), </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">zero</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(result), result)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">end</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> binarycrossentropy</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(y_pred, y_true)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    y_pred </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> y_pred </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.+</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> eps</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">eltype</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(y_pred))</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    return</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> mean</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">@.</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> -</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">xlogy</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(y_true, y_pred) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> xlogy</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> -</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> y_true, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> -</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> y_pred))</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">end</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> compute_loss</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(model, ps, st, (x, y))</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    y_pred, st </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> model</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(x, ps, st)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    return</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> binarycrossentropy</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(y_pred, y), st, (; y_pred</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">y_pred)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">end</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">matches</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(y_pred, y_true) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> sum</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">((y_pred </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.&gt;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0.5f0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.==</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> y_true)</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">accuracy</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(y_pred, y_true) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> matches</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(y_pred, y_true) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">/</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> length</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(y_pred)</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code"><code><span class="line"><span>accuracy (generic function with 1 method)</span></span></code></pre></div><h2 id="Training-the-Model" tabindex="-1">Training the Model <a class="header-anchor" href="#Training-the-Model" aria-label="Permalink to &quot;Training the Model {#Training-the-Model}&quot;">​</a></h2><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> main</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(model_type)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    # Get the dataloaders</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    (train_loader, val_loader) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> get_dataloaders</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    # Create the model</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    model </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> model_type</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">2</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">8</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    rng </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> Xoshiro</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    dev </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> gpu_device</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    train_state </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> Lux</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">Experimental</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">TrainState</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        rng, model, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">Adam</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0.01f0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">); transform_variables</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">dev)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    for</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> epoch </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">in</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">25</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">        # Train the model</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">        for</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (x, y) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">in</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> train_loader</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">            x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">|&gt;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> dev</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">            y </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> y </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">|&gt;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> dev</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">            gs, loss, _, train_state </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> Lux</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">Experimental</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">compute_gradients</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">                AutoZygote</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(), compute_loss, (x, y), train_state)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">            train_state </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> Lux</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">Experimental</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">apply_gradients</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(train_state, gs)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">            @printf</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;Epoch [%3d]: Loss %4.5f</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">\n</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> epoch loss</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">        end</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">        # Validate the model</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        st_ </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> Lux</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">testmode</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(train_state</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">states)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">        for</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (x, y) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">in</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> val_loader</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">            x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> x </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">|&gt;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> dev</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">            y </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> y </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">|&gt;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> dev</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">            loss, st_, ret </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> compute_loss</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(model, train_state</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">parameters, st_, (x, y))</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">            acc </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> accuracy</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(ret</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">y_pred, y)</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">            @printf</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;Validation: Loss %4.5f Accuracy %4.5f</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">\n</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> loss acc</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">        end</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    end</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    return</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (train_state</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">parameters, train_state</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">states) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">|&gt;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> cpu_device</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">end</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">ps_trained, st_trained </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> main</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(SpiralClassifier)</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code"><code><span class="line"><span>Epoch [  1]: Loss 0.56286</span></span>
+<span class="line"><span>Epoch [  1]: Loss 0.51024</span></span>
+<span class="line"><span>Epoch [  1]: Loss 0.47174</span></span>
+<span class="line"><span>Epoch [  1]: Loss 0.44558</span></span>
+<span class="line"><span>Epoch [  1]: Loss 0.42335</span></span>
+<span class="line"><span>Epoch [  1]: Loss 0.40314</span></span>
+<span class="line"><span>Epoch [  1]: Loss 0.38832</span></span>
+<span class="line"><span>Validation: Loss 0.36947 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.37035 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [  2]: Loss 0.37319</span></span>
+<span class="line"><span>Epoch [  2]: Loss 0.35313</span></span>
+<span class="line"><span>Epoch [  2]: Loss 0.32803</span></span>
+<span class="line"><span>Epoch [  2]: Loss 0.31343</span></span>
+<span class="line"><span>Epoch [  2]: Loss 0.29912</span></span>
+<span class="line"><span>Epoch [  2]: Loss 0.28081</span></span>
+<span class="line"><span>Epoch [  2]: Loss 0.26864</span></span>
+<span class="line"><span>Validation: Loss 0.25780 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.25844 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [  3]: Loss 0.25433</span></span>
+<span class="line"><span>Epoch [  3]: Loss 0.24232</span></span>
+<span class="line"><span>Epoch [  3]: Loss 0.23083</span></span>
+<span class="line"><span>Epoch [  3]: Loss 0.21968</span></span>
+<span class="line"><span>Epoch [  3]: Loss 0.20822</span></span>
+<span class="line"><span>Epoch [  3]: Loss 0.19795</span></span>
+<span class="line"><span>Epoch [  3]: Loss 0.18598</span></span>
+<span class="line"><span>Validation: Loss 0.17879 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.17927 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [  4]: Loss 0.17962</span></span>
+<span class="line"><span>Epoch [  4]: Loss 0.16799</span></span>
+<span class="line"><span>Epoch [  4]: Loss 0.16176</span></span>
+<span class="line"><span>Epoch [  4]: Loss 0.15280</span></span>
+<span class="line"><span>Epoch [  4]: Loss 0.14419</span></span>
+<span class="line"><span>Epoch [  4]: Loss 0.13912</span></span>
+<span class="line"><span>Epoch [  4]: Loss 0.13462</span></span>
+<span class="line"><span>Validation: Loss 0.12664 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.12703 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [  5]: Loss 0.12601</span></span>
+<span class="line"><span>Epoch [  5]: Loss 0.11977</span></span>
+<span class="line"><span>Epoch [  5]: Loss 0.11389</span></span>
+<span class="line"><span>Epoch [  5]: Loss 0.11067</span></span>
+<span class="line"><span>Epoch [  5]: Loss 0.10465</span></span>
+<span class="line"><span>Epoch [  5]: Loss 0.09958</span></span>
+<span class="line"><span>Epoch [  5]: Loss 0.09770</span></span>
+<span class="line"><span>Validation: Loss 0.09165 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.09200 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [  6]: Loss 0.09201</span></span>
+<span class="line"><span>Epoch [  6]: Loss 0.08850</span></span>
+<span class="line"><span>Epoch [  6]: Loss 0.08349</span></span>
+<span class="line"><span>Epoch [  6]: Loss 0.07948</span></span>
+<span class="line"><span>Epoch [  6]: Loss 0.07527</span></span>
+<span class="line"><span>Epoch [  6]: Loss 0.07220</span></span>
+<span class="line"><span>Epoch [  6]: Loss 0.06988</span></span>
+<span class="line"><span>Validation: Loss 0.06743 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.06775 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [  7]: Loss 0.06869</span></span>
+<span class="line"><span>Epoch [  7]: Loss 0.06326</span></span>
+<span class="line"><span>Epoch [  7]: Loss 0.06183</span></span>
+<span class="line"><span>Epoch [  7]: Loss 0.05882</span></span>
+<span class="line"><span>Epoch [  7]: Loss 0.05571</span></span>
+<span class="line"><span>Epoch [  7]: Loss 0.05440</span></span>
+<span class="line"><span>Epoch [  7]: Loss 0.04886</span></span>
+<span class="line"><span>Validation: Loss 0.05024 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.05052 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [  8]: Loss 0.04950</span></span>
+<span class="line"><span>Epoch [  8]: Loss 0.04908</span></span>
+<span class="line"><span>Epoch [  8]: Loss 0.04471</span></span>
+<span class="line"><span>Epoch [  8]: Loss 0.04393</span></span>
+<span class="line"><span>Epoch [  8]: Loss 0.04049</span></span>
+<span class="line"><span>Epoch [  8]: Loss 0.04233</span></span>
+<span class="line"><span>Epoch [  8]: Loss 0.03756</span></span>
+<span class="line"><span>Validation: Loss 0.03786 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.03809 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [  9]: Loss 0.03739</span></span>
+<span class="line"><span>Epoch [  9]: Loss 0.03669</span></span>
+<span class="line"><span>Epoch [  9]: Loss 0.03416</span></span>
+<span class="line"><span>Epoch [  9]: Loss 0.03376</span></span>
+<span class="line"><span>Epoch [  9]: Loss 0.03193</span></span>
+<span class="line"><span>Epoch [  9]: Loss 0.02994</span></span>
+<span class="line"><span>Epoch [  9]: Loss 0.02776</span></span>
+<span class="line"><span>Validation: Loss 0.02902 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.02922 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 10]: Loss 0.02831</span></span>
+<span class="line"><span>Epoch [ 10]: Loss 0.02685</span></span>
+<span class="line"><span>Epoch [ 10]: Loss 0.02565</span></span>
+<span class="line"><span>Epoch [ 10]: Loss 0.02568</span></span>
+<span class="line"><span>Epoch [ 10]: Loss 0.02576</span></span>
+<span class="line"><span>Epoch [ 10]: Loss 0.02381</span></span>
+<span class="line"><span>Epoch [ 10]: Loss 0.02619</span></span>
+<span class="line"><span>Validation: Loss 0.02294 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.02311 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 11]: Loss 0.02129</span></span>
+<span class="line"><span>Epoch [ 11]: Loss 0.02104</span></span>
+<span class="line"><span>Epoch [ 11]: Loss 0.02045</span></span>
+<span class="line"><span>Epoch [ 11]: Loss 0.02157</span></span>
+<span class="line"><span>Epoch [ 11]: Loss 0.01911</span></span>
+<span class="line"><span>Epoch [ 11]: Loss 0.02159</span></span>
+<span class="line"><span>Epoch [ 11]: Loss 0.01836</span></span>
+<span class="line"><span>Validation: Loss 0.01872 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.01886 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 12]: Loss 0.01864</span></span>
+<span class="line"><span>Epoch [ 12]: Loss 0.01838</span></span>
+<span class="line"><span>Epoch [ 12]: Loss 0.01670</span></span>
+<span class="line"><span>Epoch [ 12]: Loss 0.01713</span></span>
+<span class="line"><span>Epoch [ 12]: Loss 0.01642</span></span>
+<span class="line"><span>Epoch [ 12]: Loss 0.01609</span></span>
+<span class="line"><span>Epoch [ 12]: Loss 0.01491</span></span>
+<span class="line"><span>Validation: Loss 0.01574 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.01586 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 13]: Loss 0.01507</span></span>
+<span class="line"><span>Epoch [ 13]: Loss 0.01532</span></span>
+<span class="line"><span>Epoch [ 13]: Loss 0.01432</span></span>
+<span class="line"><span>Epoch [ 13]: Loss 0.01411</span></span>
+<span class="line"><span>Epoch [ 13]: Loss 0.01428</span></span>
+<span class="line"><span>Epoch [ 13]: Loss 0.01365</span></span>
+<span class="line"><span>Epoch [ 13]: Loss 0.01654</span></span>
+<span class="line"><span>Validation: Loss 0.01360 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.01370 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 14]: Loss 0.01290</span></span>
+<span class="line"><span>Epoch [ 14]: Loss 0.01289</span></span>
+<span class="line"><span>Epoch [ 14]: Loss 0.01254</span></span>
+<span class="line"><span>Epoch [ 14]: Loss 0.01322</span></span>
+<span class="line"><span>Epoch [ 14]: Loss 0.01215</span></span>
+<span class="line"><span>Epoch [ 14]: Loss 0.01236</span></span>
+<span class="line"><span>Epoch [ 14]: Loss 0.01228</span></span>
+<span class="line"><span>Validation: Loss 0.01198 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.01207 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 15]: Loss 0.01187</span></span>
+<span class="line"><span>Epoch [ 15]: Loss 0.01211</span></span>
+<span class="line"><span>Epoch [ 15]: Loss 0.01094</span></span>
+<span class="line"><span>Epoch [ 15]: Loss 0.01110</span></span>
+<span class="line"><span>Epoch [ 15]: Loss 0.01080</span></span>
+<span class="line"><span>Epoch [ 15]: Loss 0.01071</span></span>
+<span class="line"><span>Epoch [ 15]: Loss 0.01064</span></span>
+<span class="line"><span>Validation: Loss 0.01071 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.01080 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 16]: Loss 0.01088</span></span>
+<span class="line"><span>Epoch [ 16]: Loss 0.00952</span></span>
+<span class="line"><span>Epoch [ 16]: Loss 0.01017</span></span>
+<span class="line"><span>Epoch [ 16]: Loss 0.01001</span></span>
+<span class="line"><span>Epoch [ 16]: Loss 0.01008</span></span>
+<span class="line"><span>Epoch [ 16]: Loss 0.00991</span></span>
+<span class="line"><span>Epoch [ 16]: Loss 0.00994</span></span>
+<span class="line"><span>Validation: Loss 0.00970 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.00978 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 17]: Loss 0.00978</span></span>
+<span class="line"><span>Epoch [ 17]: Loss 0.00946</span></span>
+<span class="line"><span>Epoch [ 17]: Loss 0.00953</span></span>
+<span class="line"><span>Epoch [ 17]: Loss 0.00887</span></span>
+<span class="line"><span>Epoch [ 17]: Loss 0.00840</span></span>
+<span class="line"><span>Epoch [ 17]: Loss 0.00910</span></span>
+<span class="line"><span>Epoch [ 17]: Loss 0.00859</span></span>
+<span class="line"><span>Validation: Loss 0.00885 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.00893 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 18]: Loss 0.00847</span></span>
+<span class="line"><span>Epoch [ 18]: Loss 0.00842</span></span>
+<span class="line"><span>Epoch [ 18]: Loss 0.00820</span></span>
+<span class="line"><span>Epoch [ 18]: Loss 0.00883</span></span>
+<span class="line"><span>Epoch [ 18]: Loss 0.00831</span></span>
+<span class="line"><span>Epoch [ 18]: Loss 0.00814</span></span>
+<span class="line"><span>Epoch [ 18]: Loss 0.00811</span></span>
+<span class="line"><span>Validation: Loss 0.00814 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.00821 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 19]: Loss 0.00806</span></span>
+<span class="line"><span>Epoch [ 19]: Loss 0.00741</span></span>
+<span class="line"><span>Epoch [ 19]: Loss 0.00800</span></span>
+<span class="line"><span>Epoch [ 19]: Loss 0.00785</span></span>
+<span class="line"><span>Epoch [ 19]: Loss 0.00770</span></span>
+<span class="line"><span>Epoch [ 19]: Loss 0.00756</span></span>
+<span class="line"><span>Epoch [ 19]: Loss 0.00685</span></span>
+<span class="line"><span>Validation: Loss 0.00753 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.00759 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 20]: Loss 0.00710</span></span>
+<span class="line"><span>Epoch [ 20]: Loss 0.00722</span></span>
+<span class="line"><span>Epoch [ 20]: Loss 0.00710</span></span>
+<span class="line"><span>Epoch [ 20]: Loss 0.00718</span></span>
+<span class="line"><span>Epoch [ 20]: Loss 0.00695</span></span>
+<span class="line"><span>Epoch [ 20]: Loss 0.00746</span></span>
+<span class="line"><span>Epoch [ 20]: Loss 0.00674</span></span>
+<span class="line"><span>Validation: Loss 0.00699 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.00705 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 21]: Loss 0.00698</span></span>
+<span class="line"><span>Epoch [ 21]: Loss 0.00694</span></span>
+<span class="line"><span>Epoch [ 21]: Loss 0.00651</span></span>
+<span class="line"><span>Epoch [ 21]: Loss 0.00662</span></span>
+<span class="line"><span>Epoch [ 21]: Loss 0.00655</span></span>
+<span class="line"><span>Epoch [ 21]: Loss 0.00630</span></span>
+<span class="line"><span>Epoch [ 21]: Loss 0.00681</span></span>
+<span class="line"><span>Validation: Loss 0.00652 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.00658 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 22]: Loss 0.00597</span></span>
+<span class="line"><span>Epoch [ 22]: Loss 0.00617</span></span>
+<span class="line"><span>Epoch [ 22]: Loss 0.00634</span></span>
+<span class="line"><span>Epoch [ 22]: Loss 0.00644</span></span>
+<span class="line"><span>Epoch [ 22]: Loss 0.00594</span></span>
+<span class="line"><span>Epoch [ 22]: Loss 0.00638</span></span>
+<span class="line"><span>Epoch [ 22]: Loss 0.00635</span></span>
+<span class="line"><span>Validation: Loss 0.00610 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.00616 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 23]: Loss 0.00607</span></span>
+<span class="line"><span>Epoch [ 23]: Loss 0.00585</span></span>
+<span class="line"><span>Epoch [ 23]: Loss 0.00613</span></span>
+<span class="line"><span>Epoch [ 23]: Loss 0.00560</span></span>
+<span class="line"><span>Epoch [ 23]: Loss 0.00578</span></span>
+<span class="line"><span>Epoch [ 23]: Loss 0.00566</span></span>
+<span class="line"><span>Epoch [ 23]: Loss 0.00518</span></span>
+<span class="line"><span>Validation: Loss 0.00573 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.00578 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 24]: Loss 0.00592</span></span>
+<span class="line"><span>Epoch [ 24]: Loss 0.00578</span></span>
+<span class="line"><span>Epoch [ 24]: Loss 0.00508</span></span>
+<span class="line"><span>Epoch [ 24]: Loss 0.00529</span></span>
+<span class="line"><span>Epoch [ 24]: Loss 0.00532</span></span>
+<span class="line"><span>Epoch [ 24]: Loss 0.00554</span></span>
+<span class="line"><span>Epoch [ 24]: Loss 0.00505</span></span>
+<span class="line"><span>Validation: Loss 0.00539 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.00544 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 25]: Loss 0.00556</span></span>
+<span class="line"><span>Epoch [ 25]: Loss 0.00503</span></span>
+<span class="line"><span>Epoch [ 25]: Loss 0.00528</span></span>
+<span class="line"><span>Epoch [ 25]: Loss 0.00537</span></span>
+<span class="line"><span>Epoch [ 25]: Loss 0.00492</span></span>
+<span class="line"><span>Epoch [ 25]: Loss 0.00506</span></span>
+<span class="line"><span>Epoch [ 25]: Loss 0.00403</span></span>
+<span class="line"><span>Validation: Loss 0.00509 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.00513 Accuracy 1.00000</span></span></code></pre></div><p>We can also train the compact model with the exact same code!</p><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code"><code><span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">ps_trained2, st_trained2 </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> main</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(SpiralClassifierCompact)</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code"><code><span class="line"><span>Epoch [  1]: Loss 0.55932</span></span>
+<span class="line"><span>Epoch [  1]: Loss 0.51471</span></span>
+<span class="line"><span>Epoch [  1]: Loss 0.47290</span></span>
+<span class="line"><span>Epoch [  1]: Loss 0.45292</span></span>
+<span class="line"><span>Epoch [  1]: Loss 0.42570</span></span>
+<span class="line"><span>Epoch [  1]: Loss 0.41177</span></span>
+<span class="line"><span>Epoch [  1]: Loss 0.38946</span></span>
+<span class="line"><span>Validation: Loss 0.37884 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.38237 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [  2]: Loss 0.37750</span></span>
+<span class="line"><span>Epoch [  2]: Loss 0.35618</span></span>
+<span class="line"><span>Epoch [  2]: Loss 0.32913</span></span>
+<span class="line"><span>Epoch [  2]: Loss 0.31959</span></span>
+<span class="line"><span>Epoch [  2]: Loss 0.30142</span></span>
+<span class="line"><span>Epoch [  2]: Loss 0.28352</span></span>
+<span class="line"><span>Epoch [  2]: Loss 0.28065</span></span>
+<span class="line"><span>Validation: Loss 0.26552 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.26773 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [  3]: Loss 0.26081</span></span>
+<span class="line"><span>Epoch [  3]: Loss 0.23662</span></span>
+<span class="line"><span>Epoch [  3]: Loss 0.23785</span></span>
+<span class="line"><span>Epoch [  3]: Loss 0.22359</span></span>
+<span class="line"><span>Epoch [  3]: Loss 0.21092</span></span>
+<span class="line"><span>Epoch [  3]: Loss 0.20655</span></span>
+<span class="line"><span>Epoch [  3]: Loss 0.18979</span></span>
+<span class="line"><span>Validation: Loss 0.18540 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.18671 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [  4]: Loss 0.18143</span></span>
+<span class="line"><span>Epoch [  4]: Loss 0.17250</span></span>
+<span class="line"><span>Epoch [  4]: Loss 0.16560</span></span>
+<span class="line"><span>Epoch [  4]: Loss 0.15648</span></span>
+<span class="line"><span>Epoch [  4]: Loss 0.14984</span></span>
+<span class="line"><span>Epoch [  4]: Loss 0.14538</span></span>
+<span class="line"><span>Epoch [  4]: Loss 0.13979</span></span>
+<span class="line"><span>Validation: Loss 0.13278 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.13371 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [  5]: Loss 0.13084</span></span>
+<span class="line"><span>Epoch [  5]: Loss 0.12528</span></span>
+<span class="line"><span>Epoch [  5]: Loss 0.11726</span></span>
+<span class="line"><span>Epoch [  5]: Loss 0.11627</span></span>
+<span class="line"><span>Epoch [  5]: Loss 0.10775</span></span>
+<span class="line"><span>Epoch [  5]: Loss 0.10446</span></span>
+<span class="line"><span>Epoch [  5]: Loss 0.10147</span></span>
+<span class="line"><span>Validation: Loss 0.09722 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.09802 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [  6]: Loss 0.09458</span></span>
+<span class="line"><span>Epoch [  6]: Loss 0.09397</span></span>
+<span class="line"><span>Epoch [  6]: Loss 0.08769</span></span>
+<span class="line"><span>Epoch [  6]: Loss 0.08347</span></span>
+<span class="line"><span>Epoch [  6]: Loss 0.07935</span></span>
+<span class="line"><span>Epoch [  6]: Loss 0.07744</span></span>
+<span class="line"><span>Epoch [  6]: Loss 0.06971</span></span>
+<span class="line"><span>Validation: Loss 0.07235 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.07310 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [  7]: Loss 0.07211</span></span>
+<span class="line"><span>Epoch [  7]: Loss 0.06596</span></span>
+<span class="line"><span>Epoch [  7]: Loss 0.06402</span></span>
+<span class="line"><span>Epoch [  7]: Loss 0.06332</span></span>
+<span class="line"><span>Epoch [  7]: Loss 0.05982</span></span>
+<span class="line"><span>Epoch [  7]: Loss 0.05742</span></span>
+<span class="line"><span>Epoch [  7]: Loss 0.05623</span></span>
+<span class="line"><span>Validation: Loss 0.05450 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.05523 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [  8]: Loss 0.05270</span></span>
+<span class="line"><span>Epoch [  8]: Loss 0.04941</span></span>
+<span class="line"><span>Epoch [  8]: Loss 0.05095</span></span>
+<span class="line"><span>Epoch [  8]: Loss 0.04577</span></span>
+<span class="line"><span>Epoch [  8]: Loss 0.04453</span></span>
+<span class="line"><span>Epoch [  8]: Loss 0.04369</span></span>
+<span class="line"><span>Epoch [  8]: Loss 0.04104</span></span>
+<span class="line"><span>Validation: Loss 0.04130 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.04197 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [  9]: Loss 0.03852</span></span>
+<span class="line"><span>Epoch [  9]: Loss 0.04040</span></span>
+<span class="line"><span>Epoch [  9]: Loss 0.03621</span></span>
+<span class="line"><span>Epoch [  9]: Loss 0.03541</span></span>
+<span class="line"><span>Epoch [  9]: Loss 0.03504</span></span>
+<span class="line"><span>Epoch [  9]: Loss 0.03123</span></span>
+<span class="line"><span>Epoch [  9]: Loss 0.03105</span></span>
+<span class="line"><span>Validation: Loss 0.03170 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.03230 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 10]: Loss 0.03058</span></span>
+<span class="line"><span>Epoch [ 10]: Loss 0.03036</span></span>
+<span class="line"><span>Epoch [ 10]: Loss 0.02561</span></span>
+<span class="line"><span>Epoch [ 10]: Loss 0.02716</span></span>
+<span class="line"><span>Epoch [ 10]: Loss 0.02636</span></span>
+<span class="line"><span>Epoch [ 10]: Loss 0.02678</span></span>
+<span class="line"><span>Epoch [ 10]: Loss 0.02357</span></span>
+<span class="line"><span>Validation: Loss 0.02502 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.02555 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 11]: Loss 0.02402</span></span>
+<span class="line"><span>Epoch [ 11]: Loss 0.02372</span></span>
+<span class="line"><span>Epoch [ 11]: Loss 0.02151</span></span>
+<span class="line"><span>Epoch [ 11]: Loss 0.02138</span></span>
+<span class="line"><span>Epoch [ 11]: Loss 0.02057</span></span>
+<span class="line"><span>Epoch [ 11]: Loss 0.02148</span></span>
+<span class="line"><span>Epoch [ 11]: Loss 0.01837</span></span>
+<span class="line"><span>Validation: Loss 0.02039 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.02085 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 12]: Loss 0.02000</span></span>
+<span class="line"><span>Epoch [ 12]: Loss 0.01839</span></span>
+<span class="line"><span>Epoch [ 12]: Loss 0.01776</span></span>
+<span class="line"><span>Epoch [ 12]: Loss 0.01857</span></span>
+<span class="line"><span>Epoch [ 12]: Loss 0.01674</span></span>
+<span class="line"><span>Epoch [ 12]: Loss 0.01749</span></span>
+<span class="line"><span>Epoch [ 12]: Loss 0.01576</span></span>
+<span class="line"><span>Validation: Loss 0.01714 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.01753 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 13]: Loss 0.01647</span></span>
+<span class="line"><span>Epoch [ 13]: Loss 0.01626</span></span>
+<span class="line"><span>Epoch [ 13]: Loss 0.01532</span></span>
+<span class="line"><span>Epoch [ 13]: Loss 0.01480</span></span>
+<span class="line"><span>Epoch [ 13]: Loss 0.01529</span></span>
+<span class="line"><span>Epoch [ 13]: Loss 0.01350</span></span>
+<span class="line"><span>Epoch [ 13]: Loss 0.01617</span></span>
+<span class="line"><span>Validation: Loss 0.01477 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.01512 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 14]: Loss 0.01427</span></span>
+<span class="line"><span>Epoch [ 14]: Loss 0.01331</span></span>
+<span class="line"><span>Epoch [ 14]: Loss 0.01359</span></span>
+<span class="line"><span>Epoch [ 14]: Loss 0.01291</span></span>
+<span class="line"><span>Epoch [ 14]: Loss 0.01289</span></span>
+<span class="line"><span>Epoch [ 14]: Loss 0.01289</span></span>
+<span class="line"><span>Epoch [ 14]: Loss 0.01271</span></span>
+<span class="line"><span>Validation: Loss 0.01300 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.01331 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 15]: Loss 0.01300</span></span>
+<span class="line"><span>Epoch [ 15]: Loss 0.01263</span></span>
+<span class="line"><span>Epoch [ 15]: Loss 0.01168</span></span>
+<span class="line"><span>Epoch [ 15]: Loss 0.01128</span></span>
+<span class="line"><span>Epoch [ 15]: Loss 0.01075</span></span>
+<span class="line"><span>Epoch [ 15]: Loss 0.01154</span></span>
+<span class="line"><span>Epoch [ 15]: Loss 0.01054</span></span>
+<span class="line"><span>Validation: Loss 0.01161 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.01189 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 16]: Loss 0.01130</span></span>
+<span class="line"><span>Epoch [ 16]: Loss 0.01120</span></span>
+<span class="line"><span>Epoch [ 16]: Loss 0.01051</span></span>
+<span class="line"><span>Epoch [ 16]: Loss 0.01063</span></span>
+<span class="line"><span>Epoch [ 16]: Loss 0.01020</span></span>
+<span class="line"><span>Epoch [ 16]: Loss 0.00953</span></span>
+<span class="line"><span>Epoch [ 16]: Loss 0.01021</span></span>
+<span class="line"><span>Validation: Loss 0.01049 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.01075 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 17]: Loss 0.00984</span></span>
+<span class="line"><span>Epoch [ 17]: Loss 0.00967</span></span>
+<span class="line"><span>Epoch [ 17]: Loss 0.00976</span></span>
+<span class="line"><span>Epoch [ 17]: Loss 0.00922</span></span>
+<span class="line"><span>Epoch [ 17]: Loss 0.00969</span></span>
+<span class="line"><span>Epoch [ 17]: Loss 0.00910</span></span>
+<span class="line"><span>Epoch [ 17]: Loss 0.00983</span></span>
+<span class="line"><span>Validation: Loss 0.00957 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.00981 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 18]: Loss 0.00894</span></span>
+<span class="line"><span>Epoch [ 18]: Loss 0.00910</span></span>
+<span class="line"><span>Epoch [ 18]: Loss 0.00817</span></span>
+<span class="line"><span>Epoch [ 18]: Loss 0.00890</span></span>
+<span class="line"><span>Epoch [ 18]: Loss 0.00862</span></span>
+<span class="line"><span>Epoch [ 18]: Loss 0.00885</span></span>
+<span class="line"><span>Epoch [ 18]: Loss 0.00804</span></span>
+<span class="line"><span>Validation: Loss 0.00879 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.00901 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 19]: Loss 0.00875</span></span>
+<span class="line"><span>Epoch [ 19]: Loss 0.00730</span></span>
+<span class="line"><span>Epoch [ 19]: Loss 0.00818</span></span>
+<span class="line"><span>Epoch [ 19]: Loss 0.00794</span></span>
+<span class="line"><span>Epoch [ 19]: Loss 0.00822</span></span>
+<span class="line"><span>Epoch [ 19]: Loss 0.00780</span></span>
+<span class="line"><span>Epoch [ 19]: Loss 0.00806</span></span>
+<span class="line"><span>Validation: Loss 0.00812 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.00832 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 20]: Loss 0.00794</span></span>
+<span class="line"><span>Epoch [ 20]: Loss 0.00712</span></span>
+<span class="line"><span>Epoch [ 20]: Loss 0.00734</span></span>
+<span class="line"><span>Epoch [ 20]: Loss 0.00727</span></span>
+<span class="line"><span>Epoch [ 20]: Loss 0.00787</span></span>
+<span class="line"><span>Epoch [ 20]: Loss 0.00707</span></span>
+<span class="line"><span>Epoch [ 20]: Loss 0.00727</span></span>
+<span class="line"><span>Validation: Loss 0.00753 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.00772 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 21]: Loss 0.00697</span></span>
+<span class="line"><span>Epoch [ 21]: Loss 0.00706</span></span>
+<span class="line"><span>Epoch [ 21]: Loss 0.00687</span></span>
+<span class="line"><span>Epoch [ 21]: Loss 0.00681</span></span>
+<span class="line"><span>Epoch [ 21]: Loss 0.00706</span></span>
+<span class="line"><span>Epoch [ 21]: Loss 0.00692</span></span>
+<span class="line"><span>Epoch [ 21]: Loss 0.00570</span></span>
+<span class="line"><span>Validation: Loss 0.00702 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.00720 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 22]: Loss 0.00725</span></span>
+<span class="line"><span>Epoch [ 22]: Loss 0.00658</span></span>
+<span class="line"><span>Epoch [ 22]: Loss 0.00636</span></span>
+<span class="line"><span>Epoch [ 22]: Loss 0.00603</span></span>
+<span class="line"><span>Epoch [ 22]: Loss 0.00628</span></span>
+<span class="line"><span>Epoch [ 22]: Loss 0.00611</span></span>
+<span class="line"><span>Epoch [ 22]: Loss 0.00651</span></span>
+<span class="line"><span>Validation: Loss 0.00656 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.00673 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 23]: Loss 0.00609</span></span>
+<span class="line"><span>Epoch [ 23]: Loss 0.00620</span></span>
+<span class="line"><span>Epoch [ 23]: Loss 0.00635</span></span>
+<span class="line"><span>Epoch [ 23]: Loss 0.00610</span></span>
+<span class="line"><span>Epoch [ 23]: Loss 0.00584</span></span>
+<span class="line"><span>Epoch [ 23]: Loss 0.00564</span></span>
+<span class="line"><span>Epoch [ 23]: Loss 0.00576</span></span>
+<span class="line"><span>Validation: Loss 0.00616 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.00632 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 24]: Loss 0.00549</span></span>
+<span class="line"><span>Epoch [ 24]: Loss 0.00578</span></span>
+<span class="line"><span>Epoch [ 24]: Loss 0.00574</span></span>
+<span class="line"><span>Epoch [ 24]: Loss 0.00564</span></span>
+<span class="line"><span>Epoch [ 24]: Loss 0.00571</span></span>
+<span class="line"><span>Epoch [ 24]: Loss 0.00587</span></span>
+<span class="line"><span>Epoch [ 24]: Loss 0.00449</span></span>
+<span class="line"><span>Validation: Loss 0.00579 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.00595 Accuracy 1.00000</span></span>
+<span class="line"><span>Epoch [ 25]: Loss 0.00571</span></span>
+<span class="line"><span>Epoch [ 25]: Loss 0.00525</span></span>
+<span class="line"><span>Epoch [ 25]: Loss 0.00533</span></span>
+<span class="line"><span>Epoch [ 25]: Loss 0.00534</span></span>
+<span class="line"><span>Epoch [ 25]: Loss 0.00531</span></span>
+<span class="line"><span>Epoch [ 25]: Loss 0.00518</span></span>
+<span class="line"><span>Epoch [ 25]: Loss 0.00470</span></span>
+<span class="line"><span>Validation: Loss 0.00547 Accuracy 1.00000</span></span>
+<span class="line"><span>Validation: Loss 0.00561 Accuracy 1.00000</span></span></code></pre></div><h2 id="Saving-the-Model" tabindex="-1">Saving the Model <a class="header-anchor" href="#Saving-the-Model" aria-label="Permalink to &quot;Saving the Model {#Saving-the-Model}&quot;">​</a></h2><p>We can save the model using JLD2 (and any other serialization library of your choice) Note that we transfer the model to CPU before saving. Additionally, we recommend that you don&#39;t save the model</p><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">@save</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;trained_model.jld2&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {compress </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> true</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">} ps_trained st_trained</span></span></code></pre></div><p>Let&#39;s try loading the model</p><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">@load</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;trained_model.jld2&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> ps_trained st_trained</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code"><code><span class="line"><span>2-element Vector{Symbol}:</span></span>
+<span class="line"><span> :ps_trained</span></span>
+<span class="line"><span> :st_trained</span></span></code></pre></div><h2 id="Appendix" tabindex="-1">Appendix <a class="header-anchor" href="#Appendix" aria-label="Permalink to &quot;Appendix {#Appendix}&quot;">​</a></h2><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">using</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> InteractiveUtils</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">InteractiveUtils</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">versioninfo</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">if</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> @isdefined</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(LuxCUDA) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&amp;&amp;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> CUDA</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">functional</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(); </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">println</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(); CUDA</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">versioninfo</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(); </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">end</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">if</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> @isdefined</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(LuxAMDGPU) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&amp;&amp;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> LuxAMDGPU</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">functional</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(); </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">println</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(); AMDGPU</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">versioninfo</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(); </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">end</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code"><code><span class="line"><span>Julia Version 1.10.2</span></span>
+<span class="line"><span>Commit bd47eca2c8a (2024-03-01 10:14 UTC)</span></span>
+<span class="line"><span>Build Info:</span></span>
+<span class="line"><span>  Official https://julialang.org/ release</span></span>
+<span class="line"><span>Platform Info:</span></span>
+<span class="line"><span>  OS: Linux (x86_64-linux-gnu)</span></span>
+<span class="line"><span>  CPU: 48 × AMD EPYC 7402 24-Core Processor</span></span>
+<span class="line"><span>  WORD_SIZE: 64</span></span>
+<span class="line"><span>  LIBM: libopenlibm</span></span>
+<span class="line"><span>  LLVM: libLLVM-15.0.7 (ORCJIT, znver2)</span></span>
+<span class="line"><span>Threads: 6 default, 0 interactive, 3 GC (on 2 virtual cores)</span></span>
+<span class="line"><span>Environment:</span></span>
+<span class="line"><span>  LD_LIBRARY_PATH = /usr/local/nvidia/lib:/usr/local/nvidia/lib64</span></span>
+<span class="line"><span>  JULIA_DEPOT_PATH = /root/.cache/julia-buildkite-plugin/depots/01872db4-8c79-43af-ab7d-12abac4f24f6</span></span>
+<span class="line"><span>  JULIA_PROJECT = /var/lib/buildkite-agent/builds/gpuci-6/julialang/lux-dot-jl/docs</span></span>
+<span class="line"><span>  JULIA_AMDGPU_LOGGING_ENABLED = true</span></span>
+<span class="line"><span>  JULIA_DEBUG = Literate</span></span>
+<span class="line"><span>  JULIA_CPU_THREADS = 2</span></span>
+<span class="line"><span>  JULIA_NUM_THREADS = 6</span></span>
+<span class="line"><span>  JULIA_LOAD_PATH = @:@v#.#:@stdlib</span></span>
+<span class="line"><span>  JULIA_CUDA_HARD_MEMORY_LIMIT = 25%</span></span>
+<span class="line"><span>  JULIA_PKG_PRECOMPILE_AUTO = 0</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>CUDA runtime 12.4, artifact installation</span></span>
+<span class="line"><span>CUDA driver 12.4</span></span>
+<span class="line"><span>NVIDIA driver 550.54.15</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>CUDA libraries: </span></span>
+<span class="line"><span>- CUBLAS: 12.4.5</span></span>
+<span class="line"><span>- CURAND: 10.3.5</span></span>
+<span class="line"><span>- CUFFT: 11.2.1</span></span>
+<span class="line"><span>- CUSOLVER: 11.6.1</span></span>
+<span class="line"><span>- CUSPARSE: 12.3.1</span></span>
+<span class="line"><span>- CUPTI: 22.0.0</span></span>
+<span class="line"><span>- NVML: 12.0.0+550.54.15</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>Julia packages: </span></span>
+<span class="line"><span>- CUDA: 5.3.3</span></span>
+<span class="line"><span>- CUDA_Driver_jll: 0.8.1+0</span></span>
+<span class="line"><span>- CUDA_Runtime_jll: 0.12.1+0</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>Toolchain:</span></span>
+<span class="line"><span>- Julia: 1.10.2</span></span>
+<span class="line"><span>- LLVM: 15.0.7</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>Environment:</span></span>
+<span class="line"><span>- JULIA_CUDA_HARD_MEMORY_LIMIT: 25%</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>1 device:</span></span>
+<span class="line"><span>  0: NVIDIA A100-PCIE-40GB MIG 1g.5gb (sm_80, 4.328 GiB / 4.750 GiB available)</span></span>
+<span class="line"><span>┌ Warning: LuxAMDGPU is loaded but the AMDGPU is not functional.</span></span>
+<span class="line"><span>└ @ LuxAMDGPU ~/.cache/julia-buildkite-plugin/depots/01872db4-8c79-43af-ab7d-12abac4f24f6/packages/LuxAMDGPU/sGa0S/src/LuxAMDGPU.jl:19</span></span></code></pre></div><hr><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl" target="_blank" rel="noreferrer">Literate.jl</a>.</em></p></div></div></main><footer class="VPDocFooter" data-v-83890dd9 data-v-b88cabfa><!--[--><!--]--><div class="edit-info" data-v-b88cabfa><div class="edit-link" data-v-b88cabfa><a class="VPLink link vp-external-link-icon no-icon edit-link-button" href="https://github.com/LuxDL/Lux.jl/edit/main/docs/src/tutorials/beginner/3_SimpleRNN.md" target="_blank" rel="noreferrer" data-v-b88cabfa><!--[--><span class="vpi-square-pen edit-link-icon" data-v-b88cabfa></span> Edit this page on GitHub<!--]--></a></div><!----></div><nav class="prev-next" aria-labelledby="doc-footer-aria-label" data-v-b88cabfa><span class="visually-hidden" id="doc-footer-aria-label" data-v-b88cabfa>Pager</span><div class="pager" data-v-b88cabfa><a class="VPLink link pager-link prev" href="/v0.5.40/tutorials/beginner/2_PolynomialFitting" data-v-b88cabfa><!--[--><span class="desc" data-v-b88cabfa>Previous page</span><span class="title" data-v-b88cabfa>Fitting a Polynomial using MLP</span><!--]--></a></div><div class="pager" data-v-b88cabfa><a class="VPLink link pager-link next" href="/v0.5.40/tutorials/beginner/4_SimpleChains" data-v-b88cabfa><!--[--><span class="desc" data-v-b88cabfa>Next page</span><span class="title" data-v-b88cabfa>MNIST Classification with SimpleChains</span><!--]--></a></div></nav></footer><!--[--><!--]--></div></div></div><!--[--><!--]--></div></div><footer class="VPFooter has-sidebar" data-v-a9a9e638 data-v-c970a860><div class="container" data-v-c970a860><p class="message" data-v-c970a860>Made with <a href="https://documenter.juliadocs.org/stable/" target="_blank"><strong>Documenter.jl</strong></a>, <a href="https://vitepress.dev" target="_blank"><strong>VitePress</strong></a> and <a href="https://luxdl.github.io/DocumenterVitepress.jl/stable" target="_blank"><strong>DocumenterVitepress.jl</strong></a><br>Released under the MIT License. Powered by the <a href="https://www.julialang.org">Julia Programming Language</a>.<br></p><p class="copyright" data-v-c970a860>© Copyright 2024 Avik Pal.</p></div></footer><!--[--><!--]--></div></div>
+    <script>window.__VP_HASH_MAP__=JSON.parse("{\"api_accelerator_support_luxcuda.md\":\"bxgTk95I\",\"api_accelerator_support_luxdeviceutils.md\":\"CSSJw9FU\",\"api_accelerator_support_luxamdgpu.md\":\"C6ITMKbU\",\"api_building_blocks_luxcore.md\":\"CwBCREqs\",\"api_lux_distributed_utils.md\":\"WTwrJE5p\",\"api_lux_interop.md\":\"nuchcv50\",\"introduction_overview.md\":\"BT_t576j\",\"manual_gpu_management.md\":\"CD45FAbd\",\"api_domain_specific_modeling_boltz.md\":\"DY2mumy0\",\"manual_weight_initializers.md\":\"Tz6IevK_\",\"api_building_blocks_weightinitializers.md\":\"WJuxo8oJ\",\"api_testing_functionality_luxtestutils.md\":\"WTEK2i9Z\",\"ecosystem.md\":\"K7sFLass\",\"manual_freezing_model_parameters.md\":\"OvavGC4T\",\"index.md\":\"Cq0tQuF2\",\"introduction_citation.md\":\"DT6lHUcR\",\"manual_migrate_from_flux.md\":\"BAj7Nu0t\",\"api_lux_contrib.md\":\"CM0zFKBF\",\"manual_debugging.md\":\"DsxM_ckf\",\"introduction_resources.md\":\"DMPqsNvF\",\"api_lux_utilities.md\":\"pjMiog0n\",\"manual_dispatch_custom_input.md\":\"CcTWJ93c\",\"tutorials_index.md\":\"BefyiWcA\",\"manual_interface.md\":\"CQurIJjv\",\"manual_nested_autodiff.md\":\"COJMhPzy\",\"tutorials_beginner_4_simplechains.md\":\"CvdLp-GO\",\"introduction_index.md\":\"Cleo5o6y\",\"manual_distributed_utils.md\":\"mveI-g-N\",\"api_building_blocks_luxlib.md\":\"Bvhvqfv9\",\"tutorials_beginner_3_simplernn.md\":\"lV3jXKxG\",\"tutorials_intermediate_1_neuralode.md\":\"JCt-fswH\",\"tutorials_intermediate_3_hypernet.md\":\"BmDzDgYq\",\"tutorials_beginner_1_basics.md\":\"DeNzSaLu\",\"tutorials_beginner_2_polynomialfitting.md\":\"nRA61Omq\",\"tutorials_advanced_2_symbolicoptimalcontrol.md\":\"DnPRdGV8\",\"tutorials_intermediate_2_bayesiannn.md\":\"C5n0RXPY\",\"api_lux_layers.md\":\"BbkooJBb\",\"tutorials_advanced_1_gravitationalwaveform.md\":\"JcqxkT_T\"}");window.__VP_SITE_DATA__=JSON.parse("{\"lang\":\"en-US\",\"dir\":\"ltr\",\"title\":\"Lux.jl Documentation\",\"description\":\"Documentation for LuxDL Repositories\",\"base\":\"/v0.5.40/\",\"head\":[],\"router\":{\"prefetchLinks\":true},\"appearance\":true,\"themeConfig\":{\"outline\":\"deep\",\"logo\":{\"light\":\"/lux-logo.svg\",\"dark\":\"/lux-logo-dark.svg\"},\"search\":{\"provider\":\"local\",\"options\":{\"detailedView\":true}},\"nav\":[{\"text\":\"Home\",\"link\":\"/\"},{\"text\":\"Getting Started\",\"link\":\"/introduction\"},{\"text\":\"Benchmarks\",\"link\":\"https://lux.csail.mit.edu/benchmarks/\"},{\"text\":\"Tutorials\",\"link\":\"/tutorials/\"},{\"text\":\"Manual\",\"link\":\"/manual/interface\"},{\"text\":\"API\",\"items\":[{\"text\":\"Lux\",\"items\":[{\"text\":\"Built-In Layers\",\"link\":\"/api/Lux/layers\"},{\"text\":\"Utilities\",\"link\":\"/api/Lux/utilities\"},{\"text\":\"Experimental\",\"link\":\"/api/Lux/contrib\"},{\"text\":\"InterOp\",\"link\":\"/api/Lux/interop\"},{\"text\":\"DistributedUtils\",\"link\":\"/api/Lux/distributed_utils\"}]},{\"text\":\"Accelerator Support\",\"items\":[{\"text\":\"LuxAMDGPU\",\"link\":\"/api/Accelerator_Support/LuxAMDGPU\"},{\"text\":\"LuxCUDA\",\"link\":\"/api/Accelerator_Support/LuxCUDA\"},{\"text\":\"LuxDeviceUtils\",\"link\":\"/api/Accelerator_Support/LuxDeviceUtils\"}]},{\"text\":\"Building Blocks\",\"items\":[{\"text\":\"LuxCore\",\"link\":\"/api/Building_Blocks/LuxCore\"},{\"text\":\"LuxLib\",\"link\":\"/api/Building_Blocks/LuxLib\"},{\"text\":\"WeightInitializers\",\"link\":\"/api/Building_Blocks/WeightInitializers\"}]},{\"text\":\"Domain Specific Modeling\",\"items\":[{\"text\":\"Boltz\",\"link\":\"/api/Domain_Specific_Modeling/Boltz\"}]},{\"text\":\"Testing Functionality\",\"items\":[{\"text\":\"LuxTestUtils\",\"link\":\"/api/Testing_Functionality/LuxTestUtils\"}]}]},{\"text\":\"Versions\",\"items\":[{\"text\":\"Stable\",\"link\":\"https://lux.csail.mit.edu/stable\"},{\"text\":\"Dev\",\"link\":\"https://lux.csail.mit.edu/dev\"}]}],\"sidebar\":{\"/introduction/\":{\"text\":\"Getting Started\",\"collapsed\":false,\"items\":[{\"text\":\"Introduction\",\"link\":\"/introduction\"},{\"text\":\"Overview\",\"link\":\"/introduction/overview\"},{\"text\":\"Resources\",\"link\":\"/introduction/resources\"},{\"text\":\"Citation\",\"link\":\"/introduction/citation\"}]},\"/tutorials/\":{\"text\":\"Tutorials\",\"collapsed\":false,\"items\":[{\"text\":\"Overview\",\"link\":\"/tutorials/\"},{\"text\":\"Beginner\",\"collapsed\":false,\"items\":[{\"text\":\"Julia & Lux for the Uninitiated\",\"link\":\"/tutorials/beginner/1_Basics\"},{\"text\":\"Fitting a Polynomial using MLP\",\"link\":\"/tutorials/beginner/2_PolynomialFitting\"},{\"text\":\"Training a Simple LSTM\",\"link\":\"/tutorials/beginner/3_SimpleRNN\"},{\"text\":\"MNIST Classification with SimpleChains\",\"link\":\"/tutorials/beginner/4_SimpleChains\"}]},{\"text\":\"Intermediate\",\"collapsed\":false,\"items\":[{\"text\":\"MNIST Classification using Neural ODEs\",\"link\":\"/tutorials/intermediate/1_NeuralODE\"},{\"text\":\"Bayesian Neural Network\",\"link\":\"/tutorials/intermediate/2_BayesianNN\"},{\"text\":\"Training a HyperNetwork on MNIST and FashionMNIST\",\"link\":\"/tutorials/intermediate/3_HyperNet\"}]},{\"text\":\"Advanced\",\"collapsed\":false,\"items\":[{\"text\":\"Training a Neural ODE to Model Gravitational Waveforms\",\"link\":\"/tutorials/advanced/1_GravitationalWaveForm\"},{\"text\":\"Solving Optimal Control Problems with Symbolic UDEs\",\"link\":\"/tutorials/advanced/2_SymbolicOptimalControl\"}]},{\"text\":\"3rd Party Tutorials\",\"collapsed\":true,\"items\":[{\"text\":\"PINNs (NeuralPDE.jl)\",\"link\":\"https://docs.sciml.ai/NeuralPDE/stable/tutorials/pdesystem/\"},{\"text\":\"UDEs (SciMLSensitivity.jl)\",\"link\":\"https://docs.sciml.ai/SciMLSensitivity/stable/tutorials/data_parallel/\"},{\"text\":\"Neural DEs (DiffEqFlux.jl)\",\"link\":\"https://docs.sciml.ai/DiffEqFlux/stable/examples/neural_ode/\"},{\"text\":\"DEQs (DeepEquilibriumNetworks.jl)\",\"link\":\"https://docs.sciml.ai/DeepEquilibriumNetworks/stable/tutorials/basic_mnist_deq/\"},{\"text\":\"Medical Image Segmentation\",\"link\":\"https://github.com/Dale-Black/ComputerVisionTutorials.jl/\"}]}]},\"/manual/\":{\"text\":\"Manual\",\"collapsed\":false,\"items\":[{\"text\":\"Lux Interface\",\"link\":\"/manual/interface\"},{\"text\":\"Debugging Lux Models\",\"link\":\"/manual/debugging\"},{\"text\":\"Dispatching on Custom Input Types\",\"link\":\"/manual/dispatch_custom_input\"},{\"text\":\"Freezing Model Parameters\",\"link\":\"/manual/freezing_model_parameters\"},{\"text\":\"GPU Management\",\"link\":\"/manual/gpu_management\"},{\"text\":\"Migrating from Flux to Lux\",\"link\":\"/manual/migrate_from_flux\"},{\"text\":\"Initializing Weights\",\"link\":\"/manual/weight_initializers\"},{\"text\":\"Distributed Data Parallel Training\",\"link\":\"/manual/distributed_utils\"},{\"text\":\"Nested Automatic Differentiation\",\"link\":\"/manual/nested_autodiff\"}]},\"/api/\":{\"text\":\"API Reference\",\"collapsed\":false,\"items\":[{\"text\":\"Lux\",\"collapsed\":false,\"items\":[{\"text\":\"Built-In Layers\",\"link\":\"/api/Lux/layers\"},{\"text\":\"Utilities\",\"link\":\"/api/Lux/utilities\"},{\"text\":\"Experimental Features\",\"link\":\"/api/Lux/contrib\"},{\"text\":\"Interoperability\",\"link\":\"/api/Lux/interop\"},{\"text\":\"DistributedUtils\",\"link\":\"/api/Lux/distributed_utils\"}]},{\"text\":\"Accelerator Support\",\"collapsed\":false,\"items\":[{\"text\":\"LuxAMDGPU\",\"link\":\"/api/Accelerator_Support/LuxAMDGPU\"},{\"text\":\"LuxCUDA\",\"link\":\"/api/Accelerator_Support/LuxCUDA\"},{\"text\":\"LuxDeviceUtils\",\"link\":\"/api/Accelerator_Support/LuxDeviceUtils\"}]},{\"text\":\"Building Blocks\",\"collapsed\":false,\"items\":[{\"text\":\"LuxCore\",\"link\":\"/api/Building_Blocks/LuxCore\"},{\"text\":\"LuxLib\",\"link\":\"/api/Building_Blocks/LuxLib\"},{\"text\":\"WeightInitializers\",\"link\":\"/api/Building_Blocks/WeightInitializers\"}]},{\"text\":\"Domain Specific Modeling\",\"collapsed\":false,\"items\":[{\"text\":\"Boltz\",\"link\":\"/api/Domain_Specific_Modeling/Boltz\"}]},{\"text\":\"Testing Functionality\",\"collapsed\":false,\"items\":[{\"text\":\"LuxTestUtils\",\"link\":\"/api/Testing_Functionality/LuxTestUtils\"}]}]}},\"editLink\":{\"pattern\":\"https://github.com/LuxDL/Lux.jl/edit/main/docs/src/:path\",\"text\":\"Edit this page on GitHub\"},\"socialLinks\":[{\"icon\":\"github\",\"link\":\"https://github.com/LuxDL/Lux.jl\"},{\"icon\":\"twitter\",\"link\":\"https://twitter.com/avikpal1410\"},{\"icon\":\"slack\",\"link\":\"https://julialang.org/slack/\"}],\"footer\":{\"message\":\"Made with <a href=\\\"https://documenter.juliadocs.org/stable/\\\" target=\\\"_blank\\\"><strong>Documenter.jl</strong></a>, <a href=\\\"https://vitepress.dev\\\" target=\\\"_blank\\\"><strong>VitePress</strong></a> and <a href=\\\"https://luxdl.github.io/DocumenterVitepress.jl/stable\\\" target=\\\"_blank\\\"><strong>DocumenterVitepress.jl</strong></a><br>Released under the MIT License. Powered by the <a href=\\\"https://www.julialang.org\\\">Julia Programming Language</a>.<br>\",\"copyright\":\"© Copyright 2024 Avik Pal.\"},\"lastUpdated\":{\"text\":\"Updated at\",\"formatOptions\":{\"dateStyle\":\"full\",\"timeStyle\":\"medium\"}}},\"locales\":{},\"scrollOffset\":134,\"cleanUrls\":true}");</script>
+    
+  </body>
+</html>
