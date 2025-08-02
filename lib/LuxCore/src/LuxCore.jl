@@ -336,6 +336,26 @@ function check_fmap_condition(cond::C, ::Type{T}, x) where {C,T}
     return check_fmap_condition(cond, nothing, x)
 end
 
+"""
+    preserves_state_type(l::AbstractLuxLayer)
+
+Return `true` if the layer `l` preserves the state type of the layer. For example, if the
+input state type for your layer is `T1` and the output state type is `T2`, then this
+function should return `T1 == T2`.
+
+By default this function returns `true` for `AbstractLuxLayer`. For container layers, this
+function returns `true` if all the layers in the container preserve the state type.
+"""
+preserves_state_type(l::AbstractLuxLayer) = true
+function preserves_state_type(l::AbstractLuxWrapperLayer{layer}) where {layer}
+    return preserves_state_type(getfield(l, layer))
+end
+function preserves_state_type(l::AbstractLuxContainerLayer{layers}) where {layers}
+    return all(preserves_state_type, getfield.((l,), layers))
+end
+preserves_state_type(l::Tuple) = all(preserves_state_type, l)
+preserves_state_type(l::NamedTuple) = all(preserves_state_type, values(l))
+
 module Internal
 
     using Random: Xoshiro
@@ -399,6 +419,7 @@ end
         apply,
         stateless_apply,
         display_name,
+        preserves_state_type,
     )
 )
 

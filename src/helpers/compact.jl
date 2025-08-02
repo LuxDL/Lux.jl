@@ -712,9 +712,7 @@ function try_make_lux_layer(x::Union{AbstractVector,Tuple})
 end
 try_make_lux_layer(x) = x
 
-function maybe_make_stateful(layer::AbstractLuxLayer, ps, st)
-    return StatefulLuxLayer{true}(layer, ps, st)
-end
+maybe_make_stateful(layer::AbstractLuxLayer, ps, st) = StatefulLuxLayer(layer, ps, st)
 maybe_make_stateful(::Nothing, ::Nothing, st) = st
 maybe_make_stateful(::Nothing, ps, st) = ps
 function maybe_make_stateful(model::Union{AbstractVector,Tuple}, ps, st)

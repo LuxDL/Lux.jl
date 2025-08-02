@@ -40,7 +40,8 @@ import LuxCore:
     testmode,
     setup,
     apply,
-    replicate
+    replicate,
+    preserves_state_type
 
 @reexport using LuxCore, LuxLib, MLDataDevices, WeightInitializers
 using NNlib:

@@ -172,7 +172,7 @@ function apply_multiheadattention(mha::MultiHeadAttention, ps, st, q, k, v, mask
     k, k_st = mha.k_proj(k, ps.k_proj, st.k_proj)
     v, v_st = mha.v_proj(v, ps.v_proj, st.v_proj)
 
-    dropout = StatefulLuxLayer{true}(
+    dropout = StatefulLuxLayer(
         mha.attention_dropout, ps.attention_dropout, st.attention_dropout
     )
     x, α = NNlib.dot_product_attention(q, k, v; mha.nheads, fdrop=dropout, mask)

@@ -95,7 +95,7 @@ function mse_loss_function(
 end
 
 function loss_function(model, ps, st, (xyt, target_data, xyt_bc, target_bc))
-    smodel = StatefulLuxLayer{true}(model, ps, st)
+    smodel = StatefulLuxLayer(model, ps, st)
     physics_loss = physics_informed_loss_function(smodel, xyt)
     data_loss = mse_loss_function(smodel, target_data, xyt)
     bc_loss = mse_loss_function(smodel, target_bc, xyt_bc)
@@ -227,9 +227,7 @@ function train_model(
         iter ≥ maxiters && break
     end
 
-    return StatefulLuxLayer{true}(
-        pinn, cdev(train_state.parameters), cdev(train_state.states)
-    )
+    return StatefulLuxLayer(pinn, cdev(train_state.parameters), cdev(train_state.states))
 end
 
 trained_model = train_model(xyt, target_data, xyt_bc, target_bc)

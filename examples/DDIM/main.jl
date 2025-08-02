@@ -249,7 +249,7 @@ function reverse_diffusion(
         )
 
         pred_noises, pred_images = denoise(
-            StatefulLuxLayer{true}(model.model.layers.unet, model.ps.unet, model.st.unet),
+            StatefulLuxLayer(model.model.layers.unet, model.ps.unet, model.st.unet),
             noisy_images,
             noise_rates,
             signal_rates,
@@ -430,7 +430,7 @@ Comonicon.@main function main(;
         @load saved_model_path parameters states
         parameters = gdev(parameters)
         states = gdev(states)
-        model = StatefulLuxLayer{true}(model, parameters, Lux.testmode(states))
+        model = StatefulLuxLayer(model, parameters, Lux.testmode(states))
 
         generated_images = cpu_device()(
             generate(
@@ -495,7 +495,7 @@ Comonicon.@main function main(;
         end
 
         if epoch % generate_image_interval == 0 || epoch == epochs
-            model_test = StatefulLuxLayer{true}(
+            model_test = StatefulLuxLayer(
                 tstate.model, tstate.parameters, Lux.testmode(tstate.states)
             )
             generated_images = cpu_device()(

@@ -169,6 +169,8 @@ function initialstates(rng::AbstractRNG, ::VariationalHiddenDropout)
     )
 end
 
+preserves_state_type(::VariationalHiddenDropout) = false
+
 function VariationalHiddenDropout(p; dims=:)
     @argcheck 0 ≤ p ≤ 1
     iszero(p) && return NoOpLayer()
