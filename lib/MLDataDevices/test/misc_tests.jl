@@ -1,4 +1,4 @@
-using Adapt, MLDataDevices, ComponentArrays, Random
+using Adapt, MLDataDevices, ComponentArrays, Random, Test
 using ArrayInterface: parameterless_type
 using ChainRulesTestUtils: test_rrule
 using ReverseDiff, Tracker, ForwardDiff

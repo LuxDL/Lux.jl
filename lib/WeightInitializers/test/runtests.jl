@@ -50,8 +50,10 @@ const RETESTITEMS_NWORKER_THREADS = parse(
     ),
 )
 
-ReTestItems.runtests(
-    WeightInitializers;
-    nworkers=RETESTITEMS_NWORKERS,
-    nworker_threads=RETESTITEMS_NWORKER_THREADS,
-)
+withenv("BACKEND_GROUP" => BACKEND_GROUP) do
+    ReTestItems.runtests(
+        WeightInitializers;
+        nworkers=RETESTITEMS_NWORKERS,
+        nworker_threads=RETESTITEMS_NWORKER_THREADS,
+    )
+end

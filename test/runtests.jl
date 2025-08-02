@@ -150,13 +150,15 @@ const RETESTITEMS_NWORKER_THREADS = parse(
                                                              enumerate(LUX_TEST_GROUP)
         nworkers = (tag == "reactant") ? 0 : RETESTITEMS_NWORKERS
 
-        ReTestItems.runtests(
-            Lux;
-            tags=(tag == "all" ? nothing : [Symbol(tag)]),
-            testitem_timeout=2400,
-            nworkers,
-            nworker_threads=RETESTITEMS_NWORKER_THREADS,
-        )
+        withenv("BACKEND_GROUP" => BACKEND_GROUP) do
+            ReTestItems.runtests(
+                Lux;
+                tags=(tag == "all" ? nothing : [Symbol(tag)]),
+                testitem_timeout=2400,
+                nworkers,
+                nworker_threads=RETESTITEMS_NWORKER_THREADS,
+            )
+        end
     end
 end
 

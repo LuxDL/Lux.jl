@@ -1,5 +1,5 @@
 using Pkg: Pkg, PackageSpec
-using SafeTestsets, Test
+using Test
 
 function parse_test_args()
     test_args_from_env = @isdefined(TEST_ARGS) ? TEST_ARGS : ARGS
@@ -52,7 +52,7 @@ end
         "amdgpu_tests.jl",
         "metal_tests.jl",
         "oneapi_tests.jl",
-        "xla_tests.jl",
+        "reactant_tests.jl",
     ]
     file_names = if BACKEND_GROUP == "all"
         all_files
@@ -61,13 +61,14 @@ end
     else
         [BACKEND_GROUP * "_tests.jl"]
     end
-    @testset "$(file_name)" for file_name in file_names
-        run(`$(Base.julia_cmd()) --color=yes --project=$(dirname(Pkg.project().path))
-             --startup-file=no --code-coverage=user $(@__DIR__)/$file_name`)
-        Test.@test true
-    end
 
-    @safetestset "Iterator Tests" include("iterator_tests.jl")
-    @safetestset "Misc Tests" include("misc_tests.jl")
-    @safetestset "QA Tests" include("qa_tests.jl")
+    append!(file_names, ["iterator_tests.jl", "misc_tests.jl", "qa_tests.jl"])
+
+    @testset "$(file_name)" for file_name in file_names
+        withenv("BACKEND_GROUP" => BACKEND_GROUP) do
+            run(`$(Base.julia_cmd()) --color=yes --project=$(dirname(Pkg.project().path))
+                --startup-file=no --code-coverage=user $(@__DIR__)/$file_name`)
+            Test.@test true
+        end
+    end
 end
