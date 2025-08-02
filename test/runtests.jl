@@ -117,9 +117,13 @@ if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP)
                                                     ("none", "warn", "convert", "error")
         set_preferences!(Lux, "eltype_mismatch_handling" => option; force=true)
         try
-            run(`$(Base.julia_cmd()) --color=yes --project=$(dirname(Pkg.project().path))
-                --startup-file=no --code-coverage=user $(@__DIR__)/eltype_matching.jl`)
-            @test true
+            withenv("BACKEND_GROUP" => BACKEND_GROUP) do
+                run(
+                    `$(Base.julia_cmd()) --color=yes --project=$(dirname(Pkg.project().path))
+                    --startup-file=no --code-coverage=user $(@__DIR__)/eltype_matching.jl`,
+                )
+                @test true
+            end
         catch
             @test false
         end

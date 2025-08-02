@@ -5,23 +5,18 @@ steps:
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
+          - JuliaCI/julia-test#v1:
+              project: "lib/LuxTestUtils"
+              test_args: "BACKEND_GROUP=CUDA"
           - JuliaCI/julia-coverage#v1:
               codecov: true
               dirs:
                 - lib/LuxTestUtils/src
                 - lib/MLDataDevices/src
                 - lib/MLDataDevices/ext
-        command: |
-          julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxTestUtils -e '
-            import Pkg;
-            Pkg.Registry.update();
-            Pkg.instantiate();
-            Pkg.test(; coverage="user")'
         agents:
           queue: "juliagpu"
           cuda: "*"
-        env:
-          BACKEND_GROUP: "CUDA"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
         timeout_in_minutes: 60
         matrix:

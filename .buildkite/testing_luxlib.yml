@@ -5,6 +5,9 @@ steps:
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
+          - JuliaCI/julia-test#v1:
+              project: "lib/LuxLib"
+              test_args: "BACKEND_GROUP=CUDA"
           - JuliaCI/julia-coverage#v1:
               codecov: true
               dirs:
@@ -15,26 +18,9 @@ steps:
                 - lib/MLDataDevices/src
                 - lib/MLDataDevices/ext
                 - lib/LuxTestUtils/src
-        command: |
-          julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxLib -e '
-            import Pkg;
-            Pkg.Registry.update();
-            Pkg.instantiate();
-            Pkg.activate("lib/LuxLib/test");
-            dev_pkgs = Pkg.PackageSpec[];
-            for pkg in ("lib/LuxTestUtils", "lib/LuxLib", "lib/MLDataDevices")
-              push!(dev_pkgs, Pkg.PackageSpec(path=pkg));
-            end;
-            Pkg.develop(dev_pkgs)'
-          julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxLib/test -e '
-            import Pkg, LuxLib
-            dir = dirname(pathof(LuxLib))
-            include(joinpath(dir, "../test/runtests.jl"))'
         agents:
           queue: "juliagpu"
           cuda: "*"
-        env:
-          BACKEND_GROUP: "CUDA"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
         timeout_in_minutes: 120
         matrix:
@@ -48,6 +34,9 @@ steps:
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
+          - JuliaCI/julia-test#v1:
+              project: "lib/LuxLib"
+              test_args: "BACKEND_GROUP=AMDGPU"
           - JuliaCI/julia-coverage#v1:
               codecov: true
               dirs:
@@ -58,27 +47,10 @@ steps:
                 - lib/MLDataDevices/src
                 - lib/MLDataDevices/ext
                 - lib/LuxTestUtils/src
-        command: |
-          julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxLib -e '
-            import Pkg;
-            Pkg.Registry.update();
-            Pkg.instantiate();
-            Pkg.activate("lib/LuxLib/test");
-            dev_pkgs = Pkg.PackageSpec[];
-            for pkg in ("lib/LuxTestUtils", "lib/LuxLib", "lib/MLDataDevices")
-              push!(dev_pkgs, Pkg.PackageSpec(path=pkg));
-            end;
-            Pkg.develop(dev_pkgs)'
-          julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxLib/test -e '
-            import Pkg, LuxLib
-            dir = dirname(pathof(LuxLib))
-            include(joinpath(dir, "../test/runtests.jl"))'
         agents:
           queue: "juliagpu"
           rocm: "*"
           rocmgpu: "*"
-        env:
-          BACKEND_GROUP: "AMDGPU"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
         timeout_in_minutes: 120
         matrix:

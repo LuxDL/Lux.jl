@@ -5,22 +5,17 @@ steps:
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
+          - JuliaCI/julia-test#v1:
+              project: "lib/WeightInitializers"
+              test_args: "BACKEND_GROUP=CUDA"
           - JuliaCI/julia-coverage#v1:
               codecov: true
               dirs:
                 - lib/WeightInitializers/src
                 - lib/WeightInitializers/ext
-        command: |
-          julia --color=yes --code-coverage=user --depwarn=yes --project=lib/WeightInitializers -e '
-            import Pkg;
-            Pkg.Registry.update();
-            Pkg.instantiate();
-            Pkg.test(; coverage="user")'
         agents:
           queue: "juliagpu"
           cuda: "*"
-        env:
-          BACKEND_GROUP: "CUDA"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
         timeout_in_minutes: 60
         matrix:
@@ -34,23 +29,18 @@ steps:
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
+          - JuliaCI/julia-test#v1:
+              project: "lib/WeightInitializers"
+              test_args: "BACKEND_GROUP=AMDGPU"
           - JuliaCI/julia-coverage#v1:
               codecov: true
               dirs:
                 - lib/WeightInitializers/src
                 - lib/WeightInitializers/ext
-        command: |
-          julia --color=yes --code-coverage=user --depwarn=yes --project=lib/WeightInitializers -e '
-            import Pkg;
-            Pkg.Registry.update();
-            Pkg.instantiate();
-            Pkg.test(; coverage="user")'
         agents:
           queue: "juliagpu"
           rocm: "*"
           rocmgpu: "*"
-        env:
-          BACKEND_GROUP: "AMDGPU"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
         timeout_in_minutes: 60
         matrix:
@@ -65,23 +55,18 @@ steps:
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
+          - JuliaCI/julia-test#v1:
+              project: "lib/WeightInitializers"
+              test_args: "BACKEND_GROUP=Metal"
           - JuliaCI/julia-coverage#v1:
               codecov: true
               dirs:
                 - lib/WeightInitializers/src
                 - lib/WeightInitializers/ext
-        command: |
-          julia --color=yes --code-coverage=user --depwarn=yes --project=lib/WeightInitializers -e '
-            import Pkg;
-            Pkg.Registry.update();
-            Pkg.instantiate();
-            Pkg.test(; coverage="user")'
         agents:
           queue: "juliaecosystem"
           os: "macos"
           arch: "aarch64"
-        env:
-          BACKEND_GROUP: "Metal"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
         timeout_in_minutes: 60
         matrix:
@@ -97,22 +82,17 @@ steps:
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
+          - JuliaCI/julia-test#v1:
+              project: "lib/WeightInitializers"
+              test_args: "BACKEND_GROUP=oneAPI"
           - JuliaCI/julia-coverage#v1:
               codecov: true
               dirs:
                 - lib/WeightInitializers/src
                 - lib/WeightInitializers/ext
-        command: |
-          julia --color=yes --code-coverage=user --depwarn=yes --project=lib/WeightInitializers -e '
-            import Pkg;
-            Pkg.Registry.update();
-            Pkg.instantiate();
-            Pkg.test(; coverage="user")'
         agents:
           queue: "juliagpu"
           intel: "*"
-        env:
-          BACKEND_GROUP: "oneAPI"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
         timeout_in_minutes: 60
         matrix:

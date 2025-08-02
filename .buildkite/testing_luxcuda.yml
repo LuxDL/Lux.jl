@@ -5,16 +5,12 @@ steps:
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
+          - JuliaCI/julia-test#v1:
+              project: "lib/LuxCUDA"
           - JuliaCI/julia-coverage#v1:
               codecov: true
               dirs:
                 - lib/LuxCUDA/src
-        command: |
-          julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxCUDA -e '
-            import Pkg;
-            Pkg.Registry.update();
-            Pkg.instantiate();
-            Pkg.test(; coverage="user")'
         agents:
           queue: "juliagpu"
           cuda: "*"

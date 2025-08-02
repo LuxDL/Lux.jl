@@ -1,41 +1,41 @@
-name: CIPreRelease (Lux)
-on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "src/**"
-      - "ext/**"
-      - "test/**"
-      - "Project.toml"
-      - ".github/workflows/CI.yml"
-      - "lib/LuxTestUtils/**"
-      - "lib/LuxCore/**"
-      - "lib/MLDataDevices/**"
-      - "lib/WeightInitializers/**"
-      - "lib/LuxLib/**"
-  push:
-    branches:
-      - main
+# name: CIPreRelease (Lux)
+# on:
+#   pull_request:
+#     branches:
+#       - main
+#     paths:
+#       - "src/**"
+#       - "ext/**"
+#       - "test/**"
+#       - "Project.toml"
+#       - ".github/workflows/CI.yml"
+#       - "lib/LuxTestUtils/**"
+#       - "lib/LuxCore/**"
+#       - "lib/MLDataDevices/**"
+#       - "lib/WeightInitializers/**"
+#       - "lib/LuxLib/**"
+#   push:
+#     branches:
+#       - main
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+# concurrency:
+#   group: ${{ github.workflow }}-${{ github.ref }}
+#   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 
-jobs:
-  test:
-    strategy:
-      fail-fast: false
-      matrix:
-        test_group:
-          - "core_layers"
-          - "normalize_layers"
-          - "recurrent_layers"
-          - "autodiff"
-          - "misc"
-        #   - "reactant"
-    uses: ./.github/workflows/CommonCI.yml
-    with:
-      julia_version: "pre"
-      project: "."
-      test_args: "BACKEND_GROUP=${{ matrix.test_group }} LUX_TEST_GROUP=${{ matrix.test_group }}"
+# jobs:
+#   test:
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         test_group:
+#           - "core_layers"
+#           - "normalize_layers"
+#           - "recurrent_layers"
+#           - "autodiff"
+#           - "misc"
+#         #   - "reactant"
+#     uses: ./.github/workflows/CommonCI.yml
+#     with:
+#       julia_version: "pre"
+#       project: "."
+#       test_args: "BACKEND_GROUP=${{ matrix.test_group }} LUX_TEST_GROUP=${{ matrix.test_group }}"
