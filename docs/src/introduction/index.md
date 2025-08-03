@@ -142,7 +142,7 @@ function train_model!(model, ps, st, x_data, y_data)
             AutoEnzyme(), MSELoss(),
             (x_data, y_data), train_state
         )
-        if iter % 100 == 1 || iter == 1000
+        if iter == 1 || iter % 100 == 0 || iter == 1000
             @printf "Iteration: %04d \t Loss: %10.9g\n" iter loss
         end
     end
