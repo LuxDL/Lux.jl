@@ -134,15 +134,15 @@ x_data = reshape(collect(-2.0f0:0.1f0:2.0f0), 1, :)
 y_data = 2 .* x_data .- x_data .^ 3
 x_data, y_data = dev(x_data), dev(y_data)
 
-function train_model!(model, ps, st, x_data, y_data)
+function train_model!(model, ps, st, x_data, y_data, num_epochs=1000)
     train_state = Lux.Training.TrainState(model, ps, st, Adam(0.001f0))
 
-    for iter in 1:1000
+    for iter in 1:num_epochs
         _, loss, _, train_state = Lux.Training.single_train_step!(
             AutoEnzyme(), MSELoss(),
             (x_data, y_data), train_state
         )
-        if iter == 1 || iter % 100 == 0 || iter == 1000
+        if iter == 1 || iter % 100 == 0 || iter == num_epochs
             @printf "Iteration: %04d \t Loss: %10.9g\n" iter loss
         end
     end
