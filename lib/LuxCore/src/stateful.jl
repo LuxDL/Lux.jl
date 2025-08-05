@@ -1,6 +1,6 @@
 module StatefulLuxLayerImpl
 
-using ..LuxCore: AbstractLuxLayer
+using ..LuxCore: AbstractLuxLayer, preserves_state_type
 
 const StaticBool = Union{Val{true},Val{false}}
 
@@ -22,7 +22,7 @@ dynamic(v::Bool) = v
 A convenience wrapper over Lux layers which stores the parameters and states internally.
 This is meant to be used in internal implementation of layers.
 
-When using the defination of `StatefulLuxLayer` without `FT` specified, make sure that all
+When using the definition of `StatefulLuxLayer` without `FT` specified, make sure that all
 of the layers in the model define [`LuxCore.preserves_state_type`](@ref). Else we implicitly
 assume that the state type is preserved.
 
@@ -134,7 +134,7 @@ function update_state(s::StatefulLuxLayer, key::Symbol, value; kwargs...)
     return StatefulLuxLayer{StatefulLuxLayerImpl.dynamic(s.fixed_state_type)}(
         s.model,
         s.ps,
-        LuxCore.update_state(StatefulLuxLayerImpl.get_state(s), key, value; kwargs...),
+        update_state(StatefulLuxLayerImpl.get_state(s), key, value; kwargs...),
     )
 end
 
