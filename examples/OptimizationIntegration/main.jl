@@ -105,7 +105,9 @@ function train_model(dataloader)
     st = gdev(st)
 
     function callback(state, l)
-        state.iter % 25 == 1 && @printf "Iteration: %5d, Loss: %.6e\n" state.iter l
+        if state.iter == 1 || state.iter % 25 == 0
+            @printf "Iteration: %5d, Loss: %.6e\n" state.iter l
+        end
         return l < 1.0e-8 ## Terminate if loss is small
     end
 

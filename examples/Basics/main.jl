@@ -291,7 +291,7 @@ function train_model!(model, ps, st, opt, nepochs::Int)
         grads, loss, _, tstate = Training.single_train_step!(
             AutoZygote(), lossfn, (x_samples, y_samples), tstate
         )
-        if i % 1000 == 1 || i == nepochs
+        if i == 1 || i % 1000 == 0 || i == nepochs
             @printf "Loss Value after %6d iterations: %.8f\n" i loss
         end
     end
