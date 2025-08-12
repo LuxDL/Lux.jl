@@ -1,7 +1,7 @@
 name = "Lux"
 uuid = "b2108857-7c20-44ae-9111-449ecde12c47"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "1.17.0"
+version = "1.17.1"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -104,7 +104,7 @@ MLUtils = "0.4.4"
 MPI = "0.20.19"
 MacroTools = "0.5.13"
 Markdown = "1.10"
-Mooncake = "0.4.138"
+Mooncake = "0.4.148"
 NCCL = "0.1.1"
 NNlib = "0.9.26"
 Optimisers = "0.4.6"
