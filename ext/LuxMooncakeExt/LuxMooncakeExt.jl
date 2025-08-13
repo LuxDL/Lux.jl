@@ -3,9 +3,9 @@ module LuxMooncakeExt
 using ADTypes: AutoMooncake
 using Mooncake: Mooncake, value_and_pullback!!, prepare_pullback_cache
 using Setfield: @set!
-using Static: False, True
+using Static: True
 
-using Lux: Lux, Utils
+using Lux: Lux
 using Lux.Training: TrainingBackendCache, TrainState
 
 get_config(::AutoMooncake{Nothing}) = Mooncake.Config()
