@@ -36,13 +36,13 @@ jobs:
           - { user: LuxDL, repo: Boltz.jl, group: CPU }
           - { user: SciML, repo: NeuralOperators.jl, group: CPU }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: julia-actions/setup-julia@v2
         with:
           version: "1"
       - uses: julia-actions/julia-buildpkg@v1
       - name: "Clone Downstream"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: ${{ matrix.package.user }}/${{ matrix.package.repo }}
           path: downstream

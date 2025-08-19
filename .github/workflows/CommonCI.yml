@@ -46,7 +46,7 @@ jobs:
     env:
       TMPDIR: ${{ github.workspace }}/tmp
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Create TMPDIR
         run: |
           mkdir -p ${{ env.TMPDIR }}

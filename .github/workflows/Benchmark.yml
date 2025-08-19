@@ -26,7 +26,7 @@ jobs:
   #   if: ${{ !contains(github.event.head_commit.message, '[skip benchmarks]') }}
   #   runs-on: ubuntu-latest
   #   steps:
-  #     - uses: actions/checkout@v4
+  #     - uses: actions/checkout@v5
   #     - name: Download Buildkite Artifacts
   #       id: download
   #       uses: EnricoMi/download-buildkite-artifact-action@v1
@@ -58,7 +58,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.base_ref == github.event.repository.default_branch }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: julia-actions/setup-julia@v2
         with:
           version: "1"
