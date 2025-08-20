@@ -274,9 +274,6 @@ end
 
                 broken_backends = Any[AutoTracker()]
                 umode == :nearest || push!(broken_backends, AutoReverseDiff())
-                if VERSION < v"1.11-" && umode == :nearest
-                    push!(broken_backends, AutoEnzyme())
-                end
                 @test_gradients(
                     sumabs2first,
                     layer,
