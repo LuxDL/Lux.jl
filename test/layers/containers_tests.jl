@@ -164,6 +164,21 @@ end
             @test check_approx(gs[2].x, gs_reg[2].x)
             @test check_approx(gs[3].x, gs_reg[3].x)
         end
+
+        @testset "layer connection" begin
+            # Test Parallel with layer as connection
+            fusion_layer = Dense(20, 5)
+            layer = Parallel(fusion_layer, Dense(10, 10), Dense(10, 10))
+            display(layer)
+            ps, st = dev(Lux.setup(rng, layer))
+            x = aType(randn(rng, Float32, 10, 2))
+
+            @test haskey(ps, :layers) && haskey(ps, :connection)
+            @test haskey(st, :layers) && haskey(st, :connection)
+            @test size(layer(x, ps, st)[1]) == (5, 2)
+            @jet layer(x, ps, st)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+        end
     end
 end
 
@@ -251,6 +266,40 @@ end
 
         @jet layer(x, ps, st)
         @test_gradients(sumsumfirst, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+
+        @testset "fusion layer" begin
+            # Test BranchLayer with layer fusion
+            fusion_layer = Dense(20, 5)
+            layer = BranchLayer(Dense(10, 10), Dense(10, 10); fusion=fusion_layer)
+            display(layer)
+            ps, st = dev(Lux.setup(rng, layer))
+            x = aType(rand(Float32, 10, 1))
+            
+            @test haskey(ps, :layers) && haskey(ps, :fusion)
+            @test haskey(st, :layers) && haskey(st, :fusion)
+            y, _ = layer(x, ps, st)
+            @test size(y) == (5, 1)
+            @jet layer(x, ps, st)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+        end
+
+        @testset "fusion function" begin
+            # Test BranchLayer with function fusion
+            layer = BranchLayer(Dense(10, 5), Dense(10, 5); fusion=+)
+            display(layer)
+            ps, st = dev(Lux.setup(rng, layer))
+            x = aType(rand(Float32, 10, 1))
+            
+            y, _ = layer(x, ps, st)
+            @test size(y) == (5, 1)
+            
+            # Verify it's the sum of the individual outputs
+            (y1, y2), _ = BranchLayer(Dense(10, 5), Dense(10, 5))(x, ps.layers, st.layers)
+            @test y ≈ y1 + y2
+            
+            @jet layer(x, ps, st)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+        end
     end
 end
 
