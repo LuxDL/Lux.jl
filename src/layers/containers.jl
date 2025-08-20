@@ -179,7 +179,7 @@ function Parallel(; name::NAME_TYPE=nothing, connection, kwargs...)
 end
 
 function initialparameters(
-    rng::AbstractRNG, l::Parallel{<:AbstractLuxLayer}
+    rng::AbstractRNG, l::Parallel{<:AbstractLuxLayer,<:NamedTuple}
 )
     return (
         layers=initialparameters(rng, l.layers),
@@ -187,7 +187,7 @@ function initialparameters(
     )
 end
 
-function initialstates(rng::AbstractRNG, l::Parallel{<:AbstractLuxLayer})
+function initialstates(rng::AbstractRNG, l::Parallel{<:AbstractLuxLayer,<:NamedTuple})
     return (
         layers=initialstates(rng, l.layers), connection=initialstates(rng, l.connection)
     )
@@ -197,7 +197,7 @@ function (m::Parallel)(x, ps, st::NamedTuple)
     return applyparallel(m.layers, m.connection, x, ps, st)
 end
 
-function (m::Parallel{<:AbstractLuxLayer})(x, ps, st::NamedTuple)
+function (m::Parallel{<:AbstractLuxLayer,<:NamedTuple})(x, ps, st::NamedTuple)
     y_tuple, st_layers = applyparallel(m.layers, nothing, x, ps.layers, st.layers)
     y, st_connection = apply(m.connection, y_tuple, ps.connection, st.connection)
     return y, (layers=st_layers, connection=st_connection)
