@@ -162,7 +162,8 @@ end
 function PrettyPrinting.printable_children(l::Parallel)
     children = Functors.children(l)
     l.connection === nothing && return children.layers
-    l.connection isa AbstractLuxLayer && return merge((connection=l.connection,), children.layers)
+    l.connection isa AbstractLuxLayer &&
+        return merge((connection=l.connection,), children.layers)
     return merge((; l.connection), children.layers)
 end
 
@@ -178,9 +179,7 @@ function Parallel(; name::NAME_TYPE=nothing, connection, kwargs...)
     return Parallel(connection, (; kwargs...), name)
 end
 
-function initialparameters(
-    rng::AbstractRNG, l::Parallel{<:AbstractLuxLayer,<:NamedTuple}
-)
+function initialparameters(rng::AbstractRNG, l::Parallel{<:AbstractLuxLayer,<:NamedTuple})
     return (
         layers=initialparameters(rng, l.layers),
         connection=initialparameters(rng, l.connection),
@@ -325,15 +324,12 @@ function initialparameters(
     rng::AbstractRNG, l::BranchLayer{<:NamedTuple,<:AbstractLuxLayer}
 )
     return (
-        layers=initialparameters(rng, l.layers),
-        fusion=initialparameters(rng, l.fusion),
+        layers=initialparameters(rng, l.layers), fusion=initialparameters(rng, l.fusion)
     )
 end
 
 function initialstates(rng::AbstractRNG, l::BranchLayer{<:NamedTuple,<:AbstractLuxLayer})
-    return (
-        layers=initialstates(rng, l.layers), fusion=initialstates(rng, l.fusion)
-    )
+    return (layers=initialstates(rng, l.layers), fusion=initialstates(rng, l.fusion))
 end
 
 function (m::BranchLayer)(x, ps, st::NamedTuple)

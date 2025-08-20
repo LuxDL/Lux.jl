@@ -172,7 +172,7 @@ end
             Lux.initialparameters(rng, ::ConcatLayer) = NamedTuple()
             Lux.initialstates(rng, ::ConcatLayer) = NamedTuple()
             (::ConcatLayer)(x_tuple, ps, st) = (vcat(x_tuple...), st)
-            
+
             fusion_layer = ConcatLayer()
             layer = Parallel(fusion_layer, Dense(10, 5), Dense(10, 3))
             display(layer)
@@ -281,13 +281,13 @@ end
             Lux.initialparameters(rng, ::ConcatLayer) = NamedTuple()
             Lux.initialstates(rng, ::ConcatLayer) = NamedTuple()
             (::ConcatLayer)(x_tuple, ps, st) = (vcat(x_tuple...), st)
-            
+
             fusion_layer = ConcatLayer()
             layer = BranchLayer(Dense(10, 5), Dense(10, 3); fusion=fusion_layer)
             display(layer)
             ps, st = dev(Lux.setup(rng, layer))
             x = aType(rand(Float32, 10, 1))
-            
+
             @test haskey(ps, :layers) && haskey(ps, :fusion)
             @test haskey(st, :layers) && haskey(st, :fusion)
             y, _ = layer(x, ps, st)
@@ -302,14 +302,14 @@ end
             display(layer)
             ps, st = dev(Lux.setup(rng, layer))
             x = aType(rand(Float32, 10, 1))
-            
+
             y, _ = layer(x, ps, st)
             @test size(y) == (5, 1)
-            
+
             # Verify it's the sum of the individual outputs
             (y1, y2), _ = BranchLayer(Dense(10, 5), Dense(10, 5))(x, ps.layers, st.layers)
             @test y ≈ y1 + y2
-            
+
             @jet layer(x, ps, st)
             @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
