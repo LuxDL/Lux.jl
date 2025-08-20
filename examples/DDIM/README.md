@@ -44,7 +44,6 @@ julia --startup-file=no \
     --inference-mode \
     --saved-model-path output/checkpoints/model_100.jld2 \
     --generate-n-images 24 \
-    --generate-image-seed 12 \
     --expt-dir output
 ```
 
@@ -72,7 +71,6 @@ Options
   --embedding-dims <32::Int>
   --min-signal-rate <0.02::Float32>
   --max-signal-rate <0.95::Float32>
-  --generate-image-seed <12::Int>
   --saved-model-path <nothing>
   --generate-n-images <10::Int>
 
