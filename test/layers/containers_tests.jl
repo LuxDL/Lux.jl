@@ -169,8 +169,8 @@ end
             # Test Parallel with layer as connection  
             # Create a simple fusion layer that concatenates its tuple inputs
             struct ConcatLayer <: Lux.AbstractLuxLayer end
-            Lux.initialparameters(rng, ::ConcatLayer) = NamedTuple()
-            Lux.initialstates(rng, ::ConcatLayer) = NamedTuple()
+            Lux.initialparameters(rng::Random.AbstractRNG, ::ConcatLayer) = NamedTuple()
+            Lux.initialstates(rng::Random.AbstractRNG, ::ConcatLayer) = NamedTuple()
             (::ConcatLayer)(x_tuple, ps, st) = (vcat(x_tuple...), st)
 
             fusion_layer = ConcatLayer()
@@ -278,8 +278,8 @@ end
             # Test BranchLayer with layer fusion
             # Create a simple fusion layer that concatenates its tuple inputs
             struct ConcatLayer <: Lux.AbstractLuxLayer end
-            Lux.initialparameters(rng, ::ConcatLayer) = NamedTuple()
-            Lux.initialstates(rng, ::ConcatLayer) = NamedTuple()
+            Lux.initialparameters(rng::Random.AbstractRNG, ::ConcatLayer) = NamedTuple()
+            Lux.initialstates(rng::Random.AbstractRNG, ::ConcatLayer) = NamedTuple()
             (::ConcatLayer)(x_tuple, ps, st) = (vcat(x_tuple...), st)
 
             fusion_layer = ConcatLayer()
