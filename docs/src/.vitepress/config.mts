@@ -377,6 +377,10 @@ export default defineConfig({
                 text: "Migrating from Flux",
                 link: "/manual/migrate_from_flux",
               },
+              {
+                text: "Maintaining both Lux and Flux Interfaces",
+                link: "/manual/flux_lux_interop",
+              }
             ],
           },
           {

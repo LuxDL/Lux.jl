@@ -39,6 +39,7 @@ pages = [
         "manual/debugging.md",
         "manual/dispatch_custom_input.md",
         "manual/freezing_model_parameters.md",
+        "manual/flux_lux_interop.md",
         "manual/gpu_management.md",
         "manual/migrate_from_flux.md",
         "manual/weight_initializers.md",
