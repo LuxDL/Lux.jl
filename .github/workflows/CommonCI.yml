@@ -50,6 +50,11 @@ jobs:
       - name: Create TMPDIR
         run: |
           mkdir -p ${{ env.TMPDIR }}
+      - name: Collect Workflow Telemetry
+        uses: catchpoint/workflow-telemetry-action@v2
+        with:
+          comment_on_pr: false
+          job_summary: true
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ inputs.julia_version }}
