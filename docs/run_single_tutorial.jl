@@ -47,8 +47,10 @@ end
 # Generate the script for users to download
 example_dir = dirname(path)
 mkpath(joinpath(output_directory, name))
+has_project_toml = false
 for file in readdir(example_dir)
-    if endswith(file, ".toml")
+    if basename(file) == "Project.toml"
+        global has_project_toml = true
         cp(joinpath(example_dir, file), joinpath(output_directory, name, file); force=true)
     end
 end
@@ -106,12 +108,25 @@ function preprocess(path, str)
         """
     end
 
-    str =
+    script_download = """
+    # [![download julia script](https://img.shields.io/badge/download-$(name).jl-9558B2?logo=julia)](./$(name).jl)
+    """
+    project_toml_download = if has_project_toml
         """
-  # [![download julia script](https://img.shields.io/badge/download-$(name).jl-9558B2?logo=julia)](./$(name).jl)
-  # [![download project toml](https://img.shields.io/badge/download-Project.toml-9C4221?logo=toml)](./$(name)/Project.toml)
-  # [![download notebook](https://img.shields.io/badge/download-$(name).ipynb-FFB13B)](./$(name).ipynb)
-  \n\n""" * str
+        # [![download project toml](https://img.shields.io/badge/download-Project.toml-9C4221?logo=toml)](./$(name)/Project.toml)
+        """
+    else
+        ""
+    end
+    notebook_download = """
+    # [![download notebook](https://img.shields.io/badge/download-$(name).ipynb-FFB13B)](./$(name).ipynb)
+    """
+
+    str = """
+    $(script_download)
+    $(project_toml_download)
+    $(notebook_download)
+    \n\n""" * str
 
     return str
 end
