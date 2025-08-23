@@ -162,8 +162,6 @@ end
 function PrettyPrinting.printable_children(l::Parallel)
     children = Functors.children(l)
     l.connection === nothing && return children.layers
-    l.connection isa AbstractLuxLayer &&
-        return merge((connection=l.connection,), children.layers)
     return merge((; l.connection), children.layers)
 end
 
@@ -180,21 +178,19 @@ function Parallel(; name::NAME_TYPE=nothing, connection, kwargs...)
 end
 
 function initialparameters(rng::AbstractRNG, l::Parallel{<:AbstractLuxLayer,<:NamedTuple})
-    return (
+    return (;
         layers=initialparameters(rng, l.layers),
         connection=initialparameters(rng, l.connection),
     )
 end
 
 function initialstates(rng::AbstractRNG, l::Parallel{<:AbstractLuxLayer,<:NamedTuple})
-    return (
+    return (;
         layers=initialstates(rng, l.layers), connection=initialstates(rng, l.connection)
     )
 end
 
-function (m::Parallel)(x, ps, st::NamedTuple)
-    return applyparallel(m.layers, m.connection, x, ps, st)
-end
+(m::Parallel)(x, ps, st::NamedTuple) = applyparallel(m.layers, m.connection, x, ps, st)
 
 function (m::Parallel{<:AbstractLuxLayer,<:NamedTuple})(x, ps, st::NamedTuple)
     y_tuple, st_layers = applyparallel(m.layers, nothing, x, ps.layers, st.layers)
@@ -316,25 +312,22 @@ end
 function PrettyPrinting.printable_children(l::BranchLayer)
     children = Functors.children(l)
     l.fusion === nothing && return children.layers
-    l.fusion isa AbstractLuxLayer && return merge(children.layers, (fusion=l.fusion,))
     return merge(children.layers, (; l.fusion))
 end
 
 function initialparameters(
     rng::AbstractRNG, l::BranchLayer{<:NamedTuple,<:AbstractLuxLayer}
 )
-    return (
+    return (;
         layers=initialparameters(rng, l.layers), fusion=initialparameters(rng, l.fusion)
     )
 end
 
 function initialstates(rng::AbstractRNG, l::BranchLayer{<:NamedTuple,<:AbstractLuxLayer})
-    return (layers=initialstates(rng, l.layers), fusion=initialstates(rng, l.fusion))
+    return (; layers=initialstates(rng, l.layers), fusion=initialstates(rng, l.fusion))
 end
 
-function (m::BranchLayer)(x, ps, st::NamedTuple)
-    return applybranching(m.layers, m.fusion, x, ps, st)
-end
+(m::BranchLayer)(x, ps, st::NamedTuple) = applybranching(m.layers, m.fusion, x, ps, st)
 
 function (m::BranchLayer{<:NamedTuple,<:AbstractLuxLayer})(x, ps, st::NamedTuple)
     y_tuple, st_layers = applybranching(m.layers, nothing, x, ps.layers, st.layers)

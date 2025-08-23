@@ -166,11 +166,11 @@ end
         end
 
         @testset "layer connection" begin
-            # Test Parallel with layer as connection  
+            # Test Parallel with layer as connection
             # Create a simple fusion layer that concatenates its tuple inputs
             struct ConcatLayer <: Lux.AbstractLuxLayer end
-            Lux.initialparameters(rng::Random.AbstractRNG, ::ConcatLayer) = NamedTuple()
-            Lux.initialstates(rng::Random.AbstractRNG, ::ConcatLayer) = NamedTuple()
+            Lux.initialparameters(::Random.AbstractRNG, ::ConcatLayer) = NamedTuple()
+            Lux.initialstates(::Random.AbstractRNG, ::ConcatLayer) = NamedTuple()
             (::ConcatLayer)(x_tuple, ps, st) = (vcat(x_tuple...), st)
 
             fusion_layer = ConcatLayer()
@@ -278,8 +278,8 @@ end
             # Test BranchLayer with layer fusion
             # Create a simple fusion layer that concatenates its tuple inputs
             struct ConcatLayer <: Lux.AbstractLuxLayer end
-            Lux.initialparameters(rng::Random.AbstractRNG, ::ConcatLayer) = NamedTuple()
-            Lux.initialstates(rng::Random.AbstractRNG, ::ConcatLayer) = NamedTuple()
+            Lux.initialparameters(::Random.AbstractRNG, ::ConcatLayer) = NamedTuple()
+            Lux.initialstates(::Random.AbstractRNG, ::ConcatLayer) = NamedTuple()
             (::ConcatLayer)(x_tuple, ps, st) = (vcat(x_tuple...), st)
 
             fusion_layer = ConcatLayer()
@@ -307,7 +307,7 @@ end
             @test size(y) == (5, 1)
 
             # Verify it's the sum of the individual outputs
-            (y1, y2), _ = BranchLayer(Dense(10, 5), Dense(10, 5))(x, ps.layers, st.layers)
+            (y1, y2), _ = BranchLayer(Dense(10, 5), Dense(10, 5))(x, ps, st)
             @test y ≈ y1 + y2
 
             @jet layer(x, ps, st)
