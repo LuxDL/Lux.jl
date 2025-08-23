@@ -13,7 +13,7 @@ using Random: AbstractRNG, Random
 using Setfield: Setfield
 using Static: StaticSymbol, StaticBool, True, known, static, dynamic
 
-using ..Lux: Lux, Optional
+using ..Lux: Lux, Optional, CompactLuxLayer
 using ..Utils: Utils, BoolType, SymbolType
 using LuxCore:
     LuxCore, AbstractLuxLayer, AbstractLuxWrapperLayer, AbstractLuxContainerLayer, apply

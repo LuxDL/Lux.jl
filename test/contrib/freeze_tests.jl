@@ -111,3 +111,37 @@ end
         @test und(x, psd, std)[1] == fd(x, ps, st)[1]
     end
 end
+
+@testitem "#1319: Freezing a @compact layer" setup = [SharedTestSetup] tags = [:misc] begin
+    using Lux, Random, Functors
+
+    function freeze_by_name(d, ps, st, name::KeyPath)
+        if name == KeyPath(:layer_1)
+            return Lux.Experimental.freeze(d, ps, st, (:weight, :bias))
+        end
+        return d, ps, st
+    end
+
+    model = @compact(
+        layer_1 = Dense(2 => 5),
+        layer_2 = Dense(5 => 5),
+        layer_3 = Dense(5 => 1),
+        data = rand(Float32, 2, 5),
+        data_nt = @non_trainable(rand(Float32, 1, 4))
+    ) do x
+        x = layer_1(x)
+        x = layer_2(x)
+        x = layer_3(x)
+        @return x
+    end
+    ps, st = Lux.setup(Random.default_rng(), model)
+
+    model_frozen, ps_frozen, st_frozen = Lux.Experimental.layer_map(
+        freeze_by_name, model, ps, st
+    )
+    @test model_frozen.layers.layer_1 isa Lux.Experimental.FrozenLayer
+    @test !isempty(ps.layer_1)
+    @test isempty(ps_frozen.layer_1)
+    @test isempty(st.layer_1)
+    @test !isempty(st_frozen.layer_1)
+end
