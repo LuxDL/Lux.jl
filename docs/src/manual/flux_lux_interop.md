@@ -113,7 +113,7 @@ In your `Project.toml`, add Flux as a weak dependency:
 
 ```toml
 [deps]
-LuxCore = "2d8b4e74-eb68-11ec-a9a6-f3db1a0b0db0"
+LuxCore = "bb33d45b-7691-41d6-9220-0943567d0623"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [weakdeps]
@@ -183,22 +183,6 @@ function (wrapper::FluxLuxLayer)(x)
 end
 ```
 
-### Device Transfer
-
-Ensure your wrapper handles device transfers correctly:
-
-```julia
-# In your Flux extension
-using Adapt
-
-function Adapt.adapt_structure(to, wrapper::FluxLuxLayer)
-    return FluxLuxLayer(
-        wrapper.internal_layer,  # Layer structure doesn't need device transfer
-        Adapt.adapt(to, wrapper.ps),  # Move parameters
-        Adapt.adapt(to, wrapper.st)   # Move states
-    )
-end
-```
 
 ### Performance Considerations
 
@@ -208,33 +192,11 @@ end
    # using Lux     # ~0.5 seconds
    # using Flux    # ~0.9 seconds
    ```
-
-2. **Memory Overhead**: The wrapper adds minimal overhead - just storing parameters and state.
-
-3. **Compilation**: Both interfaces will trigger similar compilation costs for the core computation.
-
 ## Best Practices
 
 1. **Use LuxCore for core definitions**: Depend on `LuxCore.jl` rather than full `Lux.jl` to minimize dependencies.
 
 2. **Lazy loading**: Use package extensions to avoid loading Flux unless needed.
-
-3. **Test both interfaces**: Ensure both Lux and Flux interfaces work correctly:
-   ```julia
-   @testset "Lux Interface" begin
-       layer = MyCustomLuxLayer(4, 2)
-       # Test Lux interface...
-   end
-   
-   @testset "Flux Interface" begin
-       layer = MyCustomFluxLayer(4, 2)
-       # Test Flux interface...
-   end
-   ```
-
-4. **Documentation**: Clearly document which interface(s) your package supports.
-
-5. **Version compatibility**: Keep track of minimum version requirements for both ecosystems.
 
 ## Common Gotchas
 
@@ -243,7 +205,5 @@ end
 2. **Parameter sharing**: Be careful with parameter sharing when converting between interfaces.
 
 3. **Extension loading**: Users need to load Flux explicitly to access the Flux interface, even if your package supports it.
-
-4. **Type stability**: Ensure your wrapper maintains type stability for good performance.
 
 By following this pattern, you can provide excellent support for both Flux and Lux users while maintaining clean, maintainable code.
