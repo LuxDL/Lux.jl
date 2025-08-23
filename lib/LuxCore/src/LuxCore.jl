@@ -423,6 +423,7 @@ end
         stateless_apply,
         display_name,
         preserves_state_type,
+        StatefulLuxLayer,
     )
 )
 

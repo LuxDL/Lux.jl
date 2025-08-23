@@ -52,3 +52,9 @@ LuxCore.preserves_state_type
 ```@docs
 LuxCore.outputsize
 ```
+
+## Stateful Layer
+
+```@docs
+LuxCore.StatefulLuxLayer
+```

@@ -101,9 +101,8 @@ match_eltype
 
 ## Stateful Layer
 
-```@docs
-StatefulLuxLayer
-```
+This layer have been moved to [`LuxCore.jl`]. See the
+[documentation](@ref LuxCore.StatefulLuxLayer) for more details.
 
 ## Compact Layer
 

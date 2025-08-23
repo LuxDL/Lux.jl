@@ -17,7 +17,7 @@ dynamic(v::Bool) = v
 
 !!! warning
 
-    This is not a Lux.AbstractLuxLayer
+    This is not a LuxCore.AbstractLuxLayer
 
 A convenience wrapper over Lux layers which stores the parameters and states internally.
 This is meant to be used in internal implementation of layers.
