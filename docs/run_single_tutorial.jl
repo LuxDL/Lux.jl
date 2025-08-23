@@ -3,12 +3,13 @@ using Pkg
 storage_dir = joinpath(@__DIR__, "..", "tutorial_deps")
 !isdir(storage_dir) && mkpath(storage_dir)
 
-# Run this as `run_single_tutorial.jl <tutorial_name> <output_dir> <path/to/script>`
+# Run this as `run_single_tutorial.jl <tutorial_name> <output_dir> <path/to/script>` <should_run>
 name = ARGS[1]
-pkg_log_path = joinpath(storage_dir, "$(name)_pkg.log")
 output_directory = ARGS[2]
 path = ARGS[3]
 should_run = parse(Bool, ARGS[4])
+
+pkg_log_path = joinpath(storage_dir, "$(name)_pkg.log")
 push!(LOAD_PATH, "@literate")  # Should have the Literate and InteractiveUtils packages
 
 io = open(pkg_log_path, "w")
@@ -22,13 +23,25 @@ catch err
         err
     true
 end
-if should_run
-    Pkg.instantiate(; io)
-    Pkg.precompile(; io)
-end
+# TODO: uncomment this
+# if should_run
+#     Pkg.instantiate(; io)
+#     Pkg.precompile(; io)
+# end
 close(io)
 
 using Literate
+
+# Generate the script for users to download
+example_dir = dirname(path)
+mkpath(joinpath(output_directory, name))
+for file in readdir(example_dir)
+    if endswith(file, ".toml")
+        cp(joinpath(example_dir, file), joinpath(output_directory, name, file); force=true)
+    end
+end
+Literate.script(path, output_directory; name)
+Literate.notebook(path, output_directory; name, execute=false)
 
 function preprocess(path, str)
     if warn_old_version
@@ -77,6 +90,13 @@ function preprocess(path, str)
         """
     end
 
+    str =
+        """
+  # [![download julia script](https://img.shields.io/badge/download-$(name).jl-9558B2?logo=julia)](./$(name).jl)
+  # [![download project toml](https://img.shields.io/badge/download-Project.toml-9C4221?logo=toml)](./$(name)/Project.toml)
+  # [![download notebook](https://img.shields.io/badge/download-$(name).ipynb-FFB13B)](./$(name).ipynb)
+  \n\n""" * str
+
     return str
 end
 
@@ -90,7 +110,8 @@ end
 Literate.markdown(
     path,
     output_directory;
-    execute=should_run,
+    # TODO: revert
+    execute=false, # should_run,
     name,
     flavor=should_run ? Literate.DocumenterFlavor() : Literate.CommonMarkFlavor(),
     preprocess=Base.Fix1(preprocess, path),

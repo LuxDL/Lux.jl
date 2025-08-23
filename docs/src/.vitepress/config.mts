@@ -236,7 +236,7 @@ export default defineConfig({
                 link: "/tutorials/intermediate/4_PINN2DPDE",
               },
               {
-                text: "Convolutional VAE for MNIST using Reactant",
+                text: "Convolutional VAE for MNIST",
                 link: "/tutorials/intermediate/5_ConvolutionalVAE",
               },
               {

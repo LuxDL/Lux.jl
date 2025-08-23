@@ -41,7 +41,8 @@ accuracy are 89% and 75% respectively.
 ## ConvMixer
 
 > [!NOTE]
-> This code has been adapted from https://github.com/locuslab/convmixer-cifar10
+> This code has been adapted from
+> [locuslab/convmixer-cifar10](https://github.com/locuslab/convmixer-cifar10)
 
 This is a simple ConvMixer training script for CIFAR-10. It's probably a good starting point
 for new experiments on small datasets.
@@ -58,5 +59,5 @@ julia --startup-file=no \
 
 ### Notes
 
-  1. To match the results from the original repo, we need more augmentation strategies, that
-     are currently not implemented in DataAugmentation.jl.
+1. To match the results from the original repo, we need more augmentation strategies, that
+   are currently not implemented in DataAugmentation.jl.

@@ -79,6 +79,7 @@ steps:
           cuda: "*"
         env:
           JULIA_DEBUG: "Documenter"
+          LD_LIBRARY_PATH: ""
         timeout_in_minutes: 120
 
 env:

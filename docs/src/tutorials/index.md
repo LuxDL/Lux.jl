@@ -63,7 +63,7 @@ const intermediate = [
   {
     href: "intermediate/5_ConvolutionalVAE",
     src: "../conditional_vae.png",
-    caption: "Convolutional VAE for MNIST using Reactant",
+    caption: "Convolutional VAE for MNIST",
     desc: "Train a Convolutional VAE to generate images from a latent space."
   },
   {
