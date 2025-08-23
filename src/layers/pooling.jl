@@ -227,8 +227,6 @@ for layer_op in (:Max, :Mean, :LP)
             layer <: PoolingLayer
         end
 
-        Experimental.layer_map_leaf(::KeyPath, ::$(layer_name)) = true
-
         function $(layer_name)(
             window::Tuple{Vararg{IntegerType}}; stride=window, pad=0, dilation=1, p=2
         )
@@ -266,8 +264,6 @@ for layer_op in (:Max, :Mean, :LP)
             layer <: PoolingLayer
         end
 
-        Experimental.layer_map_leaf(::KeyPath, ::$(global_layer_name)) = true
-
         function $(global_layer_name)(; p=2)
             return $(global_layer_name)(PoolingLayer(static(:global), $(Meta.quot(op)); p))
         end
@@ -286,8 +282,6 @@ for layer_op in (:Max, :Mean, :LP)
                                                             AbstractLuxWrapperLayer{:layer}
             layer <: PoolingLayer
         end
-
-        Experimental.layer_map_leaf(::KeyPath, ::$(adaptive_layer_name)) = true
 
         function $(adaptive_layer_name)(out_size::Tuple{Vararg{IntegerType}}; p=2)
             return $(adaptive_layer_name)(

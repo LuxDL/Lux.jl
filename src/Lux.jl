@@ -76,9 +76,6 @@ include("helpers/optimizers.jl")
 include("helpers/training.jl")
 include("helpers/forwarddiff_training.jl")
 
-# Experimental
-include("contrib/contrib.jl")
-
 # Pretty Printing
 include("layers/display.jl")
 
@@ -102,6 +99,9 @@ include("helpers/losses.jl")
 include("helpers/recursive_ops.jl")
 include("helpers/match_eltype.jl")
 include("helpers/size_propagator.jl")
+
+# Experimental
+include("contrib/contrib.jl")
 
 # AutoDiff
 include("autodiff/api.jl")

@@ -147,3 +147,15 @@ layer_map_leaf(::KeyPath, ::AbstractLuxLayer) = true
 layer_map_leaf(::KeyPath, ::AbstractLuxWrapperLayer) = false
 layer_map_leaf(::KeyPath, ::AbstractLuxContainerLayer) = false
 layer_map_leaf(::KeyPath, x) = Functors.isleaf(x)
+
+for layer_op in (:Max, :Mean, :LP)
+    layer_name = Symbol(layer_op, :Pool)
+    global_layer_name = Symbol(:Global, layer_name)
+    adaptive_layer_name = Symbol(:Adaptive, layer_name)
+
+    @eval begin
+        layer_map_leaf(::KeyPath, ::Lux.$(layer_name)) = true
+        layer_map_leaf(::KeyPath, ::Lux.$(global_layer_name)) = true
+        layer_map_leaf(::KeyPath, ::Lux.$(adaptive_layer_name)) = true
+    end
+end
