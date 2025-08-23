@@ -19,10 +19,7 @@ end
 Profiler.@annotate "Compile Compute Gradients" function Lux.Training.compute_gradients_impl(
     backend::ReactantBackend, objective_function::F, data, ts::Training.TrainState
 ) where {F}
-    precision_config = default_precision_config(ts.parameters)
-    compiled_gradient_function = Reactant.with_config(;
-        dot_general_precision=precision_config, convolution_precision=precision_config
-    ) do
+    compiled_gradient_function = with_default_precision_config(ts.parameters) do
         @compile compute_gradients_internal(
             objective_function, ts.model, data, ts.parameters, ts.states
         )
@@ -67,11 +64,7 @@ for inplace in ("!", "")
         if hasfield(typeof(ts.cache.extras), :update_function)
             update_function = ts.cache.extras.update_function
         else
-            precision_config = default_precision_config(ts.parameters)
-            update_function = Reactant.with_config(;
-                dot_general_precision=precision_config,
-                convolution_precision=precision_config,
-            ) do
+            update_function = with_default_precision_config(ts.parameters) do
                 @compile Optimisers.$(update_fn)(ts.optimizer_state, ts.parameters, grads)
             end
 
@@ -89,11 +82,7 @@ for inplace in ("!", "")
     @eval Profiler.@annotate "Compile Train Step" function Lux.Training.$(fname)(
         backend::ReactantBackend, objective_function::F, data, ts::Training.TrainState
     ) where {F}
-        precision_config = default_precision_config(ts.parameters)
-        compiled_grad_and_step_function = Reactant.with_config(;
-            dot_general_precision=precision_config,
-            convolution_precision=precision_config,
-        ) do
+        compiled_grad_and_step_function = with_default_precision_config(ts.parameters) do
             @compile $(internal_fn)(
                 objective_function,
                 ts.model,

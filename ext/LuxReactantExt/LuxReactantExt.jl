@@ -39,11 +39,18 @@ end
 # For CUDA use `PrecisionConfig.HIGH`. For other backends use `PrecisionConfig.DEFAULT`.
 function default_precision_config(ps)
     rdev = get_device(ps)
-    @assert rdev isa ReactantDevice "Only Reactant devices are supported."
+    rdev isa ReactantDevice || return PrecisionConfig.DEFAULT
     device = rdev.device === missing ? Reactant.XLA.default_device() : rdev.device
     device_kind = string(device)
     contains(device_kind, "CUDA") && return PrecisionConfig.HIGH
     return PrecisionConfig.DEFAULT
+end
+
+function with_default_precision_config(f::F, ps) where {F}
+    precision_config = default_precision_config(ps)
+    return Reactant.with_config(
+        f; dot_general_precision=precision_config, convolution_precision=precision_config
+    )
 end
 
 include("patches.jl")
