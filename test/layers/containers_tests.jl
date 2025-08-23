@@ -164,6 +164,28 @@ end
             @test check_approx(gs[2].x, gs_reg[2].x)
             @test check_approx(gs[3].x, gs_reg[3].x)
         end
+
+        @testset "layer connection" begin
+            # Test Parallel with layer as connection
+            # Create a simple fusion layer that concatenates its tuple inputs
+            struct ConcatLayer <: Lux.AbstractLuxLayer end
+            Lux.initialparameters(::Random.AbstractRNG, ::ConcatLayer) = NamedTuple()
+            Lux.initialstates(::Random.AbstractRNG, ::ConcatLayer) = NamedTuple()
+            (::ConcatLayer)(x_tuple, ps, st) = (vcat(x_tuple...), st)
+
+            fusion_layer = ConcatLayer()
+            layer = Parallel(fusion_layer, Dense(10, 5), Dense(10, 3))
+            display(layer)
+            ps, st = dev(Lux.setup(rng, layer))
+            x = aType(randn(rng, Float32, 10, 2))
+
+            @test haskey(ps, :layers) && haskey(ps, :connection)
+            @test haskey(st, :layers) && haskey(st, :connection)
+            y, _ = layer(x, ps, st)
+            @test size(y) == (8, 2)  # 5 + 3 concatenated
+            @jet layer(x, ps, st)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+        end
     end
 end
 
@@ -251,6 +273,46 @@ end
 
         @jet layer(x, ps, st)
         @test_gradients(sumsumfirst, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+
+        @testset "fusion layer" begin
+            # Test BranchLayer with layer fusion
+            # Create a simple fusion layer that concatenates its tuple inputs
+            struct ConcatLayer <: Lux.AbstractLuxLayer end
+            Lux.initialparameters(::Random.AbstractRNG, ::ConcatLayer) = NamedTuple()
+            Lux.initialstates(::Random.AbstractRNG, ::ConcatLayer) = NamedTuple()
+            (::ConcatLayer)(x_tuple, ps, st) = (vcat(x_tuple...), st)
+
+            fusion_layer = ConcatLayer()
+            layer = BranchLayer(Dense(10, 5), Dense(10, 3); fusion=fusion_layer)
+            display(layer)
+            ps, st = dev(Lux.setup(rng, layer))
+            x = aType(rand(Float32, 10, 1))
+
+            @test haskey(ps, :layers) && haskey(ps, :fusion)
+            @test haskey(st, :layers) && haskey(st, :fusion)
+            y, _ = layer(x, ps, st)
+            @test size(y) == (8, 1)  # 5 + 3 concatenated
+            @jet layer(x, ps, st)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+        end
+
+        @testset "fusion function" begin
+            # Test BranchLayer with function fusion
+            layer = BranchLayer(Dense(10, 5), Dense(10, 5); fusion=+)
+            display(layer)
+            ps, st = dev(Lux.setup(rng, layer))
+            x = aType(rand(Float32, 10, 1))
+
+            y, _ = layer(x, ps, st)
+            @test size(y) == (5, 1)
+
+            # Verify it's the sum of the individual outputs
+            (y1, y2), _ = BranchLayer(Dense(10, 5), Dense(10, 5))(x, ps, st)
+            @test y ≈ y1 + y2
+
+            @jet layer(x, ps, st)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+        end
     end
 end
 

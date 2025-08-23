@@ -98,8 +98,8 @@ with `connection`.
 ## Arguments
 
   - `connection`: An `N`-argument function that is called after passing the input through
-    each layer. If `connection = nothing`, we return a tuple
-    `Parallel(nothing, f, g)(x, y) = (f(x), g(y))`
+    each layer, OR an AbstractLuxLayer that takes a tuple of `N` inputs. 
+    If `connection = nothing`, we return a tuple: `Parallel(nothing, f, g)(x, y) = (f(x), g(y))`
 
   - Layers can be specified in two formats:
 
@@ -117,17 +117,19 @@ with `connection`.
 ## Returns
 
   - See the Inputs section for how the output is computed
-  - Updated state of the `layers`
+  - Updated state of the `layers` (and `connection` if it's a layer)
 
 ## Parameters
 
   - Parameters of each `layer` wrapped in a NamedTuple with
     `fields = layer_1, layer_2, ..., layer_N` (naming changes if using the kwargs API)
+  - If `connection` is an AbstractLuxLayer, parameters include both `layers` and `connection`
 
 ## States
 
   - States of each `layer` wrapped in a NamedTuple with
     `fields = layer_1, layer_2, ..., layer_N` (naming changes if using the kwargs API)
+  - If `connection` is an AbstractLuxLayer, states include both `layers` and `connection`
 
 See also [`SkipConnection`](@ref) which is `Parallel` with one identity.
 
@@ -175,7 +177,26 @@ function Parallel(; name::NAME_TYPE=nothing, connection, kwargs...)
     return Parallel(connection, (; kwargs...), name)
 end
 
+function initialparameters(rng::AbstractRNG, l::Parallel{<:AbstractLuxLayer,<:NamedTuple})
+    return (;
+        layers=initialparameters(rng, l.layers),
+        connection=initialparameters(rng, l.connection),
+    )
+end
+
+function initialstates(rng::AbstractRNG, l::Parallel{<:AbstractLuxLayer,<:NamedTuple})
+    return (;
+        layers=initialstates(rng, l.layers), connection=initialstates(rng, l.connection)
+    )
+end
+
 (m::Parallel)(x, ps, st::NamedTuple) = applyparallel(m.layers, m.connection, x, ps, st)
+
+function (m::Parallel{<:AbstractLuxLayer,<:NamedTuple})(x, ps, st::NamedTuple)
+    y_tuple, st_layers = applyparallel(m.layers, nothing, x, ps.layers, st.layers)
+    y, st_connection = apply(m.connection, y_tuple, ps.connection, st.connection)
+    return y, (layers=st_layers, connection=st_connection)
+end
 
 @generated function applyparallel(
     layers::NamedTuple{names}, connection::C, x::T, ps, st::NamedTuple
@@ -206,11 +227,11 @@ end
 end
 
 """
-    BranchLayer(layers...)
-    BranchLayer(; name=nothing, layers...)
+    BranchLayer(layers...; fusion=nothing)
+    BranchLayer(; fusion=nothing, name=nothing, layers...)
 
 Takes an input `x` and passes it through all the `layers` and returns a tuple of the
-outputs.
+outputs. If `fusion` is provided, applies fusion to the tuple of outputs.
 
 ## Arguments
 
@@ -218,6 +239,12 @@ outputs.
 
       + A list of `N` Lux layers
       + Specified as `N` keyword arguments.
+
+## Keyword Arguments
+
+  - `fusion`: An optional layer or function to apply to the tuple of outputs.
+    If `fusion = nothing`, returns the tuple as-is (default behavior).
+    If `fusion` is provided, returns `fusion((layer_1(x), layer_2(x), ..., layer_N(x)))`.
 
 # Extended Help
 
@@ -227,19 +254,22 @@ outputs.
 
 ## Returns
 
-  - Tuple: `(layer_1(x), layer_2(x), ..., layer_N(x))`  (naming changes if using the kwargs
-    API)
-  - Updated state of the `layers`
+  - If `fusion = nothing`: Tuple `(layer_1(x), layer_2(x), ..., layer_N(x))` (naming changes 
+    if using the kwargs API)
+  - If `fusion` is provided: `fusion((layer_1(x), layer_2(x), ..., layer_N(x)))`
+  - Updated state of the `layers` (and `fusion` if it's a layer)
 
 ## Parameters
 
   - Parameters of each `layer` wrapped in a NamedTuple with
     `fields = layer_1, layer_2, ..., layer_N` (naming changes if using the kwargs API)
+  - If `fusion` is an AbstractLuxLayer, parameters include both `layers` and `fusion`
 
 ## States
 
   - States of each `layer` wrapped in a NamedTuple with
     `fields = layer_1, layer_2, ..., layer_N` (naming changes if using the kwargs API)
+  - If `fusion` is an AbstractLuxLayer, states include both `layers` and `fusion`
 
 !!! tip "Comparison with Parallel"
 
@@ -267,22 +297,49 @@ BranchLayer(
 """
 @concrete struct BranchLayer <: AbstractLuxWrapperLayer{:layers}
     layers <: NamedTuple
+    fusion
     name
 end
 
-function BranchLayer(layers...; name::NAME_TYPE=nothing)
-    return BranchLayer(Utils.named_tuple_layers(layers...), name)
+function BranchLayer(layers...; fusion=nothing, name::NAME_TYPE=nothing)
+    return BranchLayer(Utils.named_tuple_layers(layers...), fusion, name)
 end
 
-BranchLayer(; name::NAME_TYPE=nothing, kwargs...) = BranchLayer((; kwargs...), name)
+function BranchLayer(; fusion=nothing, name::NAME_TYPE=nothing, kwargs...)
+    return BranchLayer((; kwargs...), fusion, name)
+end
 
-(m::BranchLayer)(x, ps, st::NamedTuple) = applybranching(m.layers, x, ps, st)
+function PrettyPrinting.printable_children(l::BranchLayer)
+    children = Functors.children(l)
+    l.fusion === nothing && return children.layers
+    return merge(children.layers, (; l.fusion))
+end
+
+function initialparameters(
+    rng::AbstractRNG, l::BranchLayer{<:NamedTuple,<:AbstractLuxLayer}
+)
+    return (;
+        layers=initialparameters(rng, l.layers), fusion=initialparameters(rng, l.fusion)
+    )
+end
+
+function initialstates(rng::AbstractRNG, l::BranchLayer{<:NamedTuple,<:AbstractLuxLayer})
+    return (; layers=initialstates(rng, l.layers), fusion=initialstates(rng, l.fusion))
+end
+
+(m::BranchLayer)(x, ps, st::NamedTuple) = applybranching(m.layers, m.fusion, x, ps, st)
+
+function (m::BranchLayer{<:NamedTuple,<:AbstractLuxLayer})(x, ps, st::NamedTuple)
+    y_tuple, st_layers = applybranching(m.layers, nothing, x, ps.layers, st.layers)
+    y, st_fusion = apply(m.fusion, y_tuple, ps.fusion, st.fusion)
+    return y, (layers=st_layers, fusion=st_fusion)
+end
 
 @generated function applybranching(
-    layers::NamedTuple{names}, x, ps, st::NamedTuple
-) where {names}
+    layers::NamedTuple{names}, fusion::F, x, ps, st::NamedTuple
+) where {names,F}
     N = length(names)
-    y_symbols = [gensym() for _ in 1:N]
+    y_symbols = [gensym() for _ in 1:(N + 1)]
     st_symbols = [gensym() for _ in 1:N]
     calls = []
     append!(
@@ -296,7 +353,12 @@ BranchLayer(; name::NAME_TYPE=nothing, kwargs...) = BranchLayer((; kwargs...), n
         ],
     )
     push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
-    push!(calls, :(return tuple($(Tuple(y_symbols)...)), st))
+    if F == Nothing
+        push!(calls, :($(y_symbols[N + 1]) = tuple($(Tuple(y_symbols[1:N])...))))
+    else
+        push!(calls, :($(y_symbols[N + 1]) = fusion($(Tuple(y_symbols[1:N])...))))
+    end
+    push!(calls, :(return $(y_symbols[N + 1]), st))
     return Expr(:block, calls...)
 end
 
