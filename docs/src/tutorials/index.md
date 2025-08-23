@@ -98,7 +98,13 @@ const advanced = [
     src: "../symbolic_optimal_control.png",
     caption: "Optimal Control with Symbolic UDE",
     desc: "Train a UDE and replace a part of it with Symbolic Regression."
-  }
+  },
+  {
+    href: "advanced/2_DDIM",
+    src: "https://raw.githubusercontent.com/LuxDL/Lux.jl/main/examples/DDIM/assets/flowers_generated.png",
+    caption: "Denoising Diffusion Implicit Model (DDIM)",
+    desc: "Train a Diffusion Model to generate images from Gaussian noises."
+  },
 ];
 
 const large_models = [
@@ -107,12 +113,6 @@ const large_models = [
     src: "https://production-media.paperswithcode.com/datasets/ImageNet-0000000008-f2e87edd_Y0fT5zg.jpg",
     caption: "ImageNet Classification",
     desc: "Train Large Image Classifiers using Lux (on Distributed GPUs)."
-  },
-  {
-    href: "https://github.com/LuxDL/Lux.jl/tree/main/examples/DDIM",
-    src: "https://raw.githubusercontent.com/LuxDL/Lux.jl/main/examples/DDIM/assets/flowers_generated.png",
-    caption: "Denoising Diffusion Implicit Model (DDIM)",
-    desc: "Train a Diffusion Model to generate images from Gaussian noises."
   },
   {
     href: "https://github.com/LuxDL/Lux.jl/tree/main/examples/CIFAR10",
