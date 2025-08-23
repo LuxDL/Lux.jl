@@ -17,7 +17,7 @@ const INTERMEDIATE_TUTORIALS = [
     ("RealNVP",                 "CPU",  false),
     ("LSTMEncoderDecoder",      "CPU",  true),
     ("CIFAR10/conv_mixer.jl",   "CPU",  false),
-    ("CIFAR10/simple_cnn.jl",   "CPU",  false),
+    ("CIFAR10/simple_cnn.jl",   "CUDA", true),
     ("CIFAR10/resnet20.jl",     "CPU",  false),
 ]
 const ADVANCED_TUTORIALS = [

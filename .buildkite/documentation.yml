@@ -59,8 +59,6 @@ steps:
           - sv-oss/node-n#v0.1.2:
               node-version: v20
         command: |
-          export LD_LIBRARY_PATH=/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
-
           echo "+++ :node: Instantiate NPM"
           cd docs/
           npm i
@@ -75,9 +73,8 @@ steps:
             println("+++ :julia: Building documentation")
             include("docs/make.jl")'
         agents:
-          queue: "juliaecosystem"
-          os: "linux"
-          arch: "x86_64"
+          queue: "juliagpu"
+          cuda: "*"
         env:
           JULIA_DEBUG: "Documenter"
           LD_LIBRARY_PATH: ""

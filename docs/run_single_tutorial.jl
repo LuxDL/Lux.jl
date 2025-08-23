@@ -33,7 +33,7 @@ close(io)
 
 using Literate
 
-function preprocess_and_replace_inclues(str)
+function preprocess_and_replace_includes(str)
     return replace(
         str,
         r"""include\("([^"]+)"\)""" =>
@@ -52,13 +52,13 @@ for file in readdir(example_dir)
         cp(joinpath(example_dir, file), joinpath(output_directory, name, file); force=true)
     end
 end
-Literate.script(path, output_directory; name, preprocess=preprocess_and_replace_inclues)
+Literate.script(path, output_directory; name, preprocess=preprocess_and_replace_includes)
 Literate.notebook(
-    path, output_directory; name, execute=false, preprocess=preprocess_and_replace_inclues
+    path, output_directory; name, execute=false, preprocess=preprocess_and_replace_includes
 )
 
 function preprocess(path, str)
-    str = preprocess_and_replace_inclues(str)
+    str = preprocess_and_replace_includes(str)
 
     if warn_old_version
         str =
@@ -126,8 +126,7 @@ end
 Literate.markdown(
     path,
     output_directory;
-    # TODO: revert
-    execute=false, # should_run,
+    execute=should_run,
     name,
     flavor=should_run ? Literate.DocumenterFlavor() : Literate.CommonMarkFlavor(),
     preprocess=Base.Fix1(preprocess, path),
