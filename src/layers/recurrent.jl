@@ -1,9 +1,5 @@
 abstract type AbstractRecurrentCell <: AbstractLuxLayer end
 
-const AbstractDebugRecurrentCell = Experimental.DebugLayer{
-    <:Any,<:Any,<:AbstractRecurrentCell
-}
-
 # Fallback for vector inputs
 function (rnn::AbstractRecurrentCell)(x::AbstractVector, ps, st::NamedTuple)
     (y, carry), stₙ = rnn(reshape(x, :, 1), ps, st)
@@ -118,10 +114,21 @@ automatically operate over a sequence of inputs.
 
     For some discussion on this topic, see https://github.com/LuxDL/Lux.jl/issues/472.
 """
-@concrete struct Recurrence{R<:StaticBool} <: AbstractLuxWrapperLayer{:cell}
-    cell <: Union{<:AbstractRecurrentCell,<:AbstractDebugRecurrentCell}
-    ordering <: AbstractTimeSeriesDataBatchOrdering
+struct Recurrence{R<:StaticBool,C,O<:AbstractTimeSeriesDataBatchOrdering} <:
+       AbstractLuxWrapperLayer{:cell}
+    cell::C
+    ordering::O
     return_sequence::R
+
+    function Recurrence(
+        cell::C, ordering::AbstractTimeSeriesDataBatchOrdering, return_sequence::R
+    ) where {C,R}
+        @assert cell isa Union{
+            <:AbstractRecurrentCell,
+            <:Experimental.DebugLayer{<:Any,<:Any,<:AbstractRecurrentCell},
+        }
+        return new{R,C,typeof(ordering)}(cell, ordering, return_sequence)
+    end
 end
 
 function Recurrence(
@@ -200,8 +207,16 @@ update the state with `Lux.update_state(st, :carry, nothing)`.
       + `cell`: Same as `cell`.
       + `carry`: The carry state of the `cell`.
 """
-@concrete struct StatefulRecurrentCell <: AbstractLuxWrapperLayer{:cell}
-    cell <: Union{<:AbstractRecurrentCell,<:AbstractDebugRecurrentCell}
+struct StatefulRecurrentCell{C} <: AbstractLuxWrapperLayer{:cell}
+    cell::C
+
+    function StatefulRecurrentCell(cell::C) where {C}
+        @assert cell isa Union{
+            <:AbstractRecurrentCell,
+            <:Experimental.DebugLayer{<:Any,<:Any,<:AbstractRecurrentCell},
+        }
+        return new{C}(cell)
+    end
 end
 
 function initialstates(rng::AbstractRNG, r::StatefulRecurrentCell)

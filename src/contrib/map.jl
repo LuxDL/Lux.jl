@@ -99,8 +99,39 @@ function (::LayerWalkWithPath)(
     return layer_re(layer_children_new), ps_re(ps_children_new), st_re(st_children_new)
 end
 
+function (::LayerWalkWithPath)(
+    recurse::R, kp::KeyPath, layer::CompactLuxLayer, ps, st
+) where {R}
+    layer_children, layer_re = functor(layer.layers)
+    ps_children, ps_re = functor(ps)
+    st_children, st_re = functor(st)
+
+    non_value_storage_keys = keys(layer_children)
+    ps_children_partial = NamedTuple{non_value_storage_keys}(
+        map(Base.Fix1(getindex, ps_children), non_value_storage_keys)
+    )
+    st_children_partial = NamedTuple{non_value_storage_keys}(
+        map(Base.Fix1(getindex, st_children), non_value_storage_keys)
+    )
+
+    layer_children_new, ps_children_partial_new, st_children_partial_new = perform_layer_map(
+        recurse, kp, ps_children_partial, st_children_partial, layer_children
+    )
+
+    ps_children_new = merge(ps_children, ps_children_partial_new)
+    st_children_new = merge(st_children, st_children_partial_new)
+
+    inner_layers = layer_re(layer_children_new)
+    return (
+        Setfield.set(layer, Setfield.PropertyLens{:layers}(), inner_layers),
+        ps_re(ps_children_new),
+        st_re(st_children_new),
+    )
+end
+
 function perform_layer_map(recurse, kp, ps_children, st_children, layer_children)
-    @argcheck keys(layer_children) == keys(ps_children) == keys(st_children)
+    @argcheck keys(ps_children) == keys(st_children)
+    @argcheck keys(layer_children) == keys(ps_children)
 
     kps = NamedTuple{keys(ps_children)}(map(Base.Fix1(KeyPath, kp), keys(ps_children)))
 
@@ -116,3 +147,15 @@ layer_map_leaf(::KeyPath, ::AbstractLuxLayer) = true
 layer_map_leaf(::KeyPath, ::AbstractLuxWrapperLayer) = false
 layer_map_leaf(::KeyPath, ::AbstractLuxContainerLayer) = false
 layer_map_leaf(::KeyPath, x) = Functors.isleaf(x)
+
+for layer_op in (:Max, :Mean, :LP)
+    layer_name = Symbol(layer_op, :Pool)
+    global_layer_name = Symbol(:Global, layer_name)
+    adaptive_layer_name = Symbol(:Adaptive, layer_name)
+
+    @eval begin
+        layer_map_leaf(::KeyPath, ::Lux.$(layer_name)) = true
+        layer_map_leaf(::KeyPath, ::Lux.$(global_layer_name)) = true
+        layer_map_leaf(::KeyPath, ::Lux.$(adaptive_layer_name)) = true
+    end
+end
