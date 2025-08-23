@@ -16,7 +16,7 @@ using Compat: @compat
 using ConcreteStructs: @concrete
 using EnzymeCore: EnzymeRules
 using FastClosures: @closure
-using Functors: Functors, KeyPath, fmap
+using Functors: Functors, fmap
 using GPUArraysCore: @allowscalar
 using Markdown: @doc_str
 using NNlib: NNlib
