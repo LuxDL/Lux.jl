@@ -1,5 +1,8 @@
+# Set some global flags that will improve performance
 XLA_FLAGS = get(ENV, "XLA_FLAGS", "")
 ENV["XLA_FLAGS"] = "$(XLA_FLAGS) --xla_gpu_enable_cublaslt=true"
+
+# ## Load Common Packages
 
 using ConcreteStructs,
     DataAugmentation,
@@ -13,6 +16,8 @@ using ConcreteStructs,
     Random,
     BFloat16s
 using Reactant
+
+# ## Data Loading Functionality
 
 @concrete struct TensorDataset
     dataset
@@ -49,6 +54,8 @@ function get_cifar10_dataloaders(::Type{T}, batchsize; kwargs...) where {T}
     return trainloader, testloader
 end
 
+# ## Utility Functions
+
 function accuracy(model, ps, st, dataloader)
     total_correct, total = 0, 0
     cdev = cpu_device()
@@ -60,6 +67,8 @@ function accuracy(model, ps, st, dataloader)
     end
     return total_correct / total
 end
+
+# ## Training Loop
 
 function train_model(
     model,

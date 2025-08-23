@@ -9,6 +9,8 @@ output_directory = ARGS[2]
 path = ARGS[3]
 should_run = parse(Bool, ARGS[4])
 
+project_path = dirname(Pkg.project().path)
+
 pkg_log_path = joinpath(storage_dir, "$(name)_pkg.log")
 push!(LOAD_PATH, "@literate")  # Should have the Literate and InteractiveUtils packages
 
@@ -23,14 +25,24 @@ catch err
         err
     true
 end
-# TODO: uncomment this
-# if should_run
-#     Pkg.instantiate(; io)
-#     Pkg.precompile(; io)
-# end
+if should_run
+    Pkg.instantiate(; io)
+    Pkg.precompile(; io)
+end
 close(io)
 
 using Literate
+
+function preprocess_and_replace_inclues(str)
+    return replace(
+        str,
+        r"""include\("([^"]+)"\)""" =>
+            s -> read(
+                joinpath(project_path, match(r"""include\("([^"]+)"\)""", s).captures[1]),
+                String,
+            ),
+    )
+end
 
 # Generate the script for users to download
 example_dir = dirname(path)
@@ -40,10 +52,14 @@ for file in readdir(example_dir)
         cp(joinpath(example_dir, file), joinpath(output_directory, name, file); force=true)
     end
 end
-Literate.script(path, output_directory; name)
-Literate.notebook(path, output_directory; name, execute=false)
+Literate.script(path, output_directory; name, preprocess=preprocess_and_replace_inclues)
+Literate.notebook(
+    path, output_directory; name, execute=false, preprocess=preprocess_and_replace_inclues
+)
 
 function preprocess(path, str)
+    str = preprocess_and_replace_inclues(str)
+
     if warn_old_version
         str =
             """

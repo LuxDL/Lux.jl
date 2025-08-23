@@ -1,6 +1,12 @@
+# # ResNet20 on CIFAR-10
+
+# ## Package Imports
+
 using Comonicon, Lux, Optimisers, Printf, Random, Statistics
 
 include("common.jl")
+
+# ## Model Definition
 
 function ConvBN(kernel_size, (in_chs, out_chs), act; kwargs...)
     return Chain(Conv(kernel_size, in_chs => out_chs, act; kwargs...), BatchNorm(out_chs))
@@ -28,12 +34,13 @@ end
 function ResNet20(; num_classes=10)
     layers = []
 
-    # Initial Conv Layer
+    ## Initial Conv Layer
     push!(layers, Chain(Conv((3, 3), 3 => 16, relu; pad=SamePad()), BatchNorm(16)))
 
-    # Residual Blocks
+    ## Residual Blocks
     block_configs = [
-        (16, 16, 3, 1),  # (in_channels, out_channels, num_blocks, stride)
+        ## (in_channels, out_channels, num_blocks, stride)
+        (16, 16, 3, 1),
         (16, 32, 3, 2),
         (32, 64, 3, 2),
     ]
@@ -51,13 +58,15 @@ function ResNet20(; num_classes=10)
         end
     end
 
-    # Global Pooling and Final Dense Layer
+    ## Global Pooling and Final Dense Layer
     push!(layers, GlobalMeanPool())
     push!(layers, FlattenLayer())
     push!(layers, Dense(64 => num_classes))
 
     return Chain(layers...)
 end
+
+# ## Entry Point
 
 Comonicon.@main function main(;
     batchsize::Int=512,
