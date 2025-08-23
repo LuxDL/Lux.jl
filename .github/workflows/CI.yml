@@ -4,6 +4,7 @@ on:
     branches:
       - main
     paths:
+      - ".github/workflows/CommonCI.yml"
       - "src/**"
       - "ext/**"
       - "test/**"
