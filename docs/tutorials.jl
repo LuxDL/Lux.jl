@@ -2,28 +2,28 @@
 const BEGINNER_TUTORIALS = [
     # tutorial name             device   should_run?
     ("Basics",                  "CPU",   true),
-    # ("PolynomialFitting",       "CUDA",  true),
-    # ("SimpleRNN",               "CUDA",  true),
-    # ("SimpleChains",            "CUDA",  true),
-    # ("OptimizationIntegration", "CPU",   true),
+    ("PolynomialFitting",       "CUDA",  true),
+    ("SimpleRNN",               "CUDA",  true),
+    ("SimpleChains",            "CUDA",  true),
+    ("OptimizationIntegration", "CPU",   true),
 ]
 const INTERMEDIATE_TUTORIALS = [
-    # ("NeuralODE",               "CUDA", false),
-    # ("BayesianNN",              "CPU",  false),
-    # ("HyperNet",                "CUDA", true),
-    # ("PINN2DPDE",               "CUDA", true),
-    # ("ConvolutionalVAE",        "CUDA", true),
-    # ("GCN_Cora",                "CUDA", true),
-    # ("RealNVP",                 "CPU",  false),
-    # ("LSTMEncoderDecoder",      "CPU",  true),
+    ("NeuralODE",               "CUDA", false),
+    ("BayesianNN",              "CPU",  false),
+    ("HyperNet",                "CUDA", true),
+    ("PINN2DPDE",               "CUDA", true),
+    ("ConvolutionalVAE",        "CUDA", true),
+    ("GCN_Cora",                "CUDA", true),
+    ("RealNVP",                 "CPU",  false),
+    ("LSTMEncoderDecoder",      "CPU",  true),
     ("CIFAR10/conv_mixer.jl",   "CPU",  false),
     ("CIFAR10/simple_cnn.jl",   "CPU",  false),
     ("CIFAR10/resnet20.jl",     "CPU",  false),
 ]
 const ADVANCED_TUTORIALS = [
     ("GravitationalWaveForm",   "CPU",  true),
-    # ("DDIM",                    "CPU",  false),
-    # ("ImageNet",                "CPU",  false),
+    ("DDIM",                    "CPU",  false),
+    ("ImageNet",                "CPU",  false),
 ]
 #! format: on
 
