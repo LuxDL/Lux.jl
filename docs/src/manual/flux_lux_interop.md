@@ -43,7 +43,7 @@ function LuxCore.initialparameters(rng::AbstractRNG, layer::MyCustomLuxLayer)
     )
 end
 
-function LuxCore.initialstates(::AbstractRNG, ::MyCustomLuxLayer) 
+function LuxCore.initialstates(::AbstractRNG, ::MyCustomLuxLayer)
     return NamedTuple()  # No states needed for this example
 end
 
@@ -60,10 +60,10 @@ Create a general wrapper that can work with any LuxCore layer:
 
 ```julia
 # This part is general and doesn't need to be defined for every specific layer
-mutable struct FluxLuxLayer{L <: LuxCore.AbstractLuxLayer}
+mutable struct FluxLuxLayer{L <: LuxCore.AbstractLuxLayer,PS,ST}
     internal_layer::L
-    ps
-    st
+    ps::PS
+    st::ST # Leave untyped if state type is not fixed
 end
 
 function FluxLuxLayer(layer::LuxCore.AbstractLuxLayer, rng=Random.default_rng())
@@ -173,25 +173,26 @@ state handling:
 ```julia
 function (wrapper::FluxLuxLayer)(x)
     y, st_new = wrapper.internal_layer(x, wrapper.ps, wrapper.st)
-    
+
     # Deep copy state if it contains mutable objects
     wrapper.st = deepcopy(st_new)
     # Or use Functors.fmap for more efficient copying:
     # wrapper.st = Functors.fmap(copy, st_new)
-    
+
     return y
 end
 ```
 
-
 ### Performance Considerations
 
 1. **Load Time**: Flux has higher load time due to bundled AD libraries. Lux loads faster.
+
    ```julia
    # Typical load times (may vary by system):
    # using Lux     # ~0.5 seconds
    # using Flux    # ~0.9 seconds
    ```
+
 ## Best Practices
 
 1. **Use LuxCore for core definitions**: Depend on `LuxCore.jl` rather than full `Lux.jl` to minimize dependencies.
