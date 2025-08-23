@@ -1,6 +1,7 @@
 module LuxReactantExt
 
 using Enzyme: Enzyme, Const
+using Preferences: load_preference
 using Optimisers: Optimisers
 using Reactant:
     Reactant,
@@ -38,12 +39,26 @@ end
 
 # For CUDA use `PrecisionConfig.HIGH`. For other backends use `PrecisionConfig.DEFAULT`.
 function default_precision_config(ps)
-    rdev = get_device(ps)
-    rdev isa ReactantDevice || return PrecisionConfig.DEFAULT
-    device = rdev.device === missing ? Reactant.XLA.default_device() : rdev.device
-    device_kind = string(device)
-    contains(device_kind, "CUDA") && return PrecisionConfig.HIGH
-    return PrecisionConfig.DEFAULT
+    precision_config_preference = lowercase(
+        load_preference(Lux, "precision_config", "auto")
+    )
+
+    if precision_config_preference == "auto"
+        rdev = get_device(ps)
+        rdev isa ReactantDevice || return PrecisionConfig.DEFAULT
+        device = rdev.device === missing ? Reactant.XLA.default_device() : rdev.device
+        device_kind = string(device)
+        contains(device_kind, "CUDA") && return PrecisionConfig.HIGH
+        return PrecisionConfig.DEFAULT
+    end
+
+    precision_config_preference == "default" && return PrecisionConfig.DEFAULT
+    precision_config_preference == "high" && return PrecisionConfig.HIGH
+    precision_config_preference == "highest" && return PrecisionConfig.HIGHEST
+
+    throw(ArgumentError("Invalid value for `precision_config` preference \
+                         ($precision_config_preference). Valid choices are \"auto\", \
+                         \"default\", \"high\", and \"highest\"."))
 end
 
 function with_default_precision_config(f::F, ps) where {F}

@@ -26,6 +26,14 @@ exhaustive list of preferences that Lux.jl uses.
    of backends for nested automatic differentiation. See the manual section on
    [nested automatic differentiation](@ref nested_autodiff) for more details.
 
+## Training with Reactant
+
+1. `precision_config` - Set this to `"auto"` to use select `HIGH` precision for CUDA and
+   `DEFAULT` precision for other backends. The choice made here can change across versions
+   of Lux.jl and is generally recommended for best performance. Alternatively, you can set
+   this to `"default"` to use `DEFAULT` precision or `"high"` to use `HIGH` precision or
+   `"highest"` to use `HIGHEST` precision.
+
 ## [GPU-Aware MPI Support](@id gpu-aware-mpi-preferences)
 
 If you are using a custom MPI build that supports CUDA or ROCM, you can use the following
