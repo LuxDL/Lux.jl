@@ -357,7 +357,6 @@ preserves_state_type(l::Tuple) = all(preserves_state_type, l)
 preserves_state_type(l::NamedTuple) = all(preserves_state_type, values(l))
 
 include("stateful.jl")
-include("custom_layer_interface.jl")
 
 module Internal
 
