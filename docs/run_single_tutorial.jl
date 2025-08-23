@@ -45,19 +45,23 @@ function preprocess_and_replace_includes(str)
 end
 
 # Generate the script for users to download
+assets_dir = joinpath(@__DIR__, "src", "public", "examples", name)
+mkpath(assets_dir)
+
 example_dir = dirname(path)
-mkpath(joinpath(output_directory, name))
 has_project_toml = false
 for file in readdir(example_dir)
     if basename(file) == "Project.toml"
         global has_project_toml = true
-        cp(joinpath(example_dir, file), joinpath(output_directory, name, file); force=true)
+        cp(joinpath(example_dir, file), joinpath(assets_dir, file); force=true)
     end
 end
-Literate.script(path, output_directory; name, preprocess=preprocess_and_replace_includes)
+Literate.script(path, assets_dir; name, preprocess=preprocess_and_replace_includes)
 Literate.notebook(
-    path, output_directory; name, execute=false, preprocess=preprocess_and_replace_includes
+    path, assets_dir; name, execute=false, preprocess=preprocess_and_replace_includes
 )
+
+rel_path_to_assets = joinpath("..", "..", "public", "examples", name)
 
 function preprocess(path, str)
     str = preprocess_and_replace_includes(str)
@@ -109,18 +113,15 @@ function preprocess(path, str)
     end
 
     script_download = """
-    # [![download julia script](https://img.shields.io/badge/download-$(name).jl-9558B2?logo=julia)](./$(name).jl)
-    """
+    # [![download julia script](https://img.shields.io/badge/download-$(name).jl-9558B2?logo=julia)]($(joinpath(rel_path_to_assets, "$(name).jl")))"""
     project_toml_download = if has_project_toml
         """
-        # [![download project toml](https://img.shields.io/badge/download-Project.toml-9C4221?logo=toml)](./$(name)/Project.toml)
-        """
+        # [![download project toml](https://img.shields.io/badge/download-Project.toml-9C4221?logo=toml)]($(joinpath(rel_path_to_assets, "Project.toml")))"""
     else
         ""
     end
     notebook_download = """
-    # [![download notebook](https://img.shields.io/badge/download-$(name).ipynb-FFB13B)](./$(name).ipynb)
-    """
+    # [![download notebook](https://img.shields.io/badge/download-$(name).ipynb-FFB13B)]($(joinpath(rel_path_to_assets, "$(name).ipynb")))"""
 
     str = """
     $(script_download)

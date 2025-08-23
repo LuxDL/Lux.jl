@@ -20,6 +20,7 @@ steps:
           - "docs/src/tutorials/advanced/**/*"
           - "tutorial_deps/*"
           - "**/*.cov"
+          - "docs/src/public/examples/**/*"
         timeout_in_minutes: 120
 
       - label: "Tutorial Build [%N/%t] CPU Runners"
@@ -42,6 +43,7 @@ steps:
           - "docs/src/tutorials/advanced/**/*"
           - "tutorial_deps/*"
           - "**/*.cov"
+          - "docs/src/public/examples/**/*"
         timeout_in_minutes: 120
 
       - label: "Final Documentation Build"
