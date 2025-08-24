@@ -19,6 +19,10 @@ dynamic(v::Bool) = v
 
     This is not a LuxCore.AbstractLuxLayer
 
+!!! tip
+
+    This layer can be used as a drop-in replacement for `Flux.jl` layers.
+
 A convenience wrapper over Lux layers which stores the parameters and states internally.
 This is meant to be used in internal implementation of layers.
 

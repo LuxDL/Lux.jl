@@ -8,9 +8,10 @@ while minimizing code duplication and dependency overhead.
 
 The recommended approach is to:
 
-1. **Define your core layers using LuxCore**: Use `LuxCore.jl` as your primary interface since it's a lighter dependency than full `Lux.jl`
-2. **Create Flux wrappers**: Implement stateful wrappers that provide a Flux-style interface
-3. **Use package extensions**: Leverage Julia's package extension system to conditionally load Flux support
+1. **Define your core layers using LuxCore**: Use `LuxCore.jl` as your primary interface
+since it's a lighter dependency than full `Lux.jl`
+2. **Construct a StatefulLuxLayer**: Wrap the layer in a [`StatefulLuxLayer`](@ref) to
+provide a Flux-style interface
 
 This strategy allows users to choose their preferred framework while keeping your package's
 core functionality framework-agnostic.
@@ -21,14 +22,14 @@ core functionality framework-agnostic.
 
 First, define your layer using the LuxCore interface:
 
-```julia
-using LuxCore
+```@example flux_lux_interop
+using LuxCore, Random
 
-struct MyCustomLuxLayer <: LuxCore.AbstractLuxLayer
+struct MyCustomLuxLayer{F} <: AbstractLuxLayer
     # Layer configuration (no mutable state!)
     feature_dim::Int
     output_dim::Int
-    activation_fn::Function
+    activation_fn::F
 end
 
 function MyCustomLuxLayer(feature_dim::Int, output_dim::Int; activation=identity)
@@ -43,10 +44,6 @@ function LuxCore.initialparameters(rng::AbstractRNG, layer::MyCustomLuxLayer)
     )
 end
 
-function LuxCore.initialstates(::AbstractRNG, ::MyCustomLuxLayer)
-    return NamedTuple()  # No states needed for this example
-end
-
 function (layer::MyCustomLuxLayer)(x, ps, st)
     y = ps.weight * x .+ ps.bias
     y = layer.activation_fn.(y)
@@ -54,81 +51,18 @@ function (layer::MyCustomLuxLayer)(x, ps, st)
 end
 ```
 
-### 2. Flux Wrapper Pattern
+### 2. Wrap the layer in a StatefulLuxLayer
 
-Create a general wrapper that can work with any LuxCore layer:
-
-```julia
-# This part is general and doesn't need to be defined for every specific layer
-mutable struct FluxLuxLayer{L <: LuxCore.AbstractLuxLayer,PS,ST}
-    internal_layer::L
-    ps::PS
-    st::ST # Leave untyped if state type is not fixed
-end
-
-function FluxLuxLayer(layer::LuxCore.AbstractLuxLayer, rng=Random.default_rng())
-    ps, st = LuxCore.setup(rng, layer)
-    return FluxLuxLayer(layer, ps, st)
-end
-
-# Convenient constructor for your specific layer
-function MyCustomFluxLayer(args...; kwargs...)
-    layer = MyCustomLuxLayer(args...; kwargs...)
-    return FluxLuxLayer(layer)
-end
-
-# Forward pass with stateful interface
-function (wrapper::FluxLuxLayer)(x)
-    y, st_new = wrapper.internal_layer(x, wrapper.ps, wrapper.st)
-    wrapper.st = st_new  # Update internal state
-    return y
-end
-```
-
-### 3. Package Extension for Flux Integration
-
-Create `MyPackageFluxExt.jl` in your `ext/` directory:
-
-```julia
-module MyPackageFluxExt
-
-using MyPackage  # Your package
-using Flux
-
-# Make the wrapper work with Flux's training infrastructure
-Flux.@layer FluxLuxLayer (:ps,)
-
-# Optional: Custom training behavior if needed
-function Flux.trainable(m::FluxLuxLayer)
-    # Return only the parameters that should be trained
-    return (ps = m.ps,)
-end
-
-end  # module
-```
-
-### 4. Package Setup
-
-In your `Project.toml`, add Flux as a weak dependency:
-
-```toml
-[deps]
-LuxCore = "bb33d45b-7691-41d6-9220-0943567d0623"
-Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-
-[weakdeps]
-Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
-
-[extensions]
-MyPackageFluxExt = "Flux"
-```
+[`StatefulLuxLayer`](@ref) is a convenience wrapper over Lux layers which stores the
+parameters and states (and handles updating the state internally). This layer is also
+compatible with `Flux.jl`.
 
 ## Usage Examples
 
 ### Using the Lux Interface
 
-```julia
-using MyPackage, LuxCore, Random
+```@example flux_lux_interop
+using LuxCore, Random, Flux
 
 # Create layer and setup
 rng = Random.default_rng()
@@ -142,56 +76,30 @@ y, st_new = layer(x, ps, st)
 
 ### Using the Flux Interface
 
-```julia
-using MyPackage, Flux
+```@example flux_lux_interop
+using Flux, LuxCore, Random
 
 # Create Flux-style layer
-model = MyCustomFluxLayer(4, 2; activation=tanh)
+model = MyCustomLuxLayer(4, 2; activation=tanh)
+ps, st = LuxCore.setup(Random.default_rng(), model)
+flux_model = LuxCore.StatefulLuxLayer(model, ps, st)
 
 # Use like any Flux layer
 x = randn(Float32, 4, 32)
-y = model(x)
+y_target = randn(Float32, 2, 32)
+
+y = flux_model(x)
 
 # Works with Flux training
 using Optimisers
 opt = Adam(0.01)
-model, opt_state = Optimisers.setup(opt, model)
+opt_state = Optimisers.setup(opt, flux_model)
 
 # Training step
 loss_fn(m, x, y_target) = Flux.mse(m(x), y_target)
-loss, grads = Flux.withgradient(loss_fn, model, x, y_target)
-model, opt_state = Optimisers.update!(opt_state, model, grads[1])
+loss, grads = Flux.withgradient(loss_fn, flux_model, x, y_target)
+opt_state, flux_model = Optimisers.update(opt_state, flux_model, grads[1])
 ```
-
-## Advanced Considerations
-
-### Handling Complex State
-
-For layers with complex state (like batch normalization), you may need more sophisticated
-state handling:
-
-```julia
-function (wrapper::FluxLuxLayer)(x)
-    y, st_new = wrapper.internal_layer(x, wrapper.ps, wrapper.st)
-
-    # Deep copy state if it contains mutable objects
-    wrapper.st = deepcopy(st_new)
-    # Or use Functors.fmap for more efficient copying:
-    # wrapper.st = Functors.fmap(copy, st_new)
-
-    return y
-end
-```
-
-### Performance Considerations
-
-1. **Load Time**: Flux has higher load time due to bundled AD libraries. Lux loads faster.
-
-   ```julia
-   # Typical load times (may vary by system):
-   # using Lux     # ~0.5 seconds
-   # using Flux    # ~0.9 seconds
-   ```
 
 ## Best Practices
 
