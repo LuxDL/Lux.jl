@@ -112,22 +112,23 @@ function preprocess(path, str)
         """
     end
 
-    script_download = """
-    # [![download julia script](https://img.shields.io/badge/download-$(name).jl-9558B2?logo=julia)]($(joinpath(rel_path_to_assets, "$(name).jl")))"""
-    project_toml_download = if has_project_toml
-        """
-        # [![download project toml](https://img.shields.io/badge/download-Project.toml-9C4221?logo=toml)]($(joinpath(rel_path_to_assets, "Project.toml")))"""
-    else
-        ""
-    end
-    notebook_download = """
-    # [![download notebook](https://img.shields.io/badge/download-$(name).ipynb-FFB13B)]($(joinpath(rel_path_to_assets, "$(name).ipynb")))"""
+    # TODO: make vitepress compatible
+    # script_download = """
+    # # [![download julia script](https://img.shields.io/badge/download-$(name).jl-9558B2?logo=julia)]($(joinpath(rel_path_to_assets, "$(name).jl")))"""
+    # project_toml_download = if has_project_toml
+    #     """
+    #     # [![download project toml](https://img.shields.io/badge/download-Project.toml-9C4221?logo=toml)]($(joinpath(rel_path_to_assets, "Project.toml")))"""
+    # else
+    #     ""
+    # end
+    # notebook_download = """
+    # # [![download notebook](https://img.shields.io/badge/download-$(name).ipynb-FFB13B)]($(joinpath(rel_path_to_assets, "$(name).ipynb")))"""
 
-    str = """
-    $(script_download)
-    $(project_toml_download)
-    $(notebook_download)
-    \n\n""" * str
+    # str = """
+    # $(script_download)
+    # $(project_toml_download)
+    # $(notebook_download)
+    # \n\n""" * str
 
     return str
 end

@@ -356,6 +356,8 @@ end
 preserves_state_type(l::Tuple) = all(preserves_state_type, l)
 preserves_state_type(l::NamedTuple) = all(preserves_state_type, values(l))
 
+include("stateful.jl")
+
 module Internal
 
     using Random: Xoshiro
@@ -420,6 +422,7 @@ end
         stateless_apply,
         display_name,
         preserves_state_type,
+        StatefulLuxLayer,
     )
 )
 

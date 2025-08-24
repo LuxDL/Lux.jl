@@ -374,7 +374,8 @@ end
 
 @generated function (m::CompactLuxLayer)(x, ps, st::NamedTuple{fields}) where {fields}
     st_expr = [
-        :($(get_state)(st_new.$(field))) for field in fields if field != :₋₋₋kwargs₋₋₋
+        :($(LuxCore.StatefulLuxLayerImpl.get_state)(st_new.$(field))) for
+        field in fields if field != :₋₋₋kwargs₋₋₋
     ]
     st_expr = :(NamedTuple{$(filter(f -> f != :₋₋₋kwargs₋₋₋, fields))}(($(st_expr...),)))
     st_expr = :(merge(st, $st_expr))
@@ -615,12 +616,6 @@ function extract_reserved_kwarg(kwexs, sym::Symbol)
     end
     return val, kwexs
 end
-
-Lux.get_state(st_new::AbstractArray{<:Number}) = st_new
-function Lux.get_state(st_new::Union{AbstractArray,Tuple,NamedTuple})
-    return map(Lux.get_state, st_new)
-end
-Lux.get_state(st_new) = st_new
 
 @concrete struct NonTrainable
     value
