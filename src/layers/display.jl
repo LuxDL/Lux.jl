@@ -22,19 +22,19 @@ function underscorise(n::Integer)
     return join(reverse(join.(reverse.(Iterators.partition(digits(n), 3)))), '_')
 end
 
-function parse_name(name)
-    s = String(name)
+parse_name(name) = parse_name(string(name))
+function parse_name(name::String)
     # Match names ending in `_` and digits, e.g. `layer_1`
-    m = match(r"^(.*)_(\d+)$", s)
+    m = match(r"^(.*)_(\d+)$", name)
     if m !== nothing
         return m.captures[1], true, parse(Int, m.captures[2])
     end
     # Match names ending in digits, e.g. `layer1`
-    m = match(r"^(.*?)(\d+)$", s)
+    m = match(r"^(.*?)(\d+)$", name)
     if m !== nothing
         return m.captures[1], false, parse(Int, m.captures[2])
     end
-    return s, false, nothing
+    return name, false, nothing
 end
 
 function big_show(io::IO, obj, indent::Int=0, name=nothing, multiplier=1)

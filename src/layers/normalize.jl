@@ -67,10 +67,10 @@ Use `Lux.testmode` during inference.
 ```jldoctest
 julia> Chain(Dense(784 => 64), BatchNorm(64, relu), Dense(64 => 10), BatchNorm(10))
 Chain(
-    layer_1 = Dense(784 => 64),         # 50_240 parameters
-    layer_2 = BatchNorm(64, relu, affine=true, track_stats=true),  # 128 parameters, plus 129
-    layer_3 = Dense(64 => 10),          # 650 parameters
-    layer_4 = BatchNorm(10, affine=true, track_stats=true),  # 20 parameters, plus 21
+    layer_1 = Dense(784 => 64),                   # 50_240 parameters
+    layer_2 = BatchNorm(64, relu, affine=true, track_stats=true),  # 128 parameters, plus 129 non-trainable
+    layer_3 = Dense(64 => 10),                    # 650 parameters
+    layer_4 = BatchNorm(10, affine=true, track_stats=true),  # 20 parameters, plus 21 non-trainable
 )         # Total: 51_038 parameters,
           #        plus 150 states.
 ```
@@ -234,10 +234,10 @@ Use `Lux.testmode` during inference.
 ```jldoctest
 julia> Chain(Dense(784 => 64), GroupNorm(64, 4, relu), Dense(64 => 10), GroupNorm(10, 5))
 Chain(
-    layer_1 = Dense(784 => 64),         # 50_240 parameters
+    layer_1 = Dense(784 => 64),                   # 50_240 parameters
     layer_2 = GroupNorm(64, 4, relu, affine=true),  # 128 parameters
-    layer_3 = Dense(64 => 10),          # 650 parameters
-    layer_4 = GroupNorm(10, 5, affine=true),  # 20 parameters
+    layer_3 = Dense(64 => 10),                    # 650 parameters
+    layer_4 = GroupNorm(10, 5, affine=true),      # 20 parameters
 )         # Total: 51_038 parameters,
           #        plus 0 states.
 ```
@@ -372,10 +372,10 @@ Use `Lux.testmode` during inference.
 julia> Chain(Dense(784 => 64), InstanceNorm(64, relu; affine=true), Dense(64 => 10),
            InstanceNorm(10, relu; affine=true))
 Chain(
-    layer_1 = Dense(784 => 64),         # 50_240 parameters
-    layer_2 = InstanceNorm(64, relu, affine=true, track_stats=false),  # 128 parameters, plus 1
-    layer_3 = Dense(64 => 10),          # 650 parameters
-    layer_4 = InstanceNorm(10, relu, affine=true, track_stats=false),  # 20 parameters, plus 1
+    layer_1 = Dense(784 => 64),                   # 50_240 parameters
+    layer_2 = InstanceNorm(64, relu, affine=true, track_stats=false),  # 128 parameters, plus 1 non-trainable
+    layer_3 = Dense(64 => 10),                    # 650 parameters
+    layer_4 = InstanceNorm(10, relu, affine=true, track_stats=false),  # 20 parameters, plus 1 non-trainable
 )         # Total: 51_038 parameters,
           #        plus 2 states.
 ```

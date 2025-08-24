@@ -137,7 +137,7 @@
                 @return tmp + y
             end
             expected_string = """@compact(
-                w = Dense(32 => 32),                # 1_056 parameters
+                w = Dense(32 => 32),                          # 1_056 parameters
             ) do (x, y) 
                 tmp = sum(w(x))
                 return tmp + y
@@ -152,7 +152,7 @@
                 tmp = sum(w(x))
                 @return tmp + y
             end
-            expected_string = "Linear(...)         # 1_056 parameters"
+            expected_string = "Linear(...)                  # 1_056 parameters"
             @test similar_strings(get_model_string(model), expected_string)
         end
 
@@ -165,12 +165,12 @@
             end
             expected_string = """@compact(
                 w1 = @compact(
-                    w1 = Dense(32 => 32, relu),     # 1_056 parameters
-                    w2 = Dense(32 => 32, relu),     # 1_056 parameters
+                    w1 = Dense(32 => 32, relu),               # 1_056 parameters
+                    w2 = Dense(32 => 32, relu),               # 1_056 parameters
                 ) do x 
                     return w2(w1(x))
                 end,
-                w2 = Dense(32 => 32, relu),         # 1_056 parameters
+                w2 = Dense(32 => 32, relu),                   # 1_056 parameters
             ) do x 
                 return w2(w1(x))
             end       # Total: 3_168 parameters,
@@ -184,7 +184,7 @@
             end
             expected_string = """@compact(
                 x = 32-element Vector{Float64},
-                w = Dense(32 => 32),                # 1_056 parameters
+                w = Dense(32 => 32),                          # 1_056 parameters
             ) do s 
                 return w(x .* s)
             end       # Total: 1_088 parameters,
@@ -249,7 +249,7 @@
                 @return w2 * w1(x)
             end
             expected_string = """@compact(
-                w1 = Model(32),                     # 1_024 parameters
+                w1 = Model(32),                               # 1_024 parameters
                 w2 = 32×32 Matrix{Float64},
                 w3 = 32-element Vector{Float64},
             ) do x 
@@ -270,7 +270,7 @@
             ) do x
                 @return w2 * w1(x)
             end
-            expected_string = """Model(32)           # 2_080 parameters"""
+            expected_string = """Model(32)                    # 2_080 parameters"""
             @test similar_strings(get_model_string(model), expected_string)
         end
 
