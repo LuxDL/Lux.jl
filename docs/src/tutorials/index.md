@@ -85,19 +85,19 @@ const intermediate = [
     desc: "Train an LSTM Encoder-Decoder for sequence-to-sequence tasks."
   },
   {
-    href: "advanced/9_CIFAR10_conv_mixer",
+    href: "intermediate/9_CIFAR10_conv_mixer",
     src: "https://datasets.activeloop.ai/wp-content/uploads/2022/09/CIFAR-10-dataset-Activeloop-Platform-visualization-image-1.webp",
     caption: "Conv-Mixer on CIFAR-10",
     desc: "Train Conv-Mixer on CIFAR-10 to 90% accuracy."
   },
   {
-    href: "advanced/10_CIFAR10_simple_cnn",
+    href: "intermediate/10_CIFAR10_simple_cnn",
     src: "https://datasets.activeloop.ai/wp-content/uploads/2022/09/CIFAR-10-dataset-Activeloop-Platform-visualization-image-1.webp",
     caption: "Simple Convolutional Neural Network on CIFAR-10",
     desc: "Train a CNN on CIFAR-10 to 95% accuracy."
   },
   {
-    href: "advanced/11_CIFAR10_resnet20",
+    href: "intermediate/11_CIFAR10_resnet20",
     src: "https://datasets.activeloop.ai/wp-content/uploads/2022/09/CIFAR-10-dataset-Activeloop-Platform-visualization-image-1.webp",
     caption: "ResNet20 on CIFAR-10",
     desc: "Train a ResNet20 on CIFAR-10 to 90% accuracy."
