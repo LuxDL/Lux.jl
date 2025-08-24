@@ -1,5 +1,43 @@
+# # ImageNet Classification using Distributed Data Parallel Training
+
+# This implements training of popular model architectures, such as ResNet, AlexNet, and VGG
+# on the ImageNet dataset.
+
+# For distributed data-parallel training we need to launch this script using `mpiexecjl`
+
+# Setup [MPI.jl](https://juliaparallel.org/MPI.jl/).
+# If your system has functional NCCL we will use it for all CUDA communications.
+# Otherwise, we will use MPI for all communications.
+
+# ```bash
+# mpiexecjl -np 4 julia --startup=no --project=examples/ImageNet -t auto\
+#   examples/ImageNet/main.jl \
+#   --model-name="ViT" \
+#   --model-kind="tiny" \
+#   --train-batchsize=256 \
+#   --val-batchsize=256 \
+#   --optimizer-kind="sgd" \
+#   --learning-rate=0.01 \
+#   --base-path="/home/avik-pal/data/ImageNet/"
+# ```
+
+# For single-node training, we can simply launch the script using `julia`
+
+# ```bash
+# julia --startup=no --project=examples/ImageNet -t auto examples/ImageNet/main.jl \
+#   --model-name="ViT" \
+#   --model-kind="tiny" \
+#   --train-batchsize=256 \
+#   --val-batchsize=256 \
+#   --optimizer-kind="sgd" \
+#   --learning-rate=0.01 \
+#   --base-path="/home/avik-pal/data/ImageNet/"
+# ```
+
+# ## Package Imports
+
 using Boltz, Lux, MLDataDevices
-# import Metalhead # Install and load this package to use the Metalhead models with Lux
+## import Metalhead # Install and load this package to use the Metalhead models with Lux
 
 using Dates, Random
 using DataAugmentation,
@@ -9,14 +47,18 @@ using JLD2
 using Zygote
 
 using LuxCUDA
-# using AMDGPU # Install and load AMDGPU to train models on AMD GPUs with ROCm
+## using AMDGPU # Install and load AMDGPU to train models on AMD GPUs with ROCm
 using MPI: MPI
-using NCCL: NCCL # Enables distributed training in Lux. NCCL is needed for CUDA GPUs
+## Enables distributed training in Lux. NCCL is needed for CUDA GPUs
+using NCCL: NCCL
 
 const gdev = gpu_device()
 const cdev = cpu_device()
 
-# Distributed Training: NCCL for NVIDIA GPUs and MPI for anything else
+# ## Setup Distributed Training
+
+# We will use NCCL for NVIDIA GPUs and MPI for anything else
+
 const distributed_backend = try
     if gdev isa CUDADevice
         DistributedUtils.initialize(NCCLBackend)
@@ -40,8 +82,11 @@ end
 const is_distributed = total_workers > 1
 const should_log = !is_distributed || local_rank == 0
 
-# Data Loading for ImageNet
-## We need the data to be in a specific format. See the README for more details.
+# ## Data Loading for ImageNet
+
+## We need the data to be in a specific format. See the
+## [README.md](@__REPO_ROOT_URL__/examples/ImageNet/README.md) for more details.
+
 const IMAGENET_CORRUPTED_FILES = [
     "n01739381_1309.JPEG",
     "n02077923_14822.JPEG",
@@ -175,7 +220,8 @@ function construct_dataloaders(;
     return gdev(train_dataloader), gdev(val_dataloader)
 end
 
-# Model Construction
+# ## Model Construction
+
 function construct_model(;
     rng::AbstractRNG, model_name::String, model_args, pretrained::Bool=false
 )
@@ -196,7 +242,8 @@ function construct_model(;
     return model, ps, st
 end
 
-# Optimizer Configuration
+# ## Optimizer Configuration
+
 function construct_optimizer_and_scheduler(;
     kind::String,
     learning_rate::AbstractFloat,
@@ -260,7 +307,8 @@ function construct_optimizer_and_scheduler(;
     return optimizer, scheduler
 end
 
-# Utility Functions
+# ## Utility Functions
+
 const logitcrossentropy = CrossEntropyLoss(; logits=Val(true))
 
 function loss_function(model, ps, st, (img, y))
@@ -305,7 +353,7 @@ function symlink_safe(src, dest)
 end
 
 function load_checkpoint(filename::String)
-    try # NOTE(@avik-pal): ispath is failing for symlinks?
+    try ## NOTE(@avik-pal): ispath is failing for symlinks?
         return JLD2.load(filename)[:state]
     catch
         sensible_println("$(filename) could not be loaded. This might be because the file \
@@ -388,7 +436,8 @@ end
 
 get_loggable_values(meter::ProgressMeter) = getproperty.(meter.meters, :average)
 
-# Training and Validation Loops
+# ## Training and Validation Loops
+
 function validate(val_loader, model, ps, st, step, total_steps)
     batch_time = AverageMeter("Batch Time", "6.5f")
     data_time = AverageMeter("Data Time", "6.5f")
@@ -427,7 +476,8 @@ function validate(val_loader, model, ps, st, step, total_steps)
     return top1.average
 end
 
-# Entry Point
+# ## Entry Point
+
 Comonicon.@main function main(;
     seed::Int=0,
     model_name::String,

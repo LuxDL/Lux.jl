@@ -63,7 +63,7 @@ const intermediate = [
   {
     href: "intermediate/5_ConvolutionalVAE",
     src: "../conditional_vae.png",
-    caption: "Convolutional VAE for MNIST using Reactant",
+    caption: "Convolutional VAE for MNIST",
     desc: "Train a Convolutional VAE to generate images from a latent space."
   },
   {
@@ -83,6 +83,24 @@ const intermediate = [
     src: "../lstm_encoder_decoder.png",
     caption: "LSTM Encoder-Decoder",
     desc: "Train an LSTM Encoder-Decoder for sequence-to-sequence tasks."
+  },
+  {
+    href: "advanced/9_CIFAR10_conv_mixer",
+    src: "https://datasets.activeloop.ai/wp-content/uploads/2022/09/CIFAR-10-dataset-Activeloop-Platform-visualization-image-1.webp",
+    caption: "Conv-Mixer on CIFAR-10",
+    desc: "Train Conv-Mixer on CIFAR-10 to 90% accuracy."
+  },
+  {
+    href: "advanced/10_CIFAR10_simple_cnn",
+    src: "https://datasets.activeloop.ai/wp-content/uploads/2022/09/CIFAR-10-dataset-Activeloop-Platform-visualization-image-1.webp",
+    caption: "Simple Convolutional Neural Network on CIFAR-10",
+    desc: "Train a CNN on CIFAR-10 to 95% accuracy."
+  },
+  {
+    href: "advanced/11_CIFAR10_resnet20",
+    src: "https://datasets.activeloop.ai/wp-content/uploads/2022/09/CIFAR-10-dataset-Activeloop-Platform-visualization-image-1.webp",
+    caption: "ResNet20 on CIFAR-10",
+    desc: "Train a ResNet20 on CIFAR-10 to 90% accuracy."
   }
 ];
 
@@ -98,27 +116,18 @@ const advanced = [
     src: "../symbolic_optimal_control.png",
     caption: "Optimal Control with Symbolic UDE",
     desc: "Train a UDE and replace a part of it with Symbolic Regression."
-  }
-];
-
-const large_models = [
-  {
-    href: "https://github.com/LuxDL/Lux.jl/tree/main/examples/ImageNet",
-    src: "https://production-media.paperswithcode.com/datasets/ImageNet-0000000008-f2e87edd_Y0fT5zg.jpg",
-    caption: "ImageNet Classification",
-    desc: "Train Large Image Classifiers using Lux (on Distributed GPUs)."
   },
   {
-    href: "https://github.com/LuxDL/Lux.jl/tree/main/examples/DDIM",
+    href: "advanced/2_DDIM",
     src: "https://raw.githubusercontent.com/LuxDL/Lux.jl/main/examples/DDIM/assets/flowers_generated.png",
     caption: "Denoising Diffusion Implicit Model (DDIM)",
     desc: "Train a Diffusion Model to generate images from Gaussian noises."
   },
   {
-    href: "https://github.com/LuxDL/Lux.jl/tree/main/examples/CIFAR10",
-    src: "https://datasets.activeloop.ai/wp-content/uploads/2022/09/CIFAR-10-dataset-Activeloop-Platform-visualization-image-1.webp",
-    caption: "Vision Models on CIFAR-10",
-    desc: "Train different vision models on CIFAR-10 to 90% accuracy within 10 minutes."
+    href: "advanced/3_ImageNet",
+    src: "https://production-media.paperswithcode.com/datasets/ImageNet-0000000008-f2e87edd_Y0fT5zg.jpg",
+    caption: "ImageNet Classification",
+    desc: "Train Large Image Classifiers using Lux (on Distributed GPUs)."
   }
 ];
 
@@ -175,18 +184,6 @@ const third_party = [
 ## Advanced Tutorials
 
 <Gallery :images="advanced" />
-
-## Larger Models
-
-::: warning
-
-These models are part of the Lux examples, however, these are larger model that cannot be
-run on CI and aren't frequently tested. If you find a bug in one of these models, please
-open an issue or PR to fix it.
-
-:::
-
-<Gallery :images="large_models" />
 
 ## Selected 3rd Party Tutorials
 

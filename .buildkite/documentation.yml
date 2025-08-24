@@ -20,6 +20,7 @@ steps:
           - "docs/src/tutorials/advanced/**/*"
           - "tutorial_deps/*"
           - "**/*.cov"
+          - "docs/src/public/examples/**/*"
         timeout_in_minutes: 120
 
       - label: "Tutorial Build [%N/%t] CPU Runners"
@@ -42,6 +43,7 @@ steps:
           - "docs/src/tutorials/advanced/**/*"
           - "tutorial_deps/*"
           - "**/*.cov"
+          - "docs/src/public/examples/**/*"
         timeout_in_minutes: 120
 
       - label: "Final Documentation Build"
@@ -59,8 +61,6 @@ steps:
           - sv-oss/node-n#v0.1.2:
               node-version: v20
         command: |
-          export LD_LIBRARY_PATH=/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
-
           echo "+++ :node: Instantiate NPM"
           cd docs/
           npm i
@@ -79,6 +79,7 @@ steps:
           cuda: "*"
         env:
           JULIA_DEBUG: "Documenter"
+          LD_LIBRARY_PATH: ""
         timeout_in_minutes: 120
 
 env:

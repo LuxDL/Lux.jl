@@ -3,12 +3,15 @@ using Pkg
 storage_dir = joinpath(@__DIR__, "..", "tutorial_deps")
 !isdir(storage_dir) && mkpath(storage_dir)
 
-# Run this as `run_single_tutorial.jl <tutorial_name> <output_dir> <path/to/script>`
+# Run this as `run_single_tutorial.jl <tutorial_name> <output_dir> <path/to/script>` <should_run>
 name = ARGS[1]
-pkg_log_path = joinpath(storage_dir, "$(name)_pkg.log")
 output_directory = ARGS[2]
 path = ARGS[3]
 should_run = parse(Bool, ARGS[4])
+
+project_path = dirname(Pkg.project().path)
+
+pkg_log_path = joinpath(storage_dir, "$(name)_pkg.log")
 push!(LOAD_PATH, "@literate")  # Should have the Literate and InteractiveUtils packages
 
 io = open(pkg_log_path, "w")
@@ -30,7 +33,39 @@ close(io)
 
 using Literate
 
+function preprocess_and_replace_includes(str)
+    return replace(
+        str,
+        r"""include\("([^"]+)"\)""" =>
+            s -> read(
+                joinpath(project_path, match(r"""include\("([^"]+)"\)""", s).captures[1]),
+                String,
+            ),
+    )
+end
+
+# Generate the script for users to download
+assets_dir = joinpath(@__DIR__, "src", "public", "examples", name)
+mkpath(assets_dir)
+
+example_dir = dirname(path)
+has_project_toml = false
+for file in readdir(example_dir)
+    if basename(file) == "Project.toml"
+        global has_project_toml = true
+        cp(joinpath(example_dir, file), joinpath(assets_dir, file); force=true)
+    end
+end
+Literate.script(path, assets_dir; name, preprocess=preprocess_and_replace_includes)
+Literate.notebook(
+    path, assets_dir; name, execute=false, preprocess=preprocess_and_replace_includes
+)
+
+rel_path_to_assets = joinpath("..", "..", "public", "examples", name)
+
 function preprocess(path, str)
+    str = preprocess_and_replace_includes(str)
+
     if warn_old_version
         str =
             """
@@ -76,6 +111,23 @@ function preprocess(path, str)
         nothing #hide
         """
     end
+
+    script_download = """
+    # [![download julia script](https://img.shields.io/badge/download-$(name).jl-9558B2?logo=julia)]($(joinpath(rel_path_to_assets, "$(name).jl")))"""
+    project_toml_download = if has_project_toml
+        """
+        # [![download project toml](https://img.shields.io/badge/download-Project.toml-9C4221?logo=toml)]($(joinpath(rel_path_to_assets, "Project.toml")))"""
+    else
+        ""
+    end
+    notebook_download = """
+    # [![download notebook](https://img.shields.io/badge/download-$(name).ipynb-FFB13B)]($(joinpath(rel_path_to_assets, "$(name).ipynb")))"""
+
+    str = """
+    $(script_download)
+    $(project_toml_download)
+    $(notebook_download)
+    \n\n""" * str
 
     return str
 end

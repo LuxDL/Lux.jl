@@ -381,7 +381,7 @@ Comonicon.@main function main(;
     expt_dir=tempname(@__DIR__),
     diffusion_steps::Int=80,
     generate_image_interval::Int=5,
-    # model hyper params
+    ## model hyper params
     channels::Vector{Int}=[32, 64, 96, 128],
     block_depth::Int=2,
     min_freq::Float32=1.0f0,
@@ -390,7 +390,7 @@ Comonicon.@main function main(;
     min_signal_rate::Float32=0.02f0,
     max_signal_rate::Float32=0.95f0,
     generate_image_seed::Int=12,
-    # inference specific
+    ## inference specific
     inference_mode::Bool=false,
     saved_model_path=nothing,
     generate_n_images::Int=12,

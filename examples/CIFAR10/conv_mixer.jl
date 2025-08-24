@@ -1,6 +1,12 @@
+# # ConvMixer on CIFAR-10
+
+# ## Package Imports
+
 using Comonicon, Interpolations, Lux, Optimisers, Printf, Random, Statistics
 
 include("common.jl")
+
+# ## Model Definition
 
 function ConvMixer(; dim, depth, kernel_size=5, patch_size=2)
     return Chain(
@@ -30,6 +36,8 @@ function ConvMixer(; dim, depth, kernel_size=5, patch_size=2)
         Dense(dim => 10),
     )
 end
+
+# ## Entry Point
 
 Comonicon.@main function main(;
     batchsize::Int=512,

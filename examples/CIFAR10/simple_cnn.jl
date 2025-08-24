@@ -1,6 +1,12 @@
+# # Convolutional Neural Network on CIFAR-10
+
+# ## Package Imports
+
 using Comonicon, Lux, Optimisers, Printf, Random, Statistics, Enzyme
 
 include("common.jl")
+
+# ## Model Definition
 
 function SimpleCNN()
     return Chain(
@@ -19,6 +25,8 @@ function SimpleCNN()
         Chain(Dense(128 => 64, relu), BatchNorm(64), Dense(64 => 10)),
     )
 end
+
+# ## Entry Point
 
 Comonicon.@main function main(;
     batchsize::Int=512,
