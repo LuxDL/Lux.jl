@@ -250,6 +250,18 @@ export default defineConfig({
               {
                 text: "LSTM Encoder-Decoder",
                 link: "/tutorials/intermediate/8_LSTMEncoderDecoder",
+              },
+              {
+                text: "Training a Conv-Mixer on CIFAR-10",
+                link: "/tutorials/intermediate/9_CIFAR10_conv_mixer",
+              },
+              {
+                text: "Training a Simple CNN on CIFAR-10",
+                link: "/tutorials/intermediate/10_CIFAR10_simple_cnn",
+              },
+              {
+                text: "Training a ResNet20 on CIFAR-10",
+                link: "/tutorials/intermediate/11_CIFAR10_resnet20",
               }
             ],
           },
@@ -261,23 +273,13 @@ export default defineConfig({
                 text: "Training a Neural ODE to Model Gravitational Waveforms",
                 link: "/tutorials/advanced/1_GravitationalWaveForm",
               },
-            ],
-          },
-          {
-            text: "Larger Models",
-            collapsed: true,
-            items: [
               {
                 text: "Training Image Classification Models on ImageNet with Distributed Data Parallel Training",
-                link: "https://github.com/LuxDL/Lux.jl/tree/main/examples/ImageNet",
+                link: "/tutorials/advanced/2_ImageNet",
               },
               {
                 text: "Training a DDIM (Diffusion Model) for Image Generation",
-                link: "https://github.com/LuxDL/Lux.jl/tree/main/examples/DDIM",
-              },
-              {
-                text: "Different Vision Models on CIFAR-10",
-                link: "https://github.com/LuxDL/Lux.jl/tree/main/examples/CIFAR10",
+                link: "/tutorials/advanced/3_DDIM",
               },
             ],
           },
