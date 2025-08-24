@@ -22,27 +22,81 @@ function underscorise(n::Integer)
     return join(reverse(join.(reverse.(Iterators.partition(digits(n), 3)))), '_')
 end
 
-function big_show(io::IO, obj, indent::Int=0, name=nothing)
+parse_name(name) = parse_name(string(name))
+function parse_name(name::String)
+    # Match names ending in `_` and digits, e.g. `layer_1`
+    m = match(r"^(.*)_(\d+)$", name)
+    if m !== nothing
+        return m.captures[1], true, parse(Int, m.captures[2])
+    end
+    # Match names ending in digits, e.g. `layer1`
+    m = match(r"^(.*?)(\d+)$", name)
+    if m !== nothing
+        return m.captures[1], false, parse(Int, m.captures[2])
+    end
+    return name, false, nothing
+end
+
+function big_show(io::IO, obj, indent::Int=0, name=nothing, multiplier=1)
     if obj isa Function || obj isa Nothing
         print(io, " "^indent, isnothing(name) ? "" : "$name = ", obj)
         indent != 0 && println(io, ",")
         return nothing
     end
     children = printable_children(obj)
-    return if all(show_leaflike, values(children)) || isa_printable_leaf(obj)
-        layer_show(io, obj, indent, name)
-    else
-        println(io, " "^indent, isnothing(name) ? "" : "$name = ", display_name(obj), "(")
-        for (k, c) in pairs(children)
-            big_show(io, c, indent + 4, k)
+    if all(show_leaflike, values(children)) || isa_printable_leaf(obj)
+        layer_show(io, obj, indent, name, multiplier)
+        return nothing
+    end
+    println(io, " "^indent, isnothing(name) ? "" : "$name = ", display_name(obj), "(")
+
+    # Group consecutive identical layers
+    child_keys = collect(keys(children))
+    child_vals = collect(values(children))
+    n = length(child_vals)
+    i = 1
+    while i <= n
+        curr = child_vals[i]
+        curr_key = child_keys[i]
+        basename, has_underscore, curr_suffix = parse_name(curr_key)
+        first_suffix = curr_suffix
+        # Find run of identical layers with consecutive names
+        j = i
+        while (
+            j < n && typeof(child_vals[j + 1]) == typeof(curr) && child_vals[j + 1] == curr
+        )
+            next_key = child_keys[j + 1]
+            next_basename, next_has_underscore, next_suffix = parse_name(next_key)
+            if (
+                next_basename == basename &&
+                next_has_underscore == has_underscore &&
+                curr_suffix !== nothing &&
+                next_suffix !== nothing &&
+                next_suffix == curr_suffix + 1
+            )
+                j += 1
+                curr_suffix = next_suffix
+            else
+                break
+            end
         end
-        if indent == 0  # i.e. this is the outermost container
-            print(io, rpad(")", 2))
-            big_finale(io, obj)
+        if j > i # Print as a range
+            updated_name = "$(basename)$(has_underscore ? "_" : "")($(first_suffix)-$(curr_suffix))"
+            big_show(io, curr, indent + 4, updated_name, (j - i + 1) * multiplier)
+            i = j + 1
         else
-            println(io, " "^indent, ")", ",")
+            big_show(io, curr, indent + 4, curr_key, multiplier)
+            i += 1
         end
     end
+
+    if indent == 0  # i.e. this is the outermost container
+        print(io, rpad(")", 2))
+        big_finale(io, obj)
+    else
+        println(io, " "^indent, ")", ",")
+    end
+    return nothing
 end
 
 function big_finale(io::IO, m, len=8)
@@ -53,32 +107,39 @@ function big_finale(io::IO, m, len=8)
     return nothing
 end
 
-function layer_show(io::IO, layer, indent::Int=0, name=nothing)
+function layer_show(io::IO, layer, indent::Int=0, name=nothing, multiplier=1)
     _str = isnothing(name) ? "" : "$name = "
     str = _str * sprint(show, layer; context=io)
     print(io, " "^indent, str, indent == 0 ? "" : ",")
-    show_parameters_count(io, layer, indent, str)
+    show_parameters_count(io, layer, indent, length(str), multiplier)
     indent == 0 || println(io)
     return nothing
 end
 
-function show_parameters_count(io::IO, layer, indent, str::String)
+function show_parameters_count(io::IO, layer, indent, str_len, multiplier=1)
     paramlength = LuxCore.parameterlength(layer)
     if paramlength > 0
-        print(io, " "^max(2, (indent == 0 ? 20 : 39) - indent - length(str)))
-        printstyled(io, "# ", underscorise(paramlength), " parameters"; color=:light_black)
+        print(io, " "^max(2, (indent == 0 ? 29 : 49) - indent - str_len))
+        printstyled(
+            io,
+            "# $(multiply_count(paramlength, multiplier)) parameters";
+            color=:light_black,
+        )
         nonparam = LuxCore.statelength(layer)
         if nonparam > 0
             printstyled(
                 io,
-                ", plus ",
-                underscorise(nonparam),
-                indent == 0 ? " non-trainable" : "";
+                ", plus $(multiply_count(nonparam, multiplier)) non-trainable";
                 color=:light_black,
             )
         end
     end
     return nothing
+end
+
+function multiply_count(count, multiplier)
+    multiplier == 1 && return "$(underscorise(count))"
+    return "$(underscorise(count * multiplier)) ($(underscorise(count)) x $multiplier)"
 end
 
 function print_wrapper_model(io::IO, desc::String, model::AbstractLuxLayer)

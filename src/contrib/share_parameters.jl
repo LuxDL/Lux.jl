@@ -26,12 +26,12 @@ Updated Parameters having the same structure as `ps`.
 julia> model = Chain(; d1=Dense(2 => 4, tanh),
            d3=Chain(; l1=Dense(4 => 2), l2=Dense(2 => 4)), d2=Dense(4 => 2))
 Chain(
-    d1 = Dense(2 => 4, tanh),           # 12 parameters
+    d1 = Dense(2 => 4, tanh),                     # 12 parameters
     d3 = Chain(
-        l1 = Dense(4 => 2),             # 10 parameters
-        l2 = Dense(2 => 4),             # 12 parameters
+        l1 = Dense(4 => 2),                       # 10 parameters
+        l2 = Dense(2 => 4),                       # 12 parameters
     ),
-    d2 = Dense(4 => 2),                 # 10 parameters
+    d2 = Dense(4 => 2),                           # 10 parameters
 )         # Total: 44 parameters,
           #        plus 0 states.
 

@@ -136,13 +136,11 @@ julia> model = @compact(w1=Dense(n_in, 128),
            @return out
        end
 @compact(
-    w1 = Dense(1 => 128),               # 256 parameters
+    w1 = Dense(1 => 128),                         # 256 parameters
     w2 = NamedTuple(
-        1 = Dense(128 => 128),          # 16_512 parameters
-        2 = Dense(128 => 128),          # 16_512 parameters
-        3 = Dense(128 => 128),          # 16_512 parameters
+        (1-3) = Dense(128 => 128),                # 49_536 (16_512 x 3) parameters
     ),
-    w3 = Dense(128 => 1),               # 129 parameters
+    w3 = Dense(128 => 1),                         # 129 parameters
     act = relu,
 ) do x
     embed = act.(w1(x))
@@ -188,7 +186,7 @@ printout, which gives a verbatim representation of the code used to construct th
 julia> model = @compact(w=rand(3), name="Linear(3 => 1)") do x
            @return sum(w .* x)
        end
-Linear(3 => 1)      # 3 parameters
+Linear(3 => 1)               # 3 parameters
 ```
 
 This can be useful when using `@compact` to hierarchically construct complex models to be
@@ -399,7 +397,7 @@ function PrettyPrinting.big_show(io::IO, obj::CompactLuxLayer, indent::Int=0, na
         _str = name === nothing ? "" : "$name = "
         str = _str * local_name
         print(io, " "^indent, str, indent == 0 ? "" : ",")
-        PrettyPrinting.show_parameters_count(io, obj, indent, str)
+        PrettyPrinting.show_parameters_count(io, obj, indent, length(str))
         indent == 0 || println(io)
         return nothing
     end

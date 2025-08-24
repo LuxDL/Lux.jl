@@ -138,8 +138,7 @@ See also [`SkipConnection`](@ref) which is `Parallel` with one identity.
 ```jldoctest
 julia> model = Parallel(nothing, Dense(2, 1), Dense(2, 1))
 Parallel(
-    layer_1 = Dense(2 => 1),            # 3 parameters
-    layer_2 = Dense(2 => 1),            # 3 parameters
+    layer_(1-2) = Dense(2 => 1),                  # 6 (3 x 2) parameters
 )         # Total: 6 parameters,
           #        plus 0 states.
 
@@ -288,9 +287,7 @@ An easy way to replicate an input to an NTuple is to do
 ```jldoctest
 julia> BranchLayer(NoOpLayer(), NoOpLayer(), NoOpLayer())
 BranchLayer(
-    layer_1 = NoOpLayer(),
-    layer_2 = NoOpLayer(),
-    layer_3 = NoOpLayer(),
+    layer_(1-3) = NoOpLayer(),
 )         # Total: 0 parameters,
           #        plus 0 states.
 ```
@@ -522,17 +519,17 @@ of the internal layers.
 ```jldoctest
 julia> Chain(Dense(2, 3, relu), BatchNorm(3), Dense(3, 2))
 Chain(
-    layer_1 = Dense(2 => 3, relu),      # 9 parameters
-    layer_2 = BatchNorm(3, affine=true, track_stats=true),  # 6 parameters, plus 7
-    layer_3 = Dense(3 => 2),            # 8 parameters
+    layer_1 = Dense(2 => 3, relu),                # 9 parameters
+    layer_2 = BatchNorm(3, affine=true, track_stats=true),  # 6 parameters, plus 7 non-trainable
+    layer_3 = Dense(3 => 2),                      # 8 parameters
 )         # Total: 23 parameters,
           #        plus 7 states.
 
 julia> Chain(Dense(2, 3, relu), BatchNorm(3), Dense(3, 2); name="MyFancyChain")
 MyFancyChain(
-    layer_1 = Dense(2 => 3, relu),      # 9 parameters
-    layer_2 = BatchNorm(3, affine=true, track_stats=true),  # 6 parameters, plus 7
-    layer_3 = Dense(3 => 2),            # 8 parameters
+    layer_1 = Dense(2 => 3, relu),                # 9 parameters
+    layer_2 = BatchNorm(3, affine=true, track_stats=true),  # 6 parameters, plus 7 non-trainable
+    layer_3 = Dense(3 => 2),                      # 8 parameters
 )         # Total: 23 parameters,
           #        plus 7 states.
 ```
