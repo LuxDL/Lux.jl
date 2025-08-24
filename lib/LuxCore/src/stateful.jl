@@ -11,57 +11,6 @@ dynamic(::Val{true}) = true
 dynamic(::Val{false}) = false
 dynamic(v::Bool) = v
 
-"""
-    StatefulLuxLayer{FT}(model, ps, st)
-    StatefulLuxLayer(model, ps, st)
-
-!!! warning
-
-    This is not a LuxCore.AbstractLuxLayer
-
-!!! tip
-
-    This layer can be used as a drop-in replacement for `Flux.jl` layers.
-
-A convenience wrapper over Lux layers which stores the parameters and states internally.
-This is meant to be used in internal implementation of layers.
-
-When using the definition of `StatefulLuxLayer` without `FT` specified, make sure that all
-of the layers in the model define [`LuxCore.preserves_state_type`](@ref). Else we implicitly
-assume that the state type is preserved.
-
-## Usecases
-
-  - Internal implementation of [`@compact`](@ref) heavily uses this layer.
-  - In SciML codebases where propagating state might involving
-    [`Box`ing](https://github.com/JuliaLang/julia/issues/15276). For a motivating example,
-    see the Neural ODE tutorial.
-  - Facilitates Nested AD support in Lux. For more details on this feature, see the
-    [Nested AD Manual Page](@ref nested_autodiff).
-
-## Static Parameters
-
-  - If `FT = true` then the type of the `state` is fixed, i.e.,
-    `typeof(last(model(x, ps, st))) == st`.
-  - If `FT = false` then type of the state might change. Note that while this works in all
-    cases, it will introduce type instability.
-
-## Arguments
-
-  - `model`: A Lux layer
-  - `ps`: The parameters of the layer. This can be set to `nothing`, if the user provides
-    the parameters on function call
-  - `st`: The state of the layer
-
-## Inputs
-
-  - `x`: The input to the layer
-  - `ps`: The parameters of the layer. Optional, defaults to `s.ps`
-
-## Outputs
-
-  - `y`: The output of the layer
-"""
 mutable struct StatefulLuxLayer{ST,M<:AbstractLuxLayer,psType,stType}
     const model::M
     ps::psType
@@ -124,6 +73,58 @@ export StatefulLuxLayer
 end
 
 using .StatefulLuxLayerImpl: StatefulLuxLayer
+
+@doc """
+    StatefulLuxLayer{FT}(model, ps, st)
+    StatefulLuxLayer(model, ps, st)
+
+!!! warning
+
+    This is not a LuxCore.AbstractLuxLayer
+
+!!! tip
+
+    This layer can be used as a drop-in replacement for `Flux.jl` layers.
+
+A convenience wrapper over Lux layers which stores the parameters and states internally.
+This is meant to be used in internal implementation of layers.
+
+When using the definition of `StatefulLuxLayer` without `FT` specified, make sure that all
+of the layers in the model define [`LuxCore.preserves_state_type`](@ref). Else we implicitly
+assume that the state type is preserved.
+
+## Usecases
+
+  - Internal implementation of `@compact` heavily uses this layer.
+  - In SciML codebases where propagating state might involving
+    [`Box`ing](https://github.com/JuliaLang/julia/issues/15276). For a motivating example,
+    see the Neural ODE tutorial.
+  - Facilitates Nested AD support in Lux. For more details on this feature, see the
+    [Nested AD Manual Page](@ref nested_autodiff).
+
+## Static Parameters
+
+  - If `FT = true` then the type of the `state` is fixed, i.e.,
+    `typeof(last(model(x, ps, st))) == st`.
+  - If `FT = false` then type of the state might change. Note that while this works in all
+    cases, it will introduce type instability.
+
+## Arguments
+
+  - `model`: A Lux layer
+  - `ps`: The parameters of the layer. This can be set to `nothing`, if the user provides
+    the parameters on function call
+  - `st`: The state of the layer
+
+## Inputs
+
+  - `x`: The input to the layer
+  - `ps`: The parameters of the layer. Optional, defaults to `s.ps`
+
+## Outputs
+
+  - `y`: The output of the layer
+""" StatefulLuxLayer
 
 # LuxCore interface
 for op in (:trainmode, :testmode)
