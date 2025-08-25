@@ -252,15 +252,15 @@ export default defineConfig({
                 link: "/tutorials/intermediate/8_LSTMEncoderDecoder",
               },
               {
-                text: "Training a Conv-Mixer on CIFAR-10",
+                text: "Conv-Mixer on CIFAR-10",
                 link: "/tutorials/intermediate/9_CIFAR10_conv_mixer",
               },
               {
-                text: "Training a Simple CNN on CIFAR-10",
+                text: "Simple CNN on CIFAR-10",
                 link: "/tutorials/intermediate/10_CIFAR10_simple_cnn",
               },
               {
-                text: "Training a ResNet20 on CIFAR-10",
+                text: "ResNet20 on CIFAR-10",
                 link: "/tutorials/intermediate/11_CIFAR10_resnet20",
               }
             ],
@@ -274,12 +274,12 @@ export default defineConfig({
                 link: "/tutorials/advanced/1_GravitationalWaveForm",
               },
               {
-                text: "Training Image Classification Models on ImageNet with Distributed Data Parallel Training",
-                link: "/tutorials/advanced/2_ImageNet",
+                text: "Training a DDIM (Diffusion Model) for Image Generation",
+                link: "/tutorials/advanced/2_DDIM",
               },
               {
-                text: "Training a DDIM (Diffusion Model) for Image Generation",
-                link: "/tutorials/advanced/3_DDIM",
+                text: "Training Image Classification Models on ImageNet with Distributed Data Parallel Training",
+                link: "/tutorials/advanced/3_ImageNet",
               },
             ],
           },
