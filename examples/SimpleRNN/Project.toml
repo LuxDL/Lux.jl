@@ -10,7 +10,7 @@ Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
 
 [compat]
 ADTypes = "1.10"
-JLD2 = "0.5"
+JLD2 = "0.5, 0.6"
 Lux = "1"
 MLUtils = "0.4"
 Optimisers = "0.4.6"
