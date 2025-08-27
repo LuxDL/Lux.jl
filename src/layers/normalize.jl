@@ -718,3 +718,37 @@ function Base.show(io::IO, ::MIME"text/plain", w::WeightNorm)
         ")",
     )
 end
+
+@concrete struct RMSNorm <: AbstractLuxLayer
+    normalized_shape <: Dims
+    epsilon <: Real
+    affine <: StaticBool
+end
+
+RMSNorm(dim::Integer; kwargs...) = RMSNorm((dim,); kwargs...)
+function RMSNorm(normalized_shape::Dims; epsilon=1.0f-5, affine::BoolType=True())
+    return RMSNorm(normalized_shape, epsilon, static(affine))
+end
+
+function Base.show(io::IO, l::RMSNorm)
+    print(io, "RMSNorm($(l.normalized_shape)")
+    (l.affine == true) || print(io, ", affine=false")
+    return print(io, ")")
+end
+
+function initialparameters(rng::AbstractRNG, l::RMSNorm)
+    has_affine(l) && return (; scale=ones32(rng, l.normalized_shape...))
+    return (;)
+end
+
+parameterlength(l::RMSNorm) = has_affine(l) ? prod(l.normalized_shape) : 0
+
+# specialization on `NT` is important here, else we won't be able to infer the
+# correct eltype of the output.
+function (rms::RMSNorm{NT})(x::AbstractArray, ps, st::NamedTuple) where {NT}
+    # Don't use `match_eltype` here, since often times the eltypes are intentionally
+    # different.
+    ϵ = eltype(x)(rms.epsilon)
+    rms_value = sqrt.(mean(abs2, x; dims=1:length(rms.normalized_shape)) .+ ϵ)
+    return (x ./ rms_value) .* ps.scale, st
+end

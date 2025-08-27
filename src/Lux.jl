@@ -137,7 +137,7 @@ export MaxPool,
     AdaptiveMeanPool,
     AdaptiveLPPool
 export AlphaDropout, Dropout, VariationalHiddenDropout
-export BatchNorm, GroupNorm, InstanceNorm, LayerNorm
+export BatchNorm, GroupNorm, InstanceNorm, LayerNorm, RMSNorm
 export WeightNorm
 export MultiHeadAttention
 export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction, ReverseSequence
