@@ -227,8 +227,8 @@ end
             (8, 10, 1),
         )
 
-        @test st.sin_cache ≈ expected_sin
-        @test st.cos_cache ≈ expected_cos
+        @test st.sin_cache[1:8, :] ≈ expected_sin
+        @test st.cos_cache[1:8, :] ≈ expected_cos
 
         x = dev(reshape(collect(Float32, 1:320), 16, 10, 2))
         x2 = dev(reshape(x, 16, 1, 10, 2))
@@ -249,16 +249,7 @@ end
         @test size(y) == (16, 10, 2)
         @test y ≈ y_expected atol = 1.0e-3 rtol = 1.0e-3
 
-        @test_gradients(
-            sumabs2first,
-            model,
-            x2,
-            ps,
-            st;
-            atol=1.0f-3,
-            rtol=1.0f-3,
-            broken_backends=[AutoReverseDiff()]
-        )
+        @test_gradients(sumabs2first, model, x2, ps, st; atol=1.0f-3, rtol=1.0f-3)
     end
 end
 
