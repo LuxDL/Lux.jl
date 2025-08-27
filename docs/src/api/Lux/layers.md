@@ -13,6 +13,7 @@ PairwiseFusion
 Parallel
 SkipConnection
 RepeatedLayer
+AlternatePrecision
 ```
 
 ## Convolutional Layers
@@ -97,6 +98,7 @@ GroupNorm
 InstanceNorm
 LayerNorm
 WeightNorm
+RMSNorm
 ```
 
 ## Upsampling

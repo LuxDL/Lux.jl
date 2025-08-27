@@ -589,3 +589,37 @@ function (b::Bilinear)((x, y)::Tuple{<:AbstractArray,<:AbstractArray}, ps, st::N
 end
 
 (b::Bilinear)(x::AbstractArray, ps, st::NamedTuple) = b((x, x), ps, st)
+
+"""
+    AlternatePrecision{T}(layer)
+    AlternatePrecision(::Type{T}, layer)
+
+This layer is used to convert the input to a different precision (`T`), execute the layer,
+and then convert the output back to the original precision.
+
+## Arguments
+
+  - `T`: The eltype of the input to the layer
+  - `layer`: The layer to execute
+
+## Inputs
+
+  - `x`: AbstractArray
+
+## Returns
+
+  - `y`: Output of the layer
+  - State of the output
+"""
+@concrete struct AlternatePrecision{T} <: AbstractLuxWrapperLayer{:layer}
+    layer
+end
+
+AlternatePrecision(::Type{T}, layer) where {T} = AlternatePrecision{T}(layer)
+
+LuxCore.display_name(::AlternatePrecision{T}) where {T} = "AlternatePrecision{$T}"
+
+function (model::AlternatePrecision{T})(x::AbstractArray{T2}, ps, st) where {T, T2}
+    y, stₙ = model.layer(T.(x), ps, st)
+    return T2.(y), stₙ
+end
