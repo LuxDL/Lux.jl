@@ -788,9 +788,9 @@ function (rms::RMSNorm)(x::AbstractArray{T}, ps, st::NamedTuple) where {T}
     mean_sq = mean(abs2, x; dims=1:length(rms.normalized_shape))
 
     if has_affine(rms)
-        norm_x = @. (x * inv(sqrt(mean_sq) + ϵ)) * ps.scale
+        norm_x = @. (x * LuxOps.rsqrt(mean_sq + ϵ)) * ps.scale
     else
-        norm_x = @. x * inv(sqrt(mean_sq) + ϵ)
+        norm_x = @. x * LuxOps.rsqrt(mean_sq + ϵ)
     end
 
     return norm_x, st

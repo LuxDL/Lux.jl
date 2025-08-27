@@ -68,6 +68,7 @@ LuxOps.xlogx
 LuxOps.xlogy
 LuxOps.istraining
 LuxOps.multigate
+LuxOps.rsqrt
 ```
 
 ## Recursive Operations
