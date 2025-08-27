@@ -444,6 +444,8 @@ end
             l = RMSNorm((2, 2))
             ps, st = dev(Lux.setup(rng, l))
 
+            ps.scale .= rand(rng, Float32, 2, 2)
+
             x = aType(randn(rng, Float32, 2, 2, 3))
             y, st = l(x, ps, st)
             @test size(y) == size(x)
@@ -451,7 +453,7 @@ end
 
             # RMS normalization: check mean and variance
             inv_rms = inv.(sqrt.(mean(abs2, x; dims=1:2)))
-            norm_x = x .* inv_rms
+            norm_x = (x .* inv_rms) .* ps.scale
             @test isapprox(y, norm_x; atol=1e-6)
         end
     end

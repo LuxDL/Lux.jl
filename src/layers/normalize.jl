@@ -729,14 +729,14 @@ square (RMS) of the first `N` dimensions of the input where `N` is the length of
 
 ```math
 \begin{align}
-  y_i &= \frac{x_i}{\sqrt{\epsilon + \frac{1}{N}\Sigma_{j=1}^N x_j^2}} * \gamma_i
+  y_i &= \frac{x_i}{\sqrt{\epsilon + \frac{1}{D}\Sigma_{j=1}^D x_j^2}} * \gamma_i
 \end{align}
 ```
 
 ## Arguments
 
   - `normalized_shape`: The input shape from which the RMS normalization factor is
-    computed. The input is expected to has a shape that can be broadcast with
+    computed. The input is expected to have a shape that can be broadcast with
     `normalized_shape`.
 
 ## Keyword Arguments
@@ -781,7 +781,7 @@ parameterlength(l::RMSNorm) = has_affine(l) ? prod(l.normalized_shape) : 0
 
 # specialization on `NT` is important here, else we won't be able to infer the
 # correct eltype of the output.
-function (rms::RMSNorm)(x::AbstractArray, ps, st::NamedTuple) where {NT}
+function (rms::RMSNorm)(x::AbstractArray, ps, st::NamedTuple)
     # Don't use `match_eltype` here, since often times the eltypes are intentionally
     # different.
     ϵ = eltype(x)(rms.epsilon)
