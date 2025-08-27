@@ -781,14 +781,17 @@ parameterlength(l::RMSNorm) = has_affine(l) ? prod(l.normalized_shape) : 0
 
 # specialization on `NT` is important here, else we won't be able to infer the
 # correct eltype of the output.
-function (rms::RMSNorm)(x::AbstractArray, ps, st::NamedTuple)
+function (rms::RMSNorm)(x::AbstractArray{T}, ps, st::NamedTuple) where {T}
     # Don't use `match_eltype` here, since often times the eltypes are intentionally
     # different.
-    ϵ = eltype(x)(rms.epsilon)
-    inv_rms = inv.(sqrt.(mean(abs2, x; dims=1:length(rms.normalized_shape)) .+ ϵ))
-    norm_x = x .* inv_rms
+    ϵ = T(rms.epsilon)
+    mean_sq = mean(abs2, x; dims=1:length(rms.normalized_shape))
 
-    has_affine(rms) && (norm_x = norm_x .* ps.scale)
+    if has_affine(rms)
+        norm_x = @. (x * inv(sqrt(mean_sq) + ϵ)) * ps.scale
+    else
+        norm_x = @. x * inv(sqrt(mean_sq) + ϵ)
+    end
 
     return norm_x, st
 end

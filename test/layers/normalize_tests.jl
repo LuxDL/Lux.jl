@@ -411,7 +411,7 @@ end
             l = RMSNorm((4,); affine=true)
             ps, st = dev(Lux.setup(rng, l))
 
-            ps.scale .= rand(rng, Float32, 4)
+            copyto!(ps.scale, randn(rng, Float32, 4))
 
             x = aType(randn(rng, Float32, 4, 5))
             y, st = l(x, ps, st)
@@ -444,7 +444,7 @@ end
             l = RMSNorm((2, 2))
             ps, st = dev(Lux.setup(rng, l))
 
-            ps.scale .= rand(rng, Float32, 2, 2)
+            copyto!(ps.scale, randn(rng, Float32, 2, 2))
 
             x = aType(randn(rng, Float32, 2, 2, 3))
             y, st = l(x, ps, st)
