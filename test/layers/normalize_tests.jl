@@ -382,3 +382,79 @@ end
         end
     end
 end
+
+@testitem "RMSNorm" setup = [SharedTestSetup] tags = [:normalize_layers] begin
+    rng = StableRNG(12345)
+
+    @testset "Basic Construction" begin
+        l = RMSNorm((4,))
+        @test l.normalized_shape == (4,)
+        @test l.epsilon ≈ 1.0f-5
+        @test Lux.has_affine(l)
+
+        @testset "Parameter Initialization" begin
+            ps = Lux.initialparameters(rng, l)
+            @test haskey(ps, :scale)
+            @test size(ps.scale) == (4,)
+            @test all(ps.scale .== 1.0f0)
+        end
+
+        @testset "Parameter Initialization (non-affine)" begin
+            l_noaff = RMSNorm((4,); affine=false)
+            ps_noaff = Lux.initialparameters(rng, l_noaff)
+            @test isempty(ps_noaff)
+        end
+    end
+
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
+        @testset "affine" begin
+            l = RMSNorm((4,); affine=true)
+            ps, st = dev(Lux.setup(rng, l))
+
+            ps.scale .= rand(rng, Float32, 4)
+
+            x = aType(randn(rng, Float32, 4, 5))
+            y, st = l(x, ps, st)
+            @test size(y) == size(x)
+            @test st == NamedTuple()
+
+            # RMS normalization: check mean and variance
+            inv_rms = inv.(sqrt.(mean(abs2, x; dims=1)))
+            norm_x = x .* inv_rms
+            norm_x_affine = norm_x .* ps.scale
+            @test y ≈ norm_x_affine
+        end
+
+        @testset "non-affine" begin
+            l = RMSNorm((4,); affine=false)
+            ps, st = dev(Lux.setup(rng, l))
+
+            x = aType(randn(rng, Float32, 4, 5))
+            y, st = l(x, ps, st)
+            @test size(y) == size(x)
+            @test st == NamedTuple()
+
+            # RMS normalization: check mean and variance
+            inv_rms = inv.(sqrt.(mean(abs2, x; dims=1)))
+            norm_x = x .* inv_rms
+            @test y ≈ norm_x
+        end
+
+        @testset "different normalized_shape" begin
+            l = RMSNorm((2, 2))
+            ps, st = dev(Lux.setup(rng, l))
+
+            ps.scale .= rand(rng, Float32, 2, 2)
+
+            x = aType(randn(rng, Float32, 2, 2, 3))
+            y, st = l(x, ps, st)
+            @test size(y) == size(x)
+            @test st == NamedTuple()
+
+            # RMS normalization: check mean and variance
+            inv_rms = inv.(sqrt.(mean(abs2, x; dims=1:2)))
+            norm_x = (x .* inv_rms) .* ps.scale
+            @test y ≈ norm_x
+        end
+    end
+end

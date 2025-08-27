@@ -125,6 +125,7 @@ include("deprecations.jl")
 # Layers
 export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer, Maxout, RepeatedLayer
 export Bilinear, Dense, Scale
+export AlternatePrecision
 export Embedding, SinusoidalPositionalEmbedding, RotaryPositionalEmbedding
 export Conv, ConvTranspose, Upsample, PixelShuffle
 export MaxPool,
@@ -137,7 +138,7 @@ export MaxPool,
     AdaptiveMeanPool,
     AdaptiveLPPool
 export AlphaDropout, Dropout, VariationalHiddenDropout
-export BatchNorm, GroupNorm, InstanceNorm, LayerNorm
+export BatchNorm, GroupNorm, InstanceNorm, LayerNorm, RMSNorm
 export WeightNorm
 export MultiHeadAttention
 export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction, ReverseSequence

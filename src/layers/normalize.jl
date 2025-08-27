@@ -718,3 +718,77 @@ function Base.show(io::IO, ::MIME"text/plain", w::WeightNorm)
         ")",
     )
 end
+
+@doc doc"""
+    RMSNorm(normalized_shape::Dims; epsilon=1.0f-5, affine=true)
+    RMSNorm(dim::Integer...; kwargs...)
+
+Root Mean Square Normalization layer. It normalizes the input by computing the root mean
+square (RMS) of the first `N` dimensions of the input where `N` is the length of
+`normalized_shape`.
+
+```math
+\begin{align}
+  y_i &= \frac{x_i}{\sqrt{\epsilon + \frac{1}{D}\Sigma_{j=1}^D x_j^2}} * \gamma_i
+\end{align}
+```
+
+## Arguments
+
+  - `normalized_shape`: The input shape from which the RMS normalization factor is
+    computed. The input is expected to have a shape that can be broadcast with
+    `normalized_shape`.
+
+## Keyword Arguments
+
+  - `epsilon`: A small value for numerical stability.
+  - `affine`: If `true`, learns a scale parameter.
+
+# Extended Help
+
+## Inputs
+
+  - `x`: Array of size `(normalized_shape..., *, *..., *)`
+
+## Returns
+
+  - `y`: Normalized Array of same shape as `x`
+  - Empty `NamedTuple()`
+"""
+@concrete struct RMSNorm <: AbstractLuxLayer
+    normalized_shape <: Dims
+    epsilon <: Real
+    affine <: StaticBool
+end
+
+RMSNorm(dim::Integer, dims::Integer...; kwargs...) = RMSNorm((dim, dims...); kwargs...)
+function RMSNorm(normalized_shape::Dims; epsilon=1.0f-5, affine::BoolType=True())
+    return RMSNorm(normalized_shape, epsilon, static(affine))
+end
+
+function Base.show(io::IO, l::RMSNorm)
+    print(io, "RMSNorm($(l.normalized_shape)")
+    (l.affine == true) || print(io, ", affine=false")
+    return print(io, ")")
+end
+
+function initialparameters(rng::AbstractRNG, l::RMSNorm)
+    has_affine(l) && return (; scale=ones32(rng, l.normalized_shape...))
+    return (;)
+end
+
+parameterlength(l::RMSNorm) = has_affine(l) ? prod(l.normalized_shape) : 0
+
+# specialization on `NT` is important here, else we won't be able to infer the
+# correct eltype of the output.
+function (rms::RMSNorm)(x::AbstractArray, ps, st::NamedTuple)
+    # Don't use `match_eltype` here, since often times the eltypes are intentionally
+    # different.
+    ϵ = eltype(x)(rms.epsilon)
+    inv_rms = inv.(sqrt.(mean(abs2, x; dims=1:length(rms.normalized_shape)) .+ ϵ))
+    norm_x = x .* inv_rms
+
+    has_affine(rms) && (norm_x = norm_x .* ps.scale)
+
+    return norm_x, st
+end

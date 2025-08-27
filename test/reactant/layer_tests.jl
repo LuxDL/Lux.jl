@@ -169,3 +169,77 @@ end
         end
     end
 end
+
+@testitem "Reactant: RMSNorm" tags = [:reactant] setup = [
+    SharedTestSetup, SharedReactantLayersTestSetup
+] skip = :(Sys.iswindows()) begin
+    using Reactant, Lux, Random
+
+    rng = StableRNG(12345)
+
+    @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
+        if mode == "amdgpu"
+            @warn "Skipping AMDGPU tests for Reactant"
+            continue
+        end
+
+        dev = reactant_device(; force=true)
+
+        if ongpu
+            Reactant.set_default_backend("gpu")
+        else
+            Reactant.set_default_backend("cpu")
+        end
+
+        model = RMSNorm((4, 5))
+        ps, st = Lux.setup(rng, model)
+        ps_ra, st_ra = dev((ps, st))
+
+        x = randn(rng, Float32, 4, 5, 3)
+        x_ra = dev(x)
+
+        y_ra, st_ra = @jit model(x_ra, ps_ra, st_ra)
+        y, st = model(x, ps, st)
+
+        @test y_ra ≈ y atol = 1.0e-4 rtol = 1.0e-2
+
+        hlo = @code_hlo model(x_ra, ps_ra, st_ra)
+        @test contains(repr(hlo), "stablehlo.rsqrt")
+    end
+end
+
+@testitem "Reactant: Alternate Precision" tags = [:reactant] setup = [
+    SharedTestSetup, SharedReactantLayersTestSetup
+] skip = :(Sys.iswindows()) begin
+    using Reactant, Lux, Random
+
+    @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
+        if mode == "amdgpu"
+            @warn "Skipping AMDGPU tests for Reactant"
+            continue
+        end
+
+        dev = reactant_device(; force=true)
+
+        if ongpu
+            Reactant.set_default_backend("gpu")
+        else
+            Reactant.set_default_backend("cpu")
+        end
+
+        model = Dense(2 => 3, tanh)
+        model2 = AlternatePrecision{Float64}(model)
+
+        x = randn(Float32, 2, 4)
+        ps, st = Lux.setup(Random.default_rng(), model2)
+
+        x_ra, ps_ra, st_ra = dev((x, ps, st))
+
+        hlo1 = @code_hlo model(x_ra, ps_ra, st_ra)
+        hlo2 = @code_hlo model2(x_ra, ps_ra, st_ra)
+        @test !contains(repr(hlo1), "stablehlo.convert")
+        @test !contains(repr(hlo1), "f64")
+        @test contains(repr(hlo2), "stablehlo.convert")
+        @test contains(repr(hlo2), "f64")
+    end
+end
