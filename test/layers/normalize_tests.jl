@@ -390,7 +390,7 @@ end
         l = RMSNorm((4,))
         @test l.normalized_shape == (4,)
         @test l.epsilon ≈ 1.0f-5
-        @test Lux.has_affine(l.affine)
+        @test Lux.has_affine(l)
 
         @testset "Parameter Initialization" begin
             ps = Lux.initialparameters(rng, l)
@@ -422,7 +422,7 @@ end
             inv_rms = inv.(sqrt.(mean(abs2, x; dims=1)))
             norm_x = x .* inv_rms
             norm_x_affine = norm_x .* ps.scale
-            @test isapprox(y, norm_x_affine; atol=1e-6)
+            @test y ≈ norm_x_affine
         end
 
         @testset "non-affine" begin
@@ -437,7 +437,7 @@ end
             # RMS normalization: check mean and variance
             inv_rms = inv.(sqrt.(mean(abs2, x; dims=1)))
             norm_x = x .* inv_rms
-            @test isapprox(y, norm_x; atol=1e-6)
+            @test y ≈ norm_x
         end
 
         @testset "different normalized_shape" begin
@@ -454,7 +454,7 @@ end
             # RMS normalization: check mean and variance
             inv_rms = inv.(sqrt.(mean(abs2, x; dims=1:2)))
             norm_x = (x .* inv_rms) .* ps.scale
-            @test isapprox(y, norm_x; atol=1e-6)
+            @test y ≈ norm_x
         end
     end
 end
