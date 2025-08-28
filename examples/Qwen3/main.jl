@@ -832,30 +832,67 @@ function generate_text!(
     return nothing
 end
 
-#=
-# TODO: use argparse and set this up as a command line tool
+# ## Entry Point
 
-cfg = Qwen3Config("0.6B"; reasoning_model=true)
+function run_model_selection()
+    printstyled("Which model do you want to run? \n"; color=:cyan, bold=true)
+    choices = ["0.6B", "1.7B", "4B", "8B", "14B", "32B"]
+    for (i, choice) in enumerate(choices)
+        printstyled("    $(i). $(choice)\n"; color=:light_blue)
+    end
+    printstyled("  Enter your choice: "; color=:cyan)
+    choice = parse(Int, readline(stdin))
+    if choice ∉ 1:length(choices)
+        error("Invalid choice: $(choice). Expected an integer between 1 and \
+               $(length(choices))")
+    end
 
-rdev = reactant_device()
+    printstyled("Do you want to use the reasoning model? [y/N] "; color=:cyan)
+    reasoning = readline(stdin) == "y"
+    println()
+    return choices[choice], reasoning
+end
 
-weights_dict, tokenizer_file, repo_id = download_qwen3_weights_from_huggingface(cfg);
+function get_model_and_tokenizer(version, reasoning)
+    cfg = Qwen3Config(version; reasoning_model=reasoning)
+    rdev = reactant_device(; force=true)
+    weights_dict, tokenizer_file, repo_id = download_qwen3_weights_from_huggingface(cfg)
+    tokenizer = Qwen3Tokenizer(
+        tokenizer_file;
+        repo_id,
+        add_generation_prompt=cfg.reasoning_model,
+        add_thinking=cfg.reasoning_model,
+    )
+    model, ps, st = setup_model(cfg, rdev; weights_dict)
+    return model, ps, st, tokenizer
+end
 
-tokenizer = Qwen3Tokenizer(
-    tokenizer_file;
-    repo_id,
-    add_generation_prompt=cfg.reasoning_model,
-    add_thinking=cfg.reasoning_model,
-)
+function main()
+    @info "Text Generation with Qwen-3 powered by Lux, Reactant & XLA."
 
-model, ps, st = setup_model(cfg, rdev; weights_dict);
+    version, reasoning = run_model_selection()
+    model, ps, st, tokenizer = get_model_and_tokenizer(version, reasoning)
 
-generate_text(
-    model,
-    "What is a large language model?",
-    ps,
-    st,
-    100_000,
-    tokenizer,
-)
-=#
+    while true
+        printstyled("Prompt (type \"exit\" to quit the program or \
+                     \"model selection\" to change the model):"; color=:cyan, bold=true)
+        prompt = readline(stdin)
+
+        prompt == "exit" && break
+
+        if prompt == "model selection"
+            version, reasoning = run_model_selection()
+            model, ps, st, tokenizer = get_model_and_tokenizer(version, reasoning)
+            continue
+        end
+
+        generate_text(model, prompt, ps, st, 100_000, tokenizer)
+        println("\n")
+    end
+
+    return nothing
+end
+
+if abspath(PROGRAM_FILE) == @__FILE__
+    main()
+end
