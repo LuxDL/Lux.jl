@@ -196,8 +196,15 @@ end
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        model = RotaryPositionalEmbedding(16; max_sequence_length=10, base=10000)
+        model = RotaryPositionalEmbedding(
+            16; max_sequence_length=10, base=10000, low_memory_variant=false
+        )
+        model_lm = RotaryPositionalEmbedding(
+            16; max_sequence_length=10, base=10000, low_memory_variant=true
+        )
+
         ps, st = Lux.setup(rng, model)
+        ps_lm, st_lm = Lux.setup(rng, model_lm)
 
         expected_cos = reshape(
             [
@@ -211,7 +218,9 @@ end
                 1.0 1.0 1.0 1.0 0.999999 0.999999 0.999998 0.999998 0.999997 0.999996
             ],
             (8, 10, 1),
-        )
+        )[
+            1:8, :,
+        ]
 
         expected_sin = reshape(
             [
@@ -227,12 +236,15 @@ end
             (8, 10, 1),
         )
 
-        @test st.sin_cache ≈ expected_sin
-        @test st.cos_cache ≈ expected_cos
+        @test st.cos_cache[1:8, :] ≈ expected_cos
+        @test st.sin_cache[1:8, :] ≈ expected_sin
+        @test st_lm.sin_cache ≈ expected_sin
+        @test st_lm.cos_cache ≈ expected_cos
 
         x = dev(reshape(collect(Float32, 1:320), 16, 10, 2))
         x2 = dev(reshape(x, 16, 1, 10, 2))
         ps, st = dev((ps, st))
+        ps_lm, st_lm = dev((ps_lm, st_lm))
         expected_sin = dev(expected_sin)
         expected_cos = dev(expected_cos)
 
@@ -249,15 +261,22 @@ end
         @test size(y) == (16, 10, 2)
         @test y ≈ y_expected atol = 1.0e-3 rtol = 1.0e-3
 
+        @test_gradients(sumabs2first, model, x2, ps, st; atol=1.0f-3, rtol=1.0f-3)
+
+        y_lm, st_lm = model_lm(x2, ps_lm, st_lm)
+        y_lm = dropdims(y_lm; dims=2)
+        @test size(y_lm) == (16, 10, 2)
+        @test y_lm ≈ y_expected atol = 1.0e-3 rtol = 1.0e-3
+
         @test_gradients(
             sumabs2first,
-            model,
+            model_lm,
             x2,
-            ps,
-            st;
+            ps_lm,
+            st_lm;
             atol=1.0f-3,
-            rtol=1.0f-3,
-            broken_backends=[AutoReverseDiff()]
+            rtol=1.0f-3;
+            broken_backends=[AutoTracker()]
         )
     end
 end
@@ -284,26 +303,30 @@ end
 
         dev = reactant_device(; force=true)
 
-        model = RotaryPositionalEmbedding(16; max_sequence_length=10, base=10000)
-        ps, st = Lux.setup(rng, model)
+        @testset for low_memory_variant in (true, false)
+            model = RotaryPositionalEmbedding(
+                16; max_sequence_length=10, base=10000, low_memory_variant
+            )
+            ps, st = Lux.setup(rng, model)
 
-        x = reshape(collect(Float32, 1:320), 16, 1, 10, 2)
-        x_ra = dev(reshape(x, 16, 1, 10, 2))
-        ps_ra, st_ra = dev((ps, st))
+            x = reshape(collect(Float32, 1:320), 16, 1, 10, 2)
+            x_ra = dev(reshape(x, 16, 1, 10, 2))
+            ps_ra, st_ra = dev((ps, st))
 
-        y_ra, st_ra = @jit model(x_ra, ps_ra, st_ra)
-        y, st = model(x, ps, st)
-        @test hasfield(typeof(st_ra), :cos_cache)
-        @test hasfield(typeof(st_ra), :sin_cache)
-        @test size(y_ra) == (16, 1, 10, 2)
+            y_ra, st_ra = @jit model(x_ra, ps_ra, st_ra)
+            y, st = model(x, ps, st)
+            @test hasfield(typeof(st_ra), :cos_cache)
+            @test hasfield(typeof(st_ra), :sin_cache)
+            @test size(y_ra) == (16, 1, 10, 2)
 
-        @test Array(y_ra) ≈ y atol = 1.0e-2 rtol = 1.0e-2
+            @test Array(y_ra) ≈ y atol = 1.0e-2 rtol = 1.0e-2
 
-        @testset "gradient" begin
-            ∂x, ∂ps = ∇sumabs2_zygote(model, x, ps, st)
-            ∂x_ra, ∂ps_ra = @jit ∇sumabs2_enzyme(model, x_ra, ps_ra, st_ra)
-            @test ∂x_ra ≈ ∂x atol = 1.0e-2 rtol = 1.0e-2
-            @test check_approx(∂ps_ra, ∂ps; atol=1.0e-2, rtol=1.0e-2)
+            @testset "gradient" begin
+                ∂x, ∂ps = ∇sumabs2_zygote(model, x, ps, st)
+                ∂x_ra, ∂ps_ra = @jit ∇sumabs2_enzyme(model, x_ra, ps_ra, st_ra)
+                @test ∂x_ra ≈ ∂x atol = 1.0e-2 rtol = 1.0e-2
+                @test check_approx(∂ps_ra, ∂ps; atol=1.0e-2, rtol=1.0e-2)
+            end
         end
     end
 end

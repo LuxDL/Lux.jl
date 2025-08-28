@@ -9,3 +9,6 @@ Profiler.@annotate "Optimisers Setup" function Lux.ReactantCompatibleOptimisers.
 )
     return @jit Optimisers.setup(opt, ps)
 end
+
+# rsqrt
+LuxOps.rsqrt(x::TracedRNumber) = Reactant.Ops.rsqrt(x)

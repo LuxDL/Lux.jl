@@ -78,6 +78,13 @@ RotaryPositionalEmbedding
 SinusoidalPositionalEmbedding
 ```
 
+### Functional API
+
+```@docs
+apply_rotary_embedding
+compute_rotary_embedding_params
+```
+
 ## Misc. Helper Layers
 
 ```@docs

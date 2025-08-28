@@ -153,7 +153,10 @@ end
 
 """
     RotaryPositionalEmbedding(
-        dim::IntegerType; max_sequence_length::IntegerType=4096, base::IntegerType=10000
+        dim::IntegerType;
+        max_sequence_length::IntegerType=4096,
+        base::IntegerType=10000,
+        low_memory_variant::Bool=true,
     )
 
 Rotary Positional Embedding. For details see [su2024roformer](@citet).
@@ -172,6 +175,9 @@ dimensions for efficiency.
   - `base`: The base used to compute angular frequency for each dimension in the positional
     encodings. Default: `10000`.
   - `max_sequence_length`: The maximum sequence length. Default: `4096`.
+  - `low_memory_variant`: If `true` then cos and sin cache have leading dimension of
+    `dim ÷ 2`. If `false` then cos and sin cache have leading dimension of `dim`.
+    Default: `true`.
 
 ## Input
 
@@ -192,63 +198,167 @@ dimensions for efficiency.
     dim <: IntegerType
     max_sequence_length <: IntegerType
     base <: IntegerType
+    low_memory_variant::Bool
 end
 
 function RotaryPositionalEmbedding(
-    dim::IntegerType; max_sequence_length::IntegerType=4096, base::IntegerType=10000
+    dim::IntegerType;
+    max_sequence_length::IntegerType=4096,
+    base::IntegerType=10000,
+    low_memory_variant::Bool=true,
 )
-    return RotaryPositionalEmbedding(dim, max_sequence_length, base)
+    return RotaryPositionalEmbedding(dim, max_sequence_length, base, low_memory_variant)
 end
 
 function initialstates(::AbstractRNG, rope::RotaryPositionalEmbedding)
-    theta =
-        inv.(
-            Float32.(
-                rope.base .^ (range(0, rope.dim - 1; step=2)[1:(rope.dim ÷ 2)] ./ rope.dim)
-            )
-        )
-
-    seq_idx = collect(Float32, 0:(rope.max_sequence_length - 1))
-    idx_theta = reshape(theta, :, 1) .* reshape(seq_idx, 1, :)
-    return (; cos_cache=cos.(idx_theta), sin_cache=sin.(idx_theta))
+    return compute_rotary_embedding_params(
+        rope.dim,
+        rope.max_sequence_length;
+        rope.base,
+        dtype=Float32,
+        rope.low_memory_variant,
+    )
 end
 
 function (rope::RotaryPositionalEmbedding)(
     x::AbstractArray{T,4}, ps, st::NamedTuple
 ) where {T}
-    return rope((x, nothing), ps, st)
+    y = apply_rotary_embedding(x, st.cos_cache, st.sin_cache; seq_dim=3)
+    return y, st
 end
 
 function (rope::RotaryPositionalEmbedding)((x, input_pos)::Tuple, ps, st::NamedTuple)
-    @argcheck ndims(x) == 4 "Input must be a 4D tensor ([dim, nheads, seq_len, batch])"
-    @argcheck size(x, 3) ≤ rope.max_sequence_length "Sequence length must be less than \
-                                                     $(rope.max_sequence_length)"
-    @argcheck size(x, 1) == rope.dim "Input Dimension Mismatch: Expected $(rope.dim), got \
-                                      $(size(x, 1))"
+    y = apply_rotary_embedding(x, input_pos, st.cos_cache, st.sin_cache; seq_dim=3)
+    return y, st
+end
 
-    h_d, _, seq_len, _ = size(x)
-    y = match_eltype(rope, ps, st, x)
+## Functional variants since Qwen3 like models tend to share the same rotary embedding
+## parameters
+"""
+    compute_rotary_embedding_params(head_dim::Integer, max_sequence_length::Integer;
+                                    base::Number, dtype::Type{T}=Float32,
+                                    low_memory_variant::Bool=true)
 
-    # extract the values based on whether input_pos is set or not
-    if input_pos === nothing
-        cos_cache = st.cos_cache[:, 1:seq_len]
-        sin_cache = st.sin_cache[:, 1:seq_len]
+Computes the cosine and sine cache for rotary positional embeddings.
+
+## Arguments
+
+  - `head_dim`: The feature dimensions to be rotated.
+  - `max_sequence_length`: The maximum sequence length. Default: `4096`.
+
+## Keyword Arguments
+
+  - `base`: The base used to compute angular frequency for each dimension in the positional
+    encodings. Default: `10000`.
+  - `dtype`: The data type of the cache. Default: `Float32`.
+  - `low_memory_variant`: If `true` then cos and sin cache have leading dimension of
+    `head_dim ÷ 2`. If `false` then cos and sin cache have leading dimension of `head_dim`.
+    Default: `true`.
+"""
+function compute_rotary_embedding_params(
+    head_dim::Integer,
+    max_sequence_length::Integer;
+    base::Number,
+    dtype::Type{T}=Float32,
+    low_memory_variant::Bool=true,
+) where {T}
+    θ = inv.(T.(base .^ (range(0, head_dim - 1; step=2)[1:(head_dim ÷ 2)] ./ head_dim)))
+    seq_idx = collect(T, 0:(max_sequence_length - 1))
+    angles = reshape(θ, :, 1) .* reshape(seq_idx, 1, :)
+    low_memory_variant || (angles = vcat(angles, angles))
+    return (; cos_cache=cos.(angles), sin_cache=sin.(angles))
+end
+
+"""
+    apply_rotary_embedding(x::AbstractArray{T,4}, cos_cache::AbstractMatrix,
+                           sin_cache::AbstractMatrix; head_dim::Integer, seq_dim::Integer)
+    apply_rotary_embedding(x::AbstractArray{T,4}, input_positions::AbstractVector{<:Integer},
+                           cos_cache::AbstractMatrix, sin_cache::AbstractMatrix;
+                           head_dim::Integer, seq_dim::Integer)
+
+Apply rotary embedding to the input `x` using the `cos_cache` and `sin_cache` parameters.
+If `input_positions` is provided, then we extract the cosine and sine cache for the
+corresponding positions in the sequence. Otherwise, we use the entire cache upto
+sequence length of `x`.
+
+## Arguments
+
+  - `x`: 4D `AbstractArray`.
+  - `cos_cache`: Cache of cosine values. Generated using
+    [`compute_rotary_embedding_params`](@ref).
+  - `sin_cache`: Cache of sine values. Generated using
+    [`compute_rotary_embedding_params`](@ref).
+  - `seq_dim`: Dimension of the sequence. Must be between 1 and 4.
+  - `input_positions`: Positions in the sequence to extract the cosine and sine cache for.
+    If not provided, then we use the entire cache upto sequence length of `x`.
+
+## Returns
+
+  - Output of the rotary embedding.
+"""
+function apply_rotary_embedding(
+    x::AbstractArray{T,4},
+    cos_cache::AbstractMatrix,
+    sin_cache::AbstractMatrix;
+    seq_dim::Integer,
+    kwargs...,
+) where {T}
+    @argcheck 1 ≤ seq_dim ≤ 4 "seq_dim must be between 1 and 4"
+    return apply_rotary_embedding(
+        x, 1:size(x, seq_dim), cos_cache, sin_cache; seq_dim, kwargs...
+    )
+end
+
+function apply_rotary_embedding(
+    x::AbstractArray{T,4},
+    input_positions::AbstractVector{<:Integer},
+    cos_cache::AbstractMatrix,
+    sin_cache::AbstractMatrix;
+    seq_dim::Integer,
+) where {T}
+    @argcheck seq_dim != 1 "seq_dim cannot be the first dimension"
+    @argcheck 1 ≤ seq_dim ≤ 4 "seq_dim must be between 1 and 4"
+    @argcheck size(cos_cache) == size(sin_cache)
+
+    h_d, seq_len = size(x, 1), size(x, seq_dim)
+    h_d_2 = h_d ÷ 2
+    c_1, c_2 = size(cos_cache)
+
+    if c_1 == h_d
+        low_memory_variant = false
+    elseif c_1 == h_d_2
+        low_memory_variant = true
     else
-        cos_cache = st.cos_cache[:, input_pos]
-        sin_cache = st.sin_cache[:, input_pos]
+        throw(DimensionMismatch("Input Dimension Mismatch: Expected $(h_d) or $(h_d_2), \
+                                 got $(c_1)"))
     end
 
-    x_shaped1 = y[1:(h_d ÷ 2), :, :, :]
-    x_shaped2 = y[(h_d ÷ 2 + 1):end, :, :, :]
+    @argcheck seq_len ≤ c_2 "Sequence length ($seq_len) must be less than $(c_2)"
+    @argcheck seq_len == length(input_positions) "Sequence length ($seq_len) must be equal \
+                                                  to length of input_positions ($seq_len)"
 
-    # reshape the cache for broadcasting
-    cos_cache = reshape(cos_cache, :, 1, seq_len, 1)
-    sin_cache = reshape(sin_cache, :, 1, seq_len, 1)
-
-    x_out = vcat(
-        x_shaped1 .* cos_cache - x_shaped2 .* sin_cache,
-        x_shaped2 .* cos_cache + x_shaped1 .* sin_cache,
+    cos_cache_reshaped, sin_cache_reshaped = standardize_cache_size(
+        @view(cos_cache[:, input_positions]), @view(sin_cache[:, input_positions]), seq_dim
     )
 
-    return x_out, st
+    # split x into first half and second half
+    x1 = @view x[1:h_d_2, :, :, :]
+    x2 = @view x[(h_d_2 + 1):h_d, :, :, :]
+
+    if low_memory_variant
+        first_half = @. x1 * cos_cache_reshaped - x2 * sin_cache_reshaped
+        second_half = @. x2 * cos_cache_reshaped + x1 * sin_cache_reshaped
+        return vcat(first_half, second_half)
+    else
+        x_rotated = vcat(-x2, x1)
+        return @. x * cos_cache_reshaped + x_rotated * sin_cache_reshaped
+    end
+end
+
+function standardize_cache_size(
+    cos_cache::AbstractMatrix, sin_cache::AbstractMatrix, seq_dim::Integer
+)
+    c_1, c_2 = size(cos_cache)
+    final_shape = ntuple(i -> i == 1 ? c_1 : (i == seq_dim ? c_2 : 1), 4)
+    return reshape(cos_cache, final_shape...), reshape(sin_cache, final_shape...)
 end

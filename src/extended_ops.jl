@@ -241,6 +241,14 @@ istraining(st::NamedTuple) = hasproperty(st, :training) && istraining(st.trainin
 
 CRC.@non_differentiable istraining(::Any)
 
+"""
+    rsqrt(x)
+
+Computes the reciprocal square root of `x`. For all backends except `Reactant.jl`, this
+falls back to `inv(sqrt(x))`.
+"""
+rsqrt(x::Number) = inv(sqrt(x))
+
 # Public API
 @compat(public, (xlogx, xlogy, getproperty, eachslice, foldl_init, multigate, istraining))
 
