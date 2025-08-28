@@ -275,7 +275,7 @@ end
             ps_lm,
             st_lm;
             atol=1.0f-3,
-            rtol=1.0f-3;
+            rtol=1.0f-3,
             broken_backends=[AutoTracker()]
         )
     end
