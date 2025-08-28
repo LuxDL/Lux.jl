@@ -782,9 +782,14 @@ function generate_text!(
         compile_cache.increment_fn = @compile safe_increment(cur_num_tokens_traced)
     end
 
+    start_time = time()
+    compile_time = 0.0
+    ntokens_generated = 0
+
     for _ in 1:max_new_tokens
         new_compiled_fn_token_len = get_padded_size(cur_num_tokens, max_context_length)
         if new_compiled_fn_token_len != cur_compiled_fn_token_len
+            compile_start_time = time()
             cur_compiled_fn_token_len = new_compiled_fn_token_len
             padded_token_ids, input_mask_len = @jit padded_input_and_mask_len(
                 padded_token_ids, next_token, cur_compiled_fn_token_len
@@ -801,11 +806,14 @@ function generate_text!(
                 next_token,
                 cur_num_tokens_traced,
             )
+            compile_time += time() - compile_start_time
         end
 
         next_token, st = predict_next_token_compiled(
             model, padded_token_ids, input_mask_len, ps, st
         )
+
+        ntokens_generated += 1
 
         next_token_jl = vec(Array(next_token))
 
@@ -827,9 +835,10 @@ function generate_text!(
         end
         cur_num_tokens += 1
     end
+    total_time = time() - start_time
 
     println()
-    return nothing
+    return ntokens_generated / (total_time - compile_time)
 end
 
 # ## Entry Point
@@ -890,8 +899,8 @@ function main()
             continue
         end
 
-        generate_text(model, prompt, ps, st, 100_000, tokenizer)
-        println("\n")
+        tokens_per_second = generate_text(model, prompt, ps, st, 100_000, tokenizer)
+        println("\nTokens per second: $tokens_per_second\n\n")
     end
 
     return nothing
