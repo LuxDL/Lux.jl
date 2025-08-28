@@ -52,27 +52,33 @@ end
 
 module DeviceAgnostic
 
-using Random: AbstractRNG
+using Random: AbstractRNG, randn!, rand!
+
+# Different RNG types should override this method
+function get_backend_array(::AbstractRNG, ::Type{T}, dims::Integer...) where {T}
+    return Array{T}(undef, dims...)
+end
+
+ones!(x::AbstractArray{T}) where {T} = fill!(x, one(T))
+zeros!(x::AbstractArray{T}) where {T} = fill!(x, zero(T))
 
 # Helpers for device agnostic initializers
-function zeros(::AbstractRNG, ::Type{T}, dims::Integer...) where {T<:Number}
-    return Base.zeros(T, dims...)
-end
-ones(::AbstractRNG, ::Type{T}, dims::Integer...) where {T<:Number} = Base.ones(T, dims...)
-function rand(rng::AbstractRNG, ::Type{T}, args::Integer...) where {T<:Number}
-    return Base.rand(rng, T, args...)
-end
-function randn(rng::AbstractRNG, ::Type{T}, args::Integer...) where {T<:Number}
-    return Base.randn(rng, T, args...)
+for f in (:zeros, :ones, :rand, :randn)
+    f! = Symbol(f, "!")
+    @eval function $(f)(rng::AbstractRNG, ::Type{T}, dims::Integer...) where {T}
+        x = get_backend_array(rng, T, dims...)
+        $(f!)(x)
+        return x
+    end
 end
 
 ## Certain backends don't support sampling Complex numbers, so we avoid hitting those
 ## dispatches
 for f in (:rand, :randn)
-    @eval function $(f)(
-        rng::AbstractRNG, ::Type{<:Complex{T}}, args::Integer...
-    ) where {T<:Number}
-        return Complex{T}.($(f)(rng, T, args...), $(f)(rng, T, args...))
+    @eval function $(f)(rng::AbstractRNG, ::Type{Complex{T}}, args::Integer...) where {T}
+        real_part = $(f)(rng, T, args...)
+        imag_part = $(f)(rng, T, args...)
+        return complex.(real_part, imag_part)
     end
 end
 
