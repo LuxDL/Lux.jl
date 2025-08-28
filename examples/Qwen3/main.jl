@@ -638,21 +638,21 @@ function get_padded_size(seq_len::Int, context_length::Int)
     return min(max(512, nextpow(2, seq_len)), context_length)
 end
 
-function padded_input_and_mask_len(x::AbstractMatrix, v, cfg::Qwen3Config)
+function padded_input_and_mask_len(x::AbstractMatrix, v, cfg::Qwen3Config, pad_token_id)
     return padded_input_and_mask_len(
-        x, v, get_padded_size(size(x, 1) + v !== nothing, cfg.context_length)
+        x, v, get_padded_size(size(x, 1) + v !== nothing, cfg.context_length), pad_token_id
     )
 end
 
-function padded_input_and_mask_len(x::AbstractMatrix, v, padded_sz::Int)
+function padded_input_and_mask_len(x::AbstractMatrix, v, padded_sz::Int, pad_token_id)
     if padded_sz > size(x, 1)
         x_padded = similar(x, (padded_sz, size(x, 2)))
         x_padded[1:size(x, 1), :] .= x
         if v === nothing
-            x_padded[(size(x, 1) + 1):end, :] .= 1
+            x_padded[(size(x, 1) + 1):end, :] .= pad_token_id
         else
             x_padded[(size(x, 1) + 1), :] = v[1, :]
-            x_padded[(size(x, 1) + 2):end, :] .= 1
+            x_padded[(size(x, 1) + 2):end, :] .= pad_token_id
         end
     else
         x_padded = x
@@ -755,12 +755,13 @@ function generate_text!(
     token_ids = Reactant.to_rarray(reshape(encode(tokenizer, prompt), :, 1))
 
     ## TODO: compile the generation loop with Reactant
+    ## TODO: implement some simple KV caching
     cur_num_tokens = size(token_ids, 1)
     max_context_length = model.cfg.context_length
     cur_compiled_fn_token_len = get_padded_size(cur_num_tokens, max_context_length)
 
     padded_token_ids, input_mask_len = @jit padded_input_and_mask_len(
-        token_ids, nothing, cur_compiled_fn_token_len
+        token_ids, nothing, cur_compiled_fn_token_len, tokenizer.pad_token_id
     )
     cur_num_tokens_traced = ConcreteRNumber{Int32}(cur_num_tokens)
 
@@ -792,7 +793,10 @@ function generate_text!(
             compile_start_time = time()
             cur_compiled_fn_token_len = new_compiled_fn_token_len
             padded_token_ids, input_mask_len = @jit padded_input_and_mask_len(
-                padded_token_ids, next_token, cur_compiled_fn_token_len
+                padded_token_ids,
+                next_token,
+                cur_compiled_fn_token_len,
+                tokenizer.pad_token_id,
             )
 
             (predict_next_token_compiled, update_fn1!, update_fn2!) = cache_and_retrieve!(
