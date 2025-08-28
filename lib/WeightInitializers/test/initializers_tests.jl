@@ -350,17 +350,15 @@ end
         @testset "kaiming" begin
             # kaiming_uniform should yield a kernel in range [-sqrt(6/n_out), sqrt(6/n_out)]
             # and kaiming_normal should yield a kernel with stddev ~= sqrt(2/n_out)
-            for (n_in, n_out) in [(100, 100), (100, 400)]
+            @testset for (n_in, n_out) in [(100, 100), (100, 400)]
                 v = kaiming_uniform(rng, n_in, n_out)
                 σ2 = sqrt(6 / n_out)
                 @test -1σ2 < minimum(v) < -0.9σ2
                 @test 0.9σ2 < maximum(v) < 1σ2
 
-                @test begin
-                    v = kaiming_normal(rng, n_in, n_out)
-                    σ2 = sqrt(2 / n_out)
-                    0.9σ2 < std(v) < 1.1σ2
-                end
+                v = kaiming_normal(rng, n_in, n_out)
+                σ2 = sqrt(2 / n_out)
+                @test 0.9σ2 < std(v) < 1.1σ2
             end
 
             # Type
