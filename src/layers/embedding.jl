@@ -223,14 +223,12 @@ end
 function (rope::RotaryPositionalEmbedding)(
     x::AbstractArray{T,4}, ps, st::NamedTuple
 ) where {T}
-    y = apply_rotary_embedding(x, st.cos_cache, st.sin_cache; head_dim=1, seq_dim=3)
+    y = apply_rotary_embedding(x, st.cos_cache, st.sin_cache; seq_dim=3)
     return y, st
 end
 
 function (rope::RotaryPositionalEmbedding)((x, input_pos)::Tuple, ps, st::NamedTuple)
-    y = apply_rotary_embedding(
-        x, input_pos, st.cos_cache, st.sin_cache; head_dim=1, seq_dim=3
-    )
+    y = apply_rotary_embedding(x, input_pos, st.cos_cache, st.sin_cache; seq_dim=3)
     return y, st
 end
 
@@ -290,7 +288,6 @@ sequence length of `x`.
     [`compute_rotary_embedding_params`](@ref).
   - `sin_cache`: Cache of sine values. Generated using
     [`compute_rotary_embedding_params`](@ref).
-  - `head_dim`: Dimension of the head. Must be between 1 and 4.
   - `seq_dim`: Dimension of the sequence. Must be between 1 and 4.
   - `input_positions`: Positions in the sequence to extract the cosine and sine cache for.
     If not provided, then we use the entire cache upto sequence length of `x`.
@@ -317,57 +314,51 @@ function apply_rotary_embedding(
     input_positions::AbstractVector{<:Integer},
     cos_cache::AbstractMatrix,
     sin_cache::AbstractMatrix;
-    head_dim::Integer,
     seq_dim::Integer,
 ) where {T}
-    @argcheck 1 ≤ head_dim ≤ 4 "head_dim must be between 1 and 4"
+    @argcheck seq_dim != 1 "seq_dim cannot be the first dimension"
     @argcheck 1 ≤ seq_dim ≤ 4 "seq_dim must be between 1 and 4"
-    @argcheck seq_dim != head_dim "seq_dim and head_dim cannot be the same"
     @argcheck size(cos_cache) == size(sin_cache)
 
-    h_d, seq_len = size(x, head_dim), size(x, seq_dim)
+    h_d, seq_len = size(x, 1), size(x, seq_dim)
+    h_d_2 = h_d ÷ 2
+    c_1, c_2 = size(cos_cache)
 
-    if size(cos_cache, 1) == h_d
+    if c_1 == h_d
         low_memory_variant = false
-    elseif size(cos_cache, 1) == h_d ÷ 2
+    elseif c_1 == h_d_2
         low_memory_variant = true
     else
-        throw(
-            DimensionMismatch("Input Dimension Mismatch: Expected $(h_d) or $(h_d ÷ 2), \
-                               got $(size(cos_cache, 1))")
-        )
+        throw(DimensionMismatch("Input Dimension Mismatch: Expected $(h_d) or $(h_d_2), \
+                                 got $(c_1)"))
     end
 
-    @argcheck seq_len ≤ size(cos_cache, 2) "Sequence length ($seq_len) must be less than \
-                                           $(size(cos_cache, 2))"
+    @argcheck seq_len ≤ c_2 "Sequence length ($seq_len) must be less than $(c_2)"
     @argcheck seq_len == length(input_positions) "Sequence length ($seq_len) must be equal \
                                                   to length of input_positions ($seq_len)"
 
-    cos_cache = @view cos_cache[:, input_positions]
-    sin_cache = @view sin_cache[:, input_positions]
-
-    final_shape = ntuple(
-        i -> i == head_dim ? size(cos_cache, 1) : (i == seq_dim ? seq_len : 1), ndims(x)
+    cos_cache_reshaped, sin_cache_reshaped = standardize_cache_size(
+        @view(cos_cache[:, input_positions]), @view(sin_cache[:, input_positions]), seq_dim
     )
 
-    if head_dim > seq_dim
-        cos_cache = transpose(cos_cache)
-        sin_cache = transpose(sin_cache)
-    end
-
-    cos_cache = reshape(cos_cache, final_shape...)
-    sin_cache = reshape(sin_cache, final_shape...)
-
     # split x into first half and second half
-    x1 = selectdim(x, head_dim, 1:div(h_d, 2))
-    x2 = selectdim(x, head_dim, (div(h_d, 2) + 1):h_d)
+    x1 = @view x[1:h_d_2, :, :, :]
+    x2 = @view x[(h_d_2 + 1):h_d, :, :, :]
 
     if low_memory_variant
-        first_half = @. x1 * cos_cache - x2 * sin_cache
-        second_half = @. x2 * cos_cache + x1 * sin_cache
+        first_half = @. x1 * cos_cache_reshaped - x2 * sin_cache_reshaped
+        second_half = @. x2 * cos_cache_reshaped + x1 * sin_cache_reshaped
         return vcat(first_half, second_half)
     else
-        x_rotated = cat(-x2, x1; dims=head_dim)
-        return @. x * cos_cache + x_rotated * sin_cache
+        x_rotated = vcat(-x2, x1)
+        return @. x * cos_cache_reshaped + x_rotated * sin_cache_reshaped
     end
+end
+
+function standardize_cache_size(
+    cos_cache::AbstractMatrix, sin_cache::AbstractMatrix, seq_dim::Integer
+)
+    c_1, c_2 = size(cos_cache)
+    final_shape = ntuple(i -> i == 1 ? c_1 : (i == seq_dim ? c_2 : 1), 4)
+    return reshape(cos_cache, final_shape...), reshape(sin_cache, final_shape...)
 end
