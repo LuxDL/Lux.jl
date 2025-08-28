@@ -59,15 +59,15 @@ function get_backend_array(::AbstractRNG, ::Type{T}, dims::Integer...) where {T}
     return Array{T}(undef, dims...)
 end
 
-ones!(x::AbstractArray{T}) where {T} = fill!(x, one(T))
-zeros!(x::AbstractArray{T}) where {T} = fill!(x, zero(T))
+ones!(rng, x::AbstractArray{T}) where {T} = fill!(x, one(T))
+zeros!(rng, x::AbstractArray{T}) where {T} = fill!(x, zero(T))
 
 # Helpers for device agnostic initializers
 for f in (:zeros, :ones, :rand, :randn)
     f! = Symbol(f, "!")
     @eval function $(f)(rng::AbstractRNG, ::Type{T}, dims::Integer...) where {T}
         x = get_backend_array(rng, T, dims...)
-        $(f!)(x)
+        $(f!)(rng, x)
         return x
     end
 end
@@ -75,10 +75,11 @@ end
 ## Certain backends don't support sampling Complex numbers, so we avoid hitting those
 ## dispatches
 for f in (:rand, :randn)
+    f! = Symbol(f, "!")
     @eval function $(f)(rng::AbstractRNG, ::Type{Complex{T}}, args::Integer...) where {T}
-        real_part = $(f)(rng, T, args...)
-        imag_part = $(f)(rng, T, args...)
-        return complex.(real_part, imag_part)
+        x = get_backend_array(rng, Complex{T}, args...)
+        $(f!)(rng, reinterpret(T, x))
+        return x
     end
 end
 
