@@ -199,7 +199,7 @@ function scaled_dot_product_attention(q, k, v, mask, head_dim)
 end
 
 function apply_rope(x::AbstractArray{T}, cos_cache, sin_cache) where {T}
-    return T.(apply_rotary_embedding(x, cos_cache, sin_cache; seq_dim=2, head_dim=1))
+    return T.(apply_rotary_embedding(x, cos_cache, sin_cache; seq_dim=2))
 end
 
 function (attn::GroupedQueryAttention)((x, mask, cos_cache, sin_cache), ps, st::NamedTuple)
@@ -665,9 +665,8 @@ function padded_input_and_mask_len(x::AbstractMatrix, v, padded_sz::Int)
     )
 end
 
-# ## Entry Point
+# ## Helpers to generate text
 
-## Define _mod1 since Reactant doesn't overload it currently
 function predict_next_token(
     model, token_ids::AbstractMatrix{T}, input_mask_len, ps, st
 ) where {T}
@@ -693,20 +692,67 @@ end
 
 safe_increment(x) = x + one(x)
 
-function generate_text(
-    model,
-    token_ids::AbstractMatrix,
+mutable struct CachedReactantThunks
+    cache::Dict{Qwen3Config,Dict{Int,NTuple{3,Reactant.Compiler.Thunk}}}
+    increment_fn::Union{Nothing,Reactant.Compiler.Thunk}
+end
+
+function CachedReactantThunks()
+    return CachedReactantThunks(
+        Dict{Qwen3Config,Dict{Int,NTuple{3,Reactant.Compiler.Thunk}}}(), nothing
+    )
+end
+
+function cache_and_retrieve!(
+    cache::CachedReactantThunks,
+    len::Integer,
+    model::Qwen3,
+    padded_token_ids,
+    input_mask_len,
+    ps,
+    st,
+    next_token,
+    cur_num_tokens_traced,
+)
+    if haskey(cache.cache, model.cfg) && haskey(cache.cache[model.cfg], len)
+        return cache.cache[model.cfg][len]
+    end
+
+    println()
+    @warn "Compiling Qwen3 generation loop for $(model.cfg.version) with $(len) tokens. \
+           This might take a while... (However this is only done once per model per length)"
+
+    predict_next_token_compiled = @compile predict_next_token(
+        model, padded_token_ids, input_mask_len, ps, st
+    )
+    update_fn1! = @compile update_token_ids_and_mask!(
+        padded_token_ids, input_mask_len, cur_num_tokens_traced, next_token
+    )
+    update_fn2! = @compile update_token_ids_with_shift!(padded_token_ids, next_token)
+
+    if !haskey(cache.cache, model.cfg)
+        cache.cache[model.cfg] = Dict{Int,NTuple{3,Reactant.Compiler.Thunk}}()
+    end
+
+    return cache.cache[model.cfg][len] = (
+        predict_next_token_compiled, update_fn1!, update_fn2!
+    )
+end
+
+const CACHED_THUNKS = CachedReactantThunks()
+
+generate_text(args...; kwargs...) = generate_text!(CACHED_THUNKS, args...; kwargs...)
+
+function generate_text!(
+    compile_cache::CachedReactantThunks,
+    model::Qwen3,
+    prompt::String,
     ps,
     st,
     max_new_tokens,
     tokenizer,
-    eos_token_id=nothing;
-    stream_output::Bool=false,
 )
-    if stream_output
-        @assert size(token_ids, 2) == 1 "Streaming output only supported for batch size 1"
-        print(decode(tokenizer, vec(Array(token_ids)[:, 1])))
-    end
+    token_ids = Reactant.to_rarray(reshape(encode(tokenizer, prompt), :, 1))
 
     ## TODO: compile the generation loop with Reactant
     cur_num_tokens = size(token_ids, 1)
@@ -720,15 +766,21 @@ function generate_text(
 
     next_token = get_device(ps)(rand(Int32, 1, size(padded_token_ids, 2)))
 
-    predict_next_token_compiled = @compile predict_next_token(
-        model, padded_token_ids, input_mask_len, ps, st
-    )
-    update_fn1! = @compile update_token_ids_and_mask!(
-        padded_token_ids, input_mask_len, cur_num_tokens_traced, next_token
+    (predict_next_token_compiled, update_fn1!, update_fn2!) = cache_and_retrieve!(
+        compile_cache,
+        cur_compiled_fn_token_len,
+        model,
+        padded_token_ids,
+        input_mask_len,
+        ps,
+        st,
+        next_token,
+        cur_num_tokens_traced,
     )
 
-    compiled_incremental_fn = @compile safe_increment(cur_num_tokens_traced)
-    update_fn2! = @compile update_token_ids_with_shift!(padded_token_ids, next_token)
+    if compile_cache.increment_fn === nothing
+        compile_cache.increment_fn = @compile safe_increment(cur_num_tokens_traced)
+    end
 
     for _ in 1:max_new_tokens
         new_compiled_fn_token_len = get_padded_size(cur_num_tokens, max_context_length)
@@ -738,14 +790,16 @@ function generate_text(
                 padded_token_ids, next_token, cur_compiled_fn_token_len
             )
 
-            predict_next_token_compiled = @compile predict_next_token(
-                model, padded_token_ids, input_mask_len, ps, st
-            )
-            update_fn1! = @compile update_token_ids_and_mask!(
-                padded_token_ids, input_mask_len, cur_num_tokens_traced, next_token
-            )
-            update_fn2! = @compile update_token_ids_with_shift!(
-                padded_token_ids, next_token
+            (predict_next_token_compiled, update_fn1!, update_fn2!) = cache_and_retrieve!(
+                compile_cache,
+                cur_compiled_fn_token_len,
+                model,
+                padded_token_ids,
+                input_mask_len,
+                ps,
+                st,
+                next_token,
+                cur_num_tokens_traced,
             )
         end
 
@@ -754,12 +808,13 @@ function generate_text(
         )
 
         next_token_jl = vec(Array(next_token))
-        if stream_output
-            print(decode(tokenizer, next_token_jl))
+
+        if tokenizer.eos_token_id !== nothing &&
+            all(next_token_jl .== tokenizer.eos_token_id)
+            break
         end
 
-        ## TODO: compile these functions
-        # token_ids = @jit vcat(token_ids, next_token)
+        print(decode(tokenizer, next_token_jl))
 
         if cur_num_tokens >= max_context_length
             update_fn2!(padded_token_ids, next_token)
@@ -768,24 +823,19 @@ function generate_text(
                 padded_token_ids, input_mask_len, cur_num_tokens_traced, next_token
             )
         else
-            cur_num_tokens_traced = compiled_incremental_fn(cur_num_tokens_traced)
+            cur_num_tokens_traced = compile_cache.increment_fn(cur_num_tokens_traced)
         end
         cur_num_tokens += 1
-
-        if eos_token_id !== nothing && all(next_token_jl .== eos_token_id)
-            break
-        end
     end
 
     println()
-
-    ## TODO: return token_ids
-    # return token_ids
     return nothing
 end
 
 #=
-cfg = Qwen3Config("0.6B"; reasoning_model=false)
+# TODO: use argparse and set this up as a command line tool
+
+cfg = Qwen3Config("0.6B"; reasoning_model=true)
 
 rdev = reactant_device()
 
@@ -800,22 +850,12 @@ tokenizer = Qwen3Tokenizer(
 
 model, ps, st = setup_model(cfg, rdev; weights_dict);
 
-prompt = "What is a large language model?"
-token_ids = encode(tokenizer, prompt)
-println(decode(tokenizer, token_ids))
-
-input_token_ids = Reactant.to_rarray(reshape(encode(tokenizer, prompt), :, 1))
-
-output = generate_text(
+generate_text(
     model,
-    input_token_ids,
+    "What is a large language model?",
     ps,
     st,
     100_000,
     tokenizer,
-    tokenizer.eos_token_id;
-    stream_output=true,
 )
-
-decode(tokenizer, Array(output)[:, 1])
 =#
