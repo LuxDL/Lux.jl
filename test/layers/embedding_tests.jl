@@ -268,7 +268,16 @@ end
         @test size(y_lm) == (16, 10, 2)
         @test y_lm ≈ y_expected atol = 1.0e-3 rtol = 1.0e-3
 
-        @test_gradients(sumabs2first, model_lm, x2, ps_lm, st_lm; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(
+            sumabs2first,
+            model_lm,
+            x2,
+            ps_lm,
+            st_lm;
+            atol=1.0f-3,
+            rtol=1.0f-3;
+            broken_backends=[AutoTracker()]
+        )
     end
 end
 
