@@ -125,9 +125,15 @@ const advanced = [
   },
   {
     href: "advanced/3_ImageNet",
-    src: "https://production-media.paperswithcode.com/datasets/ImageNet-0000000008-f2e87edd_Y0fT5zg.jpg",
+    src: "https://datasets.activeloop.ai/wp-content/uploads/2022/09/ImageNet-dataset-main-image.webp",
     caption: "ImageNet Classification",
     desc: "Train Large Image Classifiers using Lux (on Distributed GPUs)."
+  },
+  {
+    href: "advanced/4_Qwen3",
+    src: "../qwen3-30a3.jpg",
+    caption: "Text Generation with Qwen-3",
+    desc: "Building a command-line text generation tool with Lux by loading pre-trained Qwen-3 models."
   }
 ];
 

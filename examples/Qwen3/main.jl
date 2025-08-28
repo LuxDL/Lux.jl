@@ -874,8 +874,12 @@ function main()
     model, ps, st, tokenizer = get_model_and_tokenizer(version, reasoning)
 
     while true
-        printstyled("Prompt (type \"exit\" to quit the program or \
-                     \"model selection\" to change the model):"; color=:cyan, bold=true)
+        printstyled(
+            "Prompt (type \"exit\" to quit the program or \
+             \"model selection\" to change the model): ";
+            color=:cyan,
+            bold=true,
+        )
         prompt = readline(stdin)
 
         prompt == "exit" && break
