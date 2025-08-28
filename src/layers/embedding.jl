@@ -153,7 +153,10 @@ end
 
 """
     RotaryPositionalEmbedding(
-        dim::IntegerType; max_sequence_length::IntegerType=4096, base::IntegerType=10000
+        dim::IntegerType;
+        max_sequence_length::IntegerType=4096,
+        base::IntegerType=10000,
+        low_memory_variant::Bool=true,
     )
 
 Rotary Positional Embedding. For details see [su2024roformer](@citet).
@@ -172,6 +175,9 @@ dimensions for efficiency.
   - `base`: The base used to compute angular frequency for each dimension in the positional
     encodings. Default: `10000`.
   - `max_sequence_length`: The maximum sequence length. Default: `4096`.
+  - `low_memory_variant`: If `true` then cos and sin cache have leading dimension of
+    `dim ÷ 2`. If `false` then cos and sin cache have leading dimension of `dim`.
+    Default: `true`.
 
 ## Input
 
@@ -192,17 +198,25 @@ dimensions for efficiency.
     dim <: IntegerType
     max_sequence_length <: IntegerType
     base <: IntegerType
+    low_memory_variant::Bool
 end
 
 function RotaryPositionalEmbedding(
-    dim::IntegerType; max_sequence_length::IntegerType=4096, base::IntegerType=10000
+    dim::IntegerType;
+    max_sequence_length::IntegerType=4096,
+    base::IntegerType=10000,
+    low_memory_variant::Bool=true,
 )
-    return RotaryPositionalEmbedding(dim, max_sequence_length, base)
+    return RotaryPositionalEmbedding(dim, max_sequence_length, base, low_memory_variant)
 end
 
 function initialstates(::AbstractRNG, rope::RotaryPositionalEmbedding)
     return compute_rotary_embedding_params(
-        rope.dim, rope.max_sequence_length; base=rope.base, dtype=Float32
+        rope.dim,
+        rope.max_sequence_length;
+        rope.base,
+        dtype=Float32,
+        rope.low_memory_variant,
     )
 end
 
@@ -224,17 +238,36 @@ end
 ## parameters
 """
     compute_rotary_embedding_params(head_dim::Integer, max_sequence_length::Integer;
-                                    base::Number, dtype::Type{T}=Float32)
+                                    base::Number, dtype::Type{T}=Float32,
+                                    low_memory_variant::Bool=true)
 
 Computes the cosine and sine cache for rotary positional embeddings.
+
+## Arguments
+
+  - `head_dim`: The feature dimensions to be rotated.
+  - `max_sequence_length`: The maximum sequence length. Default: `4096`.
+
+## Keyword Arguments
+
+  - `base`: The base used to compute angular frequency for each dimension in the positional
+    encodings. Default: `10000`.
+  - `dtype`: The data type of the cache. Default: `Float32`.
+  - `low_memory_variant`: If `true` then cos and sin cache have leading dimension of
+    `head_dim ÷ 2`. If `false` then cos and sin cache have leading dimension of `head_dim`.
+    Default: `true`.
 """
 function compute_rotary_embedding_params(
-    head_dim::Integer, max_sequence_length::Integer; base::Number, dtype::Type{T}=Float32
+    head_dim::Integer,
+    max_sequence_length::Integer;
+    base::Number,
+    dtype::Type{T}=Float32,
+    low_memory_variant::Bool=true,
 ) where {T}
     θ = inv.(T.(base .^ (range(0, head_dim - 1; step=2)[1:(head_dim ÷ 2)] ./ head_dim)))
     seq_idx = collect(T, 0:(max_sequence_length - 1))
     angles = reshape(θ, :, 1) .* reshape(seq_idx, 1, :)
-    angles = vcat(angles, angles)
+    low_memory_variant || (angles = vcat(angles, angles))
     return (; cos_cache=cos.(angles), sin_cache=sin.(angles))
 end
 
@@ -290,21 +323,32 @@ function apply_rotary_embedding(
     @argcheck 1 ≤ head_dim ≤ 4 "head_dim must be between 1 and 4"
     @argcheck 1 ≤ seq_dim ≤ 4 "seq_dim must be between 1 and 4"
     @argcheck seq_dim != head_dim "seq_dim and head_dim cannot be the same"
+    @argcheck size(cos_cache) == size(sin_cache)
 
-    h_d = size(x, head_dim)
-    seq_len = size(x, seq_dim)
+    h_d, seq_len = size(x, head_dim), size(x, seq_dim)
+
+    if size(cos_cache, 1) == h_d
+        low_memory_variant = false
+    elseif size(cos_cache, 1) == h_d ÷ 2
+        low_memory_variant = true
+    else
+        throw(
+            DimensionMismatch("Input Dimension Mismatch: Expected $(h_d) or $(h_d ÷ 2), \
+                               got $(size(cos_cache, 1))")
+        )
+    end
 
     @argcheck seq_len ≤ size(cos_cache, 2) "Sequence length ($seq_len) must be less than \
                                            $(size(cos_cache, 2))"
-    @argcheck h_d == size(cos_cache, 1) "Input Dimension Mismatch: Expected $(h_d), \
-                                         got $(size(cos_cache, 1))"
     @argcheck seq_len == length(input_positions) "Sequence length ($seq_len) must be equal \
                                                   to length of input_positions ($seq_len)"
 
     cos_cache = @view cos_cache[:, input_positions]
     sin_cache = @view sin_cache[:, input_positions]
 
-    final_shape = ntuple(i -> i == head_dim ? h_d : (i == seq_dim ? seq_len : 1), ndims(x))
+    final_shape = ntuple(
+        i -> i == head_dim ? size(cos_cache, 1) : (i == seq_dim ? seq_len : 1), ndims(x)
+    )
 
     if head_dim > seq_dim
         cos_cache = transpose(cos_cache)
@@ -317,8 +361,13 @@ function apply_rotary_embedding(
     # split x into first half and second half
     x1 = selectdim(x, head_dim, 1:div(h_d, 2))
     x2 = selectdim(x, head_dim, (div(h_d, 2) + 1):h_d)
-    rotated = cat(-x2, x1; dims=head_dim)
 
-    # apply rotary embedding
-    return x .* cos_cache .+ rotated .* sin_cache
+    if low_memory_variant
+        first_half = @. x1 * cos_cache - x2 * sin_cache
+        second_half = @. x2 * cos_cache + x1 * sin_cache
+        return vcat(first_half, second_half)
+    else
+        x_rotated = cat(-x2, x1; dims=head_dim)
+        return @. x * cos_cache + x_rotated * sin_cache
+    end
 end
