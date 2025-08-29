@@ -193,6 +193,54 @@ end
     @test final_loss * 50 < initial_loss
 end
 
+@testitem "Training API Enzyme Runtime Mode" setup = [SharedTestSetup] tags = [:misc] skip =
+    :(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
+    using Lux, Random, Enzyme, Optimisers
+
+    function makemodel(n)
+        @compact(dense = Dense(n => 1; use_bias=true), b = ones(Float32, n)) do x
+            @return dense(x .+ b)
+        end
+    end
+
+    n_samples = 20
+    x_dim = 10
+    y_dim = 1
+
+    model = makemodel(x_dim)
+    rng = Random.default_rng()
+    ps, st = Lux.setup(rng, model)
+
+    W = randn(rng, Float32, y_dim, x_dim)
+    b = randn(rng, Float32, y_dim)
+
+    x_samples = randn(rng, Float32, x_dim, n_samples)
+    y_samples = W * x_samples .+ b .+ 0.01f0 .* randn(rng, Float32, y_dim, n_samples)
+
+    lossfn = MSELoss()
+
+    function train_model!(model, ps, st, opt, nepochs::Int)
+        tstate = Training.TrainState(model, ps, st, opt)
+        for i in 1:nepochs
+            grads, loss, _, tstate = Training.single_train_step!(
+                AutoEnzyme(; mode=set_runtime_activity(Reverse)),
+                lossfn,
+                (x_samples, y_samples),
+                tstate,
+            )
+        end
+        return tstate.model, tstate.parameters, tstate.states
+    end
+
+    initial_loss = lossfn(first(model(x_samples, ps, st)), y_samples)
+
+    model, ps, st = train_model!(model, ps, st, Descent(0.01f0), 10000)
+
+    final_loss = lossfn(first(model(x_samples, ps, st)), y_samples)
+
+    @test final_loss * 100 < initial_loss
+end
+
 @testitem "Enzyme: Invalidate Cache on State Update" setup = [SharedTestSetup] tags = [
     :misc
 ] skip = :(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
