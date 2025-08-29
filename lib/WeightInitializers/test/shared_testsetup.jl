@@ -18,23 +18,21 @@ if BACKEND_GROUP == "all" || BACKEND_GROUP == "cpu"
 end
 if BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda"
     using CUDA
-    append!(
-        RNGS_ARRTYPES,
-        [
-            (CUDA.default_rng(), CuArray, true, "cuda"),
-            (GPUArrays.default_rng(CuArray), CuArray, true, "cuda"),
-        ],
-    )
+    append!(RNGS_ARRTYPES, [
+        (CUDA.default_rng(), CuArray, true, "cuda"),
+        # See https://github.com/JuliaGPU/GPUArrays.jl/issues/614
+        # The GPUArrays.RNG for CUDA is a bit fragile
+        # (GPUArrays.default_rng(CuArray), CuArray, true, "cuda"),
+    ])
 end
 if BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu"
     using AMDGPU
-    append!(
-        RNGS_ARRTYPES,
-        [
-            (AMDGPU.rocrand_rng(), ROCArray, true, "amdgpu"),
-            (AMDGPU.gpuarrays_rng(), ROCArray, true, "amdgpu"),
-        ],
-    )
+    append!(RNGS_ARRTYPES, [
+        (AMDGPU.rocrand_rng(), ROCArray, true, "amdgpu"),
+        # See https://github.com/JuliaGPU/GPUArrays.jl/issues/614
+        # The GPUArrays.RNG for AMDGPU is a bit fragile
+        # (AMDGPU.gpuarrays_rng(), ROCArray, true, "amdgpu"),
+    ])
 end
 if BACKEND_GROUP == "all" || BACKEND_GROUP == "metal"
     using Metal

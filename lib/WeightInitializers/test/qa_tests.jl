@@ -9,7 +9,8 @@ end
     using ExplicitImports
 
     @test check_no_implicit_imports(WeightInitializers) === nothing
-    @test check_no_stale_explicit_imports(WeightInitializers) === nothing
+    @test check_no_stale_explicit_imports(WeightInitializers; ignore=(:randn!, :rand!)) ===
+        nothing
     @test check_no_self_qualified_accesses(WeightInitializers) === nothing
     @test check_all_explicit_imports_via_owners(WeightInitializers) === nothing
     @test check_all_qualified_accesses_via_owners(WeightInitializers) === nothing
