@@ -1,3 +1,10 @@
+function match_runtime_activity(ad_mode, actual_mode)
+    if ad_mode !== nothing && EnzymeCore.runtime_activity(ad_mode)
+        return EnzymeCore.set_runtime_activity(actual_mode)
+    end
+    return actual_mode
+end
+
 function Lux.Training.compute_gradients_impl(
     ad::AutoEnzyme, obj_fn::F, data, ts::TrainState
 ) where {F}
@@ -8,7 +15,7 @@ function Lux.Training.compute_gradients_impl(
     )
 
     _, loss = Enzyme.autodiff(
-        EnzymeCore.ReverseWithPrimal,
+        match_runtime_activity(ad.mode, EnzymeCore.ReverseWithPrimal),
         Const(obj_fn_wrap),
         Active,
         Const(ts.model),
@@ -31,12 +38,12 @@ const AUTODIFF_CACHE_TYPE = TrainingBackendCache{
 } where {PS}
 
 function Lux.Training.compute_gradients_impl(
-    ::AutoEnzyme, obj_fn::F, data, ts::TrainState{<:AUTODIFF_CACHE_TYPE,F}
+    ad::AutoEnzyme, obj_fn::F, data, ts::TrainState{<:AUTODIFF_CACHE_TYPE,F}
 ) where {F}
     dps = Lux.Training.dparameters(ts.cache)
 
     _, loss = Enzyme.autodiff(
-        EnzymeCore.ReverseWithPrimal,
+        match_runtime_activity(ad.mode, EnzymeCore.ReverseWithPrimal),
         Const(ts.cache.extras.obj_fn),
         Active,
         Const(ts.model),
@@ -62,7 +69,7 @@ function Lux.Training.compute_gradients_impl(
            generation of slow code" maxlog = 1
 
     forward, reverse = Enzyme.autodiff_thunk(
-        EnzymeCore.ReverseSplitWithPrimal,
+        match_runtime_activity(ad.mode, EnzymeCore.ReverseSplitWithPrimal),
         Const{typeof(obj_fn)},
         Active,
         Const{typeof(ts.model)},
