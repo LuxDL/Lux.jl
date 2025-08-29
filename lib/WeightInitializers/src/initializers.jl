@@ -28,9 +28,9 @@ artificial intelligence and statistics_. 2010.
 function glorot_uniform(
     rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=1
 ) where {T<:Number}
-    scale = T(gain) * sqrt(T(24) / sum(Utils.nfan(dims...)))
+    scale = Utils.safe_type_conversion(T, gain * sqrt(24 / sum(Utils.nfan(dims...))))
+    half = Utils.safe_type_conversion(T, 0.5)
     x = DeviceAgnostic.rand(rng, T, dims...)
-    half = T(0.5)
     @. x = (x - half) * scale
     return x
 end
@@ -52,7 +52,7 @@ artificial intelligence and statistics_. 2010.
 function glorot_normal(
     rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=1
 ) where {T<:Number}
-    std = T(gain) * sqrt(T(2) / sum(Utils.nfan(dims...)))
+    std = Utils.safe_type_conversion(T, gain * sqrt(2 / sum(Utils.nfan(dims...))))
     x = DeviceAgnostic.randn(rng, T, dims...)
     x .*= std
     return x
@@ -74,9 +74,9 @@ vision_. 2015.
 function kaiming_uniform(
     rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=√T(2)
 ) where {T<:Number}
-    bound = √T(3) * T(gain) / sqrt(T(first(Utils.nfan(dims...))))
+    bound = Utils.safe_type_conversion(T, √3 * gain / sqrt(first(Utils.nfan(dims...))))
+    half = Utils.safe_type_conversion(T, 0.5)
     x = DeviceAgnostic.rand(rng, T, dims...)
-    half = T(0.5)
     @. x = (x - half) * 2 * bound
     return x
 end
@@ -97,7 +97,7 @@ vision_. 2015.
 function kaiming_normal(
     rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=√T(2)
 ) where {T<:Number}
-    std = T(gain) / sqrt(T(first(Utils.nfan(dims...))))
+    std = Utils.safe_type_conversion(T, gain / sqrt(first(Utils.nfan(dims...))))
     x = DeviceAgnostic.randn(rng, T, dims...)
     @. x *= std
     return x

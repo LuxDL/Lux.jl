@@ -11,6 +11,9 @@ nfan(dims...) = prod(dims[1:(end - 2)]) .* (dims[end - 1], dims[end]) # In case 
 
 norm_cdf(x::T) where {T} = T(0.5) * (1 + T(erf(x / √2))) # erf often doesn't respect the type
 
+safe_type_conversion(::Type{T}, x) where {T} = T(x)
+safe_type_conversion(::Type{Complex{T}}, x) where {T} = complex(T(x), T(x))
+
 default_rng() = Xoshiro(1234)
 
 #! format: off
