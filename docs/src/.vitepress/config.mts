@@ -113,7 +113,7 @@ export default defineConfig({
     nav: [
       { text: "Home", link: "/" },
       { text: "Getting Started", link: "/introduction" },
-      { text: "Benchmarks", link: "https://lux.csail.mit.edu/benchmarks/" },
+      // { text: "Benchmarks", link: "https://lux.csail.mit.edu/benchmarks/" },
       { text: "Tutorials", link: "/tutorials/" },
       { text: "Manual", link: "/manual/interface" },
       {
