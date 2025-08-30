@@ -24,6 +24,7 @@ const ADVANCED_TUTORIALS = [
     ("GravitationalWaveForm",   "CPU",  true),
     ("DDIM",                    "CPU",  false),
     ("ImageNet",                "CPU",  false),
+    ("Qwen3",                   "CPU",  false),
 ]
 #! format: on
 

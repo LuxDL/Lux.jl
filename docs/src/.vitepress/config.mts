@@ -270,17 +270,21 @@ export default defineConfig({
             collapsed: false,
             items: [
               {
-                text: "Training a Neural ODE to Model Gravitational Waveforms",
+                text: "Neural ODE for Model Gravitational Waveforms",
                 link: "/tutorials/advanced/1_GravitationalWaveForm",
               },
               {
-                text: "Training a DDIM (Diffusion Model) for Image Generation",
+                text: "Training a Image Diffusion Model",
                 link: "/tutorials/advanced/2_DDIM",
               },
               {
-                text: "Training Image Classification Models on ImageNet with Distributed Data Parallel Training",
+                text: "Distributed Data Parallel ImageNet Training",
                 link: "/tutorials/advanced/3_ImageNet",
               },
+              {
+                text: "Text Generation with Qwen-3",
+                link: "/tutorials/advanced/4_Qwen3",
+              }
             ],
           },
           {
