@@ -1,9 +1,14 @@
-using MLDataDevices, MLUtils, Test, Reactant
+using MLDataDevices, MLUtils, Test
 
 const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "none"))
 
 if BACKEND_GROUP == "cuda" || BACKEND_GROUP == "all"
     using LuxCUDA
+end
+
+if BACKEND_GROUP != "cuda"
+    # For CUDA only tests avoid loading Reactant since they are often incompatible
+    using Reactant
 end
 
 if BACKEND_GROUP == "amdgpu" || BACKEND_GROUP == "all"

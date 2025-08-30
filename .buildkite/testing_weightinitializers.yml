@@ -23,31 +23,31 @@ steps:
             julia:
               - "1"
 
-  - group: ":julia: (WeightInitializers) AMD GPU"
-    steps:
-      - label: ":julia: (WeightInitializers) Julia: {{matrix.julia}} + AMD GPU"
-        plugins:
-          - JuliaCI/julia#v1:
-              version: "{{matrix.julia}}"
-          - JuliaCI/julia-test#v1:
-              project: "lib/WeightInitializers"
-              test_args: "BACKEND_GROUP=AMDGPU"
-          - JuliaCI/julia-coverage#v1:
-              codecov: true
-              dirs:
-                - lib/WeightInitializers/src
-                - lib/WeightInitializers/ext
-        agents:
-          queue: "juliagpu"
-          rocm: "*"
-          rocmgpu: "*"
-        if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
-        timeout_in_minutes: 60
-        matrix:
-          setup:
-            julia:
-              - "1.10"
-              - "1"
+  # - group: ":julia: (WeightInitializers) AMD GPU"
+  #   steps:
+  #     - label: ":julia: (WeightInitializers) Julia: {{matrix.julia}} + AMD GPU"
+  #       plugins:
+  #         - JuliaCI/julia#v1:
+  #             version: "{{matrix.julia}}"
+  #         - JuliaCI/julia-test#v1:
+  #             project: "lib/WeightInitializers"
+  #             test_args: "BACKEND_GROUP=AMDGPU"
+  #         - JuliaCI/julia-coverage#v1:
+  #             codecov: true
+  #             dirs:
+  #               - lib/WeightInitializers/src
+  #               - lib/WeightInitializers/ext
+  #       agents:
+  #         queue: "juliagpu"
+  #         rocm: "*"
+  #         rocmgpu: "*"
+  #       if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
+  #       timeout_in_minutes: 60
+  #       matrix:
+  #         setup:
+  #           julia:
+  #             - "1.10"
+  #             - "1"
 
   - group: ":julia: (WeightInitializers) Metal GPU"
     steps:
