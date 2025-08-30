@@ -4,8 +4,7 @@ end
 
 # Zygote.jl on CPU
 function ground_truth_gradient(f, args...)
-    dev = cpu_device()
-    return gradient(dev(f), AutoZygote(), map(dev, args)...)
+    return gradient(f, AutoZygote(), map(cpu_device(), args)...)
 end
 
 # Zygote.jl

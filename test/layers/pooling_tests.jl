@@ -68,15 +68,7 @@
 
                 soft_fail = ltype == :MaxPool ? [AutoFiniteDiff()] : []
                 @test_gradients(
-                    sumabs2first,
-                    layer,
-                    x,
-                    ps,
-                    st;
-                    atol=1.0f-3,
-                    rtol=1.0f-3,
-                    soft_fail,
-                    broken_backends
+                    sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3, soft_fail
                 )
             end
         end
