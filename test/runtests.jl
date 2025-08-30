@@ -20,10 +20,8 @@ const PARSED_TEST_ARGS = parse_test_args()
 
 const BACKEND_GROUP = lowercase(get(PARSED_TEST_ARGS, "BACKEND_GROUP", "all"))
 const ALL_LUX_TEST_GROUPS = [
-    "core_layers", "normalize_layers", "autodiff", "recurrent_layers", "misc"
+    "core_layers", "normalize_layers", "autodiff", "recurrent_layers", "misc", "reactant"
 ]
-
-Sys.iswindows() || push!(ALL_LUX_TEST_GROUPS, "reactant")
 
 INPUT_TEST_GROUP = lowercase(get(PARSED_TEST_ARGS, "LUX_TEST_GROUP", "all"))
 const LUX_TEST_GROUP = if startswith("!", INPUT_TEST_GROUP[1])
@@ -42,11 +40,6 @@ if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP)
     (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
         push!(EXTRA_PKGS, Pkg.PackageSpec("NCCL"))
     push!(EXTRA_PKGS, Pkg.PackageSpec("Flux"))
-end
-
-if !Sys.iswindows()
-    ("all" in LUX_TEST_GROUP || "reactant" in LUX_TEST_GROUP) &&
-        push!(EXTRA_PKGS, Pkg.PackageSpec("Reactant"))
 end
 
 if (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda")

@@ -9,6 +9,7 @@ using Reactant:
     @compile,
     @code_hlo,
     @jit,
+    @opcall,
     AnyTracedRArray,
     TracedRArray,
     TracedRNumber,
