@@ -16,32 +16,14 @@
             @test size(layer(x, ps, st)[1]) == (embed_size,)
             @test y == ps.weight[:, x]
             @jet layer(x, ps, st)
-            @test_gradients(
-                sumabs2first,
-                layer,
-                x,
-                ps,
-                st;
-                atol=1.0f-3,
-                rtol=1.0f-3,
-                skip_backends=[AutoTracker()]
-            )
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             x = aType(rand(1:vocab_size, 3))
             y, st_ = layer(x, ps, st)
             @test y isa aType{Float32}
             @test y == ps.weight[:, x]
             @jet layer(x, ps, st)
-            @test_gradients(
-                sumabs2first,
-                layer,
-                x,
-                ps,
-                st;
-                atol=1.0f-3,
-                rtol=1.0f-3,
-                skip_backends=[AutoTracker()]
-            )
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             x = aType(rand(1:vocab_size, 3, 4))
             y, st_ = layer(x, ps, st)
@@ -49,16 +31,7 @@
             @test size(y) == (embed_size, 3, 4)
             @test y == reshape(ps.weight[:, vec(x)], embed_size, 3, 4)
             @jet layer(x, ps, st)
-            @test_gradients(
-                sumabs2first,
-                layer,
-                x,
-                ps,
-                st;
-                atol=1.0f-3,
-                rtol=1.0f-3,
-                skip_backends=[AutoTracker()]
-            )
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "Cartesian indices" begin
@@ -268,16 +241,7 @@ end
         @test size(y_lm) == (16, 10, 2)
         @test y_lm ≈ y_expected atol = 1.0e-3 rtol = 1.0e-3
 
-        @test_gradients(
-            sumabs2first,
-            model_lm,
-            x2,
-            ps_lm,
-            st_lm;
-            atol=1.0f-3,
-            rtol=1.0f-3,
-            broken_backends=[AutoTracker()]
-        )
+        @test_gradients(sumabs2first, model_lm, x2, ps_lm, st_lm; atol=1.0f-3, rtol=1.0f-3)
     end
 end
 

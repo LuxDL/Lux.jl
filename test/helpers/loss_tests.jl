@@ -305,16 +305,9 @@ end
 
             __f = Base.Fix2(FocalLoss(), y)
             # FD will lead to out of domain errors
-            broken_backends = if VERSION ≥ v"1.11-"
-                []
-            else
-                ongpu ? [AutoTracker()] : []
-            end
             skip_backends = VERSION ≥ v"1.11-" ? Any[AutoEnzyme()] : []
             push!(skip_backends, AutoFiniteDiff())
-            @test_gradients(
-                __f, ŷ; atol=1.0f-3, rtol=1.0f-3, skip_backends, broken_backends
-            )
+            @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3, skip_backends)
         end
     end
 end
@@ -392,13 +385,7 @@ end
             @jet DiceCoeffLoss()(ŷ, y)
 
             __f = Base.Fix2(DiceCoeffLoss(), y)
-            @test_gradients(
-                __f,
-                ŷ;
-                atol=1.0f-3,
-                rtol=1.0f-3,
-                broken_backends=ongpu ? [AutoTracker()] : []
-            )
+            @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "Siamese Contrastive Loss" begin

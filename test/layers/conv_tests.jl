@@ -236,18 +236,7 @@ end
                 end
                 @test size(y)[3:4] == size(x)[3:4]
 
-                broken_backends = Any[AutoTracker()]
-                umode == :nearest || push!(broken_backends, AutoReverseDiff())
-                @test_gradients(
-                    sumabs2first,
-                    layer,
-                    x,
-                    ps,
-                    st;
-                    atol=1.0f-3,
-                    rtol=1.0f-3,
-                    broken_backends
-                )
+                @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
             end
 
             sizes = (nothing, (64, 64, 64), (64, 32, 128))
@@ -272,18 +261,7 @@ end
                 end
                 @test size(y)[4:5] == size(x)[4:5]
 
-                broken_backends = Any[AutoTracker()]
-                umode == :nearest || push!(broken_backends, AutoReverseDiff())
-                @test_gradients(
-                    sumabs2first,
-                    layer,
-                    x,
-                    ps,
-                    st;
-                    atol=1.0f-3,
-                    rtol=1.0f-3,
-                    broken_backends
-                )
+                @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,)
             end
         end
     end

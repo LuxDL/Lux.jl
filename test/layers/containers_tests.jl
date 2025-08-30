@@ -21,17 +21,7 @@
 
             @test size(layer(x, ps, st)[1]) == (10, 4)
             @jet layer(x, ps, st)
-            # Method ambiguity for concatenation
-            @test_gradients(
-                sumabs2first,
-                layer,
-                x,
-                ps,
-                st;
-                atol=1.0f-3,
-                rtol=1.0f-3,
-                broken_backends=[AutoReverseDiff()]
-            )
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
     end
 end
@@ -69,17 +59,7 @@ end
 
             @test size(layer(x, ps, st)[1]) == (10, 4)
             @jet layer(x, ps, st)
-            # Method ambiguity for concatenation
-            @test_gradients(
-                sumabs2first,
-                layer,
-                x,
-                ps,
-                st;
-                atol=1.0f-3,
-                rtol=1.0f-3,
-                broken_backends=[AutoReverseDiff()]
-            )
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "vararg input" begin
