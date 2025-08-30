@@ -103,11 +103,13 @@ function Base.show(io::IO, ::MIME"text/plain", mha::MultiHeadAttention)
     out_dim = mha.out_proj.out_dims
     attention_dropout_probability =
         mha.attention_dropout isa NoOpLayer ? 0.0f0 : mha.attention_dropout.p
-    return print(
-        io,
-        "MultiHeadAttention($q_in => ($k_in, $v_in) => $out_dim; nheads=$(mha.nheads), \
-         attention_dropout_probability=$(attention_dropout_probability))",
+    print(
+        io, "MultiHeadAttention($q_in => ($k_in, $v_in) => $out_dim; nheads=$(mha.nheads)"
     )
+    !iszero(attention_dropout_probability) &&
+        print(io, ", attention_dropout_probability=$(attention_dropout_probability)")
+    print(io, ")")
+    return nothing
 end
 
 function parse_mha_dims(dims::IntegerType)
@@ -175,7 +177,17 @@ function apply_multiheadattention(mha::MultiHeadAttention, ps, st, q, k, v, mask
     dropout = StatefulLuxLayer(
         mha.attention_dropout, ps.attention_dropout, st.attention_dropout
     )
-    x, α = NNlib.dot_product_attention(q, k, v; mha.nheads, fdrop=dropout, mask)
+
+    x, α = scaled_dot_product_attention(
+        reshape(q, size(q, 1) ÷ mha.nheads, mha.nheads, size(q)[2:end]...),
+        reshape(k, size(k, 1) ÷ mha.nheads, mha.nheads, size(k)[2:end]...),
+        reshape(v, size(v, 1) ÷ mha.nheads, mha.nheads, size(v)[2:end]...);
+        head_dim=1,
+        token_dim=3,
+        fdrop=dropout,
+        mask=mask,
+    )
+    x = reshape(x, size(x, 1) * mha.nheads, size(x)[3:end]...)
 
     y, out_st = mha.out_proj(x, ps.out_proj, st.out_proj)
 

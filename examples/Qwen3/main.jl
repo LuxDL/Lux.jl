@@ -191,15 +191,8 @@ function GroupedQueryAttention(d_in, num_heads, num_kv_groups; head_dim=nothing)
     )
 end
 
-function scaled_dot_product_attention(q, k, v, mask, head_dim)
-    scores = batched_mul(batched_transpose(k), q) ./ sqrt(eltype(q)(head_dim))
-    scores = ifelse.(mask, scores, typemin(eltype(scores)))
-    weights = softmax(scores; dims=1)
-    return batched_mul(v, weights)
-end
-
 function apply_rope(x::AbstractArray{T}, cos_cache, sin_cache) where {T}
-    return T.(apply_rotary_embedding(x, cos_cache, sin_cache; seq_dim=2))
+    return T.(apply_rotary_embedding(x, cos_cache, sin_cache; seq_dim=3))
 end
 
 function (attn::GroupedQueryAttention)((x, mask, cos_cache, sin_cache), ps, st::NamedTuple)
@@ -210,18 +203,12 @@ function (attn::GroupedQueryAttention)((x, mask, cos_cache, sin_cache), ps, st::
     keys, st_k_proj = attn.k_proj(x, ps.k_proj, st.k_proj)
     values, st_v_proj = attn.v_proj(x, ps.v_proj, st.v_proj)
 
-    ## reshape and permute to (head_dim, num_tokens, num_heads/num_kv_groups, batch)
-    queries = permutedims(
-        reshape(queries, attn.head_dim, attn.num_heads, num_tokens, B), (1, 3, 2, 4)
-    )
-    keys = permutedims(
-        reshape(keys, attn.head_dim, attn.num_kv_groups, num_tokens, B), (1, 3, 2, 4)
-    )
-    values = permutedims(
-        reshape(values, attn.head_dim, attn.num_kv_groups, num_tokens, B), (1, 3, 2, 4)
-    )
+    ## reshape and permute to (head_dim, num_heads/num_kv_groups, num_tokens, batch)
+    queries = reshape(queries, attn.head_dim, attn.num_heads, num_tokens, B)
+    keys = reshape(keys, attn.head_dim, attn.num_kv_groups, num_tokens, B)
+    values = reshape(values, attn.head_dim, attn.num_kv_groups, num_tokens, B)
 
-    ## apply optional normalization
+    ## apply normalization
     queries, st_q_norm = attn.q_norm(queries, ps.q_norm, st.q_norm)
     keys, st_k_norm = attn.k_norm(keys, ps.k_norm, st.k_norm)
 
@@ -229,27 +216,17 @@ function (attn::GroupedQueryAttention)((x, mask, cos_cache, sin_cache), ps, st::
     queries = apply_rope(queries, cos_cache, sin_cache)
     keys = apply_rope(keys, cos_cache, sin_cache)
 
+    ## XXX: move this to the attention layer???
     ## expand K and V to match number of heads
-    keys = repeat(keys, 1, attn.group_size, 1, 1)
-    values = repeat(values, 1, attn.group_size, 1, 1)
+    keys = repeat(keys; inner=(1, attn.group_size, 1, 1))
+    values = repeat(values; inner=(1, attn.group_size, 1, 1))
 
     ## attention
-    queries = reshape(queries, attn.head_dim, num_tokens, attn.num_heads * B)
-    keys = reshape(keys, attn.head_dim, num_tokens, attn.num_heads * B)
-    values = reshape(values, attn.head_dim, num_tokens, attn.num_heads * B)
-
     context = reshape(
-        permutedims(
-            reshape(
-                scaled_dot_product_attention(queries, keys, values, mask, attn.head_dim),
-                attn.head_dim,
-                num_tokens,
-                attn.num_heads,
-                B,
-            ),
-            (1, 3, 2, 4),
-        ),
-        (attn.head_dim * attn.num_heads, num_tokens, B),
+        scaled_dot_product_attention(queries, keys, values; head_dim=1, token_dim=3, mask)[1],
+        attn.head_dim * attn.num_heads,
+        num_tokens,
+        B,
     )
 
     ## output projection
