@@ -12,37 +12,21 @@ end
     x = (; t=rand(10), x=(z=[2.0],))
 
     test_gradients(f, 1.0, x, nothing)
-
-    test_gradients(f, 1.0, x, nothing; skip_backends=[AutoTracker()])
-    @test_gradients(f, 1.0, x, nothing; skip_backends=[AutoTracker()])
+    @test_gradients(f, 1.0, x, nothing)
 
     @test errors() do
-        test_gradients(f, 1.0, x, nothing; broken_backends=[AutoTracker()])
+        test_gradients(f, 1.0, x, nothing; broken_backends=[AutoZygote()])
     end
-
     @test errors() do
-        @test_gradients(f, 1.0, x, nothing; broken_backends=[AutoTracker()])
+        @test_gradients(f, 1.0, x, nothing; broken_backends=[AutoZygote()])
     end
 
     @test_throws ArgumentError test_gradients(
-        f,
-        1.0,
-        x,
-        nothing;
-        broken_backends=[AutoTracker()],
-        skip_backends=[AutoTracker(), AutoEnzyme()],
+        f, 1.0, x, nothing; skip_backends=[AutoZygote()], broken_backends=[AutoZygote()]
     )
     @test_throws ArgumentError @test_gradients(
-        f,
-        1.0,
-        x,
-        nothing;
-        broken_backends=[AutoTracker()],
-        skip_backends=[AutoTracker(), AutoEnzyme()]
+        f, 1.0, x, nothing; skip_backends=[AutoZygote()], broken_backends=[AutoZygote()]
     )
-
-    test_gradients(f, 1.0, x, nothing; soft_fail=[AutoTracker()])
-    @test_gradients(f, 1.0, x, nothing; soft_fail=[AutoTracker()])
 
     test_gradients(f, 1.0, x, nothing; soft_fail=true)
     @test_gradients(f, 1.0, x, nothing; soft_fail=true)
@@ -67,7 +51,7 @@ end
 
     test_gradients(f, 1.0, x, nothing)
 
-    test_gradients(f, 1.0, x, nothing; skip_backends=[AutoTracker()])
+    test_gradients(f, 1.0, x, nothing)
 end
 
 @testitem "@test_softfail" begin
