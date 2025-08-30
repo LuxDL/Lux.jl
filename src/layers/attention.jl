@@ -175,7 +175,17 @@ function apply_multiheadattention(mha::MultiHeadAttention, ps, st, q, k, v, mask
     dropout = StatefulLuxLayer(
         mha.attention_dropout, ps.attention_dropout, st.attention_dropout
     )
-    x, α = NNlib.dot_product_attention(q, k, v; mha.nheads, fdrop=dropout, mask)
+
+    x, α = scaled_dot_product_attention(
+        reshape(q, size(q, 1) ÷ mha.nheads, mha.nheads, size(q)[2:end]...),
+        reshape(k, size(k, 1) ÷ mha.nheads, mha.nheads, size(k)[2:end]...),
+        reshape(v, size(v, 1) ÷ mha.nheads, mha.nheads, size(v)[2:end]...);
+        head_dim=1,
+        token_dim=3,
+        fdrop=dropout,
+        mask=mask,
+    )
+    x = reshape(x, size(x, 1) * mha.nheads, size(x)[3:end]...)
 
     y, out_st = mha.out_proj(x, ps.out_proj, st.out_proj)
 
