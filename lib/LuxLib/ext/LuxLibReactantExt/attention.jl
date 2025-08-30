@@ -1,4 +1,3 @@
-
 function Impl.unsafe_scaled_dot_product_attention(
     q::AnyTracedRArray{TQ,N},
     k::AnyTracedRArray{TK,N},
@@ -17,7 +16,7 @@ function Impl.unsafe_scaled_dot_product_attention(
     mask !== nothing && (mask = materialize_traced_array(mask))
     bias !== nothing && (bias = materialize_traced_array(bias))
 
-    # alpha: [H, B..., S, L]
+    # alpha: [B..., H, S, L]
     scale_q = @opcall fill(scale, size(q))
     q_scaled = @opcall divide(q, scale_q)
     alpha = @opcall dot_general(
@@ -51,8 +50,7 @@ function Impl.unsafe_scaled_dot_product_attention(
     scores = @opcall divide(diff, sum_)
     attn_scores = fdrop(scores)
 
-    attn_scores_to_return = @opcall transpose(attn_scores, [N, N - 1, N - 2, 1:(N - 3)...])
-
+    # x: [B..., H, Ev, L]
     x = @opcall dot_general(
         v,
         attn_scores;
@@ -62,7 +60,9 @@ function Impl.unsafe_scaled_dot_product_attention(
             collect(Int, 1:(N - 2)),
         ),
     )
-    x_to_return = @opcall transpose(x, [N - 1, N, N - 2, 1:(N - 3)...])
+
+    attn_scores_to_return = @opcall transpose(attn_scores, [N, N - 2, N - 1, 1:(N - 3)...])
+    x_to_return = @opcall transpose(x, [N - 1, N - 2, N, 1:(N - 3)...])
 
     return x_to_return, attn_scores_to_return
 end

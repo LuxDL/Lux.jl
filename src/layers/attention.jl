@@ -103,11 +103,13 @@ function Base.show(io::IO, ::MIME"text/plain", mha::MultiHeadAttention)
     out_dim = mha.out_proj.out_dims
     attention_dropout_probability =
         mha.attention_dropout isa NoOpLayer ? 0.0f0 : mha.attention_dropout.p
-    return print(
-        io,
-        "MultiHeadAttention($q_in => ($k_in, $v_in) => $out_dim; nheads=$(mha.nheads), \
-         attention_dropout_probability=$(attention_dropout_probability))",
+    print(
+        io, "MultiHeadAttention($q_in => ($k_in, $v_in) => $out_dim; nheads=$(mha.nheads)"
     )
+    !iszero(attention_dropout_probability) &&
+        print(io, ", attention_dropout_probability=$(attention_dropout_probability)")
+    print(io, ")")
+    return nothing
 end
 
 function parse_mha_dims(dims::IntegerType)

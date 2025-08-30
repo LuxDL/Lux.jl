@@ -223,9 +223,7 @@ function (attn::GroupedQueryAttention)((x, mask, cos_cache, sin_cache), ps, st::
 
     ## attention
     context = reshape(
-        scaled_dot_product_attention(
-            queries, keys, values; head_dim=1, token_dim=3, mask
-        )[1],
+        scaled_dot_product_attention(queries, keys, values; head_dim=1, token_dim=3, mask)[1],
         attn.head_dim * attn.num_heads,
         num_tokens,
         B,
@@ -882,8 +880,7 @@ function main()
             continue
         end
 
-        # FIXME: increase the max_new_tokens to 100_000
-        tokens_per_second = generate_text(model, prompt, ps, st, 1024, tokenizer)
+        tokens_per_second = generate_text(model, prompt, ps, st, 100_000, tokenizer)
         println("\nTokens per second: $tokens_per_second\n\n")
     end
 
