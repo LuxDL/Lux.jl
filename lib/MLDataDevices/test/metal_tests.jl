@@ -11,6 +11,11 @@ end
 
 using Metal
 
+if !Metal.functional()
+    @warn "Metal.jl is not functional. Skipping Metal tests."
+    exit()
+end
+
 @testset "Loaded Trigger Package" begin
     @test MLDataDevices.GPU_DEVICE[] === nothing
 

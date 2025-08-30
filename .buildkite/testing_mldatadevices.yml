@@ -1,7 +1,7 @@
 steps:
   - group: ":julia: (MLDataDevices) CUDA GPU"
     steps:
-      - label: ":julia: Julia: {{matrix.julia}} + CUDA GPU + {{matrix.group}}"
+      - label: ":julia: (MLDataDevices) Julia: {{matrix.julia}} + CUDA GPU + {{matrix.group}}"
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
@@ -28,7 +28,7 @@ steps:
 
   - group: ":julia: (MLDataDevices) AMD GPU"
     steps:
-      - label: ":julia: Julia: {{matrix.julia}} + AMD GPU"
+      - label: ":julia: (MLDataDevices) Julia: {{matrix.julia}} + AMD GPU"
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
@@ -53,7 +53,7 @@ steps:
 
   - group: ":julia: (MLDataDevices) Metal GPU"
     steps:
-      - label: ":julia: Julia: {{matrix.julia}} + Metal"
+      - label: ":julia: (MLDataDevices) Julia: {{matrix.julia}} + Metal"
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
@@ -78,7 +78,7 @@ steps:
 
   - group: ":julia: (MLDataDevices) oneAPI GPU"
     steps:
-      - label: ":julia: Julia: {{matrix.julia}} + oneAPI"
+      - label: ":julia: (MLDataDevices) Julia: {{matrix.julia}} + oneAPI"
         soft_fail: true
         plugins:
           - JuliaCI/julia#v1:

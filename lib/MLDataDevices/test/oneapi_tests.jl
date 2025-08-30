@@ -11,6 +11,11 @@ end
 
 using oneAPI
 
+if !oneAPI.functional()
+    @warn "oneAPI.jl is not functional. Skipping oneAPI tests."
+    exit()
+end
+
 @testset "Loaded Trigger Package" begin
     @test MLDataDevices.GPU_DEVICE[] === nothing
 

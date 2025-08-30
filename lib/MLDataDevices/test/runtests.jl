@@ -59,6 +59,7 @@ end
     append!(file_names, ["iterator_tests.jl", "misc_tests.jl", "qa_tests.jl"])
 
     @testset "$(file_name)" for file_name in file_names
+        @info "Running $(file_name)"
         withenv("BACKEND_GROUP" => BACKEND_GROUP) do
             run(`$(Base.julia_cmd()) --color=yes --project=$(dirname(Pkg.project().path))
                 --startup-file=no --code-coverage=user $(@__DIR__)/$file_name`)
