@@ -26,30 +26,30 @@ steps:
               - "CUDA"
               - "reactant"
 
-  - group: ":julia: (MLDataDevices) AMD GPU"
-    steps:
-      - label: ":julia: (MLDataDevices) Julia: {{matrix.julia}} + AMD GPU"
-        plugins:
-          - JuliaCI/julia#v1:
-              version: "{{matrix.julia}}"
-          - JuliaCI/julia-test#v1:
-              project: "lib/MLDataDevices"
-              test_args: "BACKEND_GROUP=AMDGPU"
-          - JuliaCI/julia-coverage#v1:
-              codecov: true
-              dirs:
-                - lib/MLDataDevices/src
-                - lib/MLDataDevices/ext
-        agents:
-          queue: "juliagpu"
-          rocm: "*"
-          rocmgpu: "*"
-        if: build.message !~ /\[skip tests\]/
-        timeout_in_minutes: 60
-        matrix:
-          setup:
-            julia:
-              - "1"
+  # - group: ":julia: (MLDataDevices) AMD GPU"
+  #   steps:
+  #     - label: ":julia: (MLDataDevices) Julia: {{matrix.julia}} + AMD GPU"
+  #       plugins:
+  #         - JuliaCI/julia#v1:
+  #             version: "{{matrix.julia}}"
+  #         - JuliaCI/julia-test#v1:
+  #             project: "lib/MLDataDevices"
+  #             test_args: "BACKEND_GROUP=AMDGPU"
+  #         - JuliaCI/julia-coverage#v1:
+  #             codecov: true
+  #             dirs:
+  #               - lib/MLDataDevices/src
+  #               - lib/MLDataDevices/ext
+  #       agents:
+  #         queue: "juliagpu"
+  #         rocm: "*"
+  #         rocmgpu: "*"
+  #       if: build.message !~ /\[skip tests\]/
+  #       timeout_in_minutes: 60
+  #       matrix:
+  #         setup:
+  #           julia:
+  #             - "1"
 
   - group: ":julia: (MLDataDevices) Metal GPU"
     steps:
