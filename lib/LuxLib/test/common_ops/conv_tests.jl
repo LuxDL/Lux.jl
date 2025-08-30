@@ -71,15 +71,7 @@ function run_conv_testing(
     @test @inferred(fused_conv_bias_activation(activation, weight, x, bias, cdims)) isa Any
     @jet fused_conv_bias_activation(activation, weight, x, bias, cdims)
 
-    skip_backends = []
-    mp = Tx != Tw
-    mp && push!(skip_backends, AutoReverseDiff())
-    ((mp && ongpu) || (mode == "amdgpu" && (Tx == Float64 || Tw == Float64))) &&
-        push!(skip_backends, AutoTracker())
-
-    @test_gradients(
-        sumabs2conv, activation, weight, x, bias, cdims; atol, rtol, skip_backends
-    )
+    @test_gradients(sumabs2conv, activation, weight, x, bias, cdims; atol, rtol)
 end
 
 anonact = x -> gelu(x)

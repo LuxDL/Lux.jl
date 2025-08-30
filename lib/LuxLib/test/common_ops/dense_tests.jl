@@ -33,10 +33,7 @@ function run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu
     atol = 1.0f-3
     rtol = 1.0f-3
 
-    skip_backends = []
-    Tw != Tx && push!(skip_backends, AutoReverseDiff())
-
-    @test_gradients(sumabs2dense, activation, w, x, bias; atol, rtol, skip_backends)
+    @test_gradients(sumabs2dense, activation, w, x, bias; atol, rtol)
 
     y_simple = dense_simple(activation, w, x, bias)
     y_zyg = fused_dense_bias_activation(activation, w, x, bias)
