@@ -175,7 +175,7 @@ function test_gradients(
     @assert (backends[1] ∉ broken_backends) && (backends[1] ∉ skip_backends) "first backend cannot be broken or skipped"
 
     return @testset "gradtest($(f))" begin
-        @testset "$(nameof(typeof(backend)))()" for backend in backends[2:end]
+        @testset "$(nameof(typeof(backend)))()" for backend in backends
             local_test_expr = :([$(nameof(typeof(backend)))] - $(test_expr))
 
             result = if check_ad_backend_in(backend, skip_backends)
