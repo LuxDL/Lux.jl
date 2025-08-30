@@ -38,12 +38,16 @@ function batched_matmul(
     x_flattened = reshape(x_permuted, size(x_permuted, 1), size(x_permuted, 2), :)
     y_flattened = reshape(y_permuted, size(y_permuted, 1), size(y_permuted, 2), :)
 
-    res = batched_matmul(
-        internal_operation_mode((x_flattened, y_flattened)), x_flattened, y_flattened
-    )
+    res = batched_matmul_fallback(x_flattened, y_flattened)
 
     length(lhs_batching_dims) == 1 && return res
     return reshape(res, size(res, 1), size(res, 2), batch_size_tuple...)
+end
+
+@inline function batched_matmul_fallback(
+    x::AbstractArray{xT,3}, y::AbstractArray{yT,3}
+) where {xT,yT}
+    return batched_matmul(internal_operation_mode((x, y)), x, y)
 end
 
 function assert_batched_matmul_checks(
@@ -251,7 +255,7 @@ use_threaded_batched_matmul(::Type{CUDADevice}) = true
 use_threaded_batched_matmul(::Type{CPUDevice}) = true
 
 function CRC.rrule(
-    ::typeof(batched_matmul), x::AbstractArray{xT,3}, y::AbstractArray{yT,3}
+    ::typeof(batched_matmul_fallback), x::AbstractArray{xT,3}, y::AbstractArray{yT,3}
 ) where {xT,yT}
     ∇batched_matmul = @closure Δ -> begin
         ∂x = CRC.@thunk begin
@@ -264,7 +268,7 @@ function CRC.rrule(
         end
         return ∂∅, ∂x, ∂y
     end
-    return batched_matmul(x, y), ∇batched_matmul
+    return batched_matmul_fallback(x, y), ∇batched_matmul
 end
 
 # This is type-piracy but needed to fix a blocking issue. TODO: upstream to NNlib
