@@ -1,6 +1,76 @@
 # Entry Point
-function batched_matmul(x::AbstractArray{xT,3}, y::AbstractArray{yT,3}) where {xT,yT}
-    return batched_matmul(internal_operation_mode((x, y)), x, y)
+function batched_matmul(
+    x::AbstractArray{xT,N},
+    y::AbstractArray{yT,N};
+    lhs_contracting_dim::Int=2,
+    rhs_contracting_dim::Int=1,
+    lhs_batching_dims::Dims{M}=ntuple(Base.Fix2(+, 2), Val(N - 2)),
+    rhs_batching_dims::Dims{M}=ntuple(Base.Fix2(+, 2), Val(N - 2)),
+) where {xT,yT,N,M}
+    assert_batched_matmul_checks(
+        x, y; lhs_contracting_dim, rhs_contracting_dim, lhs_batching_dims, rhs_batching_dims
+    )
+
+    batch_size_tuple = map(Base.Fix1(size, x), lhs_batching_dims)
+
+    if (
+        lhs_batching_dims != ntuple(identity, Val(N - 2)) ||
+        rhs_batching_dims != ntuple(identity, Val(N - 2)) ||
+        lhs_contracting_dim != 2 ||
+        rhs_contracting_dim != 1
+    )
+        lhs_non_contracting_dims = only(
+            setdiff(1:N, (lhs_contracting_dim, lhs_batching_dims...))
+        )
+        rhs_non_contracting_dims = only(
+            setdiff(1:N, (rhs_contracting_dim, rhs_batching_dims...))
+        )
+        x_permuted = Utils.maybe_permutedims(
+            x, (lhs_non_contracting_dims, lhs_contracting_dim, lhs_batching_dims...)
+        )
+        y_permuted = Utils.maybe_permutedims(
+            y, (rhs_contracting_dim, rhs_non_contracting_dims, rhs_batching_dims...)
+        )
+    else
+        x_permuted, y_permuted = x, y
+    end
+
+    x_flattened = reshape(x_permuted, size(x_permuted, 1), size(x_permuted, 2), :)
+    y_flattened = reshape(y_permuted, size(y_permuted, 1), size(y_permuted, 2), :)
+
+    res = batched_matmul(
+        internal_operation_mode((x_flattened, y_flattened)), x_flattened, y_flattened
+    )
+
+    length(lhs_batching_dims) == 1 && return res
+    return reshape(res, size(res, 1), size(res, 2), batch_size_tuple...)
+end
+
+function assert_batched_matmul_checks(
+    x::AbstractArray{xT,N},
+    y::AbstractArray{yT,N};
+    lhs_contracting_dim::Int=2,
+    rhs_contracting_dim::Int=1,
+    lhs_batching_dims::Dims{M}=ntuple(Base.Fix2(+, 2), Val(N - 2)),
+    rhs_batching_dims::Dims{M}=ntuple(Base.Fix2(+, 2), Val(N - 2)),
+) where {xT,yT,N,M}
+    @assert N ≥ 3 "N must be at least 4"
+    @assert M == N - 2 "M = $M must be equal to N - 2 = $N - 2"
+    @assert 1 ≤ lhs_contracting_dim ≤ N "lhs_contracting_dim must be between 1 and $N"
+    @assert 1 ≤ rhs_contracting_dim ≤ N "rhs_contracting_dim must be between 1 and $N"
+    for (lhs_batching_dim, rhs_batching_dim) in zip(lhs_batching_dims, rhs_batching_dims)
+        @assert 1 ≤ lhs_batching_dim ≤ N "lhs_batching_dim must be between 1 and 3"
+        @assert 1 ≤ rhs_batching_dim ≤ N "rhs_batching_dim must be between 1 and 3"
+        @assert lhs_batching_dim ≠ lhs_contracting_dim "lhs_batching_dim must be different \
+                                                        from lhs_contracting_dim"
+        @assert rhs_batching_dim ≠ rhs_contracting_dim "rhs_batching_dim must be different \
+                                                        from rhs_contracting_dim"
+        @assert (
+            size(x, lhs_batching_dim) == size(y, rhs_batching_dim) ||
+            size(x, lhs_batching_dim) == 1 ||
+            size(y, rhs_batching_dim) == 1
+        )
+    end
 end
 
 function batched_matmul(

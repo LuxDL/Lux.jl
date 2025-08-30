@@ -29,12 +29,14 @@ for op in (
     :activation!!,
     :fused_conv,
     :fused_dense,
+    :scaled_dot_product_attention,
 )
     impl_op = Symbol(op, :_impl)
     @eval const $impl_op = Impl.$op
 end
 
 include("activation.jl")
+include("attention.jl")
 include("batched_mul.jl")
 include("batchnorm.jl")
 include("bias_activation.jl")
@@ -52,6 +54,7 @@ export batchnorm, groupnorm, instancenorm, layernorm
 export fast_activation, fast_activation!!
 export fused_conv_bias_activation
 export fused_dense_bias_activation
+export scaled_dot_product_attention
 
 end
 

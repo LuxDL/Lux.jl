@@ -74,6 +74,7 @@ const CRC = ChainRulesCore
 const KA = KernelAbstractions
 
 include("activation.jl")
+include("attention.jl")
 include("batched_mul.jl")
 include("batchnorm.jl")
 include("bias_activation.jl")
