@@ -24,8 +24,7 @@ jobs:
       fail-fast: false
       matrix:
         test_group:
-          - "conv"
-          - "dense"
+          - "common"
           - "normalization"
           - "misc"
     uses: ./.github/workflows/CommonCI.yml
@@ -35,15 +34,14 @@ jobs:
       downgrade_testing: true
       local_dependencies: "lib/LuxCore,lib/MLDataDevices"
       local_test_dependencies: "lib/LuxTestUtils,lib/MLDataDevices"
-      test_args: "BACKEND_GROUP=${{ matrix.test_group }} LUXLIB_BLAS_BACKEND=default LUXLIB_LOAD_LOOPVEC=true"
+      test_args: "BACKEND_GROUP=cpu LUXLIB_TEST_GROUP=${{ matrix.test_group }} LUXLIB_BLAS_BACKEND=default LUXLIB_LOAD_LOOPVEC=true"
 
   test:
     strategy:
       fail-fast: false
       matrix:
         test_group:
-          - "conv"
-          - "dense"
+          - "common"
           - "normalization"
           - "misc"
         blas_backend:
@@ -51,7 +49,7 @@ jobs:
         loopvec:
           - "true"
         include:
-          - test_group: "dense"
+          - test_group: "common"
             blas_backend: "default"
             loopvec: "false"
           - test_group: "misc"
@@ -61,4 +59,4 @@ jobs:
     with:
       julia_version: "1"
       project: "lib/LuxLib"
-      test_args: "BACKEND_GROUP=${{ matrix.test_group }} LUXLIB_BLAS_BACKEND=${{ matrix.blas_backend }} LUXLIB_LOAD_LOOPVEC=${{ matrix.loopvec }}"
+      test_args: "BACKEND_GROUP=cpu LUXLIB_TEST_GROUP=${{ matrix.test_group }} LUXLIB_BLAS_BACKEND=${{ matrix.blas_backend }} LUXLIB_LOAD_LOOPVEC=${{ matrix.loopvec }}"

@@ -35,7 +35,7 @@ function test_nested_ad_input_gradient_jacobian(aType, dev, ongpu, loss_fn, X, m
             atol=1.0f-3,
             rtol=1.0f-1,
             soft_fail=[AutoFiniteDiff()],
-            skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()]
+            skip_backends=[AutoEnzyme()]
         )
     end
 end
@@ -187,7 +187,7 @@ function test_nested_ad_parameter_gradient_jacobian(aType, dev, ongpu, loss_fn, 
             atol=1.0f-3,
             rtol=1.0f-1,
             soft_fail=[AutoFiniteDiff()],
-            skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()]
+            skip_backends=[AutoEnzyme()]
         )
     end
 end
@@ -325,12 +325,7 @@ end
             end
 
             @test_gradients(
-                __f,
-                x,
-                ps;
-                atol=1.0f-3,
-                rtol=1.0f-3,
-                skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()]
+                __f, x, ps; atol=1.0f-3, rtol=1.0f-3, skip_backends=[AutoEnzyme()]
             )
         end
     end
@@ -479,12 +474,5 @@ end
         (x, ps) -> loss_function(model, ps, st, x)
     end
 
-    @test_gradients(
-        __f,
-        x,
-        ps;
-        atol=1.0f-3,
-        rtol=1.0f-3,
-        skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()]
-    )
+    @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3, skip_backends=[AutoEnzyme()])
 end

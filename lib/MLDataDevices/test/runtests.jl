@@ -35,8 +35,6 @@ end
     push!(EXTRA_PKGS, PackageSpec(; name="oneAPI"))
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "metal") &&
     push!(EXTRA_PKGS, PackageSpec(; name="Metal"))
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "reactant") &&
-    push!(EXTRA_PKGS, PackageSpec(; name="Reactant"))
 
 if !isempty(EXTRA_PKGS) || !isempty(EXTRA_DEV_PKGS)
     @info "Installing Extra Packages for testing" EXTRA_PKGS EXTRA_DEV_PKGS
@@ -47,13 +45,9 @@ if !isempty(EXTRA_PKGS) || !isempty(EXTRA_DEV_PKGS)
 end
 
 @testset "MLDataDevices Tests" begin
-    all_files = [
-        "cuda_tests.jl",
-        "amdgpu_tests.jl",
-        "metal_tests.jl",
-        "oneapi_tests.jl",
-        "reactant_tests.jl",
-    ]
+    all_files = map(
+        Base.Fix2(*, "_tests.jl"), ["reactant", "cuda", "amdgpu", "metal", "oneapi"]
+    )
     file_names = if BACKEND_GROUP == "all"
         all_files
     elseif BACKEND_GROUP ∈ ("cpu", "none")
@@ -65,6 +59,7 @@ end
     append!(file_names, ["iterator_tests.jl", "misc_tests.jl", "qa_tests.jl"])
 
     @testset "$(file_name)" for file_name in file_names
+        @info "Running $(file_name)"
         withenv("BACKEND_GROUP" => BACKEND_GROUP) do
             run(`$(Base.julia_cmd()) --color=yes --project=$(dirname(Pkg.project().path))
                 --startup-file=no --code-coverage=user $(@__DIR__)/$file_name`)

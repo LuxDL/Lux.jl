@@ -38,12 +38,7 @@
 
         # See https://github.com/LuxDL/Lux.jl/issues/644
         @test_gradients(
-            __f,
-            x,
-            ps;
-            atol=1.0f-3,
-            rtol=1.0f-3,
-            broken_backends=[AutoEnzyme(), AutoTracker()]
+            __f, x, ps; atol=1.0f-3, rtol=1.0f-3, broken_backends=[AutoEnzyme()]
         )
 
         x = randn(Float32, 28, 28, 1, 15)
@@ -57,12 +52,7 @@
 
         # See https://github.com/LuxDL/Lux.jl/issues/644
         @test_gradients(
-            __f,
-            x,
-            ps;
-            atol=1.0f-3,
-            rtol=1.0f-3,
-            broken_backends=[AutoEnzyme(), AutoTracker()]
+            __f, x, ps; atol=1.0f-3, rtol=1.0f-3, broken_backends=[AutoEnzyme()]
         )
 
         @testset "Array Output" begin
@@ -132,7 +122,7 @@
                     ps;
                     atol=1.0f-3,
                     rtol=1.0f-3,
-                    broken_backends=[AutoEnzyme(), AutoTracker()],
+                    broken_backends=[AutoEnzyme()],
                     soft_fail=[AutoForwardDiff(), AutoFiniteDiff()]
                 )
             end

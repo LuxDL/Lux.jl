@@ -14,6 +14,11 @@ end
 
 using LuxCUDA
 
+if !LuxCUDA.functional()
+    @warn "LuxCUDA.jl is not functional. Skipping CUDA tests."
+    exit()
+end
+
 @testset "Loaded Trigger Package" begin
     @test MLDataDevices.GPU_DEVICE[] === nothing
 

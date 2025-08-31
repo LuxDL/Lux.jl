@@ -9,25 +9,25 @@ function Impl.batchnorm(
     momentum,
     ϵ,
 ) where {T,F}
-    x = Reactant.materialize_traced_array(x)
-    γ !== nothing && (γ = Reactant.materialize_traced_array(γ))
-    β !== nothing && (β = Reactant.materialize_traced_array(β))
+    x = materialize_traced_array(x)
+    γ !== nothing && (γ = materialize_traced_array(γ))
+    β !== nothing && (β = materialize_traced_array(β))
 
     if rμ === nothing && rσ² === nothing
         μ, σ² = Impl.mean_var(
             x; dims=Utils.unsafe_known(Impl.batchnorm_reduce_dims(x)), corrected=false
         )
-        μ = Reactant.materialize_traced_array(vec(μ))
-        σ² = Reactant.materialize_traced_array(vec(σ²))
+        μ = materialize_traced_array(vec(μ))
+        σ² = materialize_traced_array(vec(σ²))
     else
         @assert rμ !== nothing && rσ² !== nothing
-        μ = Reactant.materialize_traced_array(rμ)
-        σ² = Reactant.materialize_traced_array(rσ²)
+        μ = materialize_traced_array(rμ)
+        σ² = materialize_traced_array(rσ²)
     end
 
     return (
         act.(
-            Ops.batch_norm_inference(
+            @opcall batch_norm_inference(
                 x, γ, β, μ, σ²; epsilon=ϵ, feature_index=Int64(ndims(x) - 1)
             )
         ),
@@ -47,11 +47,11 @@ function Impl.batchnorm(
     momentum,
     ϵ,
 ) where {T,F}
-    x = Reactant.materialize_traced_array(x)
-    γ !== nothing && (γ = Reactant.materialize_traced_array(γ))
-    β !== nothing && (β = Reactant.materialize_traced_array(β))
+    x = materialize_traced_array(x)
+    γ !== nothing && (γ = materialize_traced_array(γ))
+    β !== nothing && (β = materialize_traced_array(β))
 
-    y, μ, σ² = Ops.batch_norm_training(
+    y, μ, σ² = @opcall batch_norm_training(
         x, γ, β; epsilon=ϵ, feature_index=Int64(ndims(x) - 1)
     )
     res = act.(y)

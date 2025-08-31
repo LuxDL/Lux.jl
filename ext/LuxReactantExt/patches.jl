@@ -11,4 +11,4 @@ Profiler.@annotate "Optimisers Setup" function Lux.ReactantCompatibleOptimisers.
 end
 
 # rsqrt
-LuxOps.rsqrt(x::TracedRNumber) = Reactant.Ops.rsqrt(x)
+LuxOps.rsqrt(x::TracedRNumber) = @opcall rsqrt(x)

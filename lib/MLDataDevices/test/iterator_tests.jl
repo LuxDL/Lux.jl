@@ -6,6 +6,11 @@ if BACKEND_GROUP == "cuda" || BACKEND_GROUP == "all"
     using LuxCUDA
 end
 
+if BACKEND_GROUP != "cuda"
+    # For CUDA only tests avoid loading Reactant since they are often incompatible
+    using Reactant
+end
+
 if BACKEND_GROUP == "amdgpu" || BACKEND_GROUP == "all"
     using AMDGPU
 end
@@ -16,10 +21,6 @@ end
 
 if BACKEND_GROUP == "oneapi" || BACKEND_GROUP == "all"
     using oneAPI
-end
-
-if BACKEND_GROUP == "reactant" || BACKEND_GROUP == "all"
-    using Reactant
 end
 
 DEVICES = [CPUDevice, CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice, ReactantDevice]
@@ -40,7 +41,10 @@ end
 @testset "Device Iterator: $(dev_type)" for dev_type in DEVICES
     dev = dev_type()
 
-    !MLDataDevices.functional(dev) && continue
+    if !MLDataDevices.functional(dev)
+        @warn "Device $(dev_type) is not functional. Skipping tests."
+        continue
+    end
 
     @info "Testing Device Iterator for $(dev)..."
 

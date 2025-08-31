@@ -27,8 +27,6 @@ using ADTypes:
 using ChainRulesCore: ChainRulesCore
 using FiniteDiff: FiniteDiff
 using ForwardDiff: ForwardDiff
-using ReverseDiff: ReverseDiff
-using Tracker: Tracker
 using Zygote: Zygote
 
 const CRC = ChainRulesCore

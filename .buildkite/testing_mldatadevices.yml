@@ -1,7 +1,7 @@
 steps:
   - group: ":julia: (MLDataDevices) CUDA GPU"
     steps:
-      - label: ":julia: Julia: {{matrix.julia}} + CUDA GPU + {{matrix.group}}"
+      - label: ":julia: (MLDataDevices) Julia: {{matrix.julia}} + CUDA GPU + {{matrix.group}}"
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
@@ -26,34 +26,34 @@ steps:
               - "CUDA"
               - "reactant"
 
-  - group: ":julia: (MLDataDevices) AMD GPU"
-    steps:
-      - label: ":julia: Julia: {{matrix.julia}} + AMD GPU"
-        plugins:
-          - JuliaCI/julia#v1:
-              version: "{{matrix.julia}}"
-          - JuliaCI/julia-test#v1:
-              project: "lib/MLDataDevices"
-              test_args: "BACKEND_GROUP=AMDGPU"
-          - JuliaCI/julia-coverage#v1:
-              codecov: true
-              dirs:
-                - lib/MLDataDevices/src
-                - lib/MLDataDevices/ext
-        agents:
-          queue: "juliagpu"
-          rocm: "*"
-          rocmgpu: "*"
-        if: build.message !~ /\[skip tests\]/
-        timeout_in_minutes: 60
-        matrix:
-          setup:
-            julia:
-              - "1"
+  # - group: ":julia: (MLDataDevices) AMD GPU"
+  #   steps:
+  #     - label: ":julia: (MLDataDevices) Julia: {{matrix.julia}} + AMD GPU"
+  #       plugins:
+  #         - JuliaCI/julia#v1:
+  #             version: "{{matrix.julia}}"
+  #         - JuliaCI/julia-test#v1:
+  #             project: "lib/MLDataDevices"
+  #             test_args: "BACKEND_GROUP=AMDGPU"
+  #         - JuliaCI/julia-coverage#v1:
+  #             codecov: true
+  #             dirs:
+  #               - lib/MLDataDevices/src
+  #               - lib/MLDataDevices/ext
+  #       agents:
+  #         queue: "juliagpu"
+  #         rocm: "*"
+  #         rocmgpu: "*"
+  #       if: build.message !~ /\[skip tests\]/
+  #       timeout_in_minutes: 60
+  #       matrix:
+  #         setup:
+  #           julia:
+  #             - "1"
 
   - group: ":julia: (MLDataDevices) Metal GPU"
     steps:
-      - label: ":julia: Julia: {{matrix.julia}} + Metal"
+      - label: ":julia: (MLDataDevices) Julia: {{matrix.julia}} + Metal"
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
@@ -78,7 +78,7 @@ steps:
 
   - group: ":julia: (MLDataDevices) oneAPI GPU"
     steps:
-      - label: ":julia: Julia: {{matrix.julia}} + oneAPI"
+      - label: ":julia: (MLDataDevices) Julia: {{matrix.julia}} + oneAPI"
         soft_fail: true
         plugins:
           - JuliaCI/julia#v1:

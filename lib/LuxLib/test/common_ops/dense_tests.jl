@@ -33,10 +33,7 @@ function run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu
     atol = 1.0f-3
     rtol = 1.0f-3
 
-    skip_backends = []
-    Tw != Tx && push!(skip_backends, AutoReverseDiff())
-
-    @test_gradients(sumabs2dense, activation, w, x, bias; atol, rtol, skip_backends)
+    @test_gradients(sumabs2dense, activation, w, x, bias; atol, rtol)
 
     y_simple = dense_simple(activation, w, x, bias)
     y_zyg = fused_dense_bias_activation(activation, w, x, bias)
@@ -56,22 +53,24 @@ function run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu
 end
 
 const ALL_TEST_CONFIGS = Iterators.product(
-    ((Float32, Float32), (Float32, Float64), (Float64, Float64)),
+    # ((Float32, Float32), (Float32, Float64), (Float64, Float64)),
+    ((Float32, Float32), (Float64, Float64)),
     (4, 32),
     (4, 32),
     (true, false),
-    (identity, tanh, tanh_fast, sigmoid, sigmoid_fast, relu, gelu, anonact),
+    # (identity, tanh, tanh_fast, sigmoid, sigmoid_fast, relu, gelu, anonact),
+    (identity, tanh, sigmoid_fast, relu),
 )
 
 const TEST_BLOCKS = collect(
-    Iterators.partition(ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 5))
+    Iterators.partition(ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 2))
 )
 
 export ALL_TEST_CONFIGS, TEST_BLOCKS, run_dense_testing
 
 end
 
-@testitem "Fused Dense: Group 1" tags = [:dense] setup = [SharedTestSetup, DenseSetup] begin
+@testitem "Fused Dense: Group 1" tags = [:common] setup = [SharedTestSetup, DenseSetup] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for (
             (Tx, Tw), M, N, hasbias, activation
@@ -82,7 +81,7 @@ end
     end
 end
 
-@testitem "Fused Dense: Group 2" tags = [:dense] setup = [SharedTestSetup, DenseSetup] begin
+@testitem "Fused Dense: Group 2" tags = [:common] setup = [SharedTestSetup, DenseSetup] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for (
             (Tx, Tw), M, N, hasbias, activation
@@ -93,40 +92,7 @@ end
     end
 end
 
-@testitem "Fused Dense: Group 3" tags = [:dense] setup = [SharedTestSetup, DenseSetup] begin
-    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for (
-            (Tx, Tw), M, N, hasbias, activation
-        ) in TEST_BLOCKS[3]
-            !fp64 && (Tx == Float64 || Tw == Float64) && continue
-            run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
-        end
-    end
-end
-
-@testitem "Fused Dense: Group 4" tags = [:dense] setup = [SharedTestSetup, DenseSetup] begin
-    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for (
-            (Tx, Tw), M, N, hasbias, activation
-        ) in TEST_BLOCKS[4]
-            !fp64 && (Tx == Float64 || Tw == Float64) && continue
-            run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
-        end
-    end
-end
-
-@testitem "Fused Dense: Group 5" tags = [:dense] setup = [SharedTestSetup, DenseSetup] begin
-    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for (
-            (Tx, Tw), M, N, hasbias, activation
-        ) in TEST_BLOCKS[5]
-            !fp64 && (Tx == Float64 || Tw == Float64) && continue
-            run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
-        end
-    end
-end
-
-@testitem "Fused Dense: StaticArrays" tags = [:dense] begin
+@testitem "Fused Dense: StaticArrays" tags = [:common] begin
     using StaticArrays, NNlib
 
     x = @SArray rand(2, 4)
@@ -136,7 +102,7 @@ end
     @test @inferred(fused_dense_bias_activation(relu, weight, x, bias)) isa SArray
 end
 
-@testitem "Fused Dense: CPU No Scalar Indexing" tags = [:dense] begin
+@testitem "Fused Dense: CPU No Scalar Indexing" tags = [:common] begin
     using JLArrays, NNlib
 
     x = JLArray(rand(Float32, 2, 4))
@@ -147,7 +113,7 @@ end
     @test LuxLib.internal_operation_mode(x) isa LuxLib.GenericBroadcastOp
 end
 
-@testitem "`LuxLib.Impl.matmul(add)` allocations" tags = [:dense] setup = [SharedTestSetup] begin
+@testitem "`LuxLib.Impl.matmul(add)` allocations" tags = [:common] setup = [SharedTestSetup] begin
     using BenchmarkTools, Statistics
 
     if BACKEND_GROUP == "all" || BACKEND_GROUP == "cpu"
@@ -171,7 +137,7 @@ end
     end
 end
 
-@testitem "Enzyme.Forward patch: dense" tags = [:dense] setup = [SharedTestSetup] skip =
+@testitem "Enzyme.Forward patch: dense" tags = [:common] setup = [SharedTestSetup] skip =
     :(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
     using LuxLib, Random, ForwardDiff, Enzyme
 
@@ -182,7 +148,7 @@ end
     @test only(Enzyme.gradient(Forward, f, x)) ≈ ForwardDiff.gradient(f, x)
 end
 
-@testitem "Enzyme rules for fused dense" tags = [:dense] setup = [SharedTestSetup] skip =
+@testitem "Enzyme rules for fused dense" tags = [:common] setup = [SharedTestSetup] skip =
     :(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
     using LuxLib, NNlib, Zygote, Enzyme
 

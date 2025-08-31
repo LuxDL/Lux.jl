@@ -1,4 +1,4 @@
-@testitem "Tracing" tags = [:reactant] skip = :(Sys.iswindows()) begin
+@testitem "Tracing" tags = [:reactant] begin
     using Reactant, Lux, Random
 
     model = Chain(Dense(2 => 3, relu), BatchNorm(3), Dense(3 => 2))

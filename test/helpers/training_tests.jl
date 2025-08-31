@@ -20,7 +20,7 @@
 end
 
 @testitem "AbstractADTypes" setup = [SharedTestSetup] tags = [:misc] begin
-    using ADTypes, Optimisers
+    using ADTypes, Optimisers, Tracker, ReverseDiff
 
     function _loss_function(model, ps, st, data)
         y, st = model(data, ps, st)
@@ -52,7 +52,7 @@ end
 
 @testitem "Training API" setup = [SharedTestSetup] tags = [:misc] begin
     using ADTypes, Optimisers
-    using Mooncake
+    using Mooncake, ReverseDiff, Tracker
 
     mse = MSELoss()
 

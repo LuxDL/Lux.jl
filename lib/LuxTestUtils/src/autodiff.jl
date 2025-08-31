@@ -2,6 +2,11 @@ struct Constant{T}
     val::T
 end
 
+# Zygote.jl on CPU
+function ground_truth_gradient(f, args...)
+    return gradient(f, AutoZygote(), map(cpu_device(), args)...)
+end
+
 # Zygote.jl
 function gradient(f::F, ::AutoZygote, args...) where {F}
     return gradient(f, only ∘ Zygote.gradient, args...)
@@ -39,16 +44,6 @@ function gradient(::F, ::AutoEnzyme{<:Enzyme.ForwardMode}, args...) where {F}
     return error("AutoEnzyme{ForwardMode} is not supported yet.")
 end
 
-# Tracker.jl
-function gradient(f::F, ::AutoTracker, args...) where {F}
-    return gradient(f, Tracker.data ∘ only ∘ Tracker.gradient, args...)
-end
-
-# ReverseDiff.jl
-function gradient(f::F, ::AutoReverseDiff, args...) where {F}
-    return gradient(f, ReverseDiff.gradient, args...)
-end
-
 # ForwardDiff.jl
 function gradient(f::F, ::AutoForwardDiff, args...) where {F}
     return gradient(f, ForwardDiff.gradient, args...)
@@ -81,8 +76,6 @@ Test the gradients of `f` with respect to `args` using the specified backends.
 | Backend        | ADType              | CPU | GPU | Notes             |
 |:-------------- |:------------------- |:--- |:--- |:----------------- |
 | Zygote.jl      | `AutoZygote()`      | ✔   | ✔   |                   |
-| Tracker.jl     | `AutoTracker()`     | ✔   | ✔   |                   |
-| ReverseDiff.jl | `AutoReverseDiff()` | ✔   | ✖   |                   |
 | ForwardDiff.jl | `AutoForwardDiff()` | ✔   | ✖   | `len ≤ 100`       |
 | FiniteDiff.jl  | `AutoFiniteDiff()`  | ✔   | ✖   | `len ≤ 100`       |
 | Enzyme.jl      | `AutoEnzyme()`      | ✔   | ✖   | Only Reverse Mode |
@@ -130,6 +123,23 @@ function test_gradients(
     # Internal kwargs end
     kwargs...,
 )
+    bad_skip_backend = findfirst(removed_backend, skip_backends)
+    bad_skip_backend === nothing || throw(
+        ArgumentError("skip_backends cannot contain $(skip_backends[bad_skip_backend])")
+    )
+    bad_broken_backend = findfirst(removed_backend, broken_backends)
+    bad_broken_backend === nothing || throw(
+        ArgumentError(
+            "broken_backends cannot contain $(broken_backends[bad_broken_backend])"
+        ),
+    )
+
+    if !(soft_fail isa Bool)
+        bad_soft_fail = findfirst(removed_backend, soft_fail)
+        bad_soft_fail === nothing ||
+            throw(ArgumentError("soft_fail cannot contain $(soft_fail[bad_soft_fail])"))
+    end
+
     on_gpu = get_device_type(args) <: AbstractGPUDevice
     total_length = mapreduce(__length, +, Functors.fleaves(args); init=0)
 
@@ -137,7 +147,6 @@ function test_gradients(
     backends = []
     push!(backends, AutoZygote())
     if !on_gpu
-        push!(backends, AutoReverseDiff())
         total_length ≤ 100 && push!(backends, AutoForwardDiff())
         total_length ≤ 100 && push!(backends, AutoFiniteDiff())
         # TODO: Move Enzyme out of here once it supports GPUs
@@ -150,7 +159,6 @@ function test_gradients(
             push!(backends, AutoEnzyme(; mode))
         end
     end
-    push!(backends, AutoTracker())
 
     intersect_backends = intersect(broken_backends, skip_backends)
     if !isempty(intersect_backends)
@@ -161,13 +169,12 @@ function test_gradients(
     end
 
     # Test the gradients
-    ∂args_gt = gradient(f, backends[1], args...)  # Should be Zygote in most cases
+    ∂args_gt = ground_truth_gradient(f, args...)  # Should be Zygote in most cases
 
     @assert (backends[1] ∉ broken_backends) && (backends[1] ∉ skip_backends) "first backend cannot be broken or skipped"
 
     return @testset "gradtest($(f))" begin
-        @testset "$(nameof(typeof(backends[1])))() vs $(nameof(typeof(backend)))()" for backend in
-                                                                                        backends[2:end]
+        @testset "$(nameof(typeof(backend)))()" for backend in backends
             local_test_expr = :([$(nameof(typeof(backend)))] - $(test_expr))
 
             result = if check_ad_backend_in(backend, skip_backends)
@@ -236,6 +243,10 @@ function test_gradients(
         end
     end
 end
+
+removed_backend(::AutoTracker) = true
+removed_backend(::AutoReverseDiff) = true
+removed_backend(x) = false
 
 """
     @test_gradients(f, args...; kwargs...)

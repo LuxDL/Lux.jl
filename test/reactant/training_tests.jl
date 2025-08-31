@@ -1,5 +1,4 @@
-@testitem "Reactant: Training API" tags = [:reactant] setup = [SharedTestSetup] skip =
-    :(Sys.iswindows()) begin
+@testitem "Reactant: Training API" tags = [:reactant] setup = [SharedTestSetup] begin
     using Reactant, Optimisers
 
     @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
@@ -87,7 +86,7 @@ end
 
 @testitem "Reactant Optimisers Patch: AccumGrad" tags = [:reactant] setup = [
     SharedTestSetup
-] skip = :(Sys.iswindows()) begin
+] begin
     using Lux, Random, Reactant, Optimisers
 
     dev = reactant_device(; force=true)

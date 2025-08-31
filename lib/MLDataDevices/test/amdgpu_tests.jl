@@ -14,6 +14,11 @@ end
 
 using AMDGPU
 
+if !AMDGPU.functional()
+    @warn "AMDGPU.jl is not functional. Skipping AMDGPU tests."
+    exit()
+end
+
 @testset "Loaded Trigger Package" begin
     @test MLDataDevices.GPU_DEVICE[] === nothing
 
