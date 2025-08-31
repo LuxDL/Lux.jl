@@ -31,7 +31,11 @@ steps:
             julia:
               - "1"
             group:
-              - "!reactant"
+              - "core_layers"
+              - "normalize_layers"
+              - "recurrent_layers"
+              - "autodiff"
+              - "misc"
               - "reactant"
 
   # - group: ":julia: (Lux) AMD GPU"
