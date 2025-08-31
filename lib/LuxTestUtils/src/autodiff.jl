@@ -4,7 +4,15 @@ end
 
 # Zygote.jl on CPU
 function ground_truth_gradient(f, args...)
-    return gradient(f, AutoZygote(), map(cpu_device(), args)...)
+    cdev = cpu_device()
+    f_cpu = try
+        cdev(f)
+    catch err
+        @error "Encountered error while moving $(f) to CPU. Skipping movement... This can \
+                be fixed by defining overloads using ConstructionBase.jl" err
+        f
+    end
+    return gradient(f_cpu, AutoZygote(), map(cdev, args)...)
 end
 
 # Zygote.jl

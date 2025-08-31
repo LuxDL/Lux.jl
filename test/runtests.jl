@@ -42,7 +42,7 @@ if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP)
     push!(EXTRA_PKGS, Pkg.PackageSpec("Flux"))
 end
 
-if (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda")
+if (BACKEND_GROUP == "all" || (BACKEND_GROUP == "cuda" && LUX_TEST_GROUP != ["reactant"]))
     if isdir(joinpath(@__DIR__, "../lib/LuxCUDA"))
         @info "Using local LuxCUDA"
         push!(EXTRA_DEV_PKGS, Pkg.PackageSpec(; path=joinpath(@__DIR__, "../lib/LuxCUDA")))
@@ -60,11 +60,6 @@ if !isempty(EXTRA_PKGS) || !isempty(EXTRA_DEV_PKGS)
     Base.retry_load_extensions()
     Pkg.instantiate()
     Pkg.precompile()
-end
-
-if BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda"
-    using LuxCUDA
-    @info sprint(CUDA.versioninfo)
 end
 
 using Lux
