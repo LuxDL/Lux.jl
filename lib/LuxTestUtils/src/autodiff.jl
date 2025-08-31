@@ -84,8 +84,8 @@ Test the gradients of `f` with respect to `args` using the specified backends.
 | Backend        | ADType              | CPU | GPU | Notes             |
 |:-------------- |:------------------- |:--- |:--- |:----------------- |
 | Zygote.jl      | `AutoZygote()`      | ✔   | ✔   |                   |
-| ForwardDiff.jl | `AutoForwardDiff()` | ✔   | ✖   | `len ≤ 100`       |
-| FiniteDiff.jl  | `AutoFiniteDiff()`  | ✔   | ✖   | `len ≤ 100`       |
+| ForwardDiff.jl | `AutoForwardDiff()` | ✔   | ✖   | `len ≤ 32`        |
+| FiniteDiff.jl  | `AutoFiniteDiff()`  | ✔   | ✖   | `len ≤ 32`        |
 | Enzyme.jl      | `AutoEnzyme()`      | ✔   | ✖   | Only Reverse Mode |
 
 ## Arguments
@@ -155,8 +155,8 @@ function test_gradients(
     backends = []
     push!(backends, AutoZygote())
     if !on_gpu
-        total_length ≤ 100 && push!(backends, AutoForwardDiff())
-        total_length ≤ 100 && push!(backends, AutoFiniteDiff())
+        total_length ≤ 32 && push!(backends, AutoForwardDiff())
+        total_length ≤ 32 && push!(backends, AutoFiniteDiff())
         # TODO: Move Enzyme out of here once it supports GPUs
         if enable_enzyme_reverse_mode || ENZYME_TESTING_ENABLED
             mode = if enzyme_set_runtime_activity

@@ -142,7 +142,9 @@ const RETESTITEMS_NWORKER_THREADS = parse(
                                                              enumerate(LUX_TEST_GROUP)
         nworkers = (tag == "reactant") ? 0 : RETESTITEMS_NWORKERS
 
-        withenv("BACKEND_GROUP" => BACKEND_GROUP) do
+        withenv(
+            "BACKEND_GROUP" => BACKEND_GROUP, "LUX_CURRENT_TEST_GROUP" => string(tag)
+        ) do
             ReTestItems.runtests(
                 Lux;
                 tags=(tag == "all" ? nothing : [Symbol(tag)]),
