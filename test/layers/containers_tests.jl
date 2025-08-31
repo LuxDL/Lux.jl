@@ -433,11 +433,18 @@ end
         end
 
         @testset "complex alternatives" begin
+            struct MulLayer <: Lux.AbstractLuxLayer end
+
+            (::MulLayer)(x, ps, st) = (ps.weight * x, st)
+
             A = aType([0.5 0.1]')
             B = aType([0.2 0.7]')
-            layer = Maxout(WrappedFunction(x -> A * x), WrappedFunction(x -> B * x))
+            layer = Maxout(MulLayer(), MulLayer())
             display(layer)
-            ps, st = dev(Lux.setup(rng, layer))
+
+            ps = dev((; layer_1=(; weight=A), layer_2=(; weight=B)))
+            st = dev((; layer_1=NamedTuple(), layer_2=NamedTuple()))
+
             x = aType([3.0 2.0])
             y = aType([0.5, 0.7]) .* x
 

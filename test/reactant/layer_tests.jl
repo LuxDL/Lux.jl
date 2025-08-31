@@ -1,6 +1,6 @@
 @testitem "Recurrent Layers" tags = [:reactant] setup = [
     SharedTestSetup, SharedReactantLayersTestSetup
-] skip = :(Sys.iswindows()) begin
+] begin
     using Reactant, Lux
     using LuxTestUtils: check_approx
 
@@ -67,8 +67,7 @@
     end
 end
 
-@testitem "Dropout Layers" tags = [:reactant] setup = [SharedTestSetup] skip =
-    :(Sys.iswindows()) begin
+@testitem "Dropout Layers" tags = [:reactant] setup = [SharedTestSetup] begin
     using Reactant, Lux, Random
 
     @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
@@ -104,7 +103,7 @@ end
 
 @testitem "BatchNorm Layer" tags = [:reactant] setup = [
     SharedTestSetup, SharedReactantLayersTestSetup
-] skip = :(Sys.iswindows()) begin
+] begin
     using Reactant, Lux, Random
 
     @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
@@ -172,7 +171,7 @@ end
 
 @testitem "Reactant: RMSNorm" tags = [:reactant] setup = [
     SharedTestSetup, SharedReactantLayersTestSetup
-] skip = :(Sys.iswindows()) begin
+] begin
     using Reactant, Lux, Random
 
     rng = StableRNG(12345)
@@ -210,7 +209,7 @@ end
 
 @testitem "Reactant: Alternate Precision" tags = [:reactant] setup = [
     SharedTestSetup, SharedReactantLayersTestSetup
-] skip = :(Sys.iswindows()) begin
+] begin
     using Reactant, Lux, Random
 
     @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES

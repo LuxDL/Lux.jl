@@ -1,5 +1,4 @@
-@testitem "Tensorflow Saved Model Export" tags = [:reactant] setup = [SharedTestSetup] skip =
-    :(Sys.iswindows()) begin
+@testitem "Tensorflow Saved Model Export" tags = [:reactant] setup = [SharedTestSetup] begin
     using Lux, Reactant, PythonCall, Random
 
     dev = reactant_device()
