@@ -14,8 +14,8 @@ function scaled_dot_product_attention(
     fdrop::F=identity,
 ) where {TQ,TK,TV,F,N}
     @assert N ≥ 4 "N must be at least 4"
-    @assert 1 ≤ head_dim ≤ 3 "head_dim must be between 1 and $N"
-    @assert 1 ≤ token_dim ≤ 3 "token_dim must be between 1 and $N"
+    @assert 1 ≤ head_dim ≤ 3 "head_dim must be between 1 and 3"
+    @assert 1 ≤ token_dim ≤ 3 "token_dim must be between 1 and 3"
     @assert head_dim ≠ token_dim "head_dim and token_dim must be different"
     @assert size(q, head_dim) == size(k, head_dim) "`q` and `k` must have the same \
                                                     number of heads. Found $(size(q)) vs \

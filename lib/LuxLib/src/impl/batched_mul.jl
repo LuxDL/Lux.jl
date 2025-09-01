@@ -111,13 +111,13 @@ function assert_batched_matmul_checks(
     lhs_batching_dims::Dims{M}=ntuple(Base.Fix2(+, 2), Val(N - 2)),
     rhs_batching_dims::Dims{M}=ntuple(Base.Fix2(+, 2), Val(N - 2)),
 ) where {xT,yT,N,M}
-    @assert N ≥ 3 "N must be at least 4"
+    @assert N ≥ 3 "N must be at least 3"
     @assert M == N - 2 "M = $M must be equal to N - 2 = $N - 2"
     @assert 1 ≤ lhs_contracting_dim ≤ N "lhs_contracting_dim must be between 1 and $N"
     @assert 1 ≤ rhs_contracting_dim ≤ N "rhs_contracting_dim must be between 1 and $N"
     for (lhs_batching_dim, rhs_batching_dim) in zip(lhs_batching_dims, rhs_batching_dims)
-        @assert 1 ≤ lhs_batching_dim ≤ N "lhs_batching_dim must be between 1 and 3"
-        @assert 1 ≤ rhs_batching_dim ≤ N "rhs_batching_dim must be between 1 and 3"
+        @assert 1 ≤ lhs_batching_dim ≤ N "lhs_batching_dim must be between 1 and $N"
+        @assert 1 ≤ rhs_batching_dim ≤ N "rhs_batching_dim must be between 1 and $N"
         @assert lhs_batching_dim ≠ lhs_contracting_dim "lhs_batching_dim must be different \
                                                         from lhs_contracting_dim"
         @assert rhs_batching_dim ≠ rhs_contracting_dim "rhs_batching_dim must be different \
