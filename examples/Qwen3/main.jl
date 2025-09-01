@@ -160,13 +160,10 @@ Qwen3RMSNorm(emb_dim::Int, eps) = AlternatePrecision{Float32}(RMSNorm(emb_dim; e
     num_heads::Int
     num_kv_groups::Int
     head_dim::Int
-    group_size::Int
 end
 
 function GroupedQueryAttention(d_in, num_heads, num_kv_groups; head_dim=nothing)
     @assert num_heads % num_kv_groups == 0 "num_heads must be divisible by num_kv_groups"
-
-    group_size = num_heads ÷ num_kv_groups
 
     if head_dim === nothing
         @assert d_in % num_heads == 0 "`d_in` must be divisible by `num_heads` if \
@@ -187,22 +184,14 @@ function GroupedQueryAttention(d_in, num_heads, num_kv_groups; head_dim=nothing)
         num_heads,
         num_kv_groups,
         head_dim,
-        group_size,
     )
 end
 
-function scaled_dot_product_attention(q, k, v, mask, head_dim)
-    scores = batched_mul(batched_transpose(k), q) ./ sqrt(eltype(q)(head_dim))
-    scores = ifelse.(mask, scores, typemin(eltype(scores)))
-    weights = softmax(scores; dims=1)
-    return batched_mul(v, weights)
-end
-
 function apply_rope(x::AbstractArray{T}, cos_cache, sin_cache) where {T}
-    return T.(apply_rotary_embedding(x, cos_cache, sin_cache; seq_dim=2))
+    return T.(apply_rotary_embedding(x, cos_cache, sin_cache; seq_dim=3))
 end
 
-function (attn::GroupedQueryAttention)((x, mask, cos_cache, sin_cache), ps, st::NamedTuple)
+function (attn::GroupedQueryAttention)((x, cos_cache, sin_cache), ps, st::NamedTuple)
     _, num_tokens, B = size(x)
 
     ## apply projections
@@ -210,18 +199,12 @@ function (attn::GroupedQueryAttention)((x, mask, cos_cache, sin_cache), ps, st::
     keys, st_k_proj = attn.k_proj(x, ps.k_proj, st.k_proj)
     values, st_v_proj = attn.v_proj(x, ps.v_proj, st.v_proj)
 
-    ## reshape and permute to (head_dim, num_tokens, num_heads/num_kv_groups, batch)
-    queries = permutedims(
-        reshape(queries, attn.head_dim, attn.num_heads, num_tokens, B), (1, 3, 2, 4)
-    )
-    keys = permutedims(
-        reshape(keys, attn.head_dim, attn.num_kv_groups, num_tokens, B), (1, 3, 2, 4)
-    )
-    values = permutedims(
-        reshape(values, attn.head_dim, attn.num_kv_groups, num_tokens, B), (1, 3, 2, 4)
-    )
+    ## reshape and permute to (head_dim, num_heads/num_kv_groups, num_tokens, batch)
+    queries = reshape(queries, attn.head_dim, attn.num_heads, num_tokens, B)
+    keys = reshape(keys, attn.head_dim, attn.num_kv_groups, num_tokens, B)
+    values = reshape(values, attn.head_dim, attn.num_kv_groups, num_tokens, B)
 
-    ## apply optional normalization
+    ## apply normalization
     queries, st_q_norm = attn.q_norm(queries, ps.q_norm, st.q_norm)
     keys, st_k_norm = attn.k_norm(keys, ps.k_norm, st.k_norm)
 
@@ -229,27 +212,14 @@ function (attn::GroupedQueryAttention)((x, mask, cos_cache, sin_cache), ps, st::
     queries = apply_rope(queries, cos_cache, sin_cache)
     keys = apply_rope(keys, cos_cache, sin_cache)
 
-    ## expand K and V to match number of heads
-    keys = repeat(keys, 1, attn.group_size, 1, 1)
-    values = repeat(values, 1, attn.group_size, 1, 1)
-
     ## attention
-    queries = reshape(queries, attn.head_dim, num_tokens, attn.num_heads * B)
-    keys = reshape(keys, attn.head_dim, num_tokens, attn.num_heads * B)
-    values = reshape(values, attn.head_dim, num_tokens, attn.num_heads * B)
-
     context = reshape(
-        permutedims(
-            reshape(
-                scaled_dot_product_attention(queries, keys, values, mask, attn.head_dim),
-                attn.head_dim,
-                num_tokens,
-                attn.num_heads,
-                B,
-            ),
-            (1, 3, 2, 4),
-        ),
-        (attn.head_dim * attn.num_heads, num_tokens, B),
+        scaled_dot_product_attention(
+            queries, keys, values; head_dim=1, token_dim=3, is_causal=true
+        )[1],
+        attn.head_dim * attn.num_heads,
+        num_tokens,
+        B,
     )
 
     ## output projection
@@ -286,13 +256,11 @@ function Qwen3Attention(cfg::Qwen3Config)
     )
 end
 
-function (block::Qwen3Attention)((x, mask, cos_cache, sin_cache), ps, st::NamedTuple)
+function (block::Qwen3Attention)((x, cos_cache, sin_cache), ps, st::NamedTuple)
     ## shortcut connection for attention block
     shortcut = x
     x, st_norm1 = block.input_layernorm(x, ps.input_layernorm, st.input_layernorm)
-    x, st_attn = block.self_attn(
-        (x, mask, cos_cache, sin_cache), ps.self_attn, st.self_attn
-    )
+    x, st_attn = block.self_attn((x, cos_cache, sin_cache), ps.self_attn, st.self_attn)
     x = x .+ shortcut
 
     ## shortcut connection for feed-forward block
@@ -349,18 +317,11 @@ function LuxCore.initialstates(rng::AbstractRNG, m::Qwen3)
 end
 
 function (qwen3::Qwen3)(in_idx, ps, st::NamedTuple)
-    embed_tokens, st_embed_tokens = qwen3.embed_tokens(
-        in_idx, ps.embed_tokens, st.embed_tokens
-    )
-    x = embed_tokens
-
-    attn_mask = make_causal_mask(x)
+    x, st_embed_tokens = qwen3.embed_tokens(in_idx, ps.embed_tokens, st.embed_tokens)
 
     st_blocks = ()
     for (i, block) in enumerate(qwen3.blocks)
-        x, st_block_new = block(
-            (x, attn_mask, st.cos_cache, st.sin_cache), ps.blocks[i], st.blocks[i]
-        )
+        x, st_block_new = block((x, st.cos_cache, st.sin_cache), ps.blocks[i], st.blocks[i])
         st_blocks = (st_blocks..., st_block_new)
     end
     x, st_norm = qwen3.norm(x, ps.norm, st.norm)
