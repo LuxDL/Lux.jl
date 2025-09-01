@@ -257,7 +257,8 @@ julia> logitbce_ls(y_model, y_bin) > logitbce(y_model, y_bin)
 true
 ```
 """
-@concrete struct BinaryCrossEntropyLoss{logits} <: AbstractLossFunction
+@concrete struct BinaryCrossEntropyLoss <: AbstractLossFunction
+    logits <: Union{Val{true},Val{false}}
     label_smoothing <: Union{Nothing,Real}
     agg
     epsilon
@@ -270,22 +271,23 @@ function BinaryCrossEntropyLoss(;
     logits::Union{Bool,Val}=Val(false),
 )
     label_smoothing !== nothing && @argcheck 0 ≤ label_smoothing ≤ 1
-    return BinaryCrossEntropyLoss{Utils.unwrap_val(logits)}(label_smoothing, agg, epsilon)
+    logits isa Bool && (logits = Val(logits))
+    return BinaryCrossEntropyLoss(logits, label_smoothing, agg, epsilon)
 end
 
-for logits in (true, false)
-    return_expr = if logits
-        :(return loss.agg((1 .- ỹ) .* ŷ .- logsigmoid.(ŷ)))
-    else
-        :(return loss.agg(-xlogy.(ỹ, ŷ .+ ϵ) .- xlogy.(1 .- ỹ, 1 .- ŷ .+ ϵ)))
-    end
+function unsafe_apply_loss(loss::BinaryCrossEntropyLoss, ŷ, y)
+    T = promote_type(eltype(ŷ), eltype(y))
+    ϵ = LossFunctionImpl.get_ϵ(T, loss.epsilon)
+    ỹ = LossFunctionImpl.label_smoothing_binary(loss.label_smoothing, y, T)
+    return compute_binary_cross_entropy(loss.logits, loss, ŷ, ỹ, ϵ)
+end
 
-    @eval function unsafe_apply_loss(loss::BinaryCrossEntropyLoss{$(logits)}, ŷ, y)
-        T = promote_type(eltype(ŷ), eltype(y))
-        ϵ = LossFunctionImpl.get_ϵ(T, loss.epsilon)
-        ỹ = LossFunctionImpl.label_smoothing_binary(loss.label_smoothing, y, T)
-        return $(return_expr)
-    end
+function compute_binary_cross_entropy(::Val{true}, loss, ŷ, ỹ, ϵ)
+    return loss.agg((1 .- ỹ) .* ŷ .- logsigmoid.(ŷ))
+end
+
+function compute_binary_cross_entropy(::Val{false}, loss, ŷ, ỹ, ϵ)
+    return loss.agg(-xlogy.(ỹ, ŷ .+ ϵ) .- xlogy.(1 .- ỹ, 1 .- ŷ .+ ϵ))
 end
 
 @doc doc"""
@@ -379,7 +381,8 @@ julia> CrossEntropyLoss(label_smoothing=0.15)(y_model, y) ≈ 1.5776052f0
 true
 ```
 """
-@concrete struct CrossEntropyLoss{logits} <: AbstractLossFunction
+@concrete struct CrossEntropyLoss <: AbstractLossFunction
+    logits <: Union{Val{true},Val{false}}
     label_smoothing <: Union{Nothing,Real}
     dims
     agg
@@ -394,26 +397,25 @@ function CrossEntropyLoss(;
     logits::Union{Bool,Val}=Val(false),
 )
     label_smoothing !== nothing && @argcheck 0 ≤ label_smoothing ≤ 1
-    return CrossEntropyLoss{Utils.unwrap_val(logits)}(label_smoothing, dims, agg, epsilon)
+    logits isa Bool && (logits = Val(logits))
+    return CrossEntropyLoss(logits, label_smoothing, dims, agg, epsilon)
 end
 
-for logits in (true, false)
-    return_expr = if logits
-        :(
-            return LossFunctionImpl.fused_agg(
-                loss.agg, -, sum(ỹ .* logsoftmax(ŷ; loss.dims); loss.dims)
-            )
-        )
-    else
-        :(return LossFunctionImpl.fused_agg(loss.agg, -, sum(xlogy.(ỹ, ŷ .+ ϵ); loss.dims)))
-    end
+function unsafe_apply_loss(loss::CrossEntropyLoss, ŷ, y)
+    T = promote_type(eltype(ŷ), eltype(y))
+    ϵ = LossFunctionImpl.get_ϵ(T, loss.epsilon)
+    ỹ = LossFunctionImpl.label_smoothing(loss.label_smoothing, y, T)
+    return compute_cross_entropy(loss.logits, loss, ŷ, ỹ, ϵ)
+end
 
-    @eval function unsafe_apply_loss(loss::CrossEntropyLoss{$(logits)}, ŷ, y)
-        T = promote_type(eltype(ŷ), eltype(y))
-        ϵ = LossFunctionImpl.get_ϵ(T, loss.epsilon)
-        ỹ = LossFunctionImpl.label_smoothing(loss.label_smoothing, y, T)
-        return $(return_expr)
-    end
+function compute_cross_entropy(::Val{true}, loss, ŷ, ỹ, ϵ)
+    return LossFunctionImpl.fused_agg(
+        loss.agg, -, sum(ỹ .* logsoftmax(ŷ; loss.dims); loss.dims)
+    )
+end
+
+function compute_cross_entropy(::Val{false}, loss, ŷ, ỹ, ϵ)
+    return LossFunctionImpl.fused_agg(loss.agg, -, sum(xlogy.(ỹ, ŷ .+ ϵ); loss.dims))
 end
 
 @doc doc"""

@@ -1,13 +1,13 @@
 steps:
   - group: ":julia: (LuxLib) CUDA GPU"
     steps:
-      - label: ":julia: (LuxLib) Julia {{matrix.julia}} + CUDA GPU"
+      - label: ":julia: (LuxLib) Julia {{matrix.julia}} + CUDA GPU + {{matrix.group}}"
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
           - JuliaCI/julia-test#v1:
               project: "lib/LuxLib"
-              test_args: "BACKEND_GROUP=CUDA"
+              test_args: "BACKEND_GROUP=CUDA LUXLIB_TEST_GROUP={{matrix.group}}"
           - JuliaCI/julia-coverage#v1:
               codecov: true
               dirs:
@@ -27,6 +27,10 @@ steps:
           setup:
             julia:
               - "1"
+            group:
+              - "common"
+              - "normalization"
+              - "misc"
 
   # - group: ":julia: (LuxLib) AMD GPU"
   #   steps:

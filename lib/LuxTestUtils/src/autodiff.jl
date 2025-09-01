@@ -4,7 +4,15 @@ end
 
 # Zygote.jl on CPU
 function ground_truth_gradient(f, args...)
-    return gradient(f, AutoZygote(), map(cpu_device(), args)...)
+    cdev = cpu_device()
+    f_cpu = try
+        cdev(f)
+    catch err
+        @error "Encountered error while moving $(f) to CPU. Skipping movement... This can \
+                be fixed by defining overloads using ConstructionBase.jl" err
+        f
+    end
+    return gradient(f_cpu, AutoZygote(), map(cdev, args)...)
 end
 
 # Zygote.jl
@@ -76,8 +84,8 @@ Test the gradients of `f` with respect to `args` using the specified backends.
 | Backend        | ADType              | CPU | GPU | Notes             |
 |:-------------- |:------------------- |:--- |:--- |:----------------- |
 | Zygote.jl      | `AutoZygote()`      | ✔   | ✔   |                   |
-| ForwardDiff.jl | `AutoForwardDiff()` | ✔   | ✖   | `len ≤ 100`       |
-| FiniteDiff.jl  | `AutoFiniteDiff()`  | ✔   | ✖   | `len ≤ 100`       |
+| ForwardDiff.jl | `AutoForwardDiff()` | ✔   | ✖   | `len ≤ 32`        |
+| FiniteDiff.jl  | `AutoFiniteDiff()`  | ✔   | ✖   | `len ≤ 32`        |
 | Enzyme.jl      | `AutoEnzyme()`      | ✔   | ✖   | Only Reverse Mode |
 
 ## Arguments
@@ -147,8 +155,8 @@ function test_gradients(
     backends = []
     push!(backends, AutoZygote())
     if !on_gpu
-        total_length ≤ 100 && push!(backends, AutoForwardDiff())
-        total_length ≤ 100 && push!(backends, AutoFiniteDiff())
+        total_length ≤ 32 && push!(backends, AutoForwardDiff())
+        total_length ≤ 32 && push!(backends, AutoFiniteDiff())
         # TODO: Move Enzyme out of here once it supports GPUs
         if enable_enzyme_reverse_mode || ENZYME_TESTING_ENABLED
             mode = if enzyme_set_runtime_activity

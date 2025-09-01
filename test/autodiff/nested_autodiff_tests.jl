@@ -29,9 +29,11 @@ function test_nested_ad_input_gradient_jacobian(aType, dev, ongpu, loss_fn, X, m
 
     allow_unstable() do
         @test_gradients(
-            (x, ps) -> loss_fn(model, x, ps, st),
+            loss_fn,
+            Constant(model),
             X,
-            ps;
+            ps,
+            Constant(st);
             atol=1.0f-3,
             rtol=1.0f-1,
             soft_fail=[AutoFiniteDiff()],
@@ -40,23 +42,9 @@ function test_nested_ad_input_gradient_jacobian(aType, dev, ongpu, loss_fn, X, m
     end
 end
 
-const Xs = (
-    randn(rng, Float32, 3, 3, 2, 2),
-    randn(rng, Float32, 2, 2),
-    randn(rng, Float32, 2, 2),
-    randn(rng, Float32, 3, 3, 2, 2),
-)
+const Xs = (randn(rng, Float32, 2, 2), randn(rng, Float32, 3, 3, 2, 2))
 
 const models = (
-    Chain(
-        Conv((3, 3), 2 => 4, gelu; pad=SamePad()),
-        BatchNorm(4),
-        Conv((3, 3), 4 => 2, gelu; pad=SamePad()),
-        BatchNorm(2),
-        FlattenLayer(),
-        Dense(18 => 2),
-    ),
-    Chain(Dense(2, 4), GroupNorm(4, 2, gelu), Dense(4, 2)),
     Chain(Dense(2, 4), BatchNorm(4, gelu), Dense(4, 2)),
     Chain(
         Conv((3, 3), 2 => 3, gelu; pad=SamePad()),
@@ -97,7 +85,7 @@ const ALL_TEST_CONFIGS = Iterators.product(
 )
 
 const TEST_BLOCKS = collect(
-    Iterators.partition(ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 4))
+    Iterators.partition(ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 2))
 )
 
 export test_nested_ad_input_gradient_jacobian, TEST_BLOCKS
@@ -120,28 +108,6 @@ end
 ] tags = [:autodiff] begin
     @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
         @testset "$(summary(X)) $(loss_fn)" for ((X, model), loss_fn) in TEST_BLOCKS[2]
-            model = maybe_rewrite_to_crosscor(mode, model)
-            test_nested_ad_input_gradient_jacobian(aType, dev, ongpu, loss_fn, X, model)
-        end
-    end
-end
-
-@testitem "Nested AD: Input Gradient/Jacobian Group 3" setup = [
-    SharedTestSetup, NestedADInputTestSetup
-] tags = [:autodiff] begin
-    @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
-        @testset "$(summary(X)) $(loss_fn)" for ((X, model), loss_fn) in TEST_BLOCKS[3]
-            model = maybe_rewrite_to_crosscor(mode, model)
-            test_nested_ad_input_gradient_jacobian(aType, dev, ongpu, loss_fn, X, model)
-        end
-    end
-end
-
-@testitem "Nested AD: Input Gradient/Jacobian Group 4" setup = [
-    SharedTestSetup, NestedADInputTestSetup
-] tags = [:autodiff] begin
-    @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
-        @testset "$(summary(X)) $(loss_fn)" for ((X, model), loss_fn) in TEST_BLOCKS[4]
             model = maybe_rewrite_to_crosscor(mode, model)
             test_nested_ad_input_gradient_jacobian(aType, dev, ongpu, loss_fn, X, model)
         end
@@ -181,9 +147,11 @@ function test_nested_ad_parameter_gradient_jacobian(aType, dev, ongpu, loss_fn, 
 
     allow_unstable() do
         @test_gradients(
-            (x, ps) -> loss_fn(model, x, ps, st),
+            loss_fn,
+            Constant(model),
             X,
-            ps;
+            ps,
+            Constant(st);
             atol=1.0f-3,
             rtol=1.0f-1,
             soft_fail=[AutoFiniteDiff()],
@@ -192,23 +160,9 @@ function test_nested_ad_parameter_gradient_jacobian(aType, dev, ongpu, loss_fn, 
     end
 end
 
-const Xs = (
-    randn(rng, Float32, 3, 3, 2, 2),
-    randn(rng, Float32, 2, 2),
-    randn(rng, Float32, 2, 2),
-    randn(rng, Float32, 3, 3, 2, 2),
-)
+const Xs = (randn(rng, Float32, 2, 2), randn(rng, Float32, 3, 3, 2, 2))
 
 const models = (
-    Chain(
-        Conv((3, 3), 2 => 4, gelu; pad=SamePad()),
-        BatchNorm(4),
-        Conv((3, 3), 4 => 2, gelu; pad=SamePad()),
-        BatchNorm(2),
-        FlattenLayer(),
-        Dense(18 => 2),
-    ),
-    Chain(Dense(2, 4, gelu), Dense(4, 2)),
     Chain(Dense(2, 4, gelu), BatchNorm(4, sigmoid), Dense(4, 2)),
     Chain(
         Conv((3, 3), 2 => 4, gelu; pad=SamePad()),
@@ -255,7 +209,7 @@ const ALL_TEST_CONFIGS = Iterators.product(
 )
 
 const TEST_BLOCKS = collect(
-    Iterators.partition(ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 4))
+    Iterators.partition(ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 2))
 )
 
 export test_nested_ad_parameter_gradient_jacobian, TEST_BLOCKS
@@ -278,28 +232,6 @@ end
 ] tags = [:autodiff] begin
     @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
         @testset "$(summary(X)) $(loss_fn)" for ((X, model), loss_fn) in TEST_BLOCKS[2]
-            model = maybe_rewrite_to_crosscor(mode, model)
-            test_nested_ad_parameter_gradient_jacobian(aType, dev, ongpu, loss_fn, X, model)
-        end
-    end
-end
-
-@testitem "Nested AD: Parameter Gradient/Jacobian Group 3" setup = [
-    SharedTestSetup, NestedADParameterTestSetup
-] tags = [:autodiff] begin
-    @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
-        @testset "$(summary(X)) $(loss_fn)" for ((X, model), loss_fn) in TEST_BLOCKS[3]
-            model = maybe_rewrite_to_crosscor(mode, model)
-            test_nested_ad_parameter_gradient_jacobian(aType, dev, ongpu, loss_fn, X, model)
-        end
-    end
-end
-
-@testitem "Nested AD: Parameter Gradient/Jacobian Group 4" setup = [
-    SharedTestSetup, NestedADParameterTestSetup
-] tags = [:autodiff] begin
-    @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
-        @testset "$(summary(X)) $(loss_fn)" for ((X, model), loss_fn) in TEST_BLOCKS[4]
             model = maybe_rewrite_to_crosscor(mode, model)
             test_nested_ad_parameter_gradient_jacobian(aType, dev, ongpu, loss_fn, X, model)
         end

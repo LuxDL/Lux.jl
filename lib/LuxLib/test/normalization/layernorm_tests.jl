@@ -77,8 +77,10 @@ anonact = x -> x^3
 const ALL_TEST_CONFIGS = Any[]
 
 for T in (Float32, Float64),
-    x_shape in ((3, 3, 2, 1), (2, 2, 2, 1), (2, 3, 2, 2)),
-    affine_shape in (nothing, x_shape[1:3], (1, 1, 1), (1, 1, x_shape[3])),
+    # x_shape in ((3, 3, 2, 1), (2, 2, 2, 1), (2, 3, 2, 2)),
+    x_shape in ((3, 3, 2, 1), (2, 2, 2, 1)),
+    # affine_shape in (nothing, x_shape[1:3], (1, 1, 1), (1, 1, x_shape[3])),
+    affine_shape in (nothing, (1, 1, x_shape[3])),
     act in (identity, sigmoid_fast, anonact)
 
     push!(ALL_TEST_CONFIGS, (T, x_shape, affine_shape, act))

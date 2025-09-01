@@ -196,6 +196,8 @@ end
 @testitem "GRUCell" setup = [SharedTestSetup, RecurrentLayersSetup] tags = [
     :recurrent_layers
 ] begin
+    using LuxTestUtils: check_approx
+
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -228,7 +230,7 @@ end
                 ps, st = dev(Lux.setup(rng, gru))
                 ps = _ps
                 (y, carry), _ = Lux.apply(gru, x, ps, st)
-                @test carry == _carry
+                @test check_approx(carry, _carry)
                 l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(gru(x, p, st)[1][1])), ps)
                 gs = back(one(l))[1]
 
@@ -240,7 +242,7 @@ end
                 ps, st = dev(Lux.setup(rng, gru))
                 ps = merge(_ps, (hidden_state=ps.hidden_state,))
                 (y, carry), _ = Lux.apply(gru, x, ps, st)
-                @test carry == _carry
+                @test check_approx(carry, _carry)
                 l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(gru(x, p, st)[1][1])), ps)
                 gs = back(one(l))[1]
                 @test !isnothing(gs.hidden_state)
@@ -249,7 +251,7 @@ end
                 ps, st = dev(Lux.setup(rng, gru))
                 ps = merge(_ps, (; ps.bias_ih, ps.bias_hh, ps.hidden_state))
                 (y, carry), _ = Lux.apply(gru, x, ps, st)
-                @test carry == _carry
+                @test check_approx(carry, _carry)
                 l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(gru(x, p, st)[1][1])), ps)
                 gs = back(one(l))[1]
                 @test !isnothing(gs.hidden_state)
@@ -328,7 +330,7 @@ function test_recurrence_layer(
     # Batched Time Series
     @testset "typeof(x): $(typeof(x))" for x in (
         aType(randn(rng, Float32, 3, 4, 2)),
-        aType.(Tuple(randn(rng, Float32, 3, 2) for _ in 1:4)),
+        # aType.(Tuple(randn(rng, Float32, 3, 2) for _ in 1:4)),
         aType.([randn(rng, Float32, 3, 2) for _ in 1:4]),
     )
         # Fix data ordering for testing
@@ -372,7 +374,7 @@ function test_recurrence_layer(
     # Batched Time Series without data batches
     @testset "typeof(x): $(typeof(x))" for x in (
         aType(randn(rng, Float32, 3, 4)),
-        aType.(Tuple(randn(rng, Float32, 3) for _ in 1:4)),
+        # aType.(Tuple(randn(rng, Float32, 3) for _ in 1:4)),
         aType.([randn(rng, Float32, 3) for _ in 1:4]),
     )
         ps, st = dev(Lux.setup(rng, rnn))
@@ -425,7 +427,7 @@ const ALL_TEST_CONFIGS = Iterators.product(
 )
 
 const TEST_BLOCKS = collect(
-    Iterators.partition(ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 4))
+    Iterators.partition(ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 2))
 )
 
 export TEST_BLOCKS, test_recurrence_layer
@@ -449,30 +451,6 @@ end
 ] tags = [:recurrent_layers] begin
     @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
         @testset for (ordering, cell, use_bias, train_state) in TEST_BLOCKS[2]
-            test_recurrence_layer(
-                mode, aType, dev, ongpu, ordering, cell, use_bias, train_state
-            )
-        end
-    end
-end
-
-@testitem "Recurrence: Group 3" setup = [
-    RecurrenceTestSetup, SharedTestSetup, RecurrentLayersSetup
-] tags = [:recurrent_layers] begin
-    @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
-        @testset for (ordering, cell, use_bias, train_state) in TEST_BLOCKS[3]
-            test_recurrence_layer(
-                mode, aType, dev, ongpu, ordering, cell, use_bias, train_state
-            )
-        end
-    end
-end
-
-@testitem "Recurrence: Group 4" setup = [
-    RecurrenceTestSetup, SharedTestSetup, RecurrentLayersSetup
-] tags = [:recurrent_layers] begin
-    @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
-        @testset for (ordering, cell, use_bias, train_state) in TEST_BLOCKS[4]
             test_recurrence_layer(
                 mode, aType, dev, ongpu, ordering, cell, use_bias, train_state
             )

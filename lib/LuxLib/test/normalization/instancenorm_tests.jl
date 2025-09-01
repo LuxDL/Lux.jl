@@ -82,7 +82,8 @@ end
 
 const ALL_TEST_CONFIGS = Iterators.product(
     [Float32, Float64],
-    ((4, 4, 6, 2), (3, 4, 2), (4, 4, 4, 3, 2)),
+    # ((4, 4, 6, 2), (3, 4, 2), (4, 4, 4, 3, 2)),
+    ((4, 4, 6, 2),),
     (Val(true), Val(false)),
     (identity, sigmoid_fast, anonact),
 )

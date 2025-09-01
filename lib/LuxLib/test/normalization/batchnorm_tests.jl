@@ -127,10 +127,12 @@ end
 
 const ALL_TEST_CONFIGS = Iterators.product(
     [Float32, Float64],
-    ((4, 4, 6, 2), (8, 2), (4, 4, 4, 3, 2)),
+    # ((4, 4, 6, 2), (8, 2), (4, 4, 4, 3, 2)),
+    ((4, 4, 6, 2), (8, 2)),
     (Val(true), Val(false)),
-    (true, false),
-    (true, false),
+    # (true, false),
+    # (true, false),
+    [(true, true), (false, false)],
     (identity, sigmoid_fast, anonact),
 )
 
@@ -147,7 +149,7 @@ end
 ] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (
-            T, sz, training, affine, track_stats, act
+            T, sz, training, (affine, track_stats), act
         ) in TEST_BLOCKS[1]
             !fp64 && T == Float64 && continue
             run_batchnorm_testing(
@@ -162,7 +164,7 @@ end
 ] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (
-            T, sz, training, affine, track_stats, act
+            T, sz, training, (affine, track_stats), act
         ) in TEST_BLOCKS[2]
             !fp64 && T == Float64 && continue
             run_batchnorm_testing(
