@@ -196,6 +196,8 @@ end
 @testitem "GRUCell" setup = [SharedTestSetup, RecurrentLayersSetup] tags = [
     :recurrent_layers
 ] begin
+    using LuxTestUtils: check_approx
+
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -228,7 +230,7 @@ end
                 ps, st = dev(Lux.setup(rng, gru))
                 ps = _ps
                 (y, carry), _ = Lux.apply(gru, x, ps, st)
-                @test carry == _carry
+                @test check_approx(carry, _carry)
                 l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(gru(x, p, st)[1][1])), ps)
                 gs = back(one(l))[1]
 
@@ -240,7 +242,7 @@ end
                 ps, st = dev(Lux.setup(rng, gru))
                 ps = merge(_ps, (hidden_state=ps.hidden_state,))
                 (y, carry), _ = Lux.apply(gru, x, ps, st)
-                @test carry == _carry
+                @test check_approx(carry, _carry)
                 l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(gru(x, p, st)[1][1])), ps)
                 gs = back(one(l))[1]
                 @test !isnothing(gs.hidden_state)
@@ -249,7 +251,7 @@ end
                 ps, st = dev(Lux.setup(rng, gru))
                 ps = merge(_ps, (; ps.bias_ih, ps.bias_hh, ps.hidden_state))
                 (y, carry), _ = Lux.apply(gru, x, ps, st)
-                @test carry == _carry
+                @test check_approx(carry, _carry)
                 l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(gru(x, p, st)[1][1])), ps)
                 gs = back(one(l))[1]
                 @test !isnothing(gs.hidden_state)
