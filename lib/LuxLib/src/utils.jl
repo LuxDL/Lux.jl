@@ -368,4 +368,14 @@ EnzymeRules.inactive_noinl(::typeof(can_loopvec_args_check), ::Any...) = nothing
 
 recursive_unthunk(x) = Functors.fmap(CRC.unthunk, x; exclude=MLDataDevices.isleaf)
 
+function maybe_permutedims(x::AbstractArray{T,N}, perm) where {T,N}
+    perm == ntuple(identity, Val(N)) && return x
+    return permutedims(x, perm)
+end
+
+function maybe_repeat(x::AbstractArray{T,N}, dims::Dims{N}) where {T,N}
+    all(==(1), dims) && return x
+    return repeat(x; outer=dims)
+end
+
 end
