@@ -8,6 +8,18 @@ to address these problems in the respective frameworks would be too disruptive f
 Here comes in `Lux`: a neural network framework built completely using pure functions to make
 it both compiler and autodiff friendly.
 
+## Performance and Deployment with Reactant
+
+Lux.jl takes a **Reactant-first approach** to deliver exceptional performance and seamless deployment capabilities:
+
+* **XLA Compilation** -- Lux models compile to highly optimized XLA code via [Reactant.jl](https://github.com/EnzymeAD/Reactant.jl), delivering significant speedups on CPU, GPU, and TPU. This compilation approach removes control flow overhead and enables advanced optimizations.
+
+* **Cross-Platform Performance** -- Run the same Lux model with optimal performance across different hardware backends (CPU, NVIDIA GPUs, AMD GPUs, TPUs) without code changes, simply by switching the Reactant backend.
+
+* **Production Deployment** -- Compiled models can be exported and deployed to production servers and edge devices by leveraging the rich TensorFlow ecosystem, making Lux suitable for real-world applications.
+
+* **Large Model Support** -- With Reactant compilation, Lux now excels at training very large models that were previously challenging, making it competitive with other frameworks for large-scale deep learning.
+
 ## Design Principles
 
 * **Layers must be immutable** -- cannot store any parameter/state but rather store the
@@ -21,6 +33,10 @@ it both compiler and autodiff friendly.
   backends across all supported hardware backends.
 
 ## Why use Lux over Flux?
+
+* **High-Performance XLA Compilation** -- Lux's Reactant-first approach enables XLA compilation for dramatic performance improvements across CPU, GPU, and TPU. Models compile to highly optimized code that eliminates Julia overhead and leverages hardware-specific optimizations.
+
+* **Production-Ready Deployment** -- Deploy Lux models to production environments using the mature TensorFlow ecosystem. Compiled models can be exported and run on servers, edge devices, and mobile platforms.
 
 * **Neural Networks for SciML**: For SciML Applications (Neural ODEs, Deep Equilibrium
   Models) solvers typically expect a monolithic parameter vector. Flux enables this via its
@@ -47,18 +63,10 @@ it both compiler and autodiff friendly.
   [AD systems in julia](@ref autodiff-lux), while Flux is mostly tied to Zygote (with some
   initial support for Enzyme).
 
-* **Small Neural Networks on CPU** -- Lux is developed for training large neural networks.
-  For smaller architectures, we recommend using
-  [SimpleChains.jl](https://github.com/PumasAI/SimpleChains.jl) or even better use it in
-  conjunction with Lux via [`ToSimpleChainsAdaptor`](@ref).
+* **Optimized for All Model Sizes** -- Whether you're working with small prototypes or large production models, Lux delivers optimal performance. For the smallest networks where minimal overhead is critical, you can use [`ToSimpleChainsAdaptor`](@ref) to leverage SimpleChains.jl's specialized CPU optimizations.
 
 * **Reliability** -- We have learned from the mistakes of the past with Flux and everything
   in our core framework is extensively tested, along with downstream CI to ensure that
   everything works as expected.
 
-!!! tip "Revising Previous Recommendation about Large Models"
 
-    Previously we recommended not using Lux for very large models. But we have been making
-    a lot of head-way with [Reactant.jl](https://github.com/EnzymeAD/Reactant.jl) and it
-    would be worthwhile to test larger models with Lux. See [compiling Lux
-    models](@ref reactant-compilation) for more information.
