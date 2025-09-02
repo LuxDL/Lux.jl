@@ -14,6 +14,12 @@ fast_activation
 fast_activation!!
 ```
 
+## Attention
+
+```@docs
+scaled_dot_product_attention
+```
+
 ## Batched Operations
 
 ```@docs

@@ -53,13 +53,17 @@ end
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
     push!(EXTRA_PKGS, Pkg.PackageSpec(; name="AMDGPU"))
 
-if !isempty(EXTRA_PKGS) || !isempty(EXTRA_DEV_PKGS)
-    @info "Installing Extra Packages for testing" EXTRA_PKGS EXTRA_DEV_PKGS
-    isempty(EXTRA_PKGS) || Pkg.add(EXTRA_PKGS)
-    isempty(EXTRA_DEV_PKGS) || Pkg.develop(EXTRA_DEV_PKGS)
-    Base.retry_load_extensions()
-    Pkg.instantiate()
-    Pkg.precompile()
+try
+    if !isempty(EXTRA_PKGS) || !isempty(EXTRA_DEV_PKGS)
+        @info "Installing Extra Packages for testing" EXTRA_PKGS EXTRA_DEV_PKGS
+        isempty(EXTRA_PKGS) || Pkg.add(EXTRA_PKGS)
+        isempty(EXTRA_DEV_PKGS) || Pkg.develop(EXTRA_DEV_PKGS)
+        Base.retry_load_extensions()
+        Pkg.instantiate()
+        Pkg.precompile()
+    end
+catch err
+    @error "Error occurred while installing extra packages" err
 end
 
 using Lux

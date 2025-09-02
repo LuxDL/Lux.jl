@@ -14,7 +14,7 @@ using KernelAbstractions: KernelAbstractions, @kernel, @Const, @index
 
 using Polyester: @batch
 
-using LinearAlgebra: LinearAlgebra, mul!
+using LinearAlgebra: LinearAlgebra, mul!, triu!
 using Random: Random, AbstractRNG, rand!
 using Statistics: Statistics, mean, var
 
@@ -74,6 +74,7 @@ const CRC = ChainRulesCore
 const KA = KernelAbstractions
 
 include("activation.jl")
+include("attention.jl")
 include("batched_mul.jl")
 include("batchnorm.jl")
 include("bias_activation.jl")
