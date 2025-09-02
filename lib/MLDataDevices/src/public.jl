@@ -318,7 +318,7 @@ const SET_DEVICE_DOCS = """
 Set the device for the given type. This is a no-op for `CPUDevice`. For `CUDADevice`
 and `AMDGPUDevice`, it prints a warning if the corresponding trigger package is not
 loaded.
-    
+
 Currently, `MetalDevice` and `oneAPIDevice` don't support setting the device.
 """
 
@@ -383,7 +383,10 @@ for op in (:get_device, :get_device_type)
     @eval function $(op)(x)
         Internal.fast_structure(x) && return Internal.$(op)(x)
         return mapreduce(
-            Internal.$(op), Internal.combine_devices, fleaves(x; exclude=isleaf)
+            Internal.$(op),
+            Internal.combine_devices,
+            fleaves(x; exclude=isleaf);
+            init=$(op == :get_device ? nothing : Nothing),
         )
     end
 end
