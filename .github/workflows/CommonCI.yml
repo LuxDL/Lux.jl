@@ -60,8 +60,9 @@ jobs:
           version: ${{ inputs.julia_version }}
       - uses: julia-actions/julia-downgrade-compat@v2
         if: ${{ inputs.downgrade_testing }}
+        with:
+          projects: ${{ inputs.project }}
       - uses: julia-actions/cache@v2
-        if: ${{ !inputs.downgrade_testing }}
 
       # For 1.11 and beyond we can use sources. For older versions we need to
       # manually develop the packages.
