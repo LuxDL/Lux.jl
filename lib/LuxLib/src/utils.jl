@@ -378,4 +378,9 @@ function maybe_repeat(x::AbstractArray{T,N}, dims::Dims{N}) where {T,N}
     return repeat(x; outer=dims)
 end
 
+function maybe_reshape(x::AbstractArray{T,N}, dims::Dims{N}) where {T,N}
+    size(x) == dims && return x
+    return reshape(x, dims)
+end
+
 end

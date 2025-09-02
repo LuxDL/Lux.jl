@@ -43,8 +43,12 @@ function batched_matmul(
         x_permuted, y_permuted = x, y
     end
 
-    x_flattened = reshape(x_permuted, size(x_permuted, 1), size(x_permuted, 2), :)
-    y_flattened = reshape(y_permuted, size(y_permuted, 1), size(y_permuted, 2), :)
+    x_flattened = Utils.maybe_reshape(
+        x_permuted, (size(x_permuted, 1), size(x_permuted, 2), prod(batch_size_tuple))
+    )
+    y_flattened = Utils.maybe_reshape(
+        y_permuted, (size(y_permuted, 1), size(y_permuted, 2), prod(batch_size_tuple))
+    )
 
     res = batched_matmul_fallback(x_flattened, y_flattened)
 
@@ -213,8 +217,10 @@ end
 function batched_matmul_cpu!(
     z::AbstractArray{zT,3}, x::AbstractArray{xT,3}, y::AbstractArray{yT,3}
 ) where {zT,xT,yT}
-    if can_loopvec_args(batchview(z, 1), batchview(x, 1), batchview(y, 1)) &&
+    if (
+        can_loopvec_args(batchview(z, 1), batchview(x, 1), batchview(y, 1)) &&
         !unsafe_known(explicit_blas_loaded())
+    )
         batched_matmul_loopvec_impl!(z, x, y)
         return nothing
     end
