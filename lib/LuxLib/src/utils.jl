@@ -382,5 +382,6 @@ function maybe_reshape(x::AbstractArray{T,N}, dims::Dims{N}) where {T,N}
     size(x) == dims && return x
     return reshape(x, dims)
 end
+maybe_reshape(x::AbstractArray{T}, dims::Dims) where {T} = reshape(x, dims)
 
 end
