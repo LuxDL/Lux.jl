@@ -284,3 +284,17 @@ end
 
     @test cx2[1] === cx2[2]
 end
+
+@testset "get_device/get_device_type empty" begin
+    struct WrapperStruct{T}
+        value::T
+    end
+
+    x = WrapperStruct((;))
+    @test get_device(x) === nothing
+    @test get_device_type(x) === Nothing
+
+    x = (rand(Float32, 10), WrapperStruct((;)))
+    @test get_device(x) == CPUDevice()
+    @test get_device_type(x) == CPUDevice
+end
