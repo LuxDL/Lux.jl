@@ -1,7 +1,6 @@
 module LuxLibReactantExt
 
-using Reactant:
-    Reactant, AnyTracedRArray, AnyTracedRVector, TracedRArray, TracedUtils, @opcall
+using Reactant: Reactant, AnyTracedRArray, AnyTracedRVector, TracedRArray, @opcall
 using ReactantCore: materialize_traced_array
 using Static: False, True
 

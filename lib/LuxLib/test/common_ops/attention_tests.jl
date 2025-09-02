@@ -9,7 +9,7 @@
                 q = rand(Float32, n ÷ nheads, nheads, lenq, batch_size...) |> aType
                 k = rand(Float32, n ÷ nheads, nheads, lenkv, batch_size...) |> aType
                 v = rand(Float32, n ÷ nheads, nheads, lenkv, batch_size...) |> aType
-                y1, α1 = scaled_dot_product_attention(q, k, v)
+                y1, α1 = scaled_dot_product_attention(q, k, v) |> cpu_device()
 
                 @test y1 isa aType{Float32,length(batch_size) + 3}
                 @test size(y1) == (n ÷ nheads, nheads, lenq, batch_size...)
@@ -25,9 +25,10 @@
                 @test α1_ra ≈ α1 atol = 1.0f-3 rtol = 1.0f-3
 
                 @testset "Gradient Check" begin
-                    ∂q_zyg, ∂k_zyg, ∂v_zyg = Zygote.gradient(
-                        sum ∘ first ∘ scaled_dot_product_attention, q, k, v
-                    )
+                    ∂q_zyg, ∂k_zyg, ∂v_zyg =
+                        Zygote.gradient(
+                            sum ∘ first ∘ scaled_dot_product_attention, q, k, v
+                        ) |> cpu_device()
 
                     ∂q_reactant, ∂k_reactant, ∂v_reactant = @jit Enzyme.gradient(
                         Reverse,
@@ -49,7 +50,7 @@
                 q2 = permutedims(q, (3, 2, 1, 4:(3 + length(batch_size))...)) |> aType
                 k2 = permutedims(k, (3, 2, 1, 4:(3 + length(batch_size))...)) |> aType
                 v2 = permutedims(v, (3, 2, 1, 4:(3 + length(batch_size))...)) |> aType
-                y2, α2 = sdpa(q2, k2, v2)
+                y2, α2 = sdpa(q2, k2, v2) |> cpu_device()
 
                 @test y2 isa aType{Float32,length(batch_size) + 3}
                 @test size(y2) == (n ÷ nheads, nheads, lenq, batch_size...)
@@ -65,9 +66,8 @@
                 @test α2_ra ≈ α2 atol = 1.0f-3 rtol = 1.0f-3
 
                 @testset "Gradient Check" begin
-                    ∂q2_zyg, ∂k2_zyg, ∂v2_zyg = Zygote.gradient(
-                        sum ∘ first ∘ sdpa, q2, k2, v2
-                    )
+                    ∂q2_zyg, ∂k2_zyg, ∂v2_zyg =
+                        Zygote.gradient(sum ∘ first ∘ sdpa, q2, k2, v2) |> cpu_device()
 
                     ∂q2_reactant, ∂k2_reactant, ∂v2_reactant = @jit Enzyme.gradient(
                         Reverse, Const(sum ∘ first ∘ sdpa), q2_ra, k2_ra, v2_ra
@@ -86,7 +86,7 @@
 
             @testset "Specific Results Check" begin
                 q = k = v = aType(reshape([1:12;], 2, 2, 3, 1) ./ 12)
-                y, α = scaled_dot_product_attention(q, k, v)
+                y, α = scaled_dot_product_attention(q, k, v) |> cpu_device()
 
                 q_ra = Reactant.to_rarray(q)
                 k_ra = Reactant.to_rarray(k)
@@ -154,7 +154,7 @@
                 v = aType(rand(Float32, 4, 2, 5, 1))
                 mask = aType(rand(Bool, (5, 3)))
 
-                y, α = sdpa_with_mask(q, k, v, mask)
+                y, α = sdpa_with_mask(q, k, v, mask) |> cpu_device()
 
                 @test all((α[:, :, 1, 1] .> 0) .== mask)
                 @test all((α[:, :, 2, 1] .> 0) .== mask)
@@ -173,13 +173,15 @@
                     mask = LuxLib.Impl.make_causal_mask(q, size(k, 3), size(q, 3))
                     mask_ra = Reactant.to_rarray(mask)
 
-                    y, α = sdpa_with_mask(q, k, v, mask)
+                    y, α = sdpa_with_mask(q, k, v, mask) |> cpu_device()
                     y_ra, α_ra = @jit sdpa_with_mask(q_ra, k_ra, v_ra, mask_ra)
 
                     @test y ≈ y_ra atol = 1e-5 rtol = 1e-5
                     @test α ≈ α_ra atol = 1e-5 rtol = 1e-5
 
-                    y2, α2 = scaled_dot_product_attention(q, k, v; is_causal=true)
+                    y2, α2 =
+                        scaled_dot_product_attention(q, k, v; is_causal=true) |>
+                        cpu_device()
                     y_ra2, α_ra2 = @jit scaled_dot_product_attention(
                         q_ra, k_ra, v_ra; is_causal=true
                     )
@@ -205,7 +207,7 @@
 
                 sdpa_with_bias(q, k, v, bias) = scaled_dot_product_attention(q, k, v; bias)
 
-                y, α = sdpa_with_bias(q, k, v, bias)
+                y, α = sdpa_with_bias(q, k, v, bias) |> cpu_device()
 
                 @test size(α) == (3, 5, 2, 1)
                 @test size(y) == (2, 2, 5, 1)
@@ -225,7 +227,9 @@
                 q = k = v = aType(rand(Float32, 5, 2, 10, 10))
                 fdrop(x, p) = (rand!(similar(x)) .> p) .* x ./ (1 - p)
 
-                y, α = scaled_dot_product_attention(q, k, v; fdrop=Base.Fix2(fdrop, 0.5))
+                y, α =
+                    scaled_dot_product_attention(q, k, v; fdrop=Base.Fix2(fdrop, 0.5)) |>
+                    cpu_device()
                 @test 0.6 > mean(>(0), α) > 0.4
             end
 
@@ -234,7 +238,7 @@
                 k = aType(rand(Float32, 4, 2, 7, 3))
                 v = aType(rand(Float32, 11, 2, 7, 3))
 
-                y, α = scaled_dot_product_attention(q, k, v)
+                y, α = scaled_dot_product_attention(q, k, v) |> cpu_device()
 
                 @test size(y) == (11, 8, 5, 3)
                 @test size(α) == (7, 5, 8, 3)
