@@ -44,10 +44,12 @@ function batched_matmul(
     end
 
     x_flattened = Utils.maybe_reshape(
-        x_permuted, (size(x_permuted, 1), size(x_permuted, 2), prod(batch_size_tuple))
+        x_permuted,
+        (size(x_permuted, 1), size(x_permuted, 2), prod(size(x_permuted)[3:end])),
     )
     y_flattened = Utils.maybe_reshape(
-        y_permuted, (size(y_permuted, 1), size(y_permuted, 2), prod(batch_size_tuple))
+        y_permuted,
+        (size(y_permuted, 1), size(y_permuted, 2), prod(size(y_permuted)[3:end])),
     )
 
     res = batched_matmul_fallback(x_flattened, y_flattened)
