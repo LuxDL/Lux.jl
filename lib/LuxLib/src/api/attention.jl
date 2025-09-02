@@ -41,6 +41,10 @@ attention weights.
   a dropout function). It is applied after softmax and after mask/bias are
   applied.
 
+# Extended Help
+
+## Mathematical Formulation
+
 ```math
 \begin{align*}
 &\text{Let } q_{d,h,l,b},\ k_{d,h,s,b},\ v_{e,h,s,b} \text{ denote the elements of the query, key, and value tensors,} \\
@@ -64,9 +68,6 @@ attention weights.
 \\
 &\text{Output:} \\
 &\quad \text{output}_{e,l,h,b} = \sum_{s=1}^{S} v_{e,h,s,b} \, \alpha_{s,l,h,b} \\
-\\
-&\text{Grouped KV:} \\
-&\quad \text{If the number of KV groups } G < H, \text{ k and v are repeated so each group is shared across } H/G \text{ heads.}
 \end{align*}
 ```
 
