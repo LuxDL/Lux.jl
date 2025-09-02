@@ -12,7 +12,7 @@ it both compiler and autodiff friendly.
 
 Lux.jl takes a **Reactant-first approach** to deliver exceptional performance and seamless deployment capabilities:
 
-* **XLA Compilation** -- Lux models compile to highly optimized XLA code via [Reactant.jl](https://github.com/EnzymeAD/Reactant.jl), delivering significant speedups on CPU, GPU, and TPU. This compilation approach removes control flow overhead and enables advanced optimizations.
+* **XLA Compilation** -- Lux models compile to highly optimized XLA code via [Reactant.jl](https://github.com/EnzymeAD/Reactant.jl), delivering significant speedups on CPU, GPU, and TPU.
 
 * **Cross-Platform Performance** -- Run the same Lux model with optimal performance across different hardware backends (CPU, NVIDIA GPUs, AMD GPUs, TPUs) without code changes, simply by switching the Reactant backend.
 
