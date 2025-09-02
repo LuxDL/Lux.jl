@@ -11,7 +11,7 @@
                 v = rand(Float32, n ÷ nheads, nheads, lenkv, batch_size...) |> aType
                 y1, α1 = scaled_dot_product_attention(q, k, v) |> cpu_device()
 
-                @test y1 isa aType{Float32,length(batch_size) + 3}
+                @test y1 isa Array{Float32,length(batch_size) + 3}
                 @test size(y1) == (n ÷ nheads, nheads, lenq, batch_size...)
                 @test size(α1) == (lenkv, lenq, nheads, batch_size...)
                 @test sum(α1; dims=1) ≈ ones(1, lenq, nheads, batch_size...)
@@ -52,7 +52,7 @@
                 v2 = permutedims(v, (3, 2, 1, 4:(3 + length(batch_size))...)) |> aType
                 y2, α2 = sdpa(q2, k2, v2) |> cpu_device()
 
-                @test y2 isa aType{Float32,length(batch_size) + 3}
+                @test y2 isa Array{Float32,length(batch_size) + 3}
                 @test size(y2) == (n ÷ nheads, nheads, lenq, batch_size...)
                 @test size(α2) == (lenkv, lenq, nheads, batch_size...)
                 @test sum(α2; dims=1) ≈ ones(1, lenq, nheads, batch_size...)
@@ -156,8 +156,8 @@
 
                 y, α = sdpa_with_mask(q, k, v, mask) |> cpu_device()
 
-                @test all((α[:, :, 1, 1] .> 0) .== mask)
-                @test all((α[:, :, 2, 1] .> 0) .== mask)
+                @test all((α[:, :, 1, 1] .> 0) .== Array(mask))
+                @test all((α[:, :, 2, 1] .> 0) .== Array(mask))
 
                 q_ra = Reactant.to_rarray(q)
                 k_ra = Reactant.to_rarray(k)
@@ -166,8 +166,8 @@
 
                 y_ra, α_ra = @jit sdpa_with_mask(q_ra, k_ra, v_ra, mask_ra)
 
-                @test all((Array(α_ra)[:, :, 1, 1] .> 0) .== mask)
-                @test all((Array(α_ra)[:, :, 2, 1] .> 0) .== mask)
+                @test all((Array(α_ra)[:, :, 1, 1] .> 0) .== Array(mask))
+                @test all((Array(α_ra)[:, :, 2, 1] .> 0) .== Array(mask))
 
                 @testset "causal" begin
                     mask = LuxLib.Impl.make_causal_mask(q, size(k, 3), size(q, 3))
@@ -228,7 +228,7 @@
                 fdrop(x, p) = (rand!(similar(x)) .> p) .* x ./ (1 - p)
 
                 y, α =
-                    scaled_dot_product_attention(q, k, v; fdrop=Base.Fix2(fdrop, 0.5)) |>
+                    scaled_dot_product_attention(q, k, v; fdrop=Base.Fix2(fdrop, 0.5f0)) |>
                     cpu_device()
                 @test 0.6 > mean(>(0), α) > 0.4
             end
