@@ -10,6 +10,7 @@ function scaled_dot_product_attention(
     token_dim::Int=3,
     scale=nothing,
     mask=nothing,
+    is_causal::Union{Bool,Nothing}=nothing,
     bias=nothing,
     fdrop::F=identity,
 ) where {TQ,TK,TV,F,N}
@@ -47,6 +48,15 @@ function scaled_dot_product_attention(
 
     scale = scale === nothing ? sqrt(TQ(size(q, head_dim))) : TQ(scale)
     scale = inv(scale)
+
+    if is_causal isa Bool
+        @assert mask === nothing "`mask` and `is_causal` cannot both be specified"
+        if is_causal
+            # generally recommended to use `is_causal=true` for causal attention rather
+            # than specifying `mask` manually
+            mask = NNlib.make_causal_mask(q; dims=token_dim)
+        end
+    end
 
     return unsafe_scaled_dot_product_attention(
         q, k, v; head_dim, token_dim, num_heads_dim, scale, mask, bias, fdrop
