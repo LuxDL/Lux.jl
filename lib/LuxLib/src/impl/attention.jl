@@ -54,7 +54,7 @@ function scaled_dot_product_attention(
         if is_causal
             # generally recommended to use `is_causal=true` for causal attention rather
             # than specifying `mask` manually
-            mask = NNlib.make_causal_mask(q; dims=token_dim)
+            mask = make_causal_mask(q, size(k, token_dim), size(q, token_dim))
         end
     end
 
@@ -125,3 +125,13 @@ function apply_attention_mask_bias(logits, mask, bias)
     neginf = typemin(eltype(logits))
     return @. ifelse(mask, logits + bias, neginf)
 end
+
+make_causal_mask(x; dims::Int) = make_causal_mask(x, size(x, dims), size(x, dims))
+
+function make_causal_mask(x, x_len, y_len)
+    mask = NNlib.trues_like(x, (x_len, y_len))
+    triu!(mask)
+    return mask
+end
+
+CRC.@non_differentiable make_causal_mask(::Any...)
