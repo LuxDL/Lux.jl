@@ -2,7 +2,8 @@
 #   1. https://github.com/FluxML/Flux.jl/blob/fa108bb994a2cc839240d8497c9e1610818a49ab/src/layers/attention.jl
 """
     MultiHeadAttention(dims; nheads=1, dense_kwargs=(; use_bias=False()),
-                       attention_dropout_probability=0.0f0)
+                       attention_dropout_probability=0.0f0,
+                       is_causal::Union{Bool,Nothing}=nothing)
 
 The multi-head dot-product attention layer used in Transformer architectures
 [vaswani2017attention](@citep).
@@ -25,6 +26,9 @@ The multi-head dot-product attention layer used in Transformer architectures
   - `nheads`: number of heads.
   - `attention_dropout_probability`: dropout probability for the attention scores.
   - `dense_kwargs`: keyword arguments for the Dense layers. Default `use_bias=false`.
+  - `is_causal`: whether the attention is causal. If this is provided, the attention mask
+    will be automatically created (passing in the `mask` argument is not allowed and will
+    throw an error).
 
 ## Forward Pass Signature(s)
 
@@ -96,6 +100,7 @@ julia> size(α)
     v_proj <: Dense
     attention_dropout
     out_proj <: Dense
+    is_causal <: Union{Bool,Nothing}
 end
 
 function Base.show(io::IO, ::MIME"text/plain", mha::MultiHeadAttention)
@@ -103,11 +108,14 @@ function Base.show(io::IO, ::MIME"text/plain", mha::MultiHeadAttention)
     out_dim = mha.out_proj.out_dims
     attention_dropout_probability =
         mha.attention_dropout isa NoOpLayer ? 0.0f0 : mha.attention_dropout.p
-    return print(
-        io,
-        "MultiHeadAttention($q_in => ($k_in, $v_in) => $out_dim; nheads=$(mha.nheads), \
-         attention_dropout_probability=$(attention_dropout_probability))",
+    print(
+        io, "MultiHeadAttention($q_in => ($k_in, $v_in) => $out_dim; nheads=$(mha.nheads)"
     )
+    !iszero(attention_dropout_probability) &&
+        print(io, ", attention_dropout_probability=$(attention_dropout_probability)")
+    mha.is_causal !== nothing && print(io, ", is_causal=$(mha.is_causal)")
+    print(io, ")")
+    return nothing
 end
 
 function parse_mha_dims(dims::IntegerType)
@@ -137,6 +145,7 @@ function MultiHeadAttention(
     nheads::IntegerType=1,
     dense_kwargs=(; use_bias=False()),
     attention_dropout_probability=0.0f0,
+    is_causal::Union{Bool,Nothing}=nothing,
 )
     dims = parse_mha_dims(dims)
     @argcheck dims.qk % nheads == 0
@@ -149,6 +158,7 @@ function MultiHeadAttention(
         Dense(dims.v_in, dims.v; dense_kwargs...),
         Dropout(attention_dropout_probability),
         Dense(dims.v, dims.out; dense_kwargs...),
+        is_causal,
     )
 end
 
@@ -175,7 +185,18 @@ function apply_multiheadattention(mha::MultiHeadAttention, ps, st, q, k, v, mask
     dropout = StatefulLuxLayer(
         mha.attention_dropout, ps.attention_dropout, st.attention_dropout
     )
-    x, α = NNlib.dot_product_attention(q, k, v; mha.nheads, fdrop=dropout, mask)
+
+    x, α = scaled_dot_product_attention(
+        reshape(q, size(q, 1) ÷ mha.nheads, mha.nheads, size(q)[2:end]...),
+        reshape(k, size(k, 1) ÷ mha.nheads, mha.nheads, size(k)[2:end]...),
+        reshape(v, size(v, 1) ÷ mha.nheads, mha.nheads, size(v)[2:end]...);
+        head_dim=1,
+        token_dim=3,
+        fdrop=dropout,
+        mask,
+        mha.is_causal,
+    )
+    x = reshape(x, size(x, 1) * mha.nheads, size(x)[3:end]...)
 
     y, out_st = mha.out_proj(x, ps.out_proj, st.out_proj)
 
