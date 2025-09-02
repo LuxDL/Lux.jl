@@ -58,11 +58,11 @@ jobs:
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ inputs.julia_version }}
+      - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-downgrade-compat@v2
         if: ${{ inputs.downgrade_testing }}
         with:
           projects: ${{ inputs.project }}
-      - uses: julia-actions/cache@v2
 
       # For 1.11 and beyond we can use sources. For older versions we need to
       # manually develop the packages.
