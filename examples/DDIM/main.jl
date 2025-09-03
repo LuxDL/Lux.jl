@@ -48,7 +48,8 @@ function sinusoidal_embedding(
 
     lower, upper = T(log(min_freq)), T(log(max_freq))
     n = embedding_dims ÷ 2
-    x_ = 2 .* x .* exp.(reshape(range(lower, upper; length=n), 1, 1, n, 1))
+    freqs = exp.(reshape(range(lower, upper; length=n), 1, 1, n, 1))
+    x_ = 2 .* x .* freqs
     return cat(sinpi.(x_), cospi.(x_); dims=Val(3))
 end
 
@@ -330,7 +331,7 @@ function generate(model::DDIM, ps, st::NamedTuple, diffusion_steps::Int, num_sam
     μ, σ² = st.bn.running_mean, st.bn.running_var
     initial_noise = randn_like(rng, μ, (model.image_size..., num_samples))
     generated_images = reverse_diffusion(model, initial_noise, ps, st, diffusion_steps)
-    return clamp01.(denormalize(generated_images, μ, σ²))
+    return clamp01.(denormalize(generated_images, μ, σ², model.bn.epsilon))
 end
 
 function reverse_diffusion_single_step!(
@@ -389,9 +390,9 @@ function reverse_diffusion(
     return pred_images
 end
 
-function denormalize(x::AbstractArray{T,4}, μ, σ²) where {T}
+function denormalize(x::AbstractArray{T,4}, μ, σ², ε) where {T}
     μ = reshape(μ, 1, 1, 3, 1)
-    σ = sqrt.(reshape(σ², 1, 1, 3, 1) .+ T(eps(T)))
+    σ = sqrt.(reshape(σ², 1, 1, 3, 1) .+ T(ε))
     return σ .* x .+ μ
 end
 
@@ -452,7 +453,8 @@ end
 
 # ## Dataset
 
-# We will register the dataset using the [DataDeps.jl](https://github.com/oxinabox/DataDeps.jl)
+# We will register the dataset using the
+# [DataDeps.jl](https://github.com/oxinabox/DataDeps.jl)
 # package. The dataset is available at
 # [https://www.robots.ox.ac.uk/~vgg/data/flowers/102/](https://www.robots.ox.ac.uk/~vgg/data/flowers/102/).
 # This allows us to automatically download the dataset when we run the code.
@@ -637,7 +639,7 @@ Comonicon.@main function main(;
             (_, loss, stats, tstate) = Training.single_train_step!(
                 AutoEnzyme(), loss_function, data, tstate; return_gradients=Val(false)
             )
-
+            @show loss
             @assert !isnan(loss) "NaN loss encountered!"
 
             total_samples += size(data, ndims(data))
