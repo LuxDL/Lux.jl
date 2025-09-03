@@ -1,6 +1,6 @@
 [deps]
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 BytePairEncoding = "a4280ba5-8788-555a-8ca8-4a8c3d966a71"
-Comonicon = "863f3e99-da2a-4334-8734-de3dacbe5542"
 ConcreteStructs = "2569d6c7-a4a2-43d3-a901-331e8e4be471"
 DataDeps = "124859b0-ceae-595e-8997-d05f6a7a8dfe"
 Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
@@ -16,11 +16,10 @@ Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
-Comonicon = "1"
 DataDeps = "0.7"
 Enzyme = "0.13.14"
-JLD2 = "0.5"
-Lux = "1.2.3"
+JLD2 = "0.5, 0.6"
+Lux = "1.21"
 MLUtils = "0.4"
 NNlib = "0.9.24"
 OneHotArrays = "0.2.5"
