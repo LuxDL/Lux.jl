@@ -12,33 +12,31 @@ using ConcreteStructs,
     Reactant,
     Enzyme,
     BytePairEncoding,
-    NNlib
-using Comonicon: @main
+    NNlib,
+    ArgParse
 
-if !haskey(DataDeps.registry, "shakespeare_char")
+if !haskey(DataDeps.registry, "shakespeare")
     register(
         DataDep(
-            "shakespeare_char",
+            "shakespeare",
             "Shakespeare Input Text for training NanoGPT",
-            "https://cs.stanford.edu/people/karpathy/char-rnn/shakespeare_input.txt",
-            "59a0ad62833b2e15ec811c548618876359e902717431236e52699a0e2bc253ca",
+            "https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt",
+            "86c4e6aa9db7c042ec79f339dcb96d42b0075e16b8fc2e86bf0ca57e2dc565ed",
         ),
     )
 end
 
 # Setup the model definition
-
 @concrete struct CausalSelfAttention <: AbstractLuxWrapperLayer{:mha}
     mha
+end
 
-    function CausalSelfAttention(args...; kwargs...)
-        mha = MultiHeadAttention(args...; kwargs...)
-        return new{typeof(mha)}(mha)
-    end
+function CausalSelfAttention(args...; kwargs...)
+    return CausalSelfAttention(MultiHeadAttention(args...; kwargs..., is_causal=true))
 end
 
 function (attn::CausalSelfAttention)(x::AbstractArray{T,3}, ps, st) where {T}
-    (y, α), stₙ = attn.mha((x, x, x, NNlib.make_causal_mask(x)), ps, st)
+    (y, _), stₙ = attn.mha(x, ps, st)
     return y, stₙ
 end
 
@@ -56,7 +54,6 @@ function GPT2Block(; embed_dim, num_heads, hidden_dim, dropout_rate)
                         embed_dim;
                         nheads=num_heads,
                         attention_dropout_probability=dropout_rate,
-                        dense_kwargs=(; init_weight=glorot_uniform, init_bias=zeros32),
                     ),
                 ),
                 +,
@@ -64,17 +61,8 @@ function GPT2Block(; embed_dim, num_heads, hidden_dim, dropout_rate)
             SkipConnection(
                 Chain(
                     LayerNorm(embed_dim; dims=nothing),
-                    Dense(
-                        embed_dim => hidden_dim,
-                        gelu;
-                        init_weight=glorot_uniform,
-                        init_bias=zeros32,
-                    ),
-                    Dense(
-                        hidden_dim => embed_dim;
-                        init_weight=glorot_uniform,
-                        init_bias=zeros32,
-                    ),
+                    Dense(embed_dim => hidden_dim, gelu),
+                    Dense(hidden_dim => embed_dim),
                     Dropout(dropout_rate),
                 ),
                 +,
@@ -110,10 +98,13 @@ end
 
 function (model::GPT2)(x, ps, st)
     token_embeddings, st_tok_emb = model.tok_emb(x, ps.tok_emb, st.tok_emb)
-    pos_embeddings, st_pos_emb = model.pos_emb(1:size(x, 1), ps.pos_emb, st.pos_emb)
+    pos_embeddings, st_pos_emb = model.pos_emb(
+        Int32(1):Int32(size(x, 1)), ps.pos_emb, st.pos_emb
+    )
     embedding_output = token_embeddings .+ pos_embeddings
 
     query, st_gpt_blocks = model.gpt_blocks(embedding_output, ps.gpt_blocks, st.gpt_blocks)
+
     _, seq_len, batch_size = size(query)
     outputs = reshape(
         ps.tok_emb.weight' * reshape(query, :, seq_len * batch_size), :, seq_len, batch_size
@@ -122,29 +113,7 @@ function (model::GPT2)(x, ps, st)
     return outputs, (; tok_emb=st_tok_emb, pos_emb=st_pos_emb, gpt_blocks=st_gpt_blocks)
 end
 
-#=
-dev = reactant_device(; force=true)
-rng = Random.default_rng()
-
-model = GPT2(;
-    n_vocab=50304,
-    embed_dim=1024,
-    hidden_dim=3072,
-    block_size=1024,
-    n_layers=3,
-    dropout_rate=0.0,
-    num_heads=16,
-)
-ps, st = Lux.setup(rng, model) |> dev;
-
-x = rand(1:50304, 48, 32) |> dev;
-
-@code_hlo model(x, ps, st)
-
-sumabs2first(layer, x, ps, st) = sum(abs2, first(layer(x, ps, st)))
-
-@code_hlo Enzyme.gradient(Reverse, sumabs2first, Const(model), x, ps, Const(st))
-=#
+# ## Text Generation
 
 # Use the model to generate some text.
 
@@ -159,153 +128,212 @@ function weighted_sample!(rng, items::AbstractVector, weights::AbstractVector, n
     return items[indices]
 end
 
-function generate_text(model, ps, st, seed; alphabet, output_length, sequence_length)
-    dev = get_device((ps, st))
-    @assert !(dev isa ReactantDevice) "Currently we don't support running inference of \
-                                       dynamically sized tensors."
+## TODO: update this based on Qwen3/main.jl
+# function generate_text(model, ps, st, seed; alphabet, output_length, sequence_length)
+#     dev = get_device((ps, st))
+#     @assert !(dev isa ReactantDevice) "Currently we don't support running inference of \
+#                                        dynamically sized tensors."
 
-    seed = copy(seed)
-    seed_len = maximum(length, seed)
-    extra_letters = zeros(Int, length(seed))
-    for (i, s) in enumerate(seed)
-        if seed_len != length(s)
-            extra_letters[i] = seed_len - length(s)
-            seed[i] = "_"^extra_letters[i] * s
-        end
-    end
-    original_output_length = output_length
-    output_length += maximum(extra_letters)
+#     seed = copy(seed)
+#     seed_len = maximum(length, seed)
+#     extra_letters = zeros(Int, length(seed))
+#     for (i, s) in enumerate(seed)
+#         if seed_len != length(s)
+#             extra_letters[i] = seed_len - length(s)
+#             seed[i] = "_"^extra_letters[i] * s
+#         end
+#     end
+#     original_output_length = output_length
+#     output_length += maximum(extra_letters)
 
-    st = Lux.testmode(st)
+#     st = Lux.testmode(st)
 
-    x = zeros(Int, output_length, length(seed))
-    for (i, s) in enumerate(seed), j in 1:seed_len
-        x[j, i] = findfirst(==(s[j]), alphabet)
-    end
-    for i in (seed_len + 1):output_length
-        tail = x[max(1, i - sequence_length + 1):(i - 1), :] |> dev
-        y = model(tail, ps, st)[1] |> cpu_device()
-        p = softmax(y[:, end, 1])
-        x[i, :] .= sample(1:length(alphabet), Weights(p))
-    end
+#     x = zeros(Int, output_length, length(seed))
+#     for (i, s) in enumerate(seed), j in 1:seed_len
+#         x[j, i] = findfirst(==(s[j]), alphabet)
+#     end
+#     for i in (seed_len + 1):output_length
+#         tail = x[max(1, i - sequence_length + 1):(i - 1), :] |> dev
+#         y = model(tail, ps, st)[1] |> cpu_device()
+#         p = softmax(y[:, end, 1])
+#         x[i, :] .= sample(1:length(alphabet), Weights(p))
+#     end
 
-    res = [String(map(Base.Fix1(getindex, alphabet), x[:, i])) for i in axes(x, 2)]
-    for i in eachindex(res)
-        res[i] = res[i][(extra_letters[i] + 1):end][1:original_output_length]
-    end
+#     res = [String(map(Base.Fix1(getindex, alphabet), x[:, i])) for i in axes(x, 2)]
+#     for i in eachindex(res)
+#         res[i] = res[i][(extra_letters[i] + 1):end][1:original_output_length]
+#     end
 
-    return res
-end
+#     return res
+# end
+
+# ## Data Loading
 
 # Load data from input file, and partition into training and testing subsets.
+
 function get_nanogpt_data(; sequence_length, test_split)
-    data_file = joinpath(datadep"nanogpt", "shakespeare_input.txt")
-    text = String(read(data_file))
+    text = String(read(joinpath(datadep"shakespeare", "input.txt")))
+    tokenizer = BytePairEncoding.load_tiktoken_encoder("gpt2")
 
-    idx = ceil(Int, length(text) * (1 - test_split))
-    train_text = text[1:idx]
-    test_text = text[(idx + 1):end]
+    text_encoding = tokenizer.encode(text)
+    start_token = tokenizer.encode("_")[1]
 
-    tokenizer = BytePairEncoding.load_gpt2()
+    n_batches = (length(text_encoding) - 1) ÷ sequence_length
 
-    train_tokens = tokenizer(train_text)
-    test_tokens = tokenizer(test_text)
+    Xs = reshape(text_encoding[1:(n_batches * sequence_length)], sequence_length, n_batches)
+    ## Input string starts with stop character '_', representing zero context.
+    Xs[1, :] .= start_token
 
-    B = (length(text) - 1) ÷ sequence_length
-    # We must collect() before indexing, because String indexing does strange things with multi-byte
-    # characters and we could end up with the wrong length.
-    Xs = reshape(collect(text)[1:(B * sequence_length)], sequence_length, B)
-    Ys = reshape(collect(text)[2:(B * sequence_length + 1)], sequence_length, B)
+    Ys = reshape(
+        text_encoding[2:(n_batches * sequence_length + 1)], sequence_length, n_batches
+    )
 
-    # Input string starts with stop character '_', representing zero context.
-    Xs[1, :] .= stop
+    n_vocab = max(maximum(Xs), maximum(Ys))
 
-    # Xs (input) should consist of indices into `alphabet` because this is what Embedding expects.
-    # Ys (output) should be one-hot because this is what logitcrossentropy expects.
-    Xs = map(c -> Int32(findfirst(==(c), alphabet)), Xs)
-    Ys = onehotbatch(Ys, alphabet)
+    ## One-hot encode the target sequences.
+    Ys = onehotbatch(Ys, 1:n_vocab)
 
-    trainX, testX = MLUtils.splitobs(Xs; at=1 - test_split)
-    trainY, testY = MLUtils.splitobs(Ys; at=1 - test_split)
+    Xs_train, Xs_test = MLUtils.splitobs(Xs; at=1 - test_split)
+    Ys_train, Ys_test = MLUtils.splitobs(Ys; at=1 - test_split)
 
-    return alphabet, Array(trainX), Array(trainY), Array(testX), Array(testY)
+    return n_vocab, (Xs_train, Ys_train), (Xs_test, Ys_test)
 end
 
-@main function main(;
-    embed_dim::Int=64,
-    n_hidden::Int=256,
-    n_heads::Int=4,
-    qk_dim::Int=16,
-    v_dim::Int=16,
-    n_layers::Int=6,
-    sequence_length::Int=64,
-    batchsize::Int=128,
-    dropout_rate::Float32=0.0f0,
-    test_split::Float64=0.1,
-    lr::Float64=1e-2,
-    epochs::Int=100,
-    # Only inference options
-    inference::Bool=false,
-    model_path::String="",
-    seed::Union{String,Vector{String}}=["_", "The", "Julia", "Lux.jl"],
-    output_length::Int=1024,
-)
+# ## Entry Point
+
+function parse_command_line_arguments()
+    settings = ArgParseSettings()
+    #! format: off
+    @add_arg_table! settings begin
+        "--embedding_dim"
+            help = "Dimension of the embedding"
+            arg_type = Int
+            default = 64
+        "--n_hidden"
+            help = "Number of hidden units"
+            arg_type = Int
+            default = 256
+        "--n_heads"
+            help = "Number of attention heads"
+            arg_type = Int
+            default = 4
+        "--n_layers"
+            help = "Number of transformer layers"
+            arg_type = Int
+            default = 6
+        "--sequence_length"
+            help = "Length of the input sequences"
+            arg_type = Int
+            default = 64
+        "--batchsize"
+            help = "Batch size for training"
+            arg_type = Int
+            default = 128
+        "--dropout_rate"
+            help = "Dropout rate"
+            arg_type = Float32
+            default = 0.0f0
+        "--test_split"
+            help = "Fraction of data to use for testing"
+            arg_type = Float64
+            default = 0.1
+        "--lr"
+            help = "Learning rate"
+            arg_type = Float64
+            default = 1e-2
+        "--epochs"
+            help = "Number of training epochs"
+            arg_type = Int
+            default = 100
+        "--inference"
+            help = "Enable inference mode"
+            arg_type = Bool
+            default = false
+        "--model_path"
+            help = "Path to the model checkpoint"
+            arg_type = String
+            default = ""
+        "--seed"
+            help = "Seed text for generation"
+            arg_type = String
+            default = "_The Julia Programming Language is a"
+        "--max_output_length"
+            help = "Maximum length of the generated output"
+            arg_type = Int
+            default = 1024
+    end
+    #! format: on
+    return parse_args(ARGS, settings)
+end
+
+function main()
+    parsed_args = parse_command_line_arguments()
+
     rng = Random.default_rng()
     Random.seed!(rng, 1234)
 
-    dev = reactant_device()
+    dev = reactant_device(; force=true)
     cdev = cpu_device()
 
-    if inference
-        @printf "[Info] Inference mode enabled.\n"
+    if parsed_args["inference"]
+        error("TODO: implement this path")
+        # @printf "[Info] Inference mode enabled.\n"
 
-        @assert !isempty(model_path) "Please provide a path to a model checkpoint."
+        # @assert !isempty(model_path) "Please provide a path to a model checkpoint."
 
-        @printf "[Info] Loading model from %s.\n" model_path
-        model_config = JLD2.load(model_path, "model_config")
-        model = GPT(; model_config...)
-        ps = JLD2.load(model_path, "parameters")
-        st = JLD2.load(model_path, "states")
-        alphabet = JLD2.load(model_path, "alphabet")
-        sequence_length = model_config.sequence_length
+        # @printf "[Info] Loading model from %s.\n" model_path
+        # model_config = JLD2.load(model_path, "model_config")
+        # model = GPT(; model_config...)
+        # ps = JLD2.load(model_path, "parameters")
+        # st = JLD2.load(model_path, "states")
+        # alphabet = JLD2.load(model_path, "alphabet")
+        # sequence_length = model_config.sequence_length
 
-        texts = generate_text(model, ps, st, seed; alphabet, output_length, sequence_length)
+        # texts = generate_text(model, ps, st, seed; alphabet, output_length, sequence_length)
 
-        for (i, (text, s)) in enumerate(zip(texts, seed))
-            @printf "[Info] Seed [%d]: %s\n" i s
-            @printf "[Generated Text] %s\n\n" text
-        end
+        # for (i, (text, s)) in enumerate(zip(texts, seed))
+        #     @printf "[Info] Seed [%d]: %s\n" i s
+        #     @printf "[Generated Text] %s\n\n" text
+        # end
 
-        return nothing
+        # return nothing
     end
 
-    alphabet, trainX, trainY, testX, testY = get_nanogpt_data(; sequence_length, test_split)
+    n_vocab, (trainX, trainY), (testX, testY) = get_nanogpt_data(;
+        sequence_length=parsed_args["sequence_length"], test_split=parsed_args["test_split"]
+    )
 
-    @printf "[Info] Alphabet size: %d\n" length(alphabet)
+    @printf "[Info] Vocabulary size: %d\n" n_vocab
     @printf "[Info] Training size: %d sequences.\n" size(trainX, 2)
     @printf "[Info] Testing  size: %d sequences.\n\n" size(testX, 2)
 
     train_loader =
-        DataLoader((trainX, trainY); batchsize, shuffle=true, parallel=true) |> dev
+        DataLoader(
+            (trainX, trainY);
+            batchsize=parsed_args["batchsize"],
+            shuffle=true,
+            parallel=true,
+        ) |> dev
 
     model_config = (;
-        n_vocab=length(alphabet),
-        embed_dim,
-        sequence_length,
-        n_hidden,
-        n_layers,
-        dropout_rate,
-        n_heads,
-        qk_dim,
-        v_dim,
+        n_vocab,
+        embed_dim=parsed_args["embedding_dim"],
+        hidden_dim=parsed_args["n_hidden"],
+        n_layers=parsed_args["n_layers"],
+        dropout_rate=parsed_args["dropout_rate"],
+        num_heads=parsed_args["n_heads"],
+        block_size=parsed_args["sequence_length"],
     )
-    model = GPT(; model_config...)
+
+    model = GPT2(; model_config...)
     ps, st = Lux.setup(rng, model) |> dev
     @printf "[Info] Number of parameters: %d\n" Lux.parameterlength(ps)
     @printf "[Info] Number of states: %d\n\n" Lux.statelength(st)
 
-    opt = Adam(lr)
+    opt = Adam(parsed_args["lr"])
     train_state = Training.TrainState(model, ps, st, opt)
+
+    ## TODO: implement lr scheduler
 
     @printf "[Info] Compiling Inference Model...\n"
     testX, testY = (testX, testY) |> dev
