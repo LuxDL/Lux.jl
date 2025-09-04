@@ -34,16 +34,9 @@ function selective_scan_reference(
     ## Perform selective scan with a sequential implementation for correctness verification
     x = fill!(similar(u, size(A, 1), size(u, 1), size(u, 3)), 0) ## [n, d_in, b]
     y = similar(u)
-    @trace for i in 1:size(u, 2)
+    @trace for i in Int32(1):Int32(size(u, 2))
         @. x = ΔA[:, :, i, :] * x + ΔBu[:, :, i, :]
-        tmp = batched_matmul(
-            x,
-            reshape(C[:, i, :], size(C, 1), 1, size(C, 3));
-            lhs_contracting_dim=1,
-            rhs_contracting_dim=1,
-            lhs_batching_dims=(3,),
-            rhs_batching_dims=(3,),
-        ) ## [d_in, 1, b]
+        tmp = sum(x .* reshape(C[:, i, :], size(C, 1), 1, size(C, 3)); dims=1)
         y[:, i, :] = reshape(tmp, size(u, 1), size(u, 3))
     end
     @. y += u * D
@@ -52,15 +45,21 @@ function selective_scan_reference(
 end
 
 #=
-d_in, l, n, n = 3, 4, 5, 6
-u = randn(Float32, d_in, l, n) |> Reactant.to_rarray;
-Δ = randn(Float32, d_in, l, n) |> Reactant.to_rarray;
+d_in, l, n, b = 512, 128, 64, 32
+u = randn(Float32, d_in, l, b) |> Reactant.to_rarray;
+Δ = randn(Float32, d_in, l, b) |> Reactant.to_rarray;
 A = randn(Float32, n, d_in) |> Reactant.to_rarray;
-B = randn(Float32, n, l, n) |> Reactant.to_rarray;
-C = randn(Float32, n, l, n) |> Reactant.to_rarray;
+B = randn(Float32, n, l, b) |> Reactant.to_rarray;
+C = randn(Float32, n, l, b) |> Reactant.to_rarray;
 D = randn(Float32, d_in) |> Reactant.to_rarray;
 
 @code_hlo selective_scan_reference(u, Δ, A, B, C, D)
+
+compiled_fn = @compile selective_scan_reference(u, Δ, A, B, C, D)
+
+Reactant.with_profiler("./envs/traces") do
+    compiled_fn(u, Δ, A, B, C, D)
+end
 =#
 
 # ## Mamba Architecture
