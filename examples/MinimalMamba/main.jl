@@ -13,8 +13,6 @@ const torch = pyimport("torch")
 # Implementation of the selective scan algorithm. First we implement a reference version
 # that sequentially goes over the sequence.
 
-## TODO: Implement the version based on associative_scan for good performance
-
 function selective_scan_reference(
     u::AbstractArray{T,3}, ## [d_in, l, b]
     Δ::AbstractArray{T,3}, ## [d_in, l, b]
@@ -34,16 +32,9 @@ function selective_scan_reference(
     ## Perform selective scan with a sequential implementation for correctness verification
     x = fill!(similar(u, size(A, 1), size(u, 1), size(u, 3)), 0) ## [n, d_in, b]
     y = similar(u)
-    @trace for i in 1:size(u, 2)
+    @trace for i in Int32(1):Int32(size(u, 2))
         @. x = ΔA[:, :, i, :] * x + ΔBu[:, :, i, :]
-        tmp = batched_matmul(
-            x,
-            reshape(C[:, i, :], size(C, 1), 1, size(C, 3));
-            lhs_contracting_dim=1,
-            rhs_contracting_dim=1,
-            lhs_batching_dims=(3,),
-            rhs_batching_dims=(3,),
-        ) ## [d_in, 1, b]
+        tmp = sum(x .* reshape(C[:, i, :], size(C, 1), 1, size(C, 3)); dims=1)
         y[:, i, :] = reshape(tmp, size(u, 1), size(u, 3))
     end
     @. y += u * D
@@ -51,16 +42,112 @@ function selective_scan_reference(
     return y
 end
 
+# This trick is based off of https://arxiv.org/abs/2311.06281
+
+function selective_scan_cumsum(
+    u::AbstractArray{T,3}, ## [d_in, l, b]
+    Δ::AbstractArray{T,3}, ## [d_in, l, b]
+    A::AbstractArray{T,2}, ## [n, d_in]
+    B::AbstractArray{T,3}, ## [n, l, b]
+    C::AbstractArray{T,3}, ## [n, l, b]
+    D::AbstractArray{T,1}, ## [d_in]
+) where {T}
+    Δ′ = reshape(Δ, 1, size(Δ)...)
+
+    ## Discretize continuous parameters (A, B)
+    ΔA = Δ′ .* reshape(A, size(A)..., 1, 1)  ## [n, d_in, l, b]
+    @. ΔA = max(ΔA, -20)
+
+    ΔBu = (
+        Δ′ .* reshape(B, size(B, 1), 1, size(B, 2), size(B, 3)) .* reshape(u, 1, size(u)...)
+    ) ## [n, d_in, l, b]
+
+    ΔA = pad_zeros(ΔA[:, :, 2:end, :], (1, 0); dims=3)
+    ΔA_cumsum = exp.(cumsum(ΔA; dims=3))
+    x = ΔBu ./ (ΔA_cumsum .+ eltype(ΔA)(1e-6))
+    x = cumsum(x; dims=3) .* ΔA_cumsum  ## [n, d_in, l, b]
+
+    y = dropdims(
+        sum(x .* reshape(C, size(C, 1), 1, size(C, 2), size(C, 3)); dims=1); dims=1
+    )
+    @. y += u * D
+
+    return y
+end
+
+function complex_log(x::T) where {T}
+    real_part = log(max(abs(x), T(1e-12)))
+    imag_part = (x < 0) * T(pi)
+    return complex(real_part, imag_part)
+end
+
+function logaddexp(a, b)
+    return ifelse(
+        real(a) == -Inf,
+        b,
+        ifelse(
+            real(b) == -Inf,
+            a,
+            ifelse(real(a) > real(b), a + log(1 + exp(b - a)), b + log(1 + exp(a - b))),
+        ),
+    )
+end
+
+function logcumsumexp(x::AbstractArray{T,4}; dims) where {T}
+    return accumulate(logaddexp, x; dims, init=T(-Inf))
+end
+
+function selective_scan_logcumsumexp(
+    u::AbstractArray{T,3}, ## [d_in, l, b]
+    Δ::AbstractArray{T,3}, ## [d_in, l, b]
+    A::AbstractArray{T,2}, ## [n, d_in]
+    B::AbstractArray{T,3}, ## [n, l, b]
+    C::AbstractArray{T,3}, ## [n, l, b]
+    D::AbstractArray{T,1}, ## [d_in]
+) where {T}
+    Δ′ = reshape(Δ, 1, size(Δ)...)
+
+    ## Discretize continuous parameters (A, B)
+    ΔA = Δ′ .* reshape(A, size(A)..., 1, 1)  ## [n, d_in, l, b]
+    @. ΔA = max(ΔA, -20)
+
+    ΔBu = (
+        Δ′ .* reshape(B, size(B, 1), 1, size(B, 2), size(B, 3)) .* reshape(u, 1, size(u)...)
+    ) ## [n, d_in, l, b]
+
+    ΔBu_log = complex_log.(ΔBu)
+    ΔA_star = pad_zeros(cumsum(ΔA[:, :, 2:end, :]; dims=3), (1, 0); dims=3)
+    x_log = logcumsumexp(ΔBu_log .- ΔA_star; dims=3) .+ ΔA_star
+    x = exp.(real.(x_log)) .* cos.(imag.(x_log))
+
+    y = dropdims(
+        sum(x .* reshape(C, size(C, 1), 1, size(C, 2), size(C, 3)); dims=1); dims=1
+    )
+    @. y += u * D
+
+    return y
+end
+
 #=
-d_in, l, n, n = 3, 4, 5, 6
-u = randn(Float32, d_in, l, n) |> Reactant.to_rarray;
-Δ = randn(Float32, d_in, l, n) |> Reactant.to_rarray;
-A = randn(Float32, n, d_in) |> Reactant.to_rarray;
-B = randn(Float32, n, l, n) |> Reactant.to_rarray;
-C = randn(Float32, n, l, n) |> Reactant.to_rarray;
-D = randn(Float32, d_in) |> Reactant.to_rarray;
+d_in, l, n, b = 512, 128, 64, 32
+u = (-1 .+ 2 .* rand(Float32, d_in, l, b)) |> Reactant.to_rarray;
+Δ = ones(Float32, d_in, l, b) |> Reactant.to_rarray;
+A = -rand(Float32, n, d_in) |> Reactant.to_rarray;
+B = rand(Float32, n, l, b) |> Reactant.to_rarray;
+C = rand(Float32, n, l, b) |> Reactant.to_rarray;
+D = rand(Float32, d_in) |> Reactant.to_rarray;
 
 @code_hlo selective_scan_reference(u, Δ, A, B, C, D)
+@code_hlo selective_scan_cumsum(u, Δ, A, B, C, D)
+@code_hlo selective_scan_logcumsumexp(u, Δ, A, B, C, D)
+
+compiled_fn_ref = @compile sync=true selective_scan_reference(u, Δ, A, B, C, D)
+compiled_fn_cumsum = @compile sync=true selective_scan_cumsum(u, Δ, A, B, C, D)
+compiled_fn_logcumsumexp = @compile sync=true selective_scan_logcumsumexp(u, Δ, A, B, C, D)
+
+Reactant.with_profiler("./envs/traces") do
+    compiled_fn(u, Δ, A, B, C, D)
+end
 =#
 
 # ## Mamba Architecture
