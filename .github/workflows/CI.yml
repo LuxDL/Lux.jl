@@ -53,8 +53,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version:
-          - "1.10"
         test_group:
           - "core_layers"
           - "normalize_layers"
@@ -64,7 +62,7 @@ jobs:
           - "reactant"
     uses: ./.github/workflows/CommonCI.yml
     with:
-      julia_version: "1.10"
+      julia_version: "1"
       project: "."
       downgrade_testing: true
       test_args: "BACKEND_GROUP=CPU LUX_TEST_GROUP=${{ matrix.test_group }}"

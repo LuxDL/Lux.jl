@@ -63,6 +63,7 @@ jobs:
         if: ${{ inputs.downgrade_testing }}
         with:
           projects: ${{ inputs.project }}
+          julia_version: ${{ inputs.julia_version }}
 
       # For 1.11 and beyond we can use sources. For older versions we need to
       # manually develop the packages.
@@ -74,6 +75,7 @@ jobs:
         with:
           project: ${{ inputs.project }}
           test_args: ${{ inputs.test_args }}
+          allow_reresolve: ${{ !(inputs.downgrade_testing) }}
         if: ${{ inputs.julia_version != '1.10' }}
 
       # For 1.10 we need to manually develop the packages.

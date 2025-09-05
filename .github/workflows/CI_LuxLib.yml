@@ -29,7 +29,7 @@ jobs:
           - "misc"
     uses: ./.github/workflows/CommonCI.yml
     with:
-      julia_version: "1.10"
+      julia_version: "1"
       project: "lib/LuxLib"
       downgrade_testing: true
       local_dependencies: "lib/LuxCore,lib/MLDataDevices"
