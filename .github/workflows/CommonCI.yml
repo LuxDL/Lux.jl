@@ -59,6 +59,7 @@ jobs:
         with:
           version: ${{ inputs.julia_version }}
       - uses: julia-actions/cache@v2
+        if: ${{ !(inputs.downgrade_testing) }}
       - uses: julia-actions/julia-downgrade-compat@v2
         if: ${{ inputs.downgrade_testing }}
         with:

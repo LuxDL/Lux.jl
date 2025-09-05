@@ -19,7 +19,7 @@ jobs:
   downgrade:
     uses: ./.github/workflows/CommonCI.yml
     with:
-      julia_version: "1"
+      julia_version: "1.11"
       project: "lib/LuxCUDA"
       downgrade_testing: true
 
