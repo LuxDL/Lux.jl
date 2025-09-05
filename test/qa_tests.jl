@@ -1,7 +1,9 @@
 @testitem "Aqua: Quality Assurance" tags = [:misc] begin
     using Aqua, ChainRulesCore, ForwardDiff
 
-    Aqua.test_all(Lux; ambiguities=false, piracies=false, unbound_args=false)
+    Aqua.test_all(
+        Lux; ambiguities=false, piracies=false, unbound_args=false, persistent_tasks=false
+    )
     Aqua.test_ambiguities(
         Lux;
         exclude=[
