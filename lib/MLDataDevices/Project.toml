@@ -1,7 +1,7 @@
 name = "MLDataDevices"
 uuid = "7e8f7934-dd98-4c1a-8fe8-92b47a384d40"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "1.11.2"
+version = "1.11.3"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
@@ -53,7 +53,7 @@ MLDataDevicesoneAPIExt = ["GPUArrays", "oneAPI"]
 [compat]
 AMDGPU = "1, 2"
 Adapt = "4.1"
-CUDA = "5.2"
+CUDA = "5.3.2"
 ChainRules = "1.51"
 ChainRulesCore = "1.23"
 Compat = "4.16"

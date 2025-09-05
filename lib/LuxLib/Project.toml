@@ -1,7 +1,7 @@
 name = "LuxLib"
 uuid = "82251201-b29d-42c6-8e01-566dec8acb11"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "1.11.0"
+version = "1.11.1"
 
 [deps]
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
@@ -65,7 +65,7 @@ LuxLibcuDNNExt = ["CUDA", "cuDNN"]
 [compat]
 AMDGPU = "0.9.6, 1, 2"
 AppleAccelerate = "0.4"
-ArrayInterface = "7.9"
+ArrayInterface = "7.17.1"
 BLISBLAS = "0.1"
 CPUSummary = "0.2.6"
 CUDA = "5.3.2"
