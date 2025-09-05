@@ -64,6 +64,7 @@ jobs:
         with:
           projects: ${{ inputs.project }}
           julia_version: ${{ inputs.julia_version }}
+          skip: Pkg, TOML, Statistics, LinearAlgebra, Random, Serialization, Test
 
       # For 1.11 and beyond we can use sources. For older versions we need to
       # manually develop the packages.
