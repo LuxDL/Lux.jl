@@ -29,7 +29,7 @@ WeightInitializersReactantExt = "Reactant"
 [compat]
 AMDGPU = "0.9.6, 1, 2"
 ArgCheck = "2.3.0"
-CUDA = "5.4"
+CUDA = "5.8"
 ChainRulesCore = "1.23"
 ConcreteStructs = "0.2.3"
 GPUArrays = "10.2, 11"
