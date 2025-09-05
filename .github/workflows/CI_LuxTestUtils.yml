@@ -21,11 +21,3 @@ jobs:
     with:
       julia_version: "1"
       project: "lib/LuxTestUtils"
-
-  downgrade:
-    uses: ./.github/workflows/CommonCI.yml
-    with:
-      julia_version: "1.11"
-      project: "lib/LuxTestUtils"
-      downgrade_testing: true
-      local_dependencies: "lib/MLDataDevices"
