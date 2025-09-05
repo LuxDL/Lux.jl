@@ -59,22 +59,14 @@ jobs:
         with:
           version: ${{ inputs.julia_version }}
       - uses: julia-actions/cache@v2
-      - uses: julia-actions/julia-downgrade-compat@v2
+      # - uses: julia-actions/julia-downgrade-compat@v2
+      # FIXME: update to julia-actions/julia-downgrade-compat@v2 when it is fixed
+      - uses: avik-pal/julia-downgrade-compat@patch-1
         if: ${{ inputs.downgrade_testing }}
         with:
           projects: ${{ inputs.project }}
-
-      # For 1.11 and beyond we can use sources. For older versions we need to
-      # manually develop the packages.
-      - uses: julia-actions/julia-buildpkg@v1
-        with:
-          project: ${{ inputs.project }}
-        if: ${{ inputs.julia_version != '1.10' }}
-      - uses: julia-actions/julia-runtest@v1
-        with:
-          project: ${{ inputs.project }}
-          test_args: ${{ inputs.test_args }}
-        if: ${{ inputs.julia_version != '1.10' }}
+          julia_version: ${{ inputs.julia_version }}
+          skip: Pkg, TOML, Statistics, LinearAlgebra, Random, Serialization, Test
 
       # For 1.10 we need to manually develop the packages.
       - name: "Develop Dependencies"
@@ -87,10 +79,18 @@ jobs:
           end
           length(dev_pkgs) > 0 && Pkg.develop(dev_pkgs)
         shell: julia --color=yes --threads=auto {0}
-        if: ${{ inputs.julia_version == '1.10' }}
+        if: ${{ (inputs.julia_version == '1.10' || inputs.julia_version == 'lts') && inputs.local_dependencies != '' }}
         env:
           PROJECT: ${{ inputs.project }}
           DEV_DEPS: ${{ inputs.local_dependencies }}
+
+      # For 1.11 and beyond we can use sources. For older versions we need to
+      # manually develop the packages.
+      - uses: julia-actions/julia-buildpkg@v1
+        with:
+          project: ${{ inputs.project }}
+        if: ${{ (inputs.julia_version != '1.10' && inputs.julia_version != 'lts') || inputs.local_dependencies == '' }}
+
       - name: "Develop Test Dependencies"
         run: |
           import Pkg
@@ -102,7 +102,7 @@ jobs:
           end
           length(dev_pkgs) > 0 && Pkg.develop(dev_pkgs)
         shell: julia --color=yes --threads=auto {0}
-        if: ${{ inputs.julia_version == '1.10' }}
+        if: ${{ (inputs.julia_version == '1.10' || inputs.julia_version == 'lts') && inputs.local_test_dependencies != '' }}
         env:
           PROJECT: ${{ inputs.project }}
           TEST_DEPS: ${{ inputs.local_test_dependencies }}
@@ -114,10 +114,17 @@ jobs:
           const TEST_ARGS = filter(!isempty, split(get(ENV, "TEST_ARGS", "")))
           include(joinpath(project, "test", "runtests.jl"))
         shell: julia --color=yes --code-coverage=user --depwarn=yes --threads=auto --check-bounds=yes {0}
-        if: ${{ inputs.julia_version == '1.10' }}
+        if: ${{ (inputs.julia_version == '1.10' || inputs.julia_version == 'lts') && inputs.local_test_dependencies != '' }}
         env:
           PROJECT: ${{ inputs.project }}
           TEST_ARGS: ${{ inputs.test_args }}
+
+      - uses: julia-actions/julia-runtest@v1
+        with:
+          project: ${{ inputs.project }}
+          test_args: ${{ inputs.test_args }}
+          allow_reresolve: ${{ !(inputs.downgrade_testing) }}
+        if: ${{ (inputs.julia_version != '1.10' && inputs.julia_version != 'lts') || inputs.local_test_dependencies == '' }}
 
       - name: "Upload MLIR modules"
         uses: actions/upload-artifact@v4

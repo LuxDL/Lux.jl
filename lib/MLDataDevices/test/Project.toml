@@ -23,7 +23,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 [compat]
 Adapt = "4"
 Aqua = "0.8.4"
-ArrayInterface = "7.11"
+ArrayInterface = "7.17.1"
 ChainRulesTestUtils = "1.13.0"
 ComponentArrays = "0.15.22"
 ExplicitImports = "1.9.0"
