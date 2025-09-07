@@ -244,6 +244,8 @@ function CRC.rrule(
     return matmuladd(A, B, bias), ∇matmuladd
 end
 
+# COV_EXCL_START
+
 # EnzymeRules
 function EnzymeRules.augmented_primal(
     cfg,
@@ -339,6 +341,8 @@ function EnzymeRules.reverse(
 
     return ntuple(Returns(nothing), 5)
 end
+
+# COV_EXCL_STOP
 
 @enzyme_alternative matmul_octavian! matmul_linalg_default!
 @enzyme_alternative serial_matmul_loopvec! matmul_linalg_default!
