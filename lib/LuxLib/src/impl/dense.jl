@@ -133,6 +133,8 @@ function CRC.rrule(
     return z, ∇fused_dense
 end
 
+# COV_EXCL_START
+
 # TODO: We can optimize these a bit further by checking for cases where the forward pass
 #       is not needed. We skip such optimizations for now
 function EnzymeRules.augmented_primal(
@@ -282,6 +284,8 @@ function EnzymeRules.reverse(
 
     return ntuple(Returns(nothing), 6)
 end
+
+# COV_EXCL_STOP
 
 ∇matmul_bias(∂y, weight, x, bias) = ∇matmul_bias(∂y, ∇bias_add(bias, ∂y), weight, x, bias)
 ∇matmul_bias(∂y, ∂b, weight, x, _) = matmul(∂y, x'), matmul(weight', ∂y), ∂b

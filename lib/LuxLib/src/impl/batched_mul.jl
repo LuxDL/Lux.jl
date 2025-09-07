@@ -338,6 +338,8 @@ function CRC.rrule(
     return batched_matmul_fallback(x, y), ∇batched_matmul
 end
 
+# COV_EXCL_START
+
 # This is type-piracy but needed to fix a blocking issue. TODO: upstream to NNlib
 # Enzyme causes a "active variables passed by value to jl_new_task are not yet supported"
 # warning without this patch.
@@ -452,3 +454,5 @@ for func in (NNlib.batched_mul!, batched_matmul_loopvec_impl!)
         end
     end
 end
+
+# COV_EXCL_STOP

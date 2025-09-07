@@ -44,6 +44,8 @@ function CRC.rrule(
     return LossFunctionImpl.fused_agg(sum, lfn, x, y), ∇fused_agg
 end
 
+# COV_EXCL_START
+
 function EnzymeRules.augmented_primal(
     cfg::EnzymeRules.RevConfigWidth{1},
     func::EnzymeCore.Const{typeof(LossFunctionImpl.fused_agg)},
@@ -81,5 +83,7 @@ function EnzymeRules.reverse(
 
     return ntuple(Returns(nothing), 4)
 end
+
+# COV_EXCL_STOP
 
 end
