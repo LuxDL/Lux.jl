@@ -211,6 +211,9 @@ for op in (:get_device, :get_device_type)
     end
 end
 
+get_device(::Type{<:Number}) = CPUDevice()
+get_device_type(::Type{<:Number}) = CPUDevice
+
 get_device(_) = UnknownDevice()
 get_device_type(_) = UnknownDevice
 
@@ -262,5 +265,12 @@ function unsafe_free!(x)
 end
 
 static_length(t::Tuple) = Val(length(t))
+
+function to_rarray(args...; kwargs...)
+    loaded(ReactantDevice) && return to_rarray_internal(args...; kwargs...)
+    error("`to_rarray` is only supported with `Reactant` loaded.")
+end
+
+function to_rarray_internal end
 
 end

@@ -41,12 +41,16 @@ using FillArrays, Zygote  # Extensions
         rng=MersenneTwister(),
         one_elem=Zygote.OneElement(2.0f0, (2, 3), (1:3, 1:4)),
         farray=Fill(1.0f0, (2, 3)),
+        one_elem2=FillArrays.OneElement(2.0f0, (2, 3), (1:3, 1:4)),
+        zeros_fa=Zeros{Float32}((2, 3)),
+        ones_fa=Ones{Float32}((2, 3)),
     )
 
     device = reactant_device()
     aType = MLDataDevices.functional(ReactantDevice) ? Reactant.ConcreteRArray : Array
-    rngType =
+    rngType = (
         MLDataDevices.functional(ReactantDevice) ? Reactant.ReactantRNG : Random.AbstractRNG
+    )
 
     ps_xpu = device(ps)
     @test get_device(ps_xpu) isa ReactantDevice
@@ -70,10 +74,10 @@ using FillArrays, Zygote  # Extensions
 
     if MLDataDevices.functional(ReactantDevice)
         @test ps_xpu.one_elem isa Reactant.RArray
-        @test ps_xpu.farray isa Reactant.RArray
-    else
-        @test ps_xpu.one_elem isa Zygote.OneElement
-        @test ps_xpu.farray isa Fill
+        @test ps_xpu.farray isa Fill{<:Reactant.ConcreteRNumber}
+        @test ps_xpu.one_elem2 isa FillArrays.OneElement{<:Reactant.ConcreteRNumber}
+        @test ps_xpu.zeros_fa isa Zeros{<:Reactant.ConcreteRNumber}
+        @test ps_xpu.ones_fa isa Ones{<:Reactant.ConcreteRNumber}
     end
 
     ps_cpu = cpu_device()(ps_xpu)
@@ -100,10 +104,10 @@ using FillArrays, Zygote  # Extensions
 
     if MLDataDevices.functional(ReactantDevice)
         @test ps_cpu.one_elem isa Array
-        @test ps_cpu.farray isa Array
-    else
-        @test ps_cpu.one_elem isa Zygote.OneElement
-        @test ps_cpu.farray isa Fill
+        @test ps_cpu.farray isa Fill{Float32}
+        @test ps_cpu.one_elem2 isa FillArrays.OneElement{Float32}
+        @test ps_cpu.zeros_fa isa Zeros{Float32}
+        @test ps_cpu.ones_fa isa Ones{Float32}
     end
 
     ps_mixed = (; a=rand(2), b=device(rand(2)))
