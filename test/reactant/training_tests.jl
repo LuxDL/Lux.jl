@@ -106,3 +106,25 @@ end
     hlo = repr(@code_hlo(Optimisers.update(st_opt, ps, ps)))
     @test length(findall("stablehlo.if", hlo)) == (2 + 1 + 2) * 2
 end
+
+@testitem "Reactant Optimisers Patch: ClipNorm" tags = [:reactant] setup = [SharedTestSetup] begin
+    using Lux, Random, Reactant, Optimisers
+
+    dev = reactant_device(; force=true)
+
+    model = Chain(
+        Dense(2 => 4, relu), Chain(Dense(4 => 2, relu; use_bias=false), Dense(2 => 2))
+    )
+    ps, st = Lux.setup(Random.default_rng(), model) |> dev
+
+    x = randn(Float32, 2, 32) |> dev
+
+    train_state = Training.TrainState(
+        model, ps, st, OptimiserChain(ClipNorm(0.5), Descent(0.1))
+    )
+
+    _, loss, stats, ts = Training.single_train_step(
+        AutoEnzyme(), MSELoss(), (x, x), train_state; return_gradients=Val(false)
+    )
+    @test loss isa Number
+end
