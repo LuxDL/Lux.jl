@@ -70,6 +70,18 @@ function make_reactant_compatible(
     )
 end
 
+function make_reactant_compatible(
+    opt::Optimisers.ClipNorm, dev::ReactantDevice, outermost=Val(true)
+)
+    opt_ra = Optimisers.ClipNorm(
+        Utils.to_rarray(opt.omega; track_numbers=Integer, _dev_to_kwargs(dev)...),
+        opt.p,
+        false,
+    )
+    outermost isa Val{true} && return ReactantOptimiser(opt_ra)
+    return opt_ra
+end
+
 function optimisers_setup_with_jit end
 
 end
