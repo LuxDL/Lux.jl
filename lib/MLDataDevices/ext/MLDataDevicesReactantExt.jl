@@ -28,7 +28,7 @@ function Reactant.make_tracer(
 end
 
 # Call into Reactant.to_rarray
-function device_to_kwargs(dev::ReactantDevice)
+function device_to_kwargs(dev::ReactantDevice, x)
     kwargs = (;)
     dev.client === missing || (kwargs = (; kwargs..., client=dev.client))
     dev.device === missing || (kwargs = (; kwargs..., device=dev.device))
@@ -51,7 +51,7 @@ function device_to_kwargs(dev::ReactantDevice)
 end
 
 function Internal.to_rarray_internal(dev::ReactantDevice, x)
-    return Reactant.to_rarray(x; device_to_kwargs(dev)...)
+    return Reactant.to_rarray(x; device_to_kwargs(dev, x)...)
 end
 
 # Default RNG
@@ -92,7 +92,7 @@ Internal.unsafe_free_internal!(::Type{ReactantDevice}, x::AbstractArray) = nothi
 Profiler.@annotate "Device Transfer (Reactant)" function Adapt.adapt_storage(
     dev::ReactantDevice, x::AbstractArray
 )
-    return ConcreteRArray(x; device_to_kwargs(dev)...)
+    return ConcreteRArray(x; device_to_kwargs(dev, x)...)
 end
 
 function Adapt.adapt_storage(
