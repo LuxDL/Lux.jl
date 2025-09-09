@@ -16,18 +16,14 @@ struct oneAPIDevice <: AbstractGPUDevice end
 end
 
 function Base.:(==)(x::ReactantDevice, y::ReactantDevice)
-    if x.client !== missing
-        y.client === missing && return false
-        x.client.client != y.client.client && return false
-    else
-        y.client !== missing && return false
+    if x.client !== missing && y.client !== missing && x.client.client != y.client.client
+        return false
     end
-    if x.device !== missing
-        y.device === missing && return false
-        x.device.device != y.device.device && return false
-    else
-        y.device !== missing && return false
+
+    if x.device !== missing && y.device !== missing && x.device.device != y.device.device
+        return false
     end
+
     return true
 end
 
