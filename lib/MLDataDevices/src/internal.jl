@@ -268,7 +268,7 @@ static_length(t::Tuple) = Val(length(t))
 
 function to_rarray(args...; kwargs...)
     loaded(ReactantDevice) && return to_rarray_internal(args...; kwargs...)
-    error("`to_rarray` is only supported with `Reactant` loaded.")
+    return error("`to_rarray` is only supported with `Reactant` loaded.")
 end
 
 function to_rarray_internal end
