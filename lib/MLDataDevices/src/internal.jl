@@ -149,11 +149,23 @@ combine_devices(::AbstractDevice, dev::ReactantDevice) = dev
 function combine_devices(dev1::ReactantDevice, dev2::ReactantDevice)
     if dev1 == dev2
         # `merge(...)` of `IdDict` constructs a `Dict`
-        sharding = dev1.sharding
-        for (k, v) in dev2.sharding
-            sharding[k] = v
+        if dev1.sharding isa IdDict
+            sharding = dev1.sharding
+            if dev2.sharding isa IdDict
+                for (k, v) in dev2.sharding
+                    sharding[k] = v
+                end
+            end
+        elseif dev2.sharding isa IdDict
+            sharding = dev2.sharding
+        else
+            sharding = missing
         end
-        return ReactantDevice(dev1.client, dev1.device, sharding)
+
+        client = dev1.client === missing ? dev2.client : dev1.client
+        device = dev1.device === missing ? dev2.device : dev1.device
+
+        return ReactantDevice(client, device, sharding)
     end
     throw(ArgumentError("Objects are on different devices: $(dev1) and $(dev2)."))
 end
@@ -211,6 +223,9 @@ for op in (:get_device, :get_device_type)
     end
 end
 
+get_device(::Type{<:Number}) = CPUDevice()
+get_device_type(::Type{<:Number}) = CPUDevice
+
 get_device(_) = UnknownDevice()
 get_device_type(_) = UnknownDevice
 
@@ -262,5 +277,12 @@ function unsafe_free!(x)
 end
 
 static_length(t::Tuple) = Val(length(t))
+
+function to_rarray(args...; kwargs...)
+    loaded(ReactantDevice) && return to_rarray_internal(args...; kwargs...)
+    return error("`to_rarray` is only supported with `Reactant` loaded.")
+end
+
+function to_rarray_internal end
 
 end
