@@ -27,6 +27,16 @@ mutable struct StatefulLuxLayer{ST,M<:AbstractLuxLayer,psType,stType}
     end
 end
 
+function Base.getproperty(l::StatefulLuxLayer, s::Symbol)
+    s === :st && return getstate(l)
+    s === :st_any && throw(
+        ArgumentError(
+            "No property `st_any` for `StatefulLuxLayer`. To access the `st_any` field use `getfield(l, :st_any)` instead.",
+        ),
+    )
+    return getfield(l, s)
+end
+
 function StatefulLuxLayer{ST}(model, ps, st, st_any) where {ST}
     return StatefulLuxLayer(model, ps, st, st_any, static(ST))
 end
@@ -43,8 +53,8 @@ function StatefulLuxLayer(model::AbstractLuxLayer, ps, st)
     return StatefulLuxLayer{preserves_state_type(model)}(model, ps, st)
 end
 
-get_state(l::StatefulLuxLayer{Val{true}}) = l.st
-get_state(l::StatefulLuxLayer{Val{false}}) = l.st_any
+get_state(l::StatefulLuxLayer{Val{true}}) = getfield(l, :st)
+get_state(l::StatefulLuxLayer{Val{false}}) = getfield(l, :st_any)
 # Needed for compact macro implementation
 get_state(st::AbstractArray{<:Number}) = st
 get_state(st::Union{AbstractArray,Tuple,NamedTuple}) = map(get_state, st)
@@ -66,7 +76,7 @@ function set_state!(
                        defined for all the layers in the model.")
     )
 end
-set_state!(s::StatefulLuxLayer{Val{false}}, st) = (s.st_any = st)
+set_state!(s::StatefulLuxLayer{Val{false}}, st) = setfield!(s, :st_any, st)
 
 export StatefulLuxLayer
 

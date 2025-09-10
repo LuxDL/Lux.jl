@@ -63,15 +63,15 @@
         @test smodel.st.training == 2
 
         smodel = StatefulLuxLayer{false}(model, ps, st)
-        @test smodel.st_any.training isa Val{true}
+        @test smodel.st.training isa Val{true}
 
         smodel = LuxCore.testmode(smodel)
-        @test smodel.st_any.training isa Val{false}
+        @test smodel.st.training isa Val{false}
 
         smodel = LuxCore.trainmode(smodel)
-        @test smodel.st_any.training isa Val{true}
+        @test smodel.st.training isa Val{true}
 
         smodel = LuxCore.update_state(smodel, :training, 2)
-        @test smodel.st_any.training == 2
+        @test smodel.st.training == 2
     end
 end
