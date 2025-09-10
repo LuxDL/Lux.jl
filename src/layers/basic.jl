@@ -619,7 +619,14 @@ AlternatePrecision(::Type{T}, layer) where {T} = AlternatePrecision{T}(layer)
 
 LuxCore.display_name(::AlternatePrecision{T}) where {T} = "AlternatePrecision{$T}"
 
-function (model::AlternatePrecision{T})(x::AbstractArray{T2}, ps, st) where {T,T2}
-    y, stₙ = model.layer(T.(x), ps, st)
-    return T2.(y), stₙ
+function LuxCore.apply(
+    ::Type{<:AlternatePrecision{T}}, model, x::AbstractArray{T}
+) where {T}
+    return model.layer(x)
+end
+
+function LuxCore.apply(
+    ::Type{<:AlternatePrecision{T}}, model, x::AbstractArray{T2}
+) where {T,T2}
+    return T2.(model.layer(T.(x)))
 end

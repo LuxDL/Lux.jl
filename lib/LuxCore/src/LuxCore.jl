@@ -261,10 +261,6 @@ function statelength(l::AbstractLuxWrapperLayer{layer}) where {layer}
     return statelength(getfield(l, layer))
 end
 
-function (l::AbstractLuxWrapperLayer{layer})(x, ps, st) where {layer}
-    return apply(getfield(l, layer), x, ps, st)
-end
-
 # Test Mode
 """
     testmode(st::NamedTuple)

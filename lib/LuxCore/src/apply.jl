@@ -10,10 +10,24 @@ end
 
 # TODO: allow for stateless AbstractLuxLayers as well
 
+function (model::AbstractLuxWrapperLayer)(x, ps, st)
+    xs = x isa Tuple ? x : (x,)
+    smodel = StatefulLuxLayerImpl.NamedTupleStatefulLuxLayer(model, ps, st)
+    output = apply(typeof(model), smodel, xs...)
+    # return output, smodel.st # TODO: correctly handle the states
+    return output
+end
+
+# fallback for wrapped layers
+function apply(::Type{<:AbstractLuxWrapperLayer}, model, xs...)
+    smodel = only(getfield(model, :smodels))
+    return apply(smodel.model, xs, smodel.ps, smodel.st)
+end
+
 function (model::AbstractLuxContainerLayer)(x, ps, st)
     xs = x isa Tuple ? x : (x,)
     smodel = StatefulLuxLayerImpl.NamedTupleStatefulLuxLayer(model, ps, st)
-    res = apply(typeof(model), smodel, xs...)
-    # return res, smodel.st # TODO: correctly handle the states
-    return res
+    output = apply(typeof(model), smodel, xs...)
+    # return output, smodel.st # TODO: correctly handle the states
+    return output
 end
