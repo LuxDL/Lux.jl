@@ -106,11 +106,11 @@ end
 
 apply(::Type{ReverseSequence{StaticInt{1}}}, layer, x::AbstractVector) = safe_reverse(x)
 
-function apply(::Type{ReverseSequence{StaticInt{N}}}, layer, x::AbstractVector) where {N}
+function apply(::Type{ReverseSequence{StaticInt{N}}}, layer, ::AbstractVector) where {N}
     throw(ArgumentError("Cannot specify a dimension ($(N) != 1) for AbstractVector"))
 end
 
-function apply(::Type{ReverseSequence{StaticInt{N}}}, layer, ::AbstractArray) where {N}
+function apply(::Type{ReverseSequence{StaticInt{N}}}, layer, x::AbstractArray) where {N}
     return safe_reverse(x; dims=N)
 end
 
@@ -204,7 +204,7 @@ SelectDim(dim::Integer, index::AbstractVector) = SelectDim(static(dim), index)
 function apply(::Type{SelectDim{D,<:StaticInt}}, layer, x) where {D}
     return selectdim(x, known(layer.dim), known(layer.index))
 end
-apply(::Type{SelectDim}, layer, x) = selectdim(x, known(layer.dim), layer.index)
+apply(::Type{<:SelectDim}, layer, x) = selectdim(x, known(layer.dim), layer.index)
 
 """
     NoOpLayer()
@@ -230,7 +230,8 @@ julia> y, st_new = model(x, ps, st)
 """
 struct NoOpLayer <: AbstractLuxLayer end
 
-apply(::Type{NoOpLayer}, layer, xs...) = xs
+apply(::Type{NoOpLayer}, layer, x) = x
+apply(::Type{NoOpLayer}, layer, x, xs...) = (x, xs...)
 
 """
     WrappedFunction(f)
@@ -259,7 +260,8 @@ end
 
 Base.show(io::IO, w::WrappedFunction) = print(io, "WrappedFunction(", w.func, ")")
 
-apply(::Type{WrappedFunction{F}}, layer, xs...) where {F} = layer.func(xs)
+apply(::Type{WrappedFunction{F}}, layer, x) where {F} = layer.func(x)
+apply(::Type{WrappedFunction{F}}, layer, x, xs...) where {F} = layer.func(x, xs...)
 
 """
     Dense(in_dims => out_dims, activation=identity; init_weight=nothing,

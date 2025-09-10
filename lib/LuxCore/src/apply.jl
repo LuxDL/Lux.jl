@@ -19,4 +19,3 @@ function apply(::Type{<:AbstractLuxWrapperLayer}, model, xs...)
     smodel = only(getfield(model, :smodels))
     return apply(smodel.model, xs, smodel.ps, smodel.st)
 end
-
