@@ -41,10 +41,22 @@ function Functors.functor(
 )
     recon = let ft = x.fixed_state_type
         nt -> LuxCore.StatefulLuxLayerImpl.StatefulLuxLayer(
-            nt.model, nt.ps, nt.st, nt.st_any, ft
+            getfield(nt, :model),
+            getfield(nt, :ps),
+            getfield(nt, :st),
+            getfield(nt, :st_any),
+            ft,
         )
     end
-    return (; x.model, x.ps, x.st, x.st_any), recon
+    return (
+        (;
+            model=getfield(x, :model),
+            ps=getfield(x, :ps),
+            st=getfield(x, :st),
+            st_any=getfield(x, :st_any),
+        ),
+        recon,
+    )
 end
 
 end
