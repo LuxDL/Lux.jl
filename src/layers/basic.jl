@@ -48,14 +48,14 @@ struct ReshapeLayer{N} <: AbstractLuxLayer
     dims::NTuple{N,Int}
 end
 
-outputsize(r::ReshapeLayer, _, ::AbstractRNG) = r.dims
-
-function (r::ReshapeLayer)(x::AbstractArray, _, st::NamedTuple)
-    return reshape(x, r.dims..., size(x, ndims(x))), st
-end
-
 function Base.show(io::IO, r::ReshapeLayer)
     return print(io, "ReshapeLayer(output_dims = (", join(r.dims, ", "), ", :))")
+end
+
+outputsize(r::ReshapeLayer, _, ::AbstractRNG) = r.dims
+
+function apply(::Type{<:ReshapeLayer}, layer, x::AbstractArray)
+    return reshape(x, layer.dims..., size(x, ndims(x)))
 end
 
 """
@@ -100,20 +100,18 @@ end
 ReverseSequence(dim) = ReverseSequence(static(dim))
 ReverseSequence(; dim=nothing) = ReverseSequence(static(dim))
 
-function (r::ReverseSequence{Nothing})(x::AbstractArray, _, st::NamedTuple)
-    return safe_reverse(x; dims=max(ndims(x) - 1, 1)), st
+function apply(::Type{ReverseSequence{Nothing}}, layer, x::AbstractArray)
+    return safe_reverse(x; dims=max(ndims(x) - 1, 1))
 end
 
-function (r::ReverseSequence{StaticInt{1}})(x::AbstractVector, _, st::NamedTuple)
-    return safe_reverse(x), st
-end
+apply(::Type{ReverseSequence{StaticInt{1}}}, layer, x::AbstractVector) = safe_reverse(x)
 
-function (r::ReverseSequence{StaticInt{N}})(::AbstractVector, _, st::NamedTuple) where {N}
+function apply(::Type{ReverseSequence{StaticInt{N}}}, layer, x::AbstractVector) where {N}
     throw(ArgumentError("Cannot specify a dimension ($(N) != 1) for AbstractVector"))
 end
 
-function (r::ReverseSequence{StaticInt{N}})(x::AbstractArray, _, st::NamedTuple) where {N}
-    return safe_reverse(x; dims=N), st
+function apply(::Type{ReverseSequence{StaticInt{N}}}, layer, ::AbstractArray) where {N}
+    return safe_reverse(x; dims=N)
 end
 
 """
@@ -160,13 +158,13 @@ end
 FlattenLayer(N) = FlattenLayer(static(N))
 FlattenLayer(; N=nothing) = FlattenLayer(static(N))
 
-function (::FlattenLayer{Nothing})(x::AbstractArray{T,N}, _, st::NamedTuple) where {T,N}
-    return reshape(x, :, size(x, N)), st
+function apply(::Type{FlattenLayer{Nothing}}, layer, x::AbstractArray{T,N}) where {T,N}
+    return reshape(x, :, size(x, N))
 end
 
-function (f::FlattenLayer)(x::AbstractArray{T,N}, _, st::NamedTuple) where {T,N}
-    @argcheck f.N < N
-    return reshape(x, :, size(x)[(f.N + 1):end]...), st
+function apply(::Type{FlattenLayer}, layer, x::AbstractArray{T,N}) where {T,N}
+    @argcheck layer.N < N
+    return reshape(x, :, size(x)[(layer.N + 1):end]...)
 end
 
 """
@@ -196,17 +194,17 @@ views.
     index <: Union{StaticInt,AbstractVector}
 end
 
-SelectDim(dim::Integer, index::Integer) = SelectDim(static(dim), static(index))
-SelectDim(dim::Integer, index::AbstractVector) = SelectDim(static(dim), index)
-
-function (s::SelectDim{D,<:StaticInt})(x, _, st::NamedTuple) where {D}
-    return selectdim(x, known(s.dim), known(s.index)), st
-end
-(s::SelectDim)(x, _, st::NamedTuple) = selectdim(x, known(s.dim), s.index), st
-
 function Base.show(io::IO, s::SelectDim)
     return print(io, "SelectDim(dim = ", s.dim, ", index = ", s.index, ")")
 end
+
+SelectDim(dim::Integer, index::Integer) = SelectDim(static(dim), static(index))
+SelectDim(dim::Integer, index::AbstractVector) = SelectDim(static(dim), index)
+
+function apply(::Type{SelectDim{D,<:StaticInt}}, layer, x) where {D}
+    return selectdim(x, known(layer.dim), known(layer.index))
+end
+apply(::Type{SelectDim}, layer, x) = selectdim(x, known(layer.dim), layer.index)
 
 """
     NoOpLayer()
@@ -232,7 +230,7 @@ julia> y, st_new = model(x, ps, st)
 """
 struct NoOpLayer <: AbstractLuxLayer end
 
-(noop::NoOpLayer)(x, _, st::NamedTuple) = x, st
+apply(::Type{NoOpLayer}, layer, xs...) = xs
 
 """
     WrappedFunction(f)
@@ -259,9 +257,9 @@ be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing to do would be
     func <: Function
 end
 
-(wf::WrappedFunction)(x, ps, st::NamedTuple{}) = wf.func(x), st
-
 Base.show(io::IO, w::WrappedFunction) = print(io, "WrappedFunction(", w.func, ")")
+
+apply(::Type{WrappedFunction{F}}, layer, xs...) where {F} = layer.func(xs)
 
 """
     Dense(in_dims => out_dims, activation=identity; init_weight=nothing,
@@ -356,14 +354,14 @@ function outputsize(d::Dense, x::AbstractArray, ::AbstractRNG)
     return (d.out_dims, size(x)[2:(end - 1)]...)
 end
 
-function (d::Dense)(x::AbstractArray, ps, st::NamedTuple)
-    y = match_eltype(d, ps, st, x)
-    bias = safe_getproperty(ps, Val(:bias))
-    σ = NNlib.fast_act(d.activation, x)
-    z = matrix_to_array(
-        fused_dense_bias_activation(σ, ps.weight, make_abstract_matrix(y), bias), y
+function apply(::Type{<:Dense}, layer, x::AbstractArray)
+    # XXX: restore `match_eltype` support
+    # y = match_eltype(d, ps, st, x)
+    bias = safe_getproperty(layer, Val(:bias))
+    σ = NNlib.fast_act(layer.activation, x)
+    return matrix_to_array(
+        fused_dense_bias_activation(σ, layer.weight, make_abstract_matrix(x), bias), x
     )
-    return z, st
 end
 
 """
@@ -443,15 +441,18 @@ statelength(d::Scale) = 0
 
 outputsize(d::Scale, _, ::AbstractRNG) = d.dims
 
-function (d::Scale{False})(x::AbstractArray, ps, st::NamedTuple)
-    y = match_eltype(d, ps, st, x)
-    σ = NNlib.fast_act(d.activation, y)
-    return @.(σ(y .* ps.weight)), st
+function apply(::Type{Scale{False}}, layer, x::AbstractArray)
+    # XXX: restore `match_eltype` support
+    # y = match_eltype(d, ps, st, x)
+    σ = NNlib.fast_act(layer.activation, x)
+    return @.(σ(x .* layer.weight))
 end
-function (d::Scale{True})(x::AbstractArray, ps, st::NamedTuple)
-    y = match_eltype(d, ps, st, x)
-    σ = NNlib.fast_act(d.activation, y)
-    return @.(σ(y * ps.weight + ps.bias)), st
+
+function apply(::Type{Scale{True}}, layer, x::AbstractArray)
+    # XXX: restore `match_eltype` support
+    # y = match_eltype(d, ps, st, x)
+    σ = NNlib.fast_act(layer.activation, x)
+    return @.(σ(x * layer.weight + layer.bias))
 end
 
 """
@@ -562,33 +563,26 @@ statelength(b::Bilinear) = 0
 
 outputsize(b::Bilinear, _, ::AbstractRNG) = (b.out_dims,)
 
-function (b::Bilinear)(
-    (x, y)::Tuple{<:AbstractVecOrMat,<:AbstractVecOrMat}, ps, st::NamedTuple
-)
-    s₁, s₂, s₃ = size(ps.weight)
+function apply(::Type{<:Bilinear}, layer, x::AbstractVecOrMat, y::AbstractVecOrMat)
+    s₁, s₂, s₃ = size(layer.weight)
     @argcheck s₂ == size(x, 1) && s₃ == size(y, 1)
     @argcheck size(x, 2) == size(y, 2)
 
-    Wy = reshape(reshape(ps.weight, (:, s₃)) * y, (s₁, s₂, :))
+    Wy = reshape(reshape(layer.weight, (:, s₃)) * y, (s₁, s₂, :))
     Wyx = reshape(batched_matmul(Wy, reshape(x, (s₂, 1, :))), (s₁, :))
 
-    σ = NNlib.fast_act(b.activation, Wyx)
-    return bias_activation!!(σ, Wyx, safe_getproperty(ps, Val(:bias))), st
+    σ = NNlib.fast_act(layer.activation, Wyx)
+    return bias_activation!!(σ, Wyx, safe_getproperty(layer, Val(:bias)))
 end
 
-function (b::Bilinear)((x, y)::Tuple{<:AbstractArray,<:AbstractArray}, ps, st::NamedTuple)
+function apply(T::Type{<:Bilinear}, layer, x::AbstractArray, y::AbstractArray)
     @argcheck size(x)[2:end] == size(y)[2:end]
-
-    s₁, s₂, s₃ = size(ps.weight)
-    x′ = reshape(x, s₂, :)
-    y′ = reshape(y, s₃, :)
-
-    z, stₙ = b((x′, y′), ps, st)
-
-    return reshape(z, s₁, size(x)[2:end]...), stₙ
+    s₁, s₂, s₃ = size(layer.weight)
+    z = apply(T, layer, reshape(x, s₂, :), reshape(y′, s₃, :))
+    return reshape(z, s₁, size(x)[2:end]...)
 end
 
-(b::Bilinear)(x::AbstractArray, ps, st::NamedTuple) = b((x, x), ps, st)
+apply(T::Type{<:Bilinear}, layer, x::AbstractArray) = apply(T, layer, x, x)
 
 """
     AlternatePrecision{T}(layer)
@@ -617,16 +611,12 @@ end
 
 AlternatePrecision(::Type{T}, layer) where {T} = AlternatePrecision{T}(layer)
 
-LuxCore.display_name(::AlternatePrecision{T}) where {T} = "AlternatePrecision{$T}"
+display_name(::AlternatePrecision{T}) where {T} = "AlternatePrecision{$T}"
 
-function LuxCore.apply(
-    ::Type{<:AlternatePrecision{T}}, model, x::AbstractArray{T}
-) where {T}
+function apply(::Type{<:AlternatePrecision{T}}, model, x::AbstractArray{T}) where {T}
     return model.layer(x)
 end
 
-function LuxCore.apply(
-    ::Type{<:AlternatePrecision{T}}, model, x::AbstractArray{T2}
-) where {T,T2}
+function apply(::Type{<:AlternatePrecision{T}}, model, x::AbstractArray{T2}) where {T,T2}
     return T2.(model.layer(T.(x)))
 end
