@@ -15,6 +15,11 @@ function (model::AbstractLuxLayer)(x, ps, st)
 end
 
 # fallback for wrapped layers
+function apply(::Type{<:AbstractLuxWrapperLayer}, model, x)
+    smodel = only(getfield(model, :smodels))
+    return apply(smodel.model, x, smodel.ps, smodel.st)
+end
+
 function apply(::Type{<:AbstractLuxWrapperLayer}, model, xs...)
     smodel = only(getfield(model, :smodels))
     return apply(smodel.model, xs, smodel.ps, smodel.st)

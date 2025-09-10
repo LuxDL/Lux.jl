@@ -250,15 +250,17 @@ function parameterlength(c::Conv)
     return prod(c.kernel_size) * c.in_chs * c.out_chs ÷ c.groups + has_bias(c) * c.out_chs
 end
 
-function (c::Conv)(x::AbstractArray, ps, st::NamedTuple)
-    y = match_eltype(c, ps, st, x)
+function apply(::Type{<:Conv}, c, x::AbstractArray)
+    # XXX: restore `match_eltype` support
+    # y = match_eltype(c, ps, st, x)
+
     cdims = construct_crosscor_convdims(
         c.cross_correlation,
-        DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups),
+        DenseConvDims(x, c.weight; c.stride, padding=c.pad, c.dilation, c.groups),
     )
-    bias = safe_getproperty(ps, Val(:bias))
-    σ = NNlib.fast_act(c.activation, y)
-    return fused_conv_bias_activation(σ, ps.weight, y, bias, cdims), st
+    return fused_conv_bias_activation(
+        NNlib.fast_act(c.activation, x), c.weight, x, safe_getproperty(c, Val(:bias)), cdims
+    )
 end
 
 function Base.show(io::IO, l::Conv)
@@ -424,17 +426,20 @@ function parameterlength(c::ConvTranspose)
     return prod(c.kernel_size) * c.in_chs * c.out_chs ÷ c.groups + has_bias(c) * c.out_chs
 end
 
-function (c::ConvTranspose)(x::AbstractArray, ps, st::NamedTuple)
-    y = match_eltype(c, ps, st, x)
+function apply(::Type{<:ConvTranspose}, c, x::AbstractArray)
+    # XXX: restore `match_eltype` support
+    # y = match_eltype(c, ps, st, x)
     cdims = construct_crosscor_convdims(
         c.cross_correlation,
         conv_transpose_dims(
-            y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups, c.outpad
+            x, c.weight; c.stride, padding=c.pad, c.dilation, c.groups, c.outpad
         ),
     )
-    bias = safe_getproperty(ps, Val(:bias))
-    σ = NNlib.fast_act(c.activation, y)
-    return bias_activation!!(σ, conv_transpose(y, ps.weight, cdims), bias), st
+    return bias_activation!!(
+        NNlib.fast_act(c.activation, x),
+        conv_transpose(x, c.weight, cdims),
+        safe_getproperty(c, Val(:bias)),
+    )
 end
 
 function Base.show(io::IO, l::ConvTranspose)
@@ -528,11 +533,11 @@ end
 
 Upsample(scale, mode::SymbolType=static(:nearest)) = Upsample(mode; scale)
 
-function (m::Upsample)(x::AbstractArray, _, st::NamedTuple)
-    return lux_upsample_scale_dispatch(m.upsample_mode, x, m.scale, m.align_corners), st
+function apply(::Type{<:Upsample}, m, x::AbstractArray)
+    return lux_upsample_scale_dispatch(m.upsample_mode, x, m.scale, m.align_corners)
 end
-function (m::Upsample{Nothing})(x::AbstractArray, _, st::NamedTuple)
-    return lux_upsample_size_dispatch(m.upsample_mode, x, m.size, m.align_corners), st
+function apply(::Type{<:Upsample{Nothing}}, m, x::AbstractArray)
+    return lux_upsample_size_dispatch(m.upsample_mode, x, m.size, m.align_corners)
 end
 
 for interp in (:bilinear, :trilinear)
