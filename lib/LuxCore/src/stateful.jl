@@ -1,6 +1,10 @@
 module StatefulLuxLayerImpl
 
-using ..LuxCore: AbstractLuxLayer, AbstractLuxContainerLayer, preserves_state_type
+using ..LuxCore:
+    AbstractLuxLayer,
+    AbstractLuxContainerLayer,
+    AbstractLuxWrapperLayer,
+    preserves_state_type
 
 const StaticBool = Union{Val{true},Val{false}}
 
@@ -91,18 +95,27 @@ end
 set_state!(s::StatefulLuxLayer{Val{false}}, st) = setfield!(s, :st_any, st)
 
 # This is an internal implementation detail for bypassing manual state management
+# TODO: we need to store the fields for the base model in here as well
 struct NamedTupleStatefulLuxLayer{layers,NT<:NamedTuple,NTPS<:NamedTuple,NTST<:NamedTuple}
     smodels::NT
     ps_extra::NTPS
     st_extra::NTST
 end
 
-function NamedTupleStatefulLuxLayer{layers}(smodels, ps_extra, st_extra) where {layers}
-    return NamedTupleStatefulLuxLayer{
-        layers,typeof(smodels),typeof(ps_extra),typeof(st_extra)
-    }(
-        smodels, ps_extra, st_extra
-    )
+@generated function NamedTupleStatefulLuxLayer(
+    model::AbstractLuxWrapperLayer{layer}, ps::PS, st::ST
+) where {layer,PS,ST}
+    layers = (layer,)
+    smodel_expr = [:(StatefulLuxLayer(model.$(layer), ps, st))]
+
+    return quote
+        smodels = NamedTuple{$(layers)}(($(Tuple(smodel_expr)...),))
+        return NamedTupleStatefulLuxLayer{
+            $(layers),typeof(smodels),NamedTuple{},NamedTuple{}
+        }(
+            smodels, NamedTuple(), NamedTuple()
+        )
+    end
 end
 
 @generated function NamedTupleStatefulLuxLayer(
@@ -119,13 +132,18 @@ end
     st_get_expr = [:(getfield(st, $(QuoteNode(f)))) for f in st_extra_fields]
 
     return quote
-        return NamedTupleStatefulLuxLayer{$(layers)}(
-            NamedTuple{$(layers)}(($(Tuple(smodel_expr)...),)),
-            NamedTuple{$(ps_extra_fields)}(($(Tuple(ps_get_expr)...),)),
-            NamedTuple{$(st_extra_fields)}(($(Tuple(st_get_expr)...),)),
+        smodels = NamedTuple{$(layers)}(($(Tuple(smodel_expr)...),))
+        ps_extra = NamedTuple{$(ps_extra_fields)}(($(Tuple(ps_get_expr)...),))
+        st_extra = NamedTuple{$(st_extra_fields)}(($(Tuple(st_get_expr)...),))
+        return NamedTupleStatefulLuxLayer{
+            $(layers),typeof(smodels),typeof(ps_extra),typeof(st_extra)
+        }(
+            smodels, ps_extra, st_extra
         )
     end
 end
+
+# TODO: define propertynames
 
 function Base.getproperty(l::NamedTupleStatefulLuxLayer{layers}, s::Symbol) where {layers}
     s in layers && return getfield(getfield(l, :smodels), s)
