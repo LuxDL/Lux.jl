@@ -1,0 +1,23 @@
+[deps]
+Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
+Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
+LuxCUDA = "d0bbae9a-e099-4d5b-a835-1c6931763bda"
+MLDataDevices = "7e8f7934-dd98-4c1a-8fe8-92b47a384d40"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources]
+Lux = {path = "../../.."}
+LuxCUDA = {path = "../../../lib/LuxCUDA"}
+MLDataDevices = {path = "../../../lib/MLDataDevices"}
+
+[compat]
+Flux = "0.16"
+Lux = "1.21"
+LuxCUDA = "0.3.4"
+MLDataDevices = "1.12"
+Pkg = "1.10"
+StableRNGs = "1"
+Test = "1.10"
+julia = "1.10"

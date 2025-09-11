@@ -39,7 +39,6 @@ if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP)
     push!(EXTRA_PKGS, Pkg.PackageSpec("MPI"))
     (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
         push!(EXTRA_PKGS, Pkg.PackageSpec("NCCL"))
-    push!(EXTRA_PKGS, Pkg.PackageSpec("Flux"))
 end
 
 if (BACKEND_GROUP == "all" || (BACKEND_GROUP == "cuda" && LUX_TEST_GROUP != ["reactant"]))
@@ -156,6 +155,53 @@ const RETESTITEMS_NWORKER_THREADS = parse(
                 nworkers,
                 nworker_threads=RETESTITEMS_NWORKER_THREADS,
             )
+        end
+    end
+end
+
+# Various Downstream Integration Tests
+# We only run these on 1.11+ due to nicer handling of [sources]
+if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP) && VERSION ≥ v"1.11-"
+    testdir = @__DIR__
+    isintegrationtest(f) = endswith(f, "_integrationtest.jl")
+    integrationtestfiles = String[]
+    for (root, dirs, files) in walkdir(testdir)
+        for file in files
+            if isintegrationtest(file)
+                push!(integrationtestfiles, joinpath(root, file))
+            end
+        end
+    end
+
+    test_groups = Dict{String,Vector{String}}()
+    for file in integrationtestfiles
+        dir = dirname(file)
+        if !haskey(test_groups, dir)
+            test_groups[dir] = String[file]
+        else
+            push!(test_groups[dir], file)
+        end
+    end
+
+    @testset "Downstream Integration Tests" begin
+        withenv("BACKEND_GROUP" => BACKEND_GROUP) do
+            @info "Running Downstream $(basename(dir)) Integration Tests"
+            @testset "$(basename(dir))" for (dir, files) in test_groups
+                run(`$(Base.julia_cmd()) --color=yes --project=$(dir) \
+                     --startup-file=no -e \
+                     'using Pkg; Pkg.update(); Pkg.precompile()'`)
+
+                @testset "$(basename(file))" for file in files
+                    try
+                        run(`$(Base.julia_cmd()) --code-coverage=user --color=yes \
+                             --project=$(dir) --startup-file=no $(file)`)
+                        @test true
+                    catch e
+                        @error "Error while running $(file)"
+                        @test false
+                    end
+                end
+            end
         end
     end
 end
