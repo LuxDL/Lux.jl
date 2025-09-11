@@ -196,7 +196,7 @@ if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP) && VERSION ≥ v"1.11-"
                              --project=$(dir) --startup-file=no $(file)`)
                         @test true
                     catch err
-                        @error "Error while running $(file)" exception=err
+                        @error "Error while running $(file)" exception = err
                         @test false
                     end
                 end
@@ -213,7 +213,8 @@ if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP) && VERSION ≥ v"1.11-"
             run(`$(Base.julia_cmd()) --color=yes --project=$(distributed_proj) \
                  --startup-file=no -e 'using Pkg; Pkg.update(); Pkg.precompile()'`)
         catch err
-            @error "Error while running Pkg.update(). Continuing without it." exception=err
+            @error "Error while running Pkg.update(). Continuing without it." exception =
+                err
         end
 
         distributed_test_file = joinpath(distributed_proj, "distributed_test_runner.jl")
@@ -224,7 +225,7 @@ if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP) && VERSION ≥ v"1.11-"
                     $(distributed_test_file)`)
                 @test true
             catch err
-                @error "Error while running $(distributed_test_file)" exception=err
+                @error "Error while running $(distributed_test_file)" exception = err
                 @test false
             end
         end
