@@ -166,12 +166,7 @@ function apply(T::Type{<:MultiHeadAttention}, mha, qkv::AbstractArray)
     return apply(T, mha, qkv, qkv, qkv, nothing)
 end
 
-function apply(
-    T::Type{<:MultiHeadAttention},
-    mha,
-    q::AbstractArray,
-    kv::AbstractArray,
-)
+function apply(T::Type{<:MultiHeadAttention}, mha, q::AbstractArray, kv::AbstractArray)
     return apply(T, mha, q, kv, kv, nothing)
 end
 
