@@ -195,8 +195,8 @@ if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP) && VERSION ≥ v"1.11-"
                         run(`$(Base.julia_cmd()) --code-coverage=user --color=yes \
                              --project=$(dir) --startup-file=no $(file)`)
                         @test true
-                    catch e
-                        @error "Error while running $(file)"
+                    catch err
+                        @error "Error while running $(file)" exception=err
                         @test false
                     end
                 end
@@ -206,44 +206,26 @@ if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP) && VERSION ≥ v"1.11-"
 end
 
 # Distributed Tests
-if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP)
-    using MPI
-
-    nprocs_str = get(PARSED_TEST_ARGS, "JULIA_MPI_TEST_NPROCS", "")
-    nprocs = nprocs_str == "" ? clamp(Sys.CPU_THREADS, 2, 4) : parse(Int, nprocs_str)
-    testdir = @__DIR__
-    isdistributedtest(f) = endswith(f, "_distributedtest.jl")
-    distributedtestfiles = String[]
-    for (root, dirs, files) in walkdir(testdir)
-        for file in files
-            if isdistributedtest(file)
-                push!(distributedtestfiles, joinpath(root, file))
-            end
+if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP) && VERSION ≥ v"1.11-"
+    @testset "Distributed Tests" begin
+        distributed_proj = joinpath(@__DIR__, "distributed")
+        try
+            run(`$(Base.julia_cmd()) --color=yes --project=$(distributed_proj) \
+                 --startup-file=no -e 'using Pkg; Pkg.update(); Pkg.precompile()'`)
+        catch err
+            @error "Error while running Pkg.update(). Continuing without it." exception=err
         end
-    end
 
-    @info "Running Distributed Tests with $nprocs processes"
-
-    cur_proj = dirname(Pkg.project().path)
-
-    include("setup_modes.jl")
-
-    @testset "distributed tests: $(mode)" for (mode, aType, dev, ongpu) in MODES
-        backends = mode == "cuda" ? ("mpi", "nccl") : ("mpi",)
-        for backend_type in backends
-            np = backend_type == "nccl" ? min(nprocs, length(CUDA.devices())) : nprocs
-            @testset "Backend: $(backend_type)" begin
-                @testset "$(basename(file))" for file in distributedtestfiles
-                    @info "Running $file with $backend_type backend on $mode device"
-                    try
-                        run(`$(MPI.mpiexec()) -n $(np) $(Base.julia_cmd()) --color=yes \
-                            --code-coverage=user --project=$(cur_proj) --startup-file=no \
-                            $(file) $(mode) $(backend_type)`)
-                        @test true
-                    catch
-                        @test false
-                    end
-                end
+        distributed_test_file = joinpath(distributed_proj, "distributed_test_runner.jl")
+        withenv("BACKEND_GROUP" => BACKEND_GROUP) do
+            try
+                run(`$(Base.julia_cmd()) --color=yes --code-coverage=user \
+                    --project=$(distributed_proj) --startup-file=no \
+                    $(distributed_test_file)`)
+                @test true
+            catch err
+                @error "Error while running $(distributed_test_file)" exception=err
+                @test false
             end
         end
     end
