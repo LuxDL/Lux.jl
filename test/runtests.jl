@@ -185,7 +185,6 @@ if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP) && VERSION ≥ v"1.11-"
 
     @testset "Downstream Integration Tests" begin
         withenv("BACKEND_GROUP" => BACKEND_GROUP) do
-            @info "Running Downstream $(basename(dir)) Integration Tests"
             @testset "$(basename(dir))" for (dir, files) in test_groups
                 run(`$(Base.julia_cmd()) --color=yes --project=$(dir) \
                      --startup-file=no -e \

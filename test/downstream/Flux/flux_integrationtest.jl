@@ -128,8 +128,7 @@ toluxforce = FromFluxAdaptor(; force_preserve=true, preserve_ps_st=true)
 
         @testset "Bilinear" begin
             for model in [
-                dev(Flux.Bilinear((2, 3) => 5)),
-                dev(Flux.Bilinear((2, 3) => 5; bias=false)),
+                dev(Flux.Bilinear((2, 3) => 5)), dev(Flux.Bilinear((2, 3) => 5; bias=false))
             ]
                 x = aType(randn(Float32, 2, 4))
                 y = aType(randn(Float32, 3, 4))
