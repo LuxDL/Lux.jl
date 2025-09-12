@@ -1,4 +1,4 @@
-using Lux, StableRNGs
+using Lux, StableRNGs, Test
 using Flux: Flux
 
 include("../../setup_modes.jl")
