@@ -76,7 +76,7 @@ end
 
         @test d(x, psd, std)[1] == fd(x, ps, st)[1]
         @jet fd(x, ps, st)
-        @test_gradients(sumabs2first, fd, x, ps, st; atol=1.0f-3, rtol=1.0f-3,)
+        @test_gradients(sumabs2first, fd, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
         fd = Lux.Experimental.freeze(d, ())
         @test fd === d

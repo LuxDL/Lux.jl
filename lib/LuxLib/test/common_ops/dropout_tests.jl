@@ -116,11 +116,6 @@ end
                 Val(false),
                 T(2),
                 :;
-                broken_backends=if (length(x_shape) > 2 && pkgversion(Enzyme) < v"0.13.74")
-                    [AutoEnzyme()]
-                else
-                    []
-                end,
                 atol=1.0f-3,
                 rtol=1.0f-3
             )
