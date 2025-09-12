@@ -1,0 +1,20 @@
+[deps]
+Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
+LuxTestUtils = "ac9de150-d08f-4546-94fb-7472b5760531"
+SimpleChains = "de6bee2f-e2f4-4ec7-b6ed-219cc6f6e9e5"
+StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
+
+[sources]
+Lux = {path = "../../.."}
+LuxTestUtils = {path = "../../../lib/LuxTestUtils"}
+
+[compat]
+Lux = "1.21"
+LuxTestUtils = "2"
+SimpleChains = "0.4.7"
+StableRNGs = "1"
+Test = "1.10"
+Zygote = "0.7"
+julia = "1.10"

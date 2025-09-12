@@ -23,7 +23,6 @@ end
     using Lux: Lux
     using ComponentArrays: ComponentArrays
     using ReverseDiff: ReverseDiff
-    using SimpleChains: SimpleChains
     using Tracker: Tracker
     using Zygote: Zygote
     using Enzyme: Enzyme
@@ -52,10 +51,7 @@ end
     @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
         ongpu && continue
 
-        doctestexpr = quote
-            using SimpleChains: static
-            using Adapt, Lux, Random, Optimisers, Zygote, NNlib
-        end
+        doctestexpr = :(using Adapt, Lux, Random, Optimisers, Zygote, NNlib)
 
         DocMeta.setdocmeta!(Lux, :DocTestSetup, doctestexpr; recursive=true)
         doctest(Lux; manual=false)

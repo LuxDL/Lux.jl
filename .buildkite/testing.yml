@@ -37,6 +37,7 @@ steps:
               - "autodiff"
               - "misc"
               - "reactant"
+              - "extras"
 
   # - group: ":julia: (Lux) AMD GPU"
   #   steps:

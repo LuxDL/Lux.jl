@@ -1,14 +1,20 @@
 using ComponentArrays, Lux, MPI, Optimisers, Random, Test
 
 const input_args = length(ARGS) == 2 ? ARGS : ("cpu", "mpi")
+
 if input_args[1] == "cuda"
-    using LuxCUDA, NCCL
+    using LuxCUDA
 end
 if input_args[1] == "amdgpu"
     using AMDGPU
 end
 
 const backend_type = input_args[2] == "nccl" ? NCCLBackend : MPIBackend
+
+if input_args[1] == "nccl"
+    using NCCL
+end
+
 const dev = if input_args[1] == "cpu"
     CPUDevice()
 else

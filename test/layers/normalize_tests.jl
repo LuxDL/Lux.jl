@@ -1,4 +1,6 @@
 @testitem "BatchNorm" setup = [SharedTestSetup] tags = [:normalize_layers] begin
+    using Enzyme
+
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -44,11 +46,21 @@
         x_ = CPUDevice()(m(x, ps, st_)[1])
         @test x_[1] ≈ (1 .- 0.3) / sqrt(1.3) atol = 1.0e-5
 
-        skip_backends = VERSION ≥ v"1.11-" ? [AutoEnzyme()] : []
-        skip_backends = vcat(skip_backends, [AutoFiniteDiff()])
+        # chunking will cause incorrect gradients
+        skip_backends = [AutoFiniteDiff(), AutoForwardDiff()]
 
         @jet m(x, ps, st)
-        @test_gradients(sumabs2first, m, x, ps, st; atol=1.0f-3, rtol=1.0f-3, skip_backends)
+        @test_gradients(
+            sumabs2first,
+            m,
+            x,
+            ps,
+            st;
+            atol=1.0f-3,
+            rtol=1.0f-3,
+            skip_backends,
+            enzyme_set_runtime_activity=true
+        )
 
         @testset for affine in (true, false)
             m = BatchNorm(2; affine, track_stats=false)
@@ -58,7 +70,15 @@
 
             @jet m(x, ps, Lux.testmode(st))
             @test_gradients(
-                sumabs2first, m, x, ps, st; atol=1.0f-3, rtol=1.0f-3, skip_backends
+                sumabs2first,
+                m,
+                x,
+                ps,
+                st;
+                atol=1.0f-3,
+                rtol=1.0f-3,
+                skip_backends,
+                enzyme_set_runtime_activity=true
             )
 
             # with activation function
@@ -75,7 +95,15 @@
                 sigmoid.((x .- st_.running_mean) ./ sqrt.(st_.running_var .+ m.epsilon))
             @jet m(x, ps, Lux.testmode(st))
             @test_gradients(
-                sumabs2first, m, x, ps, st; atol=1.0f-3, rtol=1.0f-3, skip_backends
+                sumabs2first,
+                m,
+                x,
+                ps,
+                st;
+                atol=1.0f-3,
+                rtol=1.0f-3,
+                skip_backends,
+                enzyme_set_runtime_activity=true
             )
 
             m = BatchNorm(32; affine)

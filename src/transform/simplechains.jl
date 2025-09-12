@@ -25,7 +25,7 @@ performed using SimpleChains.
 
 ## Example
 
-```jldoctest
+```julia
 julia> import SimpleChains
 
 julia> using Adapt, Lux, Random

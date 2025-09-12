@@ -39,7 +39,6 @@ if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP)
     push!(EXTRA_PKGS, Pkg.PackageSpec("MPI"))
     (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
         push!(EXTRA_PKGS, Pkg.PackageSpec("NCCL"))
-    push!(EXTRA_PKGS, Pkg.PackageSpec("Flux"))
 end
 
 if (BACKEND_GROUP == "all" || (BACKEND_GROUP == "cuda" && LUX_TEST_GROUP != ["reactant"]))
@@ -145,6 +144,7 @@ const RETESTITEMS_NWORKER_THREADS = parse(
     @testset "[$(tag)] [$(i)/$(length(LUX_TEST_GROUP))]" for (i, tag) in
                                                              enumerate(LUX_TEST_GROUP)
         nworkers = (tag == "reactant") ? 0 : RETESTITEMS_NWORKERS
+        tag == "extras" && continue
 
         withenv(
             "BACKEND_GROUP" => BACKEND_GROUP, "LUX_CURRENT_TEST_GROUP" => string(tag)
@@ -160,45 +160,74 @@ const RETESTITEMS_NWORKER_THREADS = parse(
     end
 end
 
-# Distributed Tests
-if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP)
-    using MPI
-
-    nprocs_str = get(PARSED_TEST_ARGS, "JULIA_MPI_TEST_NPROCS", "")
-    nprocs = nprocs_str == "" ? clamp(Sys.CPU_THREADS, 2, 4) : parse(Int, nprocs_str)
+# Various Downstream Integration Tests
+# We only run these on 1.11+ due to nicer handling of [sources]
+if ("all" in LUX_TEST_GROUP || "extras" in LUX_TEST_GROUP) && VERSION ≥ v"1.11-"
     testdir = @__DIR__
-    isdistributedtest(f) = endswith(f, "_distributedtest.jl")
-    distributedtestfiles = String[]
+    isintegrationtest(f) = endswith(f, "_integrationtest.jl")
+    integrationtestfiles = String[]
     for (root, dirs, files) in walkdir(testdir)
         for file in files
-            if isdistributedtest(file)
-                push!(distributedtestfiles, joinpath(root, file))
+            if isintegrationtest(file)
+                push!(integrationtestfiles, joinpath(root, file))
             end
         end
     end
 
-    @info "Running Distributed Tests with $nprocs processes"
+    test_groups = Dict{String,Vector{String}}()
+    for file in integrationtestfiles
+        dir = dirname(file)
+        if !haskey(test_groups, dir)
+            test_groups[dir] = String[file]
+        else
+            push!(test_groups[dir], file)
+        end
+    end
 
-    cur_proj = dirname(Pkg.project().path)
+    @testset "Downstream Integration Tests" begin
+        withenv("BACKEND_GROUP" => BACKEND_GROUP) do
+            @testset "$(basename(dir))" for (dir, files) in test_groups
+                run(`$(Base.julia_cmd()) --color=yes --project=$(dir) \
+                     --startup-file=no -e \
+                     'using Pkg; Pkg.update(); Pkg.precompile()'`)
 
-    include("setup_modes.jl")
-
-    @testset "distributed tests: $(mode)" for (mode, aType, dev, ongpu) in MODES
-        backends = mode == "cuda" ? ("mpi", "nccl") : ("mpi",)
-        for backend_type in backends
-            np = backend_type == "nccl" ? min(nprocs, length(CUDA.devices())) : nprocs
-            @testset "Backend: $(backend_type)" begin
-                @testset "$(basename(file))" for file in distributedtestfiles
-                    @info "Running $file with $backend_type backend on $mode device"
+                @testset "$(basename(file))" for file in files
                     try
-                        run(`$(MPI.mpiexec()) -n $(np) $(Base.julia_cmd()) --color=yes \
-                            --code-coverage=user --project=$(cur_proj) --startup-file=no \
-                            $(file) $(mode) $(backend_type)`)
+                        run(`$(Base.julia_cmd()) --code-coverage=user --color=yes \
+                             --project=$(dir) --startup-file=no $(file)`)
                         @test true
-                    catch
+                    catch err
+                        @error "Error while running $(file)" exception = err
                         @test false
                     end
                 end
+            end
+        end
+    end
+end
+
+# Distributed Tests
+if ("all" in LUX_TEST_GROUP || "extras" in LUX_TEST_GROUP) && VERSION ≥ v"1.11-"
+    @testset "Distributed Tests" begin
+        distributed_proj = joinpath(@__DIR__, "distributed")
+        try
+            run(`$(Base.julia_cmd()) --color=yes --project=$(distributed_proj) \
+                 --startup-file=no -e 'using Pkg; Pkg.update(); Pkg.precompile()'`)
+        catch err
+            @error "Error while running Pkg.update(). Continuing without it." exception =
+                err
+        end
+
+        distributed_test_file = joinpath(distributed_proj, "distributed_test_runner.jl")
+        withenv("BACKEND_GROUP" => BACKEND_GROUP) do
+            try
+                run(`$(Base.julia_cmd()) --color=yes --code-coverage=user \
+                    --project=$(distributed_proj) --startup-file=no \
+                    $(distributed_test_file)`)
+                @test true
+            catch err
+                @error "Error while running $(distributed_test_file)" exception = err
+                @test false
             end
         end
     end
