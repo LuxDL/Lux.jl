@@ -55,16 +55,20 @@ function selective_scan_cumsum(
     Δ′ = reshape(Δ, 1, size(Δ)...)
 
     ## Discretize continuous parameters (A, B)
-    ΔA = Δ′ .* reshape(A, size(A)..., 1, 1)  ## [n, d_in, l, b]
-    @. ΔA = max(ΔA, -20)
+    ΔA_log = Δ′ .* reshape(A, size(A)..., 1, 1)  ## [n, d_in, l, b]
 
     ΔBu = (
         Δ′ .* reshape(B, size(B, 1), 1, size(B, 2), size(B, 3)) .* reshape(u, 1, size(u)...)
     ) ## [n, d_in, l, b]
 
-    ΔA = pad_zeros(ΔA[:, :, 2:end, :], (1, 0); dims=3)
-    ΔA_cumsum = exp.(cumsum(ΔA; dims=3))
-    x = ΔBu ./ (ΔA_cumsum .+ eltype(ΔA)(1e-6))
+    ΔA_log[:, :, 1, :] = 0
+
+    log_ΔA_cumsum = cumsum(ΔA_log; dims=3)
+    max_log = maximum(log_ΔA_cumsum; dims=3)
+    log_ΔA_cumsum_shift = log_ΔA_cumsum .- max_log
+    ΔA_cumsum = exp.(log_ΔA_cumsum_shift) .* exp.(max_log)
+
+    x = ΔBu ./ (ΔA_cumsum .+ eltype(ΔA_log)(1e-6))
     x = cumsum(x; dims=3) .* ΔA_cumsum  ## [n, d_in, l, b]
 
     y = dropdims(
@@ -75,11 +79,7 @@ function selective_scan_cumsum(
     return y
 end
 
-function complex_log(x::T) where {T}
-    real_part = log(max(abs(x), T(1e-12)))
-    imag_part = (x < 0) * T(pi)
-    return complex(real_part, imag_part)
-end
+complex_log(x::T) where {T} = complex(log(max(abs(x), eps(T))), (x < 0) * T(pi))
 
 function logaddexp(a, b)
     return ifelse(
@@ -97,6 +97,18 @@ function logcumsumexp(x::AbstractArray{T,4}; dims) where {T}
     return accumulate(logaddexp, x; dims, init=T(-Inf))
 end
 
+function compute_lcse_when_positive(ΔBu, ΔA_star)
+    ΔBu_log = log.(ΔBu)
+    x_log = logcumsumexp(ΔBu_log .- ΔA_star; dims=3) .+ ΔA_star
+    return exp.(x_log)
+end
+
+function compute_lcse_when_unconfirmed(ΔBu, ΔA_star)
+    ΔBu_log = complex_log.(ΔBu)
+    x_log = logcumsumexp(ΔBu_log .- ΔA_star; dims=3) .+ ΔA_star
+    return exp.(real.(x_log)) .* cos.(imag.(x_log))
+end
+
 function selective_scan_logcumsumexp(
     u::AbstractArray{T,3}, ## [d_in, l, b]
     Δ::AbstractArray{T,3}, ## [d_in, l, b]
@@ -108,17 +120,22 @@ function selective_scan_logcumsumexp(
     Δ′ = reshape(Δ, 1, size(Δ)...)
 
     ## Discretize continuous parameters (A, B)
-    ΔA = Δ′ .* reshape(A, size(A)..., 1, 1)  ## [n, d_in, l, b]
-    @. ΔA = max(ΔA, -20)
+    ΔA_log = Δ′ .* reshape(A, size(A)..., 1, 1)  ## [n, d_in, l, b]
 
     ΔBu = (
         Δ′ .* reshape(B, size(B, 1), 1, size(B, 2), size(B, 3)) .* reshape(u, 1, size(u)...)
     ) ## [n, d_in, l, b]
 
-    ΔBu_log = complex_log.(ΔBu)
-    ΔA_star = pad_zeros(cumsum(ΔA[:, :, 2:end, :]; dims=3), (1, 0); dims=3)
-    x_log = logcumsumexp(ΔBu_log .- ΔA_star; dims=3) .+ ΔA_star
-    x = exp.(real.(x_log)) .* cos.(imag.(x_log))
+    ΔA_star = pad_zeros(cumsum(ΔA_log[:, :, 2:end, :]; dims=3), (1, 0); dims=3)
+
+    ## adding this check doesn't affect performance much for the negative case
+    ## however, we get a dramatic speedup for the all positive case
+    ΔBu_positive = all(>(0), ΔBu)
+    @trace if ΔBu_positive
+        x = compute_lcse_when_positive(ΔBu, ΔA_star)
+    else
+        x = compute_lcse_when_unconfirmed(ΔBu, ΔA_star)
+    end
 
     y = dropdims(
         sum(x .* reshape(C, size(C, 1), 1, size(C, 2), size(C, 3)); dims=1); dims=1
@@ -128,27 +145,8 @@ function selective_scan_logcumsumexp(
     return y
 end
 
-#=
-d_in, l, n, b = 512, 128, 64, 32
-u = (-1 .+ 2 .* rand(Float32, d_in, l, b)) |> Reactant.to_rarray;
-Δ = ones(Float32, d_in, l, b) |> Reactant.to_rarray;
-A = -rand(Float32, n, d_in) |> Reactant.to_rarray;
-B = rand(Float32, n, l, b) |> Reactant.to_rarray;
-C = rand(Float32, n, l, b) |> Reactant.to_rarray;
-D = rand(Float32, d_in) |> Reactant.to_rarray;
-
-@code_hlo selective_scan_reference(u, Δ, A, B, C, D)
-@code_hlo selective_scan_cumsum(u, Δ, A, B, C, D)
-@code_hlo selective_scan_logcumsumexp(u, Δ, A, B, C, D)
-
-compiled_fn_ref = @compile sync=true selective_scan_reference(u, Δ, A, B, C, D)
-compiled_fn_cumsum = @compile sync=true selective_scan_cumsum(u, Δ, A, B, C, D)
-compiled_fn_logcumsumexp = @compile sync=true selective_scan_logcumsumexp(u, Δ, A, B, C, D)
-
-Reactant.with_profiler("./envs/traces") do
-    compiled_fn(u, Δ, A, B, C, D)
-end
-=#
+# TODO: benchmark the associative scan implementation from
+# https://github.com/vvvm23/mamba-jax/blob/main/mamba_jax/kernels/reference.py#L8
 
 # ## Mamba Architecture
 
