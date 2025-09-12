@@ -348,7 +348,6 @@ end
                     st;
                     atol=1.0f-3,
                     rtol=1.0f-3,
-                    enzyme_set_runtime_activity=track_stats,
                     skip_backends=[AutoFiniteDiff()]
                 )
 
@@ -367,7 +366,6 @@ end
                         st;
                         atol=1.0f-3,
                         rtol=1.0f-3,
-                        enzyme_set_runtime_activity=track_stats,
                         skip_backends=[AutoFiniteDiff()]
                     )
                 end
