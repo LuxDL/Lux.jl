@@ -51,15 +51,7 @@
 
         @jet m(x, ps, st)
         @test_gradients(
-            sumabs2first,
-            m,
-            x,
-            ps,
-            st;
-            atol=1.0f-3,
-            rtol=1.0f-3,
-            skip_backends,
-            enzyme_set_runtime_activity=true
+            sumabs2first, m, x, ps, st; atol=1.0f-3, rtol=1.0f-3, skip_backends,
         )
 
         @testset for affine in (true, false)
@@ -70,15 +62,7 @@
 
             @jet m(x, ps, Lux.testmode(st))
             @test_gradients(
-                sumabs2first,
-                m,
-                x,
-                ps,
-                st;
-                atol=1.0f-3,
-                rtol=1.0f-3,
-                skip_backends,
-                enzyme_set_runtime_activity=true
+                sumabs2first, m, x, ps, st; atol=1.0f-3, rtol=1.0f-3, skip_backends,
             )
 
             # with activation function
@@ -95,15 +79,7 @@
                 sigmoid.((x .- st_.running_mean) ./ sqrt.(st_.running_var .+ m.epsilon))
             @jet m(x, ps, Lux.testmode(st))
             @test_gradients(
-                sumabs2first,
-                m,
-                x,
-                ps,
-                st;
-                atol=1.0f-3,
-                rtol=1.0f-3,
-                skip_backends,
-                enzyme_set_runtime_activity=true
+                sumabs2first, m, x, ps, st; atol=1.0f-3, rtol=1.0f-3, skip_backends,
             )
 
             m = BatchNorm(32; affine)
@@ -135,16 +111,7 @@ end
         @test ps.scale == aType([1, 1, 1, 1]) # init_scale(32)
 
         @jet m(x, ps, st)
-        @test_gradients(
-            sumabs2first,
-            m,
-            x,
-            ps,
-            st;
-            atol=1.0f-3,
-            rtol=1.0f-3,
-            enzyme_set_runtime_activity=true
-        )
+        @test_gradients(sumabs2first, m, x, ps, st; atol=1.0f-3, rtol=1.0f-3,)
 
         @testset for affine in (true, false)
             m = GroupNorm(2, 2; affine)
@@ -383,7 +350,6 @@ end
                     st;
                     atol=1.0f-3,
                     rtol=1.0f-3,
-                    enzyme_set_runtime_activity=true,
                     skip_backends=[AutoFiniteDiff()]
                 )
 
@@ -402,7 +368,6 @@ end
                         st;
                         atol=1.0f-3,
                         rtol=1.0f-3,
-                        enzyme_set_runtime_activity=true,
                         skip_backends=[AutoFiniteDiff()]
                     )
                 end

@@ -42,7 +42,6 @@ function run_instancenorm_testing(gen_f, T, sz, training, act, aType)
             atol,
             rtol,
             soft_fail=[AutoFiniteDiff()],
-            enzyme_set_runtime_activity=true
         )
     end
 
@@ -75,7 +74,6 @@ function run_instancenorm_testing(gen_f, T, sz, training, act, aType)
             atol,
             rtol,
             soft_fail=[AutoFiniteDiff()],
-            enzyme_set_runtime_activity=true
         )
     end
 end

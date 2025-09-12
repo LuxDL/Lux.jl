@@ -216,13 +216,7 @@ end
             @jet bceloss(σ.(logŷ), y)
             @jet bceloss_smooth(σ.(logŷ), y)
 
-            @test_gradients(
-                Base.Fix2(bceloss, y),
-                σ.(logŷ);
-                atol=1.0f-3,
-                rtol=1.0f-3,
-                enzyme_set_runtime_activity=true
-            )
+            @test_gradients(Base.Fix2(bceloss, y), σ.(logŷ); atol=1.0f-3, rtol=1.0f-3,)
         end
 
         @testset "Logit BinaryCrossEntropyLoss" begin
@@ -242,13 +236,7 @@ end
             @jet logitbceloss(logŷ, y)
             @jet logitbceloss_smooth(logŷ, y)
 
-            @test_gradients(
-                Base.Fix2(logitbceloss, y),
-                logŷ;
-                atol=1.0f-3,
-                rtol=1.0f-3,
-                enzyme_set_runtime_activity=true
-            )
+            @test_gradients(Base.Fix2(logitbceloss, y), logŷ; atol=1.0f-3, rtol=1.0f-3,)
         end
 
         @testset "BinaryFocalLoss" begin
