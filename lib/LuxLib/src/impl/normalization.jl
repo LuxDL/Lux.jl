@@ -171,9 +171,13 @@ end
 
 reshape_norm_dims(::Nothing, ::Dims) = nothing
 function reshape_norm_dims(x::AbstractArray, dims::Dims)
-    y = similar(x, get_norm_reshape_dims(dims, length(x)))
-    reshape_norm_dims!(y, x)
-    return y
+    if Utils.within_enzyme_autodiff()
+        y = similar(x, get_norm_reshape_dims(dims, length(x)))
+        reshape_norm_dims!(y, x)
+        return y
+    else
+        return reshape(x, get_norm_reshape_dims(dims, length(x)))
+    end
 end
 
 function reshape_norm_dims!(y::AbstractArray, x::AbstractArray)

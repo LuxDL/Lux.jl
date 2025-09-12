@@ -199,8 +199,7 @@ end
             0.9,
             1.0e-5;
             atol=1.0f-3,
-            rtol=1.0f-3,
-            broken_backends=[AutoEnzyme()]
+            rtol=1.0f-3
         )
     end
 end

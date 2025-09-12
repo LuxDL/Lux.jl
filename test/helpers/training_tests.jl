@@ -82,8 +82,6 @@ end
                 continue
             !LuxTestUtils.ENZYME_TESTING_ENABLED && ad isa AutoEnzyme && continue
 
-            broken = ad isa AutoEnzyme && VERSION ≥ v"1.11-"
-
             ps, st = dev(Lux.setup(rng, model))
             tstate = Training.TrainState(model, ps, st, opt)
 
@@ -116,7 +114,7 @@ end
                 )
 
                 final_loss * 100 < initial_loss
-            end broken = broken
+            end
 
             # Test the adjust API
             tstate = Optimisers.adjust(tstate, 0.1f0)
