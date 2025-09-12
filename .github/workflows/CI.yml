@@ -40,6 +40,7 @@ jobs:
           - "autodiff"
           - "misc"
           - "reactant"
+          - "extras"
     uses: ./.github/workflows/CommonCI.yml
     with:
       julia_version: ${{ matrix.version }}
@@ -60,6 +61,7 @@ jobs:
           - "autodiff"
           - "misc"
           - "reactant"
+          - "extras"
     uses: ./.github/workflows/CommonCI.yml
     with:
       julia_version: "1.11"

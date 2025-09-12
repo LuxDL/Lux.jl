@@ -144,6 +144,7 @@ const RETESTITEMS_NWORKER_THREADS = parse(
     @testset "[$(tag)] [$(i)/$(length(LUX_TEST_GROUP))]" for (i, tag) in
                                                              enumerate(LUX_TEST_GROUP)
         nworkers = (tag == "reactant") ? 0 : RETESTITEMS_NWORKERS
+        tag == "extras" && continue
 
         withenv(
             "BACKEND_GROUP" => BACKEND_GROUP, "LUX_CURRENT_TEST_GROUP" => string(tag)
@@ -161,7 +162,7 @@ end
 
 # Various Downstream Integration Tests
 # We only run these on 1.11+ due to nicer handling of [sources]
-if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP) && VERSION ≥ v"1.11-"
+if ("all" in LUX_TEST_GROUP || "extras" in LUX_TEST_GROUP) && VERSION ≥ v"1.11-"
     testdir = @__DIR__
     isintegrationtest(f) = endswith(f, "_integrationtest.jl")
     integrationtestfiles = String[]
@@ -206,7 +207,7 @@ if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP) && VERSION ≥ v"1.11-"
 end
 
 # Distributed Tests
-if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP) && VERSION ≥ v"1.11-"
+if ("all" in LUX_TEST_GROUP || "extras" in LUX_TEST_GROUP) && VERSION ≥ v"1.11-"
     @testset "Distributed Tests" begin
         distributed_proj = joinpath(@__DIR__, "distributed")
         try
