@@ -47,7 +47,7 @@
 end
 
 @testitem "Dropout with Preset Mask" tags = [:misc] setup = [SharedTestSetup] begin
-    using Statistics
+    using Statistics, Enzyme
 
     rng = StableRNG(12345)
 
@@ -116,7 +116,11 @@ end
                 Val(false),
                 T(2),
                 :;
-                broken_backends=length(x_shape) > 2 ? [AutoEnzyme()] : [],
+                broken_backends=if (length(x_shape) > 2 && pkgversion(Enzyme) < v"0.13.74")
+                    [AutoEnzyme()]
+                else
+                    []
+                end,
                 atol=1.0f-3,
                 rtol=1.0f-3
             )
