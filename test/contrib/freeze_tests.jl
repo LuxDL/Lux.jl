@@ -29,16 +29,7 @@
 
             @test m(x, ps, st)[1] == m(x, ps_c, st)[1]
             @jet m(x, ps_c, st)
-            @test_gradients(
-                sumabs2first,
-                m,
-                x,
-                ps_c,
-                st;
-                atol=1.0f-3,
-                rtol=1.0f-3,
-                enzyme_set_runtime_activity=true
-            )
+            @test_gradients(sumabs2first, m, x, ps_c, st; atol=1.0f-3, rtol=1.0f-3,)
         end
 
         @testset "LuxDL/Lux.jl#427" begin
@@ -85,16 +76,7 @@ end
 
         @test d(x, psd, std)[1] == fd(x, ps, st)[1]
         @jet fd(x, ps, st)
-        @test_gradients(
-            sumabs2first,
-            fd,
-            x,
-            ps,
-            st;
-            atol=1.0f-3,
-            rtol=1.0f-3,
-            enzyme_set_runtime_activity=true
-        )
+        @test_gradients(sumabs2first, fd, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
         fd = Lux.Experimental.freeze(d, ())
         @test fd === d

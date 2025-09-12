@@ -35,12 +35,6 @@ end
 const EXTRA_PKGS = Pkg.PackageSpec[]
 const EXTRA_DEV_PKGS = Pkg.PackageSpec[]
 
-if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP)
-    push!(EXTRA_PKGS, Pkg.PackageSpec("MPI"))
-    (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
-        push!(EXTRA_PKGS, Pkg.PackageSpec("NCCL"))
-end
-
 if (BACKEND_GROUP == "all" || (BACKEND_GROUP == "cuda" && LUX_TEST_GROUP != ["reactant"]))
     if isdir(joinpath(@__DIR__, "../lib/LuxCUDA"))
         @info "Using local LuxCUDA"

@@ -39,8 +39,8 @@ function batchnorm(
 ) where {F,xT,N}
     (μ, σ²), (rμ, rσ²) = compute_batch_statistics(
         x,
-        reshape_norm_dims(x, rμ),
-        reshape_norm_dims(x, rσ²),
+        reshape_norm_dims(rμ, size(x)),
+        reshape_norm_dims(rσ², size(x)),
         batchnorm_reduce_dims(x),
         training,
         momentum,
@@ -73,7 +73,7 @@ function batchnorm_affine_normalize(
     ϵ,
 ) where {F,xT,μT,σ²T,N}
     return affine_normalize(
-        act, x, μ, σ², reshape_norm_dims(x, γ), reshape_norm_dims(x, β), ϵ
+        act, x, μ, σ², reshape_norm_dims(γ, size(x)), reshape_norm_dims(β, size(x)), ϵ
     )
 end
 

@@ -116,7 +116,6 @@ end
                 Val(false),
                 T(2),
                 :;
-                broken_backends=length(x_shape) > 2 ? [AutoEnzyme()] : [],
                 atol=1.0f-3,
                 rtol=1.0f-3
             )

@@ -103,7 +103,6 @@ function run_batchnorm_testing(gen_f, T, sz, training, affine, track_stats, act,
     end
 
     if is_training(training)
-        # XXX: Fails due to runtime activity but setting it doesn't help
         @test_gradients(
             sumabs2first,
             batchnorm,
@@ -119,8 +118,6 @@ function run_batchnorm_testing(gen_f, T, sz, training, affine, track_stats, act,
             atol,
             rtol,
             soft_fail=[AutoFiniteDiff()],
-            skip_backends=[AutoEnzyme()],
-            enzyme_set_runtime_activity=true
         )
     end
 end
@@ -202,8 +199,7 @@ end
             0.9,
             1.0e-5;
             atol=1.0f-3,
-            rtol=1.0f-3,
-            broken_backends=[AutoEnzyme()]
+            rtol=1.0f-3
         )
     end
 end

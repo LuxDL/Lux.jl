@@ -3,6 +3,11 @@
 
     rng = StableRNG(12345)
 
+    function loss(model, x, ps, st)
+        y, α = first(model(x, ps, st))
+        return sum(abs2, y) + sum(abs2, α)
+    end
+
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         dim, nheads, batch_size, len = 4, 2, 5, 3
 
@@ -53,21 +58,7 @@
             @test α[:, :, 1, 1] ≈ triu(α[:, :, 1, 1])
         end
 
-        function loss(model, x, ps, st)
-            y, α = first(model(x, ps, st))
-            return sum(abs2, y) + sum(abs2, α)
-        end
-
-        @test_gradients(
-            loss,
-            mha,
-            (q, k, v),
-            ps,
-            st;
-            atol=1.0f-3,
-            rtol=1.0f-3,
-            broken_backends=[AutoEnzyme()]
-        )
+        @test_gradients(loss, mha, (q, k, v), ps, st; atol=1.0f-3, rtol=1.0f-3)
     end
 end
 
