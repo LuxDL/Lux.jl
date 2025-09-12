@@ -50,9 +50,7 @@
         skip_backends = [AutoFiniteDiff(), AutoForwardDiff()]
 
         @jet m(x, ps, st)
-        @test_gradients(
-            sumabs2first, m, x, ps, st; atol=1.0f-3, rtol=1.0f-3, skip_backends,
-        )
+        @test_gradients(sumabs2first, m, x, ps, st; atol=1.0f-3, rtol=1.0f-3, skip_backends)
 
         @testset for affine in (true, false)
             m = BatchNorm(2; affine, track_stats=false)
@@ -62,7 +60,7 @@
 
             @jet m(x, ps, Lux.testmode(st))
             @test_gradients(
-                sumabs2first, m, x, ps, st; atol=1.0f-3, rtol=1.0f-3, skip_backends,
+                sumabs2first, m, x, ps, st; atol=1.0f-3, rtol=1.0f-3, skip_backends
             )
 
             # with activation function
@@ -79,7 +77,7 @@
                 sigmoid.((x .- st_.running_mean) ./ sqrt.(st_.running_var .+ m.epsilon))
             @jet m(x, ps, Lux.testmode(st))
             @test_gradients(
-                sumabs2first, m, x, ps, st; atol=1.0f-3, rtol=1.0f-3, skip_backends,
+                sumabs2first, m, x, ps, st; atol=1.0f-3, rtol=1.0f-3, skip_backends
             )
 
             m = BatchNorm(32; affine)
@@ -350,6 +348,7 @@ end
                     st;
                     atol=1.0f-3,
                     rtol=1.0f-3,
+                    enzyme_set_runtime_activity=track_stats,
                     skip_backends=[AutoFiniteDiff()]
                 )
 
@@ -368,6 +367,7 @@ end
                         st;
                         atol=1.0f-3,
                         rtol=1.0f-3,
+                        enzyme_set_runtime_activity=track_stats,
                         skip_backends=[AutoFiniteDiff()]
                     )
                 end

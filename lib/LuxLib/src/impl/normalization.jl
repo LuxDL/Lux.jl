@@ -159,18 +159,70 @@ function normalization(
 ) where {F}
     (μ, σ²), (rμ, rσ²) = compute_batch_statistics(
         x,
-        reshape_norm_dims(x, rμ),
-        reshape_norm_dims(x, rσ²),
+        reshape_norm_dims(rμ, size(x)),
+        reshape_norm_dims(rσ², size(x)),
         reduce_dims,
         training,
         momentum,
     )
-    γ, β = reshape_norm_dims(x, γ), reshape_norm_dims(x, β)
+    γ, β = reshape_norm_dims(γ, size(x)), reshape_norm_dims(β, size(x))
     return affine_normalize(act, x, μ, σ², γ, β, epsilon), rμ, rσ²
 end
 
-reshape_norm_dims(_, ::Nothing) = nothing
-reshape_norm_dims(y, x) = reshape(x, get_norm_reshape_dims(size(y), length(x)))
+reshape_norm_dims(::Nothing, ::Dims) = nothing
+function reshape_norm_dims(x::AbstractArray, dims::Dims)
+    y = similar(x, get_norm_reshape_dims(dims, length(x)))
+    reshape_norm_dims!(y, x)
+    return y
+end
+
+function reshape_norm_dims!(y::AbstractArray, x::AbstractArray)
+    copyto!(vec(y), vec(x))
+    return nothing
+end
+
+function CRC.rrule(::typeof(reshape_norm_dims), x::AbstractArray, dims::Dims)
+    y = reshape_norm_dims(x, dims)
+    ∇reshape_norm_dims = @closure Δ -> begin
+        ∂x = CRC.@thunk reshape(recursive_unthunk(Δ), size(x))
+        return ∂∅, ∂x, ∂∅
+    end
+    return y, ∇reshape_norm_dims
+end
+
+# COV_EXCL_START
+# reshape_norm_dims is a constant source of runtime activity for Enzyme. Define custom
+# rules to avoid this.
+function EnzymeRules.augmented_primal(
+    cfg::EnzymeRules.RevConfigWidth{1},
+    ::EnzymeCore.Const{typeof(reshape_norm_dims)},
+    ::Type{EnzymeCore.Const{Nothing}},
+    y::EnzymeCore.Annotation{<:AbstractArray},
+    x::EnzymeCore.Annotation{<:AbstractArray},
+)
+    if EnzymeRules.needs_primal(cfg)
+        copyto!(vec(y.val), vec(x.val))
+    end
+    return EnzymeRules.AugmentedReturn(nothing, nothing, ())
+end
+
+function EnzymeRules.reverse(
+    ::EnzymeRules.RevConfigWidth{1},
+    ::EnzymeCore.Const{typeof(reshape_norm_dims)},
+    ::Type{EnzymeCore.Const{Nothing}},
+    tape,
+    y::EnzymeCore.Annotation{<:AbstractArray},
+    x::EnzymeCore.Annotation{<:AbstractArray},
+)
+    if !(typeof(y) <: EnzymeCore.Const)
+        if !(typeof(x) <: EnzymeCore.Const)
+            copyto!(vec(x.dval), vec(y.dval))
+        end
+        fill!(y.dval, false)
+    end
+    return ntuple(Returns(nothing), 2)
+end
+# COV_EXCL_STOP
 
 @inbounds function get_norm_reshape_dims(sx::NTuple{N,<:Int}, ly::Int) where {N}
     if ly == sx[N - 1]

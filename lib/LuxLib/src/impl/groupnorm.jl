@@ -42,7 +42,7 @@ function groupnorm_affine_normalize(
     ϵ,
 ) where {F,N,xT,μT,σ²T}
     return affine_normalize(
-        act, x, μ, σ², reshape_norm_dims(x, γ), reshape_norm_dims(x, β), ϵ
+        act, x, μ, σ², reshape_norm_dims(γ, size(x)), reshape_norm_dims(β, size(x)), ϵ
     )
 end
 
