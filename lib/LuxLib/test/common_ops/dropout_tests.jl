@@ -47,7 +47,7 @@
 end
 
 @testitem "Dropout with Preset Mask" tags = [:misc] setup = [SharedTestSetup] begin
-    using Statistics, Enzyme
+    using Statistics
 
     rng = StableRNG(12345)
 
