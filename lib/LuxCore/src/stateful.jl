@@ -159,3 +159,5 @@ function (m::StatefulLuxLayer)(x, p=m.ps)
     StatefulLuxLayerImpl.set_state!(m, st)
     return y
 end
+
+apply(m::StatefulLuxLayer, x, p=m.ps) = m(x, p)
