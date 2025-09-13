@@ -162,29 +162,28 @@ function MultiHeadAttention(
     )
 end
 
-(mha::MultiHeadAttention)(x, ps, st::NamedTuple) = apply_multiheadattention(mha, ps, st, x)
-function (mha::MultiHeadAttention)(x::Tuple, ps, st::NamedTuple)
-    return apply_multiheadattention(mha, ps, st, x...)
+function apply(T::Type{<:MultiHeadAttention}, mha, qkv::AbstractArray)
+    return apply(T, mha, qkv, qkv, qkv, nothing)
 end
 
-function apply_multiheadattention(mha::MultiHeadAttention, ps, st, qkv)
-    return apply_multiheadattention(mha, ps, st, qkv, qkv, qkv, nothing)
+function apply(T::Type{<:MultiHeadAttention}, mha, q::AbstractArray, kv::AbstractArray)
+    return apply(T, mha, q, kv, kv, nothing)
 end
 
-function apply_multiheadattention(mha::MultiHeadAttention, ps, st, q, kv)
-    return apply_multiheadattention(mha, ps, st, q, kv, kv, nothing)
-end
+function apply(
+    ::Type{<:MultiHeadAttention},
+    mha,
+    q::AbstractArray,
+    k::AbstractArray,
+    v::AbstractArray,
+    mask=nothing,
+)
+    # XXX: restore `match_eltype` support
+    # q, k, v = match_eltype(mha, ps, st, q, k, v)
 
-function apply_multiheadattention(mha::MultiHeadAttention, ps, st, q, k, v, mask=nothing)
-    q, k, v = match_eltype(mha, ps, st, q, k, v)
-
-    q, q_st = mha.q_proj(q, ps.q_proj, st.q_proj)
-    k, k_st = mha.k_proj(k, ps.k_proj, st.k_proj)
-    v, v_st = mha.v_proj(v, ps.v_proj, st.v_proj)
-
-    dropout = StatefulLuxLayer(
-        mha.attention_dropout, ps.attention_dropout, st.attention_dropout
-    )
+    q = mha.q_proj(q)
+    k = mha.k_proj(k)
+    v = mha.v_proj(v)
 
     x, α = scaled_dot_product_attention(
         reshape(q, size(q, 1) ÷ mha.nheads, mha.nheads, size(q)[2:end]...),
@@ -192,22 +191,10 @@ function apply_multiheadattention(mha::MultiHeadAttention, ps, st, q, k, v, mask
         reshape(v, size(v, 1) ÷ mha.nheads, mha.nheads, size(v)[2:end]...);
         head_dim=1,
         token_dim=3,
-        fdrop=dropout,
         mask,
+        fdrop=mha.attention_dropout,
         mha.is_causal,
     )
-    x = reshape(x, size(x, 1) * mha.nheads, size(x)[3:end]...)
 
-    y, out_st = mha.out_proj(x, ps.out_proj, st.out_proj)
-
-    return (
-        (y, α),
-        (;
-            q_proj=q_st,
-            k_proj=k_st,
-            v_proj=v_st,
-            attention_dropout=dropout.st,
-            out_proj=out_st,
-        ),
-    )
+    return mha.out_proj(reshape(x, size(x, 1) * mha.nheads, size(x)[3:end]...)), α
 end

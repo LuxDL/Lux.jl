@@ -16,10 +16,12 @@ function Reactant.make_tracer(
     seen, @nospecialize(model::StatefulLuxLayer), @nospecialize(path), mode; kwargs...
 )
     return StatefulLuxLayer(
-        model.model,
-        Reactant.make_tracer(seen, model.ps, (path..., :ps), mode; kwargs...),
-        Reactant.make_tracer(seen, model.st, (path..., :st), mode; kwargs...),
-        Reactant.make_tracer(seen, model.st_any, (path..., :st_any), mode; kwargs...),
-        model.fixed_state_type,
+        getfield(model, :model),
+        Reactant.make_tracer(seen, getfield(model, :ps), (path..., :ps), mode; kwargs...),
+        Reactant.make_tracer(seen, getfield(model, :st), (path..., :st), mode; kwargs...),
+        Reactant.make_tracer(
+            seen, getfield(model, :st_any), (path..., :st_any), mode; kwargs...
+        ),
+        getfield(model, :fixed_state_type),
     )
 end

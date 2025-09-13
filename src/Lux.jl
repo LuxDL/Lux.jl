@@ -41,7 +41,8 @@ import LuxCore:
     setup,
     apply,
     replicate,
-    preserves_state_type
+    preserves_state_type,
+    display_name
 
 @reexport using LuxCore, LuxLib, MLDataDevices, WeightInitializers
 using NNlib:

@@ -151,9 +151,7 @@ this include:
     type stability. By default this is "disable"d. For more information, see the
     [documentation](https://github.com/MilesCranmer/DispatchDoctor.jl).
 """
-@stable default_mode = "disable" function apply(model::AbstractLuxLayer, x, ps, st)
-    return model(x, ps, st)
-end
+function apply end
 
 """
     stateless_apply(model, x, ps)
@@ -162,9 +160,7 @@ Calls `apply` and only returns the first argument. This function requires that `
 an empty state of `NamedTuple()`. Behavior of other kinds of models are undefined and it is
 the responsibility of the user to ensure that the model has an empty state.
 """
-function stateless_apply(model::AbstractLuxLayer, x, ps)
-    return first(apply(model, x, ps, Internal.get_empty_state(model)))
-end
+function stateless_apply end
 
 """
     display_name(layer::AbstractLuxLayer)
@@ -265,10 +261,6 @@ function statelength(l::AbstractLuxWrapperLayer{layer}) where {layer}
     return statelength(getfield(l, layer))
 end
 
-function (l::AbstractLuxWrapperLayer{layer})(x, ps, st) where {layer}
-    return apply(getfield(l, layer), x, ps, st)
-end
-
 # Test Mode
 """
     testmode(st::NamedTuple)
@@ -357,6 +349,7 @@ preserves_state_type(l::Tuple) = all(preserves_state_type, l)
 preserves_state_type(l::NamedTuple) = all(preserves_state_type, values(l))
 
 include("stateful.jl")
+include("apply.jl")
 
 module Internal
 

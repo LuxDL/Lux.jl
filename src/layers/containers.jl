@@ -1,3 +1,7 @@
+# NOTE: layers in this file can't use the low-boilerplate apply API since these layers
+#       often don't conform to the `AbstractLuxWrapperLayer` / `AbstractLuxContainerLayer`
+#       interface. Instead they define all the interface functions themselves.
+
 """
     SkipConnection(layers, connection; name=nothing)
     SkipConnection(; layers, connection, name=nothing)

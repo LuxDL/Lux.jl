@@ -1,6 +1,10 @@
 module StatefulLuxLayerImpl
 
-using ..LuxCore: AbstractLuxLayer, preserves_state_type
+using ..LuxCore:
+    AbstractLuxLayer,
+    AbstractLuxContainerLayer,
+    AbstractLuxWrapperLayer,
+    preserves_state_type
 
 const StaticBool = Union{Val{true},Val{false}}
 
@@ -27,6 +31,28 @@ mutable struct StatefulLuxLayer{ST,M<:AbstractLuxLayer,psType,stType}
     end
 end
 
+function Base.getproperty(l::StatefulLuxLayer, s::Symbol)
+    s === :st && return get_state(l)
+    s === :st_any && throw(
+        ArgumentError(
+            "No property `st_any` for `StatefulLuxLayer`. To access the `st_any` field use \
+             `getfield(l, :st_any)` instead.",
+        ),
+    )
+    return getfield(l, s)
+end
+
+function Base.setproperty!(l::StatefulLuxLayer, s::Symbol, v)
+    s === :st && return set_state!(l, v)
+    s === :st_any && throw(
+        ArgumentError(
+            "No property `st_any` for `StatefulLuxLayer`. To set the `st_any` field use \
+             `setfield!(l, :st_any, v)` instead.",
+        ),
+    )
+    return setfield!(l, s, v)
+end
+
 function StatefulLuxLayer{ST}(model, ps, st, st_any) where {ST}
     return StatefulLuxLayer(model, ps, st, st_any, static(ST))
 end
@@ -43,8 +69,8 @@ function StatefulLuxLayer(model::AbstractLuxLayer, ps, st)
     return StatefulLuxLayer{preserves_state_type(model)}(model, ps, st)
 end
 
-get_state(l::StatefulLuxLayer{Val{true}}) = l.st
-get_state(l::StatefulLuxLayer{Val{false}}) = l.st_any
+get_state(l::StatefulLuxLayer{Val{true}}) = getfield(l, :st)
+get_state(l::StatefulLuxLayer{Val{false}}) = getfield(l, :st_any)
 # Needed for compact macro implementation
 get_state(st::AbstractArray{<:Number}) = st
 get_state(st::Union{AbstractArray,Tuple,NamedTuple}) = map(get_state, st)
@@ -53,7 +79,7 @@ get_state(st) = st
 function set_state!(
     s::StatefulLuxLayer{Val{true},<:Any,<:Any,stType}, st::stType
 ) where {stType}
-    return s.st = st
+    return setfield!(s, :st, st)
 end
 function set_state!(
     ::StatefulLuxLayer{Val{true},<:Any,<:Any,stType}, ::stType2
@@ -66,9 +92,158 @@ function set_state!(
                        defined for all the layers in the model.")
     )
 end
-set_state!(s::StatefulLuxLayer{Val{false}}, st) = (s.st_any = st)
+set_state!(s::StatefulLuxLayer{Val{false}}, st) = setfield!(s, :st_any, st)
 
-export StatefulLuxLayer
+# This is an internal implementation detail for bypassing manual state management
+struct DualFieldNamedTuple{F1,F2,D<:Tuple}
+    data::D
+end
+
+@generated function prefixed_fieldnames(
+    ::NamedTuple{fields}, ::Val{prefix}
+) where {fields,prefix}
+    new_fields = Tuple(QuoteNode.(Symbol.(Ref(prefix), fields)))
+    return :($(Tuple(new_fields)...),)
+end
+
+function DualFieldNamedTuple(data::NamedTuple{fields}, ::Val{prefix}) where {fields,prefix}
+    @assert length(fields) == length(data)
+    @assert allunique(fields)
+    backing = values(data)
+    return DualFieldNamedTuple{
+        fields,prefixed_fieldnames(data, Val(prefix)),typeof(backing)
+    }(
+        backing
+    )
+end
+
+function DualFieldNamedTuple(data, ::Val{prefix}) where {prefix}
+    fnames = fieldnames(typeof(data))
+    return DualFieldNamedTuple(
+        NamedTuple{fnames}(getfield.(Ref(data), fnames)), Val(prefix)
+    )
+end
+
+first_property_names(::DualFieldNamedTuple{F1}) where {F1} = F1
+
+Base.propertynames(::DualFieldNamedTuple{F1,F2}) where {F1,F2} = (F1..., F2...)
+
+function Base.getproperty(l::DualFieldNamedTuple{F1,F2}, s::Symbol) where {F1,F2}
+    idx = findfirst(==(s), F1)
+    idx !== nothing && return getfield(getfield(l, :data), idx)
+    idx = findfirst(==(s), F2)
+    idx !== nothing && return getfield(getfield(l, :data), idx)
+    throw(ArgumentError("No property $s for `DualFieldNamedTuple`"))
+end
+
+struct NamedTupleStatefulLuxLayer{layers,NT<:NamedTuple,M,NTPS,NTST}
+    smodels::NT
+    model::M
+    ps_extra::NTPS
+    st_extra::NTST
+end
+
+function get_states_as_namedtuple(l::NamedTupleStatefulLuxLayer{layers}) where {layers}
+    smodels = getfield(l, :smodels)
+    return NamedTuple{(layers..., first_property_names(getfield(l, :st_extra))...)}((
+        (getfield(smodels, layer).st for layer in layers)...,
+        getfield(getfield(l, :st_extra), :data)...,
+    ),)
+end
+
+function NamedTupleStatefulLuxLayer{fields}(
+    smodels, model::AbstractLuxLayer, ps::NamedTuple, st::NamedTuple
+) where {fields}
+    model_dfnt = DualFieldNamedTuple(model, Val(:model_))
+    ps_extra = DualFieldNamedTuple(ps, Val(:ps_))
+    st_extra = DualFieldNamedTuple(st, Val(:st_))
+    return NamedTupleStatefulLuxLayer{
+        fields,typeof(smodels),typeof(model_dfnt),typeof(ps_extra),typeof(st_extra)
+    }(
+        smodels, model_dfnt, ps_extra, st_extra
+    )
+end
+
+function NamedTupleStatefulLuxLayer(model::AbstractLuxLayer, ps, st)
+    return NamedTupleStatefulLuxLayer{()}((;), model, ps, st)
+end
+
+@generated function NamedTupleStatefulLuxLayer(
+    model::AbstractLuxWrapperLayer{layer}, ps, st
+) where {layer}
+    layers = (layer,)
+    smodel_expr = [:(StatefulLuxLayer(model.$(layer), ps, st))]
+    return quote
+        return NamedTupleStatefulLuxLayer{$(layers)}(
+            NamedTuple{$(layers)}(($(Tuple(smodel_expr)...),)),
+            model,
+            NamedTuple(),
+            NamedTuple(),
+        )
+    end
+end
+
+@generated function NamedTupleStatefulLuxLayer(
+    model::AbstractLuxContainerLayer{layers}, ps::PS, st::ST
+) where {layers,PS,ST}
+    ps_extra_fields = Tuple(setdiff(fieldnames(PS), layers))
+    st_extra_fields = Tuple(setdiff(fieldnames(ST), layers))
+
+    smodel_expr = [
+        :(StatefulLuxLayer(model.$(layer), ps.$(layer), st.$(layer))) for layer in layers
+    ]
+
+    ps_get_expr = [:(getfield(ps, $(QuoteNode(f)))) for f in ps_extra_fields]
+    st_get_expr = [:(getfield(st, $(QuoteNode(f)))) for f in st_extra_fields]
+
+    return quote
+        smodels = NamedTuple{$(layers)}(($(Tuple(smodel_expr)...),))
+        ps_extra = NamedTuple{$(ps_extra_fields)}(($(Tuple(ps_get_expr)...),))
+        st_extra = NamedTuple{$(st_extra_fields)}(($(Tuple(st_get_expr)...),))
+        return NamedTupleStatefulLuxLayer{$(layers)}(smodels, model, ps_extra, st_extra)
+    end
+end
+
+function Base.propertynames(l::NamedTupleStatefulLuxLayer{layers}) where {layers}
+    return (
+        layers...,
+        propertynames(getfield(l, :ps_extra))...,
+        propertynames(getfield(l, :st_extra))...,
+        propertynames(getfield(l, :model))...,
+    )
+end
+
+function Base.getproperty(l::NamedTupleStatefulLuxLayer{layers}, s::Symbol) where {layers}
+    s in layers && return getfield(getfield(l, :smodels), s)
+    hasproperty(getfield(l, :model), s) && return getproperty(getfield(l, :model), s)
+    hasproperty(getfield(l, :ps_extra), s) && return getproperty(getfield(l, :ps_extra), s)
+    hasproperty(getfield(l, :st_extra), s) && return getproperty(getfield(l, :st_extra), s)
+    throw(ArgumentError("No property $(s) for `NamedTupleStatefulLuxLayer`"))
+end
+
+# XXX: fix this function
+# function Base.setproperty!(
+#     l::NamedTupleStatefulLuxLayer{layers}, s::Symbol, v
+# ) where {layers}
+#     s in layers && return setfield!(getfield(l, :smodels), s, v)
+#     hasfield(typeof(getfield(l, :ps_extra)), s) &&
+#         return setfield!(getfield(l, :ps_extra), s, v)
+#     hasfield(typeof(getfield(l, :st_extra)), s) &&
+#         return setfield!(getfield(l, :st_extra), s, v)
+#     hasfield(typeof(getfield(l, :model)), s) && return setfield!(getfield(l, :model), s, v)
+
+#     # accessing via this API is very type unstable
+#     done = set_model_field!(l, s, v)
+#     done && return v
+#     done = set_ps_field!(l, s, v)
+#     done && return v
+#     done = set_st_field!(l, s, v)
+#     done && return v
+
+#     throw(ArgumentError("No property $(s) for NamedTupleStatefulLuxLayer"))
+# end
+
+export StatefulLuxLayer, NamedTupleStatefulLuxLayer
 
 end
 
@@ -155,7 +330,7 @@ preserves_state_type(m::StatefulLuxLayer) = StatefulLuxLayerImpl.dynamic(m.fixed
 function (m::StatefulLuxLayer)(x, p=m.ps)
     @assert p !== nothing "Model parameters are not set in constructor. Pass in `ps` \
                            explicitly."
-    y, st = apply(m.model, x, p, StatefulLuxLayerImpl.get_state(m))
+    y, st = apply(m.model, x, p, m.st)
     StatefulLuxLayerImpl.set_state!(m, st)
     return y
 end
