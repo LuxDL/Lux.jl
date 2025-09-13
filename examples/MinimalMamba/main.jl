@@ -3,7 +3,7 @@
 using ConcreteStructs, Lux, Random, Reactant
 using HuggingFaceTokenizers, Scratch, PythonCall, JSON3
 
-## Load some python libraries for loading pretrained weights
+# Load some python libraries for loading pretrained weights
 
 const huggingface_hub = pyimport("huggingface_hub")
 const torch = pyimport("torch")
@@ -286,9 +286,9 @@ function (ssm::SSM)(x::AbstractArray{T,3}, ps, st) where {T}
 
     x_dbl, st_x_proj = ssm.x_proj(x, ps.x_proj, st.x_proj)
 
-    Δ = @view x_dbl[1:(ssm.dt_rank), :, :]
-    B = @view x_dbl[(ssm.dt_rank + 1):(ssm.dt_rank + n), :, :]
-    C = @view x_dbl[(ssm.dt_rank + n + 1):end, :, :]
+    Δ = x_dbl[1:(ssm.dt_rank), :, :]
+    B = x_dbl[(ssm.dt_rank + 1):(ssm.dt_rank + n), :, :]
+    C = x_dbl[(ssm.dt_rank + n + 1):end, :, :]
 
     Δ, st_dt_proj = ssm.dt_proj(Δ, ps.dt_proj, st.dt_proj)
 
@@ -368,6 +368,9 @@ function download_mamba_weights_from_huggingface(pretrained_model_name::String)
         d_model=config[:d_model], n_layer=config[:n_layer], vocab_size=config[:vocab_size]
     )
 
+    weights_file = huggingface_hub.hf_hub_download(;
+        repo_id=pretrained_model_name, filename="pytorch_model.bin", local_dir=local_dir
+    )
     weights = torch.load(weights_file; weights_only=true, mmap=true, map_location="cpu")
 
     return mamba_config, weights
@@ -424,13 +427,244 @@ function load_weights_from_dict(weights_dict, config::MambaModelArgs, dev)
     )
 end
 
+# ## Tokenizer
+
+struct MambaTokenizer
+    tokenizer::Tokenizer
+    pad_token_id::Int32
+    eos_token_id::Int32
+end
+
+const SPLIT_RE = r"(<\|[^>]+?\|>)"
+
+function MambaTokenizer()
+    tok = HuggingFaceTokenizers.from_pretrained(Tokenizer, "EleutherAI/gpt-neox-20b")
+    return MambaTokenizer(
+        tok, token_to_id(tok, "<|endoftext|>"), token_to_id(tok, "<|endoftext|>")
+    )
+end
+
+token_to_id(tokenizer::MambaTokenizer, s) = token_to_id(tokenizer.tokenizer, s)
+function token_to_id(tokenizer::Tokenizer, s)
+    return pyconvert(Int32, tokenizer.py_tokenizer.token_to_id(s)) + Int32(1)
+end
+
+function split_with_delims(text::String, re::Regex)
+    parts = String[]
+    last_end = 1
+    for m in eachmatch(re, text)
+        if m.offset > last_end
+            push!(parts, text[last_end:(m.offset - 1)])
+        elseif m.offset == 1
+            push!(parts, "")
+        end
+        push!(parts, m.match)
+        last_end = m.offset + length(m.match)
+    end
+    if last_end ≤ lastindex(text)
+        push!(parts, text[last_end:end])
+    end
+    return parts
+end
+
+function HuggingFaceTokenizers.encode(tok::MambaTokenizer, text)
+    ids = Int32[]
+    for part in filter(!isempty, split_with_delims(text, SPLIT_RE))
+        append!(ids, encode(tok.tokenizer, string(part)).ids .+ Int16(1))
+    end
+    return ids
+end
+
+function HuggingFaceTokenizers.decode(tok::MambaTokenizer, ids::Vector{<:Integer})
+    return decode(tok.tokenizer, ids .- Int16(1); skip_special_tokens=false)
+end
+
+# ## Text Generation Utilities
+
+function weighted_sample(
+    rng, items::AbstractVector, weights::AbstractVector, n::Int; temperature::Number=1
+)
+    @assert length(items) == length(weights)
+
+    weights = weights .^ inv(eltype(weights)(temperature))
+    weights = weights ./ sum(weights)
+    cumprobs = reshape(cumsum(weights), :, 1)
+    random_vals = rand(rng, 1, n)
+
+    indices = dropdims(sum(cumprobs .< random_vals; dims=1); dims=1) .+ 1
+    return items[indices]
+end
+
+# Setting top_k to 1 will disable sampling and instead return the argmax. For larger
+# values of top_k, we sample from the top_k most likely tokens.
+
+function predict_next_token(
+    rng,
+    model,
+    token_ids::AbstractVector{T},
+    input_mask_len,
+    ps,
+    st;
+    top_k::Int=32,
+    temperature::Number=1,
+) where {T}
+    token_ids = Reactant.materialize_traced_array(reshape(token_ids, :, 1))
+
+    logits, stₙ = model(token_ids, ps, st)
+    next_token_logits = logits[:, end - input_mask_len, 1]
+
+    if top_k == 1
+        predictions = T.(argmax(next_token_logits))
+    else
+        top_k_idxs = partialsortperm(next_token_logits, 1:top_k; rev=true)
+        top_k_logits = next_token_logits[Reactant.materialize_traced_array(top_k_idxs)]
+        predictions = weighted_sample(rng, T.(top_k_idxs), top_k_logits, 1; temperature)
+    end
+
+    predictions = mod1.(predictions, T(size(logits, 1)))
+    return predictions, stₙ
+end
+
+function update_token_ids_and_mask!(
+    padded_token_ids::AbstractVector, input_mask_len, cur_num_tokens, next_token::Number
+)
+    @trace if input_mask_len == 0
+        cur_num_tokens += eltype(cur_num_tokens)(1)
+        @allowscalar padded_token_ids[cur_num_tokens] = next_token
+    else
+        L = length(padded_token_ids)
+        padded_token_ids[1:(L - 1)] = padded_token_ids[2:L]
+        @allowscalar padded_token_ids[L] = next_token
+    end
+    return input_mask_len - eltype(input_mask_len)(1), cur_num_tokens
+end
+
+function generate_chunk_of_text(
+    rng,
+    model,
+    padded_token_ids,
+    input_mask_len,
+    cur_num_tokens,
+    ps,
+    st,
+    n_tokens,
+    top_k,
+    temperature,
+)
+    next_n_tokens = similar(padded_token_ids, n_tokens)
+    @trace track_numbers = false for i in 1:n_tokens
+        next_token, st = predict_next_token(
+            rng, model, padded_token_ids, input_mask_len, ps, st; top_k, temperature
+        )
+        next_token_scalar = @allowscalar next_token[1]
+        input_mask_len, cur_num_tokens = update_token_ids_and_mask!(
+            padded_token_ids, input_mask_len, cur_num_tokens, next_token_scalar
+        )
+        @allowscalar next_n_tokens[i] = next_token_scalar
+    end
+    return next_n_tokens, input_mask_len, cur_num_tokens, st
+end
+
+function generate_text(
+    model::Mamba,
+    prompt::String,
+    ps,
+    st,
+    max_new_tokens::Int,
+    tokenizer::MambaTokenizer;
+    chunk_size::Int=128,
+    top_k::Int=32,
+    temperature::Number=1,
+)
+    rdev = reactant_device()
+
+    token_ids = encode(tokenizer, prompt)
+    print(decode(tokenizer, token_ids))
+    padding_size_to_compile = min(2048, max(length(token_ids) + max_new_tokens, 512))
+    if length(token_ids) > padding_size_to_compile
+        @warn "Prompt is longer than $(padding_size_to_compile) tokens; truncating to \
+               last $(padding_size_to_compile) tokens."
+        padded_token_ids = token_ids[(end - padding_size_to_compile + 1):end]
+    else
+        padded_token_ids = pad_constant(
+            token_ids,
+            (0, padding_size_to_compile - length(token_ids)),
+            eltype(token_ids)(tokenizer.pad_token_id),
+        )
+        @assert length(padded_token_ids) == padding_size_to_compile
+    end
+    padded_token_ids = rdev(padded_token_ids)
+
+    rng = Random.default_rng() |> rdev
+    cur_num_tokens = ConcreteRNumber(Int32(length(padded_token_ids)))
+    input_mask_len = ConcreteRNumber(Int32(padding_size_to_compile - length(token_ids)))
+
+    chunked_text_genfn = @compile generate_chunk_of_text(
+        rng,
+        model,
+        padded_token_ids,
+        input_mask_len,
+        cur_num_tokens,
+        ps,
+        st,
+        chunk_size,
+        top_k,
+        temperature,
+    )
+
+    n_tokens_generated = 0
+    total_time = 0.0
+    while n_tokens_generated < max_new_tokens
+        start_time = time()
+        next_n_tokens, input_mask_len, cur_num_tokens, st = chunked_text_genfn(
+            rng,
+            model,
+            padded_token_ids,
+            input_mask_len,
+            cur_num_tokens,
+            ps,
+            st,
+            chunk_size,
+            top_k,
+            temperature,
+        )
+        total_time += time() - start_time
+
+        n_tokens_generated += length(next_n_tokens)
+        next_n_tokens_jl = vec(Array(next_n_tokens))
+        for token in next_n_tokens_jl
+            token == tokenizer.eos_token_id && return nothing
+            print(decode(tokenizer, [token]))
+        end
+    end
+    tokens_per_second = n_tokens_generated / total_time
+    println()
+    @info "Tokens per second: $(tokens_per_second)"
+
+    return nothing
+end
+
+tokenizer = MambaTokenizer()
+
 config, weights_dict = download_mamba_weights_from_huggingface("state-spaces/mamba-130m");
 model = Mamba(config)
 
-ps_from_hgf = load_weights_from_dict(weights_dict, config, cpu_device());
-ps = Lux.initialparameters(Random.default_rng(), model);
-st = Lux.initialstates(Random.default_rng(), model);
+rdev = reactant_device()
 
-x = Int32.(rand(1:(config.vocab_size), 4, 32))
+ps_from_hgf = load_weights_from_dict(weights_dict, config, rdev);
+st = Lux.initialstates(Random.default_rng(), model) |> rdev;
 
-model(x, ps_from_hgf, st)
+generate_text(model, "Mamba is the ", ps_from_hgf, st, 128, tokenizer; chunk_size=32)
+
+# x = Int32.(rand(1:(config.vocab_size), 4, 32))
+# x = reshape(encode(tok, "Mamba is the "), :, 1)
+
+# res = model(x, ps_from_hgf, st)
+
+# decode(tok, [argmax(res[1][:, end, 1])])
+
+# ## Entry Point
+
+if abspath(PROGRAM_FILE) == @__FILE__
+    main()
+end
