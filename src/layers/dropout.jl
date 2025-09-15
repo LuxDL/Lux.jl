@@ -50,9 +50,10 @@ function AlphaDropout(p::T) where {T<:Real}
     return AlphaDropout(p, α, γ, β)
 end
 
-function (d::AlphaDropout)(x, _, st::NamedTuple)
-    y, rng = alpha_dropout(st.rng, x, d.p, st.training, d.alpha, d.scale, d.bias)
-    return y, (; rng, st.training)
+function apply(::Type{<:AlphaDropout}, d, x::AbstractArray)
+    y, rng = alpha_dropout(d.rng, x, d.p, d.training, d.alpha, d.scale, d.bias)
+    d.rng = rng
+    return y
 end
 
 Base.show(io::IO, d::AlphaDropout) = print(io, "AlphaDropout(", d.p, ")")
@@ -106,9 +107,10 @@ function Dropout(p; dims=:)
     return Dropout(p, 1 / (1 - p), dims)
 end
 
-function (d::Dropout)(x, _, st::NamedTuple)
-    y, _, rng = dropout(st.rng, x, d.p, st.training, d.q, d.dims)
-    return y, (; rng, st.training)
+function apply(::Type{<:Dropout}, d, x::AbstractArray)
+    y, _, rng = dropout(d.rng, x, d.p, d.training, d.q, d.dims)
+    d.rng = rng
+    return y
 end
 
 function Base.show(io::IO, d::Dropout)
@@ -177,6 +179,8 @@ function VariationalHiddenDropout(p; dims=:)
     return VariationalHiddenDropout(p, 1 / (1 - p), dims)
 end
 
+# Note that we don't use `apply` here. While we support non-fixed state types, that
+# api is inherently type-unstable.
 function (d::VariationalHiddenDropout)(x, _, st::NamedTuple)
     maskₒ = st.mask === nothing ? x : st.mask
     y, mask, rng = dropout(st.rng, x, maskₒ, d.p, st.training, st.update_mask, d.q, d.dims)
