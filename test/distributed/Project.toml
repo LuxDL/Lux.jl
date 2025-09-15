@@ -14,6 +14,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Lux = {path = "../.."}
 LuxCUDA = {path = "../../lib/LuxCUDA"}
 MLDataDevices = {path = "../../lib/MLDataDevices"}
+NCCL = { url = "https://github.com/LuxDL/NCCL.jl", rev = "cd85e9f7830be425b64d2eee407df7d61a6a9635" }
 
 [compat]
 ComponentArrays = "0.15.29"

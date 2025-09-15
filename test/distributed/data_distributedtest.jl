@@ -17,7 +17,7 @@ end
 
 const backend_type = input_args[2] == "nccl" ? NCCLBackend : MPIBackend
 
-if input_args[1] == "nccl"
+if input_args[2] == "nccl"
     using NCCL
 end
 
