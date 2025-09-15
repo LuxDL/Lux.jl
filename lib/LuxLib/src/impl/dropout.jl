@@ -95,8 +95,9 @@ end
 @stable default_mode = "disable" function alpha_dropout(
     opmode::LoopedArrayOp, noise::AbstractArray, p, x::AbstractArray, α, A, B
 )
-    res = similar(x, promote_type(typeof(p), typeof(α)))
-    alpha_dropout!(res, opmode, noise, p, x, α, A, B)
+    T = promote_type(eltype(noise), eltype(x))
+    res = similar(x, T)
+    alpha_dropout!(res, opmode, noise, T(p), x, α, A, B)
     return res
 end
 
