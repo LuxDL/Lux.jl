@@ -15,6 +15,7 @@ function ConvMixer(; dim, depth, kernel_size=5, patch_size=2)
         [
             Chain(
                 SkipConnection(
+                    +,
                     Chain(
                         Conv(
                             (kernel_size, kernel_size),
@@ -24,8 +25,7 @@ function ConvMixer(; dim, depth, kernel_size=5, patch_size=2)
                             pad=SamePad(),
                         ),
                         BatchNorm(dim),
-                    ),
-                    +,
+                    )
                 ),
                 Conv((1, 1), dim => dim, relu),
                 BatchNorm(dim),
