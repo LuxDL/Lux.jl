@@ -95,8 +95,16 @@ end
 set_state!(s::StatefulLuxLayer{Val{false}}, st) = setfield!(s, :st_any, st)
 
 # This is an internal implementation detail for bypassing manual state management
-struct DualFieldNamedTuple{F1,F2,D<:Tuple}
+struct DualFieldNamedTuple{F1,F2,DM,D<:Tuple}
+    is_data_mutable::DM
     data::D
+end
+
+function get_backing_data(l::DualFieldNamedTuple{F1,F2,Val{false}}) where {F1,F2}
+    return getfield(l, :data)
+end
+function get_backing_data(l::DualFieldNamedTuple{F1,F2,Val{true}}) where {F1,F2}
+    return getindex.(getfield(l, :data))
 end
 
 @generated function prefixed_fieldnames(
@@ -106,34 +114,74 @@ end
     return :($(Tuple(new_fields)...),)
 end
 
-function DualFieldNamedTuple(data::NamedTuple{fields}, ::Val{prefix}) where {fields,prefix}
+function DualFieldNamedTuple(
+    data::NamedTuple{fields},
+    ::Val{prefix},
+    is_data_mutable::StaticBool=Val(false),
+    is_data_type_fixed::StaticBool=Val(true),
+) where {fields,prefix}
     @assert length(fields) == length(data)
-    @assert allunique(fields)
-    backing = values(data)
+
+    if dynamic(is_data_mutable)
+        if dynamic(is_data_type_fixed)
+            backing = Ref.(values(data))
+        else
+            backing = Ref{Any}.(values(data))
+        end
+        BT = typeof(backing)
+    else
+        @assert dynamic(is_data_type_fixed)
+        backing = values(data)
+        BT = typeof(backing)
+    end
+
     return DualFieldNamedTuple{
-        fields,prefixed_fieldnames(data, Val(prefix)),typeof(backing)
+        fields,prefixed_fieldnames(data, Val(prefix)),typeof(is_data_mutable),BT
     }(
-        backing
+        is_data_mutable, backing
     )
 end
 
-function DualFieldNamedTuple(data, ::Val{prefix}) where {prefix}
+function DualFieldNamedTuple(data, args...)
     fnames = fieldnames(typeof(data))
-    return DualFieldNamedTuple(
-        NamedTuple{fnames}(getfield.(Ref(data), fnames)), Val(prefix)
-    )
+    return DualFieldNamedTuple(NamedTuple{fnames}(getfield.(Ref(data), fnames)), args...)
 end
 
 first_property_names(::DualFieldNamedTuple{F1}) where {F1} = F1
 
 Base.propertynames(::DualFieldNamedTuple{F1,F2}) where {F1,F2} = (F1..., F2...)
 
-function Base.getproperty(l::DualFieldNamedTuple{F1,F2}, s::Symbol) where {F1,F2}
+function findfieldidx(::DualFieldNamedTuple{F1,F2}, s::Symbol) where {F1,F2}
     idx = findfirst(==(s), F1)
-    idx !== nothing && return getfield(getfield(l, :data), idx)
-    idx = findfirst(==(s), F2)
-    idx !== nothing && return getfield(getfield(l, :data), idx)
+    idx !== nothing && return idx
+    return findfirst(==(s), F2)
+end
+
+maybe_unwrap_ref(::Val{false}, x) = x
+maybe_unwrap_ref(::Val{true}, x::Ref) = x[]
+
+function Base.getproperty(l::DualFieldNamedTuple{F1,F2}, s::Symbol) where {F1,F2}
+    idx = findfieldidx(l, s)
+    idx !== nothing && return maybe_unwrap_ref(
+        getfield(l, :is_data_mutable), getfield(getfield(l, :data), idx)
+    )
     throw(ArgumentError("No property $s for `DualFieldNamedTuple`"))
+end
+
+function Base.setproperty!(
+    ::DualFieldNamedTuple{F1,F2,Val{false}}, s::Symbol, v
+) where {F1,F2}
+    throw(ArgumentError("Cannot set property $s for `DualFieldNamedTuple` since the data \
+                         was constructed as immutable."))
+end
+
+function Base.setproperty!(
+    l::DualFieldNamedTuple{F1,F2,Val{true}}, s::Symbol, v
+) where {F1,F2}
+    idx = findfieldidx(l, s)
+    idx === nothing && throw(ArgumentError("No property $s for `DualFieldNamedTuple`"))
+    getfield(l, :data)[idx][] = v
+    return l
 end
 
 struct NamedTupleStatefulLuxLayer{layers,NT<:NamedTuple,M,NTPS,NTST}
@@ -147,7 +195,7 @@ function get_states_as_namedtuple(l::NamedTupleStatefulLuxLayer{layers}) where {
     smodels = getfield(l, :smodels)
     return NamedTuple{(layers..., first_property_names(getfield(l, :st_extra))...)}((
         (getfield(smodels, layer).st for layer in layers)...,
-        getfield(getfield(l, :st_extra), :data)...,
+        get_backing_data(getfield(l, :st_extra))...,
     ),)
 end
 
@@ -156,7 +204,9 @@ function NamedTupleStatefulLuxLayer{fields}(
 ) where {fields}
     model_dfnt = DualFieldNamedTuple(model, Val(:model_))
     ps_extra = DualFieldNamedTuple(ps, Val(:ps_))
-    st_extra = DualFieldNamedTuple(st, Val(:st_))
+    st_extra = DualFieldNamedTuple(
+        st, Val(:st_), Val(true), Val(preserves_state_type(model))
+    )
     return NamedTupleStatefulLuxLayer{
         fields,typeof(smodels),typeof(model_dfnt),typeof(ps_extra),typeof(st_extra)
     }(
@@ -221,27 +271,22 @@ function Base.getproperty(l::NamedTupleStatefulLuxLayer{layers}, s::Symbol) wher
     throw(ArgumentError("No property $(s) for `NamedTupleStatefulLuxLayer`"))
 end
 
-# XXX: fix this function
-# function Base.setproperty!(
-#     l::NamedTupleStatefulLuxLayer{layers}, s::Symbol, v
-# ) where {layers}
-#     s in layers && return setfield!(getfield(l, :smodels), s, v)
-#     hasfield(typeof(getfield(l, :ps_extra)), s) &&
-#         return setfield!(getfield(l, :ps_extra), s, v)
-#     hasfield(typeof(getfield(l, :st_extra)), s) &&
-#         return setfield!(getfield(l, :st_extra), s, v)
-#     hasfield(typeof(getfield(l, :model)), s) && return setfield!(getfield(l, :model), s, v)
-
-#     # accessing via this API is very type unstable
-#     done = set_model_field!(l, s, v)
-#     done && return v
-#     done = set_ps_field!(l, s, v)
-#     done && return v
-#     done = set_st_field!(l, s, v)
-#     done && return v
-
-#     throw(ArgumentError("No property $(s) for NamedTupleStatefulLuxLayer"))
-# end
+function Base.setproperty!(
+    l::NamedTupleStatefulLuxLayer{layers}, s::Symbol, v
+) where {layers}
+    s in layers && return throw(ArgumentError("Cannot set property $(s) for \
+                                              `NamedTupleStatefulLuxLayer` since it is a \
+                                              container layer."))
+    hasproperty(getfield(l, :model), s) &&
+        throw(ArgumentError("Cannot set property $(s) for `NamedTupleStatefulLuxLayer` \
+                             since it is a model field."))
+    hasproperty(getfield(l, :ps_extra), s) &&
+        throw(ArgumentError("Cannot set property $(s) for `NamedTupleStatefulLuxLayer` \
+                            since it is a parameter."))
+    hasproperty(getfield(l, :st_extra), s) &&
+        return setproperty!(getfield(l, :st_extra), s, v)
+    throw(ArgumentError("No property $(s) for NamedTupleStatefulLuxLayer"))
+end
 
 export StatefulLuxLayer, NamedTupleStatefulLuxLayer
 
