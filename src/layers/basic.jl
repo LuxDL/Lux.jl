@@ -261,7 +261,7 @@ end
 Base.show(io::IO, w::WrappedFunction) = print(io, "WrappedFunction(", w.func, ")")
 
 apply(::Type{WrappedFunction{F}}, layer, x) where {F} = layer.func(x)
-apply(::Type{WrappedFunction{F}}, layer, x, xs...) where {F} = layer.func(x, xs...)
+apply(::Type{WrappedFunction{F}}, layer, x, xs...) where {F} = layer.func((x, xs...))
 
 """
     Dense(in_dims => out_dims, activation=identity; init_weight=nothing,

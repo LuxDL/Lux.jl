@@ -546,12 +546,12 @@ for interp in (:bilinear, :trilinear)
         function lux_upsample_scale_dispatch(
             ::StaticSymbol{$(Meta.quot(interp))}, x, scale, align_corners
         )
-            return $(nnlib_interp_func)(x, scale)
+            return $(nnlib_interp_func)(x, scale; align_corners)
         end
         function lux_upsample_size_dispatch(
             ::StaticSymbol{$(Meta.quot(interp))}, x, size, align_corners
         )
-            return $(nnlib_interp_func)(x; size)
+            return $(nnlib_interp_func)(x; size, align_corners)
         end
     end
 end
