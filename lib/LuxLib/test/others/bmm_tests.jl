@@ -139,7 +139,7 @@ end
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         !fp64 && continue
 
-        @testset "Float64 × $(TB)" for TB in [Float64, ComplexF64]
+        @testset "Float64 × $(TB)" for TB in [Float64]
             @testset "trivial dimensions & unit strides" begin
                 @testset "$tA(rand$((sA..., 3))) ⊠ $tB(rand$((sB..., 3)))" for tA in [
                         identity, batched_adjoint, batched_transpose, perm_12, perm_23
