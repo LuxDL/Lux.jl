@@ -266,7 +266,7 @@ for (op, field) in (
     :track_stats => :track_stats,
     :train_state => :train_state,
 )
-    @eval function $(Symbol(:has_, op))(l::AbstractLuxLayer)
+    @eval function $(Symbol(:has_, op))(l)
         res = known(safe_getproperty(l, Val($(Meta.quot(field)))))
         return ifelse(res === nothing, false, res)
     end

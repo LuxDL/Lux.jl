@@ -76,14 +76,11 @@ function Base.show(io::IO, ::MIME"text/plain", s::SimpleChainsLayer)
     return PrettyPrinting.print_wrapper_model(io, "SimpleChainsLayer", s.lux_layer)
 end
 
-function (sc::SimpleChainsLayer)(x, ps, st)
-    y = match_eltype(sc, ps, st, x)
-    return (
-        to_array(
-            sc.to_array,
-            apply_simple_chain(sc.layer, y, ps.params, MLDataDevices.get_device(x)),
-        ),
-        st,
+function apply(::Type{<:SimpleChainsLayer}, sc, x)
+    # XXX: restore `match_eltype` support
+    # x′ = match_eltype(sc, x)
+    return to_array(
+        sc.to_array, apply_simple_chain(sc.layer, x, sc.params, MLDataDevices.get_device(x))
     )
 end
 

@@ -134,41 +134,40 @@ end
 parameterlength(l::BatchNorm) = ifelse(has_affine(l), l.chs * 2, 0)
 statelength(l::BatchNorm) = ifelse(has_track_stats(l), l.chs * 2, 0) + 1
 
-function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
+function apply(::Type{<:BatchNorm}, bn, x::AbstractArray)
     CRC.ignore_derivatives() do
-        if st.training isa Val{true}
+        if bn.training isa Val{true}
             @argcheck size(x, ndims(x)) != 1 "Batch size for BatchNorm cannot be 1 during training"
         end
     end
 
-    x′ = match_eltype(BN, ps, st, x)
-    σ = NNlib.fast_act(BN.activation, x′)
+    # XXX: restore `match_eltype` support
+    # x′ = match_eltype(bn, ps, st, x)
+    x′ = x
+    σ = NNlib.fast_act(bn.activation, x′)
     y, stats = batchnorm(
         x′,
-        safe_getproperty(ps, Val(:scale)),
-        safe_getproperty(ps, Val(:bias)),
-        safe_getproperty(st, Val(:running_mean)),
-        safe_getproperty(st, Val(:running_var)),
-        st.training,
+        safe_getproperty(bn, Val(:scale)),
+        safe_getproperty(bn, Val(:bias)),
+        safe_getproperty(bn, Val(:running_mean)),
+        safe_getproperty(bn, Val(:running_var)),
+        bn.training,
         σ,
-        convert(unwrapped_eltype(x′), BN.momentum),
-        convert(unwrapped_eltype(x′), BN.epsilon),
+        convert(unwrapped_eltype(x′), bn.momentum),
+        convert(unwrapped_eltype(x′), bn.epsilon),
     )
-    return y, update_batchnorm_state(BN, st, stats)
+    update_batchnorm_state!(bn, stats)
+    return y
 end
 
-function update_batchnorm_state(BN::BatchNorm, st::NamedTuple, stats)
-    has_track_stats(BN) && return merge(
-        st,
-        (;
-            running_mean=Utils.vec(stats.running_mean),
-            running_var=Utils.vec(stats.running_var),
-        ),
-    )
-    return st
+function update_batchnorm_state!(bn, stats)
+    has_track_stats(bn) || return nothing
+    bn.running_mean = Utils.vec(stats.running_mean)
+    bn.running_var = Utils.vec(stats.running_var)
+    return nothing
 end
 
-CRC.@non_differentiable update_batchnorm_state(::Any...)
+CRC.@non_differentiable update_batchnorm_state!(::Any...)
 
 function Base.show(io::IO, l::BatchNorm)
     print(io, "BatchNorm($(l.chs)")
@@ -280,18 +279,20 @@ end
 
 parameterlength(l::GroupNorm) = has_affine(l) ? (l.chs * 2) : 0
 
-function (GN::GroupNorm)(x::AbstractArray, ps, st::NamedTuple)
-    x′ = match_eltype(GN, ps, st, x)
-    σ = NNlib.fast_act(GN.activation, x′)
+function apply(::Type{<:GroupNorm}, gn, x::AbstractArray)
+    # XXX: restore `match_eltype` support
+    # x′ = match_eltype(GN, ps, st, x)
+    x′ = x
+    σ = NNlib.fast_act(gn.activation, x′)
     y = groupnorm(
         x′,
-        safe_getproperty(ps, Val(:scale)),
-        safe_getproperty(ps, Val(:bias)),
-        GN.groups,
+        safe_getproperty(gn, Val(:scale)),
+        safe_getproperty(gn, Val(:bias)),
+        gn.groups,
         σ,
-        convert(unwrapped_eltype(x′), GN.epsilon),
+        convert(unwrapped_eltype(x′), gn.epsilon),
     )
-    return y, st
+    return y
 end
 
 function Base.show(io::IO, l::GroupNorm)
@@ -434,35 +435,34 @@ end
 parameterlength(l::InstanceNorm) = ifelse(has_affine(l), l.chs * 2, 0)
 statelength(l::InstanceNorm) = ifelse(has_track_stats(l), l.chs * 2, 0) + 1
 
-function (IN::InstanceNorm)(x::AbstractArray, ps, st::NamedTuple)
-    x′ = match_eltype(IN, ps, st, x)
-    σ = NNlib.fast_act(IN.activation, x′)
+function apply(::Type{<:InstanceNorm}, in, x::AbstractArray)
+    # XXX: restore `match_eltype` support
+    # x′ = match_eltype(IN, ps, st, x)
+    x′ = x
+    σ = NNlib.fast_act(in.activation, x′)
     y, stats = instancenorm(
         x′,
-        safe_getproperty(ps, Val(:scale)),
-        safe_getproperty(ps, Val(:bias)),
-        safe_getproperty(st, Val(:running_mean)),
-        safe_getproperty(st, Val(:running_var)),
-        st.training,
+        safe_getproperty(in, Val(:scale)),
+        safe_getproperty(in, Val(:bias)),
+        safe_getproperty(in, Val(:running_mean)),
+        safe_getproperty(in, Val(:running_var)),
+        in.training,
         σ,
-        convert(unwrapped_eltype(x′), IN.momentum),
-        convert(unwrapped_eltype(x′), IN.epsilon),
+        convert(unwrapped_eltype(x′), in.momentum),
+        convert(unwrapped_eltype(x′), in.epsilon),
     )
-    return y, update_instancenorm_state(IN, st, stats)
+    update_instancenorm_state!(in, stats)
+    return y
 end
 
-function update_instancenorm_state(IN::InstanceNorm, st::NamedTuple, stats)
-    has_track_stats(IN) && return merge(
-        st,
-        (;
-            running_mean=Utils.vec(stats.running_mean),
-            running_var=Utils.vec(stats.running_var),
-        ),
-    )
-    return st
+function update_instancenorm_state!(in::InstanceNorm, stats)
+    has_track_stats(in) || return nothing
+    in.running_mean = Utils.vec(stats.running_mean)
+    in.running_var = Utils.vec(stats.running_var)
+    return nothing
 end
 
-CRC.@non_differentiable update_instancenorm_state(::Any...)
+CRC.@non_differentiable update_instancenorm_state!(::Any...)
 
 function Base.show(io::IO, l::InstanceNorm)
     print(io, "InstanceNorm($(l.chs)")
@@ -554,18 +554,20 @@ function initialparameters(rng::AbstractRNG, ln::LayerNorm)
     return (;)
 end
 
-function (l::LayerNorm)(x::AbstractArray, ps, st::NamedTuple)
-    x′ = match_eltype(l, ps, st, x)
+function apply(::Type{<:LayerNorm}, l, x::AbstractArray)
+    # XXX: restore `match_eltype` support
+    # x′ = match_eltype(l, ps, st, x)
+    x′ = x
     σ = NNlib.fast_act(l.activation, x′)
     y = layernorm(
         x′,
-        safe_getproperty(ps, Val(:scale)),
-        safe_getproperty(ps, Val(:bias)),
+        safe_getproperty(l, Val(:scale)),
+        safe_getproperty(l, Val(:bias)),
         σ,
         l.dims,
         convert(unwrapped_eltype(x′), l.epsilon),
     )
-    return y, st
+    return y
 end
 
 function Base.show(io::IO, l::LayerNorm)
@@ -781,17 +783,14 @@ parameterlength(l::RMSNorm) = has_affine(l) ? prod(l.normalized_shape) : 0
 
 # specialization on `NT` is important here, else we won't be able to infer the
 # correct eltype of the output.
-function (rms::RMSNorm)(x::AbstractArray{T}, ps, st::NamedTuple) where {T}
+function apply(::Type{<:RMSNorm}, rms, x::AbstractArray{T}) where {T}
     # Don't use `match_eltype` here, since often times the eltypes are intentionally
     # different.
     ϵ = T(rms.epsilon)
     mean_sq = mean(abs2, x; dims=1:length(rms.normalized_shape))
 
     if has_affine(rms)
-        norm_x = @. (x * LuxOps.rsqrt(mean_sq + ϵ)) * ps.scale
-    else
-        norm_x = @. x * LuxOps.rsqrt(mean_sq + ϵ)
+        return @. (x * LuxOps.rsqrt(mean_sq + ϵ)) * ps.scale
     end
-
-    return norm_x, st
+    return @. x * LuxOps.rsqrt(mean_sq + ϵ)
 end
