@@ -33,6 +33,12 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
+[sources.LuxTestUtils]
+path = "../../LuxTestUtils"
+
+[sources.MLDataDevices]
+path = "../../MLDataDevices"
+
 [compat]
 AppleAccelerate = "0.4"
 Aqua = "0.8.7"
@@ -44,7 +50,7 @@ ComponentArrays = "0.15.22"
 Enzyme = "0.13.74"
 EnzymeCore = "0.8.12"
 ExplicitImports = "1.9.0"
-ForwardDiff = "0.10.36, =1"
+ForwardDiff = "0.10.36, =1, 1"
 InteractiveUtils = "<0.0.1, 1"
 JLArrays = "0.1.5, 0.2"
 LoopVectorization = "0.12.171"
@@ -67,7 +73,3 @@ Statistics = "1.10"
 Test = "1.10"
 Tracker = "0.2.36"
 Zygote = "0.6.70, 0.7"
-
-[sources]
-LuxTestUtils = { path = "../../LuxTestUtils" }
-MLDataDevices = { path = "../../MLDataDevices" }
