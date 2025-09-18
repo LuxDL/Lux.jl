@@ -50,7 +50,7 @@ end
 
 outputsize(r::ReshapeLayer, _, ::AbstractRNG) = r.dims
 
-function (r::ReshapeLayer)(x::AbstractArray, _, st::NamedTuple)
+@trace function (r::ReshapeLayer)(x::AbstractArray, _, st::NamedTuple)
     return reshape(x, r.dims..., size(x, ndims(x))), st
 end
 
@@ -100,19 +100,23 @@ end
 ReverseSequence(dim) = ReverseSequence(static(dim))
 ReverseSequence(; dim=nothing) = ReverseSequence(static(dim))
 
-function (r::ReverseSequence{Nothing})(x::AbstractArray, _, st::NamedTuple)
+@trace function (r::ReverseSequence{Nothing})(x::AbstractArray, _, st::NamedTuple)
     return safe_reverse(x; dims=max(ndims(x) - 1, 1)), st
 end
 
-function (r::ReverseSequence{StaticInt{1}})(x::AbstractVector, _, st::NamedTuple)
+@trace function (r::ReverseSequence{StaticInt{1}})(x::AbstractVector, _, st::NamedTuple)
     return safe_reverse(x), st
 end
 
-function (r::ReverseSequence{StaticInt{N}})(::AbstractVector, _, st::NamedTuple) where {N}
+@trace function (r::ReverseSequence{StaticInt{N}})(
+    ::AbstractVector, _, st::NamedTuple
+) where {N}
     throw(ArgumentError("Cannot specify a dimension ($(N) != 1) for AbstractVector"))
 end
 
-function (r::ReverseSequence{StaticInt{N}})(x::AbstractArray, _, st::NamedTuple) where {N}
+@trace function (r::ReverseSequence{StaticInt{N}})(
+    x::AbstractArray, _, st::NamedTuple
+) where {N}
     return safe_reverse(x; dims=N), st
 end
 
@@ -160,11 +164,13 @@ end
 FlattenLayer(N) = FlattenLayer(static(N))
 FlattenLayer(; N=nothing) = FlattenLayer(static(N))
 
-function (::FlattenLayer{Nothing})(x::AbstractArray{T,N}, _, st::NamedTuple) where {T,N}
+@trace function (::FlattenLayer{Nothing})(
+    x::AbstractArray{T,N}, _, st::NamedTuple
+) where {T,N}
     return reshape(x, :, size(x, N)), st
 end
 
-function (f::FlattenLayer)(x::AbstractArray{T,N}, _, st::NamedTuple) where {T,N}
+@trace function (f::FlattenLayer)(x::AbstractArray{T,N}, _, st::NamedTuple) where {T,N}
     @argcheck f.N < N
     return reshape(x, :, size(x)[(f.N + 1):end]...), st
 end
@@ -199,7 +205,7 @@ end
 SelectDim(dim::Integer, index::Integer) = SelectDim(static(dim), static(index))
 SelectDim(dim::Integer, index::AbstractVector) = SelectDim(static(dim), index)
 
-function (s::SelectDim{D,<:StaticInt})(x, _, st::NamedTuple) where {D}
+@trace function (s::SelectDim{D,<:StaticInt})(x, _, st::NamedTuple) where {D}
     return selectdim(x, known(s.dim), known(s.index)), st
 end
 (s::SelectDim)(x, _, st::NamedTuple) = selectdim(x, known(s.dim), s.index), st
@@ -356,7 +362,7 @@ function outputsize(d::Dense, x::AbstractArray, ::AbstractRNG)
     return (d.out_dims, size(x)[2:(end - 1)]...)
 end
 
-function (d::Dense)(x::AbstractArray, ps, st::NamedTuple)
+@trace function (d::Dense)(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(d, ps, st, x)
     bias = safe_getproperty(ps, Val(:bias))
     σ = NNlib.fast_act(d.activation, x)
@@ -443,12 +449,12 @@ statelength(d::Scale) = 0
 
 outputsize(d::Scale, _, ::AbstractRNG) = d.dims
 
-function (d::Scale{False})(x::AbstractArray, ps, st::NamedTuple)
+@trace function (d::Scale{False})(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(d, ps, st, x)
     σ = NNlib.fast_act(d.activation, y)
     return @.(σ(y .* ps.weight)), st
 end
-function (d::Scale{True})(x::AbstractArray, ps, st::NamedTuple)
+@trace function (d::Scale{True})(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(d, ps, st, x)
     σ = NNlib.fast_act(d.activation, y)
     return @.(σ(y * ps.weight + ps.bias)), st
@@ -562,7 +568,7 @@ statelength(b::Bilinear) = 0
 
 outputsize(b::Bilinear, _, ::AbstractRNG) = (b.out_dims,)
 
-function (b::Bilinear)(
+@trace function (b::Bilinear)(
     (x, y)::Tuple{<:AbstractVecOrMat,<:AbstractVecOrMat}, ps, st::NamedTuple
 )
     s₁, s₂, s₃ = size(ps.weight)
@@ -576,7 +582,9 @@ function (b::Bilinear)(
     return bias_activation!!(σ, Wyx, safe_getproperty(ps, Val(:bias))), st
 end
 
-function (b::Bilinear)((x, y)::Tuple{<:AbstractArray,<:AbstractArray}, ps, st::NamedTuple)
+@trace function (b::Bilinear)(
+    (x, y)::Tuple{<:AbstractArray,<:AbstractArray}, ps, st::NamedTuple
+)
     @argcheck size(x)[2:end] == size(y)[2:end]
 
     s₁, s₂, s₃ = size(ps.weight)
@@ -619,7 +627,7 @@ AlternatePrecision(::Type{T}, layer) where {T} = AlternatePrecision{T}(layer)
 
 LuxCore.display_name(::AlternatePrecision{T}) where {T} = "AlternatePrecision{$T}"
 
-function (model::AlternatePrecision{T})(x::AbstractArray{T2}, ps, st) where {T,T2}
+@trace function (model::AlternatePrecision{T})(x::AbstractArray{T2}, ps, st) where {T,T2}
     y, stₙ = model.layer(T.(x), ps, st)
     return T2.(y), stₙ
 end

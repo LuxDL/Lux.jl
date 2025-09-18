@@ -41,22 +41,32 @@ abstract type AbstractPoolOp end
 
 struct MaxPoolOp <: AbstractPoolOp end
 
-(m::MaxPoolOp)(x, pdims) = maxpool(x, pdims)
-function (m::MaxPoolOp)(x, ::GlobalPoolMode)
+@trace function (m::MaxPoolOp)(x, pdims)
+    return maxpool(x, pdims)
+end
+@trace function (m::MaxPoolOp)(x, ::GlobalPoolMode)
     return maximum(x; dims=1:(ndims(x) - 2), init=eltype(x)(-Inf))
 end
 
 struct MeanPoolOp <: AbstractPoolOp end
 
-(m::MeanPoolOp)(x, pdims) = meanpool(x, pdims)
-(m::MeanPoolOp)(x, ::GlobalPoolMode) = mean(x; dims=1:(ndims(x) - 2))
+@trace function (m::MeanPoolOp)(x, pdims)
+    return meanpool(x, pdims)
+end
+@trace function (m::MeanPoolOp)(x, ::GlobalPoolMode)
+    return mean(x; dims=1:(ndims(x) - 2))
+end
 
 @concrete struct LpPoolOp <: AbstractPoolOp
     p
 end
 
-(m::LpPoolOp)(x, pdims) = lpnormpool(x, pdims; m.p)
-(m::LpPoolOp)(x, ::GlobalPoolMode) = lpnormpool(x, PoolDims(x, size(x)[1:(end - 2)]); m.p)
+@trace function (m::LpPoolOp)(x, pdims)
+    return lpnormpool(x, pdims; m.p)
+end
+@trace function (m::LpPoolOp)(x, ::GlobalPoolMode)
+    return lpnormpool(x, PoolDims(x, size(x)[1:(end - 2)]); m.p)
+end
 
 symbol_to_pool_op(::StaticSymbol{:max}, _) = MaxPoolOp()
 symbol_to_pool_op(::StaticSymbol{:mean}, _) = MeanPoolOp()

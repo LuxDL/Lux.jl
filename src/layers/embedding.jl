@@ -57,31 +57,35 @@ end
 
 outputsize(e::Embedding, _, ::AbstractRNG) = (e.out_dims,)
 
-function (e::Embedding)(x::Union{Number,AbstractVector}, ps, st::NamedTuple)
+@trace function (e::Embedding)(x::Union{Number,AbstractVector}, ps, st::NamedTuple)
     @argcheck Utils.eltype(x) <: Integer
     return ps.weight[:, x], st
 end
-function (e::Embedding)(x::AbstractArray, ps, st::NamedTuple)
+@trace function (e::Embedding)(x::AbstractArray, ps, st::NamedTuple)
     @argcheck Utils.eltype(x) <: Integer
     y, stₙ = e(Utils.vec(x), ps, st)
     return reshape(y, :, size(x)...), stₙ
 end
-function (e::Embedding)(x::NTuple{N,T}, ps, st::NamedTuple) where {N,T}
+@trace function (e::Embedding)(x::NTuple{N,T}, ps, st::NamedTuple) where {N,T}
     @argcheck Utils.eltype(T) <: Integer
     return ps.weight[:, x...], st
 end
-function (e::Embedding)(x::NTuple{N,<:AbstractVector{T}}, ps, st::NamedTuple) where {N,T}
+@trace function (e::Embedding)(
+    x::NTuple{N,<:AbstractVector{T}}, ps, st::NamedTuple
+) where {N,T}
     @argcheck Utils.eltype(T) <: Integer
     @argcheck allequal(size, x) DimensionMismatch("Input vectors must have the same shape")
     return NNlib.gather(ps.weight, x...), st
 end
-function (e::Embedding)(x::NTuple{N,<:AbstractArray{T}}, ps, st::NamedTuple) where {N,T}
+@trace function (e::Embedding)(
+    x::NTuple{N,<:AbstractArray{T}}, ps, st::NamedTuple
+) where {N,T}
     @argcheck Utils.eltype(T) <: Integer
     @argcheck allequal(size, x) DimensionMismatch("Input arrays must have the same shape")
     y, stₙ = e(vec.(x), ps, st)
     return reshape(y, :, size(first(x))...), stₙ
 end
-function (e::Embedding)(::Tuple{}, _, ::NamedTuple)
+@trace function (e::Embedding)(::Tuple{}, _, ::NamedTuple)
     throw(ArgumentError("Input tuple must contain at least one element"))
 end
 
@@ -145,7 +149,7 @@ function initialstates(::AbstractRNG, spe::SinusoidalPositionalEmbedding{T}) whe
     return (; sigmas)
 end
 
-function (spe::SinusoidalPositionalEmbedding)(x::AbstractArray, ps, st::NamedTuple)
+@trace function (spe::SinusoidalPositionalEmbedding)(x::AbstractArray, ps, st::NamedTuple)
     y = reshape(match_eltype(spe, ps, st, x), 1, size(x)...) .* st.sigmas
     z = vcat(sin.(y), cos.(y)) .* spe.scale
     return z, st
@@ -220,14 +224,14 @@ function initialstates(::AbstractRNG, rope::RotaryPositionalEmbedding)
     )
 end
 
-function (rope::RotaryPositionalEmbedding)(
+@trace function (rope::RotaryPositionalEmbedding)(
     x::AbstractArray{T,4}, ps, st::NamedTuple
 ) where {T}
     y = apply_rotary_embedding(x, st.cos_cache, st.sin_cache; seq_dim=3)
     return y, st
 end
 
-function (rope::RotaryPositionalEmbedding)((x, input_pos)::Tuple, ps, st::NamedTuple)
+@trace function (rope::RotaryPositionalEmbedding)((x, input_pos)::Tuple, ps, st::NamedTuple)
     y = apply_rotary_embedding(x, input_pos, st.cos_cache, st.sin_cache; seq_dim=3)
     return y, st
 end
@@ -296,7 +300,9 @@ sequence length of `x`.
 
   - Output of the rotary embedding.
 """
-function apply_rotary_embedding(
+function apply_rotary_embedding end
+
+@trace function apply_rotary_embedding(
     x::AbstractArray{T,4},
     cos_cache::AbstractMatrix,
     sin_cache::AbstractMatrix;
@@ -309,7 +315,7 @@ function apply_rotary_embedding(
     )
 end
 
-function apply_rotary_embedding(
+@trace function apply_rotary_embedding(
     x::AbstractArray{T,4},
     input_positions::AbstractVector{<:Integer},
     cos_cache::AbstractMatrix,
