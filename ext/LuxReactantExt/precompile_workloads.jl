@@ -1,9 +1,5 @@
 using PrecompileTools: @setup_workload, @compile_workload
 
-# Precompilation on 1.10 hits an apparent bug:
-# https://github.com/JuliaLang/julia/issues/56947
-precompilation_supported() = VERSION ≥ v"1.11"
-
 if Reactant.Reactant_jll.is_available()
     @setup_workload begin
         orig_backend = Reactant.XLA.default_backend()
@@ -42,33 +38,35 @@ if Reactant.Reactant_jll.is_available()
         end
 
         @compile_workload begin
-            @static if precompilation_supported()
-                @compile mha((q, k, v), ps_mha, LuxCore.testmode(st_mha))
-                @info "compiled mha"
+            @compile mha((q, k, v), ps_mha, LuxCore.testmode(st_mha))
+            @info "compiled mha"
 
-                Lux.Training.single_train_step(
-                    AutoEnzyme(),
-                    sumabs2attnloss,
-                    (q, k, v),
-                    Lux.Training.TrainState(mha, ps_mha, st_mha, Optimisers.Adam(0.001f0)),
-                )
-                @info "compiled mha train step"
+            # Lux.Training.single_train_step(
+            #     AutoEnzyme(),
+            #     sumabs2attnloss,
+            #     (q, k, v),
+            #     Lux.Training.TrainState(mha, ps_mha, st_mha, Optimisers.Adam(0.001f0)),
+            # )
+            @info "compiled mha train step"
 
-                @compile conv_model(x, ps_conv_model, LuxCore.testmode(st_conv_model))
-                @info "compiled conv_model"
+            @compile conv_model(x, ps_conv_model, LuxCore.testmode(st_conv_model))
+            @info "compiled conv_model"
 
-                Lux.Training.single_train_step(
-                    AutoEnzyme(),
-                    sumabs2loss,
-                    x,
-                    Lux.Training.TrainState(
-                        conv_model, ps_conv_model, st_conv_model, Optimisers.Adam(0.001f0)
-                    ),
-                )
-                @info "compiled conv_model train step"
-            end
+            # Lux.Training.single_train_step(
+            #     AutoEnzyme(),
+            #     sumabs2loss,
+            #     x,
+            #     Lux.Training.TrainState(
+            #         conv_model, ps_conv_model, st_conv_model, Optimisers.Adam(0.001f0)
+            #     ),
+            # )
+            @info "compiled conv_model train step"
         end
 
+        @show 111
+
         Reactant.set_default_backend(orig_backend)
+
+        @show 111212
     end
 end
