@@ -24,7 +24,7 @@ using Lux: Lux, LuxOps, Training, Utils, StatefulLuxLayer
 using Lux.Training: TrainingBackendCache, ReactantBackend
 using LuxCore: LuxCore, AbstractLuxLayer
 using LuxLib: LuxLib
-using MLDataDevices: ReactantDevice, reactant_device, get_device
+using MLDataDevices: MLDataDevices, ReactantDevice, reactant_device, get_device
 
 Lux.is_extension_loaded(::Val{:Reactant}) = true
 
