@@ -147,7 +147,7 @@ function batchnorm_affine_normalize_internal!(
 end
 
 function compute_batchnorm_scale_bias!(γ′, β′, γ, β, μ, σ², ϵ)
-    return if Utils.within_enzyme_autodiff()
+    if Utils.within_enzyme_autodiff()
         if γ === nothing && β === nothing
             for J in eachindex(γ′, β′, μ, σ²)
                 @inbounds γ′[J] = inv(sqrt(σ²[J] + ϵ))
@@ -172,6 +172,7 @@ function compute_batchnorm_scale_bias!(γ′, β′, γ, β, μ, σ², ϵ)
             end
         end
     end
+    return nothing
 end
 
 function apply_batchnorm_scale_bias_act_cpu!(
@@ -181,7 +182,7 @@ function apply_batchnorm_scale_bias_act_cpu!(
     x::AbstractArray{xT,3},
     σ::F,
 ) where {F,xT,yT}
-    return if size(y, 1) == 1
+    if size(y, 1) == 1
         apply_batchnorm_scale_bias_act_2d_serial_cpu!(y, γ′, β′, x, σ)
     else
         if Utils.within_enzyme_autodiff()
@@ -190,6 +191,7 @@ function apply_batchnorm_scale_bias_act_cpu!(
             apply_batchnorm_scale_bias_act_3d_threaded_cpu!(y, γ′, β′, x, σ)
         end
     end
+    return nothing
 end
 
 @inline function apply_batchnorm_scale_bias_act_2d_serial_cpu!(
@@ -214,13 +216,14 @@ end
     x::AbstractArray{xT,3},
     σ::F,
 ) where {F,xT,yT}
-    return @batch for K in axes(x, 3)
+    Threads.@threads for K in axes(x, 3)
         for J in axes(x, 2)
             @simd ivdep for I in axes(x, 1)
                 @fastmath @inbounds y[I, J, K] = σ(x[I, J, K] * γ′[J] + β′[J])
             end
         end
     end
+    return nothing
 end
 
 @inline function apply_batchnorm_scale_bias_act_3d_serial_cpu!(
@@ -245,7 +248,7 @@ end
 function apply_batchnorm_scale_bias_cpu!(
     y::AbstractArray{yT,3}, γ′::AbstractVector, β′::AbstractVector, x::AbstractArray{xT,3}
 ) where {xT,yT}
-    return if size(y, 1) == 1
+    if size(y, 1) == 1
         apply_batchnorm_scale_bias_2d_serial_cpu!(y, γ′, β′, x)
     else
         if Utils.within_enzyme_autodiff()
@@ -254,6 +257,7 @@ function apply_batchnorm_scale_bias_cpu!(
             apply_batchnorm_scale_bias_3d_threaded_cpu!(y, γ′, β′, x)
         end
     end
+    return nothing
 end
 
 @inline function apply_batchnorm_scale_bias_2d_serial_cpu!(
@@ -270,13 +274,14 @@ end
 @inline function apply_batchnorm_scale_bias_3d_threaded_cpu!(
     y::AbstractArray{yT,3}, γ′::AbstractVector, β′::AbstractVector, x::AbstractArray{xT,3}
 ) where {xT,yT}
-    return @batch for K in axes(x, 3)
+    Threads.@threads for K in axes(x, 3)
         for J in axes(x, 2)
             @simd ivdep for I in axes(x, 1)
                 @fastmath @inbounds y[I, J, K] = x[I, J, K] * γ′[J] + β′[J]
             end
         end
     end
+    return nothing
 end
 
 @inline function apply_batchnorm_scale_bias_3d_serial_cpu!(
@@ -479,7 +484,7 @@ function ∇batchnorm_affine_normalize_cpu!(
     fill!(∂μ, 0)
     fill!(∂σ², 0)
 
-    return if size(∂y, 1) == 1
+    if size(∂y, 1) == 1
         @fastmath @inbounds for K in axes(∂y, 3)
             @simd for J in axes(∂y, 2)
                 idenom = γ′[J]
@@ -506,6 +511,7 @@ function ∇batchnorm_affine_normalize_cpu!(
             end
         end
     end
+    return nothing
 end
 
 function ∇batchnorm_affine_normalize_cpu!(
@@ -529,7 +535,7 @@ function ∇batchnorm_affine_normalize_cpu!(
     fill!(∂γ, 0)
     fill!(∂β, 0)
 
-    return if size(∂y, 1) == 1
+    if size(∂y, 1) == 1
         @fastmath @inbounds for K in axes(∂y, 3)
             @simd for J in axes(∂y, 2)
                 idenom = inv(sqrt(σ²[J] + ϵ))
@@ -560,6 +566,7 @@ function ∇batchnorm_affine_normalize_cpu!(
             end
         end
     end
+    return nothing
 end
 
 function ∇batchnorm_affine_normalize(
