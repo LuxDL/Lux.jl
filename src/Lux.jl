@@ -123,6 +123,9 @@ include("serialization/serialization.jl")
 # Deprecations for v2
 include("deprecations.jl")
 
+# Precompile common workloads
+include("precompile_workloads.jl")
+
 # Layers
 export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer, Maxout, RepeatedLayer
 export Bilinear, Dense, Scale
