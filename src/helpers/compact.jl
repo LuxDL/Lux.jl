@@ -63,11 +63,11 @@ Here is a linear model:
 ```jldoctest
 julia> using Lux, Random
 
-julia> r = @compact(w=ones(3)) do x
+julia> r = @compact(w=ones(Float32, 3)) do x
            @return w .* x
        end
 @compact(
-    w = 3-element Vector{Float64},
+    w = 3-element Vector{Float32},
 ) do x
     return w .* x
 end       # Total: 3 parameters,
@@ -75,8 +75,8 @@ end       # Total: 3 parameters,
 
 julia> ps, st = Lux.setup(Xoshiro(0), r);
 
-julia> r([1, 2, 3], ps, st)  # x is set to [1, 1, 1].
-([1.0, 2.0, 3.0], NamedTuple())
+julia> r(Float32[1, 2, 3], ps, st)  # x is set to [1, 1, 1].
+(Float32[1.0, 2.0, 3.0], NamedTuple())
 ```
 
 Here is a linear model with bias and activation:
@@ -88,13 +88,13 @@ julia> d_in = 5
 julia> d_out = 3
 3
 
-julia> d = @compact(W=ones(d_out, d_in), b=zeros(d_out), act=relu) do x
+julia> d = @compact(W=ones(Float32, d_out, d_in), b=zeros(Float32, d_out), act=relu) do x
            y = W * x
            @return act.(y .+ b)
        end
 @compact(
-    W = 3×5 Matrix{Float64},
-    b = 3-element Vector{Float64},
+    W = 3×5 Matrix{Float32},
+    b = 3-element Vector{Float32},
     act = relu,
 ) do x
     y = W * x
@@ -104,16 +104,16 @@ end       # Total: 18 parameters,
 
 julia> ps, st = Lux.setup(Xoshiro(0), d);
 
-julia> d(ones(5, 2), ps, st)[1] # 3×2 Matrix as output.
-3×2 Matrix{Float64}:
+julia> d(ones(Float32, 5, 2), ps, st)[1] # 3×2 Matrix as output.
+3×2 Matrix{Float32}:
  5.0  5.0
  5.0  5.0
  5.0  5.0
 
 julia> ps_dense = (; weight=ps.W, bias=ps.b);
 
-julia> first(d([1, 2, 3, 4, 5], ps, st)) ≈
-       first(Dense(d_in => d_out, relu)([1, 2, 3, 4, 5], ps_dense, NamedTuple())) # Equivalent to a dense layer
+julia> first(d(Float32[1, 2, 3, 4, 5], ps, st)) ≈
+       first(Dense(d_in => d_out, relu)(Float32[1, 2, 3, 4, 5], ps_dense, NamedTuple())) # Equivalent to a dense layer
 true
 ```
 
@@ -154,7 +154,7 @@ end       # Total: 49_921 parameters,
 
 julia> ps, st = Lux.setup(Xoshiro(0), model);
 
-julia> size(first(model(randn(n_in, 32), ps, st)))  # 1×32 Matrix as output.
+julia> size(first(model(randn(Float32, n_in, 32), ps, st)))  # 1×32 Matrix as output.
 (1, 32)
 
 julia> using Optimisers, Zygote
@@ -183,7 +183,7 @@ You may also specify a `name` for the model, which will be used instead of the d
 printout, which gives a verbatim representation of the code used to construct the model:
 
 ```jldoctest
-julia> model = @compact(w=rand(3), name="Linear(3 => 1)") do x
+julia> model = @compact(w=rand(Float32, 3), name="Linear(3 => 1)") do x
            @return sum(w .* x)
        end
 Linear(3 => 1)               # 3 parameters
