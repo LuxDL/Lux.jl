@@ -123,13 +123,14 @@ end
             bceloss_ls = BinaryCrossEntropyLoss(; label_smoothing=0.1)
             @test bceloss_ls(ŷ, y) ≈ @jit(bceloss_ls(ŷ_ra, y_ra))
 
-            bceloss_lp = BinaryCrossEntropyLoss(; logits=Val(true))
-            logit_bceloss_lp = (ŷ, y) -> bceloss_lp(log.(ŷ), y)
-            @test logit_bceloss_lp(ŷ, y) ≈ @jit(logit_bceloss_lp(ŷ_ra, y_ra))
+            # XXX: reenable once https://github.com/EnzymeAD/Enzyme-JAX/pull/1401 lands
+            # bceloss_lp = BinaryCrossEntropyLoss(; logits=Val(true))
+            # logit_bceloss_lp = (ŷ, y) -> bceloss_lp(log.(ŷ), y)
+            # @test logit_bceloss_lp(ŷ, y) ≈ @jit(logit_bceloss_lp(ŷ_ra, y_ra))
 
-            bceloss_lp_ls = BinaryCrossEntropyLoss(; logits=Val(true), label_smoothing=0.1)
-            logit_bceloss_lp_ls = (ŷ, y) -> bceloss_lp_ls(log.(ŷ), y)
-            @test logit_bceloss_lp_ls(ŷ, y) ≈ @jit(logit_bceloss_lp_ls(ŷ_ra, y_ra))
+            # bceloss_lp_ls = BinaryCrossEntropyLoss(; logits=Val(true), label_smoothing=0.1)
+            # logit_bceloss_lp_ls = (ŷ, y) -> bceloss_lp_ls(log.(ŷ), y)
+            # @test logit_bceloss_lp_ls(ŷ, y) ≈ @jit(logit_bceloss_lp_ls(ŷ_ra, y_ra))
         end
 
         @testset "BinaryFocalLoss" begin
