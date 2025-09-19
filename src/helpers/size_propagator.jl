@@ -7,24 +7,7 @@ using Random: Random
 using Static: Static, StaticBool
 
 # We need these to avoid ambiguities
-using SIMDTypes: SIMDTypes
 using StaticArraysCore: StaticArraysCore
-
-const VecT = Union{
-    Bool,
-    Float16,
-    Float32,
-    Float64,
-    Int16,
-    Int32,
-    Int64,
-    Int8,
-    UInt16,
-    UInt32,
-    UInt64,
-    UInt8,
-    SIMDTypes.Bit,
-}
 
 using LuxLib: LuxLib
 using NNlib: NNlib
