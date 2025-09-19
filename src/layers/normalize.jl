@@ -134,7 +134,7 @@ end
 parameterlength(l::BatchNorm) = ifelse(has_affine(l), l.chs * 2, 0)
 statelength(l::BatchNorm) = ifelse(has_track_stats(l), l.chs * 2, 0) + 1
 
-function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
+@trace function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
     CRC.ignore_derivatives() do
         if st.training isa Val{true}
             @argcheck size(x, ndims(x)) != 1 "Batch size for BatchNorm cannot be 1 during training"
@@ -280,7 +280,7 @@ end
 
 parameterlength(l::GroupNorm) = has_affine(l) ? (l.chs * 2) : 0
 
-function (GN::GroupNorm)(x::AbstractArray, ps, st::NamedTuple)
+@trace function (GN::GroupNorm)(x::AbstractArray, ps, st::NamedTuple)
     x′ = match_eltype(GN, ps, st, x)
     σ = NNlib.fast_act(GN.activation, x′)
     y = groupnorm(
@@ -434,7 +434,7 @@ end
 parameterlength(l::InstanceNorm) = ifelse(has_affine(l), l.chs * 2, 0)
 statelength(l::InstanceNorm) = ifelse(has_track_stats(l), l.chs * 2, 0) + 1
 
-function (IN::InstanceNorm)(x::AbstractArray, ps, st::NamedTuple)
+@trace function (IN::InstanceNorm)(x::AbstractArray, ps, st::NamedTuple)
     x′ = match_eltype(IN, ps, st, x)
     σ = NNlib.fast_act(IN.activation, x′)
     y, stats = instancenorm(
@@ -554,7 +554,7 @@ function initialparameters(rng::AbstractRNG, ln::LayerNorm)
     return (;)
 end
 
-function (l::LayerNorm)(x::AbstractArray, ps, st::NamedTuple)
+@trace function (l::LayerNorm)(x::AbstractArray, ps, st::NamedTuple)
     x′ = match_eltype(l, ps, st, x)
     σ = NNlib.fast_act(l.activation, x′)
     y = layernorm(
@@ -781,7 +781,7 @@ parameterlength(l::RMSNorm) = has_affine(l) ? prod(l.normalized_shape) : 0
 
 # specialization on `NT` is important here, else we won't be able to infer the
 # correct eltype of the output.
-function (rms::RMSNorm)(x::AbstractArray{T}, ps, st::NamedTuple) where {T}
+@trace function (rms::RMSNorm)(x::AbstractArray{T}, ps, st::NamedTuple) where {T}
     # Don't use `match_eltype` here, since often times the eltypes are intentionally
     # different.
     ϵ = T(rms.epsilon)

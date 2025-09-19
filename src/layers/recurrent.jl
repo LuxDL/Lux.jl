@@ -354,7 +354,7 @@ function (rnn::RNNCell{True})(x::AbstractMatrix, ps, st::NamedTuple)
     return rnn((x, (hidden_state,)), ps, st)
 end
 
-function (rnn::RNNCell)(
+@trace function (rnn::RNNCell)(
     (x, (hidden_state,))::Tuple{<:AbstractMatrix,Tuple{<:AbstractMatrix}},
     ps,
     st::NamedTuple,
@@ -576,7 +576,7 @@ end
 
 const _LSTMCellInputType = Tuple{<:AbstractMatrix,Tuple{<:AbstractMatrix,<:AbstractMatrix}}
 
-function (lstm::LSTMCell)(
+@trace function (lstm::LSTMCell)(
     (x, (hidden_state, memory))::_LSTMCellInputType, ps, st::NamedTuple
 )
     y, hidden_stateₙ, memoryₙ = match_eltype(lstm, ps, st, x, hidden_state, memory)
@@ -758,7 +758,7 @@ end
 
 const _GRUCellInputType = Tuple{<:AbstractMatrix,Tuple{<:AbstractMatrix}}
 
-function (gru::GRUCell)((x, (hidden_state,))::_GRUCellInputType, ps, st::NamedTuple)
+@trace function (gru::GRUCell)((x, (hidden_state,))::_GRUCellInputType, ps, st::NamedTuple)
     y, hidden_stateₙ = match_eltype(gru, ps, st, x, hidden_state)
 
     z₁ = fused_dense_bias_activation(

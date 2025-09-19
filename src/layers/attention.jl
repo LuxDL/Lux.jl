@@ -162,8 +162,10 @@ function MultiHeadAttention(
     )
 end
 
-(mha::MultiHeadAttention)(x, ps, st::NamedTuple) = apply_multiheadattention(mha, ps, st, x)
-function (mha::MultiHeadAttention)(x::Tuple, ps, st::NamedTuple)
+@trace function (mha::MultiHeadAttention)(x, ps, st::NamedTuple)
+    return apply_multiheadattention(mha, ps, st, x)
+end
+@trace function (mha::MultiHeadAttention)(x::Tuple, ps, st::NamedTuple)
     return apply_multiheadattention(mha, ps, st, x...)
 end
 

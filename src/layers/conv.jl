@@ -250,7 +250,7 @@ function parameterlength(c::Conv)
     return prod(c.kernel_size) * c.in_chs * c.out_chs ÷ c.groups + has_bias(c) * c.out_chs
 end
 
-function (c::Conv)(x::AbstractArray, ps, st::NamedTuple)
+@trace function (c::Conv)(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(c, ps, st, x)
     cdims = construct_crosscor_convdims(
         c.cross_correlation,
@@ -424,7 +424,7 @@ function parameterlength(c::ConvTranspose)
     return prod(c.kernel_size) * c.in_chs * c.out_chs ÷ c.groups + has_bias(c) * c.out_chs
 end
 
-function (c::ConvTranspose)(x::AbstractArray, ps, st::NamedTuple)
+@trace function (c::ConvTranspose)(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(c, ps, st, x)
     cdims = construct_crosscor_convdims(
         c.cross_correlation,
@@ -528,10 +528,10 @@ end
 
 Upsample(scale, mode::SymbolType=static(:nearest)) = Upsample(mode; scale)
 
-function (m::Upsample)(x::AbstractArray, _, st::NamedTuple)
+@trace function (m::Upsample)(x::AbstractArray, _, st::NamedTuple)
     return lux_upsample_scale_dispatch(m.upsample_mode, x, m.scale, m.align_corners), st
 end
-function (m::Upsample{Nothing})(x::AbstractArray, _, st::NamedTuple)
+@trace function (m::Upsample{Nothing})(x::AbstractArray, _, st::NamedTuple)
     return lux_upsample_size_dispatch(m.upsample_mode, x, m.size, m.align_corners), st
 end
 

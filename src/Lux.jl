@@ -22,6 +22,7 @@ using Markdown: @doc_str
 using NNlib: NNlib
 using Optimisers: Optimisers
 using Random: Random, AbstractRNG
+using ReactantCore: @trace
 using Static: StaticBool, StaticInt, StaticSymbol, True, False, static, known, dynamic
 using Reexport: Reexport, @reexport
 using Statistics: mean
