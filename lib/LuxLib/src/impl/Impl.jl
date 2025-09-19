@@ -12,8 +12,6 @@ using ForwardDiff: ForwardDiff
 
 using KernelAbstractions: KernelAbstractions, @kernel, @Const, @index
 
-using Polyester: @batch
-
 using LinearAlgebra: LinearAlgebra, mul!, triu!
 using Random: Random, AbstractRNG, rand!
 using Statistics: Statistics, mean, var
