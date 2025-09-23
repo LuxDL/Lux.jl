@@ -305,3 +305,24 @@ For the `SkipConnection` tests that would be:
 ```julia
 ReTestItems.runtests("tests/"; name = "SkipConnection")
 ```
+
+### 📖 Documentation
+
+Lux builds a bunch of tutorials as part of its documentation. This can be time-consuming and
+requires a lot of compute. To speed up the build, you can set the
+`LUX_DOCS_DRAFT_BUILD=true`.
+
+```shell
+LUX_DOCS_DRAFT_BUILD=true julia --threads=auto --startup=no --project=docs docs/make.jl
+```
+
+When writing tutorials (anything under `examples/`), include the tutorial in
+`docs/tutorials.jl`. If the tutorial is time-consuming, set `should_run` to `false`.
+
+Additionally for a new page to be included in the navigation and sidebar, these need to be
+added to `docs/src/.vitepress/config.mts`. Specifically these need to be added under
+`sidebar` and/or `nav` based on the type of page.
+
+To use LiveServer to preview the docs locally, checkout
+[DocumenterVitepress.jl](https://luxdl.github.io/DocumenterVitepress.jl/dev/manual/get_started#Preview-Documentation-Development-Instantly)
+documentation.

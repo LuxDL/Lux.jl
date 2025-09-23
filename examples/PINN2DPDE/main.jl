@@ -260,5 +260,3 @@ begin
     fig
 end
 nothing #hide
-
-# ![](pinn_nested_ad.gif)
