@@ -14,7 +14,6 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Lux = {path = "../.."}
 LuxCUDA = {path = "../../lib/LuxCUDA"}
 MLDataDevices = {path = "../../lib/MLDataDevices"}
-NCCL = { url = "https://github.com/LuxDL/NCCL.jl", rev = "cd85e9f7830be425b64d2eee407df7d61a6a9635" }
 
 [compat]
 ComponentArrays = "0.15.29"
@@ -23,8 +22,7 @@ LuxCUDA = "0.3.3"
 MLDataDevices = "1.12"
 MLUtils = "0.4.8"
 MPI = "0.20.23"
-NCCL = "0.1.1"
+NCCL = "0.1.2"
 Optimisers = "0.4.6"
 Pkg = "1.10"
 Test = "1.10"
-
