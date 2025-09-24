@@ -28,6 +28,8 @@ const ADVANCED_TUTORIALS = [
 ]
 #! format: on
 
+const DRAFT_MODE = parse(Bool, get(ENV, "LUX_DOCS_DRAFT_BUILD", "false"))
+
 get_name_and_run(list) = getindex.(list, ([1, 3],))
 
 const TUTORIALS = [
@@ -101,6 +103,8 @@ asyncmap(TUTORIALS_BUILDING; ntasks=NTASKS) do (i, (d, (input_path, should_run))
         path = joinpath(@__DIR__, "..", "examples", input_path)
         name = "$(i)_$(join([endswith(x, ".jl") ? x[1:end-3] : x for x in rsplit(input_path, "/")], "_"))"
     end
+
+    DRAFT_MODE && (should_run = false)
 
     output_directory = joinpath(@__DIR__, "src", "tutorials", d)
     tutorial_proj = dirname(path)

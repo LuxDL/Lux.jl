@@ -14,6 +14,8 @@ project_path = dirname(Pkg.project().path)
 pkg_log_path = joinpath(storage_dir, "$(name)_pkg.log")
 push!(LOAD_PATH, "@literate")  # Should have the Literate and InteractiveUtils packages
 
+const DRAFT_MODE = parse(Bool, get(ENV, "LUX_DOCS_DRAFT_BUILD", "false"))
+
 io = open(pkg_log_path, "w")
 warn_old_version = try
     should_run && Pkg.develop(; path=joinpath(@__DIR__, ".."), io)
@@ -145,7 +147,11 @@ Literate.markdown(
     output_directory;
     execute=should_run,
     name,
-    flavor=should_run ? Literate.DocumenterFlavor() : Literate.CommonMarkFlavor(),
+    flavor=if should_run || DRAFT_MODE
+        Literate.DocumenterFlavor()
+    else
+        Literate.CommonMarkFlavor()
+    end,
     preprocess=Base.Fix1(preprocess, path),
     postprocess=Base.Fix1(postprocess, path),
 )
