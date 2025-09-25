@@ -620,7 +620,7 @@ function padded_input_and_mask_len(x::AbstractMatrix, v, padded_sz::Int, pad_tok
     end
     return (
         x_padded,
-        Reactant.TracedUtils.promote_to(
+        Reactant.promote_to(
             Reactant.TracedRNumber{Int32}, padded_sz - (size(x, 1) + (v !== nothing))
         ),
     )

@@ -1,7 +1,7 @@
 name = "WeightInitializers"
 uuid = "d49dbf32-c5c2-4618-8acc-27bb2598ef2d"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "1.2.1"
+version = "1.2.2"
 
 [deps]
 ArgCheck = "dce04be8-c92d-5529-be00-80e4d2c0e197"
@@ -33,10 +33,10 @@ CUDA = "5.8"
 ChainRulesCore = "1.23"
 ConcreteStructs = "0.2.3"
 GPUArrays = "10.2, 11"
-GPUArraysCore = "0.1.6, 0.2"
+GPUArraysCore = "0.2"
 LinearAlgebra = "1.10"
 Random = "1.10"
-Reactant = "0.2.120"
+Reactant = "0.2.166"
 SpecialFunctions = "2.4"
 Statistics = "1.10"
 julia = "1.10"

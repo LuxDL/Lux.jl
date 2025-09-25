@@ -396,9 +396,31 @@ end
     end
 end
 
-@testitem "Kaiming Uniform: Complex" setup = [SharedTestSetup] begin
+@testitem "Kaiming Uniform: Complex" begin
+    using WeightInitializers, Test
+
     x = kaiming_uniform(ComplexF32, 1024, 1024)
     @test eltype(x) == ComplexF32
     @test size(x) == (1024, 1024)
     @test minimum(imag.(x)) < 0.0
+end
+
+@testitem "Initialization inside compile" begin
+    using Reactant, WeightInitializers, Test
+
+    rrng = Reactant.ReactantRNG()
+
+    @testset "Concrete: $(op)" for op in (zeros32, ones32)
+        gen_arr = op(rrng, 3, 4)
+        @test eltype(gen_arr) == Float32
+        @test size(gen_arr) == (3, 4)
+        @test gen_arr isa Reactant.ConcreteRArray{Float32,2}
+    end
+
+    @testset "Traced: $(op)" for op in (zeros32, ones32, rand32, randn32)
+        gen_arr = @jit op(rrng, 3, 4)
+        @test eltype(gen_arr) == Float32
+        @test size(gen_arr) == (3, 4)
+        @test gen_arr isa Reactant.ConcreteRArray{Float32,2}
+    end
 end
