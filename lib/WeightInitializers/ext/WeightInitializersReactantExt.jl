@@ -1,7 +1,7 @@
 module WeightInitializersReactantExt
 
 using Random: AbstractRNG
-using Reactant: Reactant, ReactantRNG, TracedRArray, @reactant_overlay
+using Reactant: Reactant, ReactantRNG, @reactant_overlay
 using Reactant.Ops: @opcall
 using WeightInitializers: DeviceAgnostic
 
