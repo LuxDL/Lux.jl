@@ -1,30 +1,20 @@
 module WeightInitializersReactantExt
 
 using Random: AbstractRNG
-using Reactant: Reactant, TracedUtils, ReactantRNG, TracedRArray, @reactant_overlay
+using Reactant: Reactant, ReactantRNG, TracedRArray, @reactant_overlay
+using Reactant.Ops: @opcall
 using WeightInitializers: DeviceAgnostic
 
-# random numbers are automatically handled
-for op in (:zeros, :ones)
-    @eval begin
-        function DeviceAgnostic.$(op)(
-            ::ReactantRNG, ::Type{T}, dims::Integer...
-        ) where {T<:Number}
-            if Reactant.within_compile()
-                return TracedUtils.promote_to(
-                    TracedRArray{T,length(dims)}, $(op)(T, dims...)
-                )
-            else
-                return Reactant.to_rarray($(op)(T, dims...))
-            end
-        end
+@reactant_overlay function DeviceAgnostic.get_backend_array(
+    ::AbstractRNG, ::Type{T}, dims::Integer...
+) where {T}
+    return @opcall fill(T(0), dims)
+end
 
-        @reactant_overlay @noinline function DeviceAgnostic.$(op)(
-            ::AbstractRNG, ::Type{T}, dims::Integer...
-        ) where {T}
-            return TracedUtils.promote_to(TracedRArray{T,length(dims)}, $(op)(T, dims...))
-        end
-    end
+function DeviceAgnostic.get_backend_array(
+    rng::ReactantRNG, ::Type{T}, dims::Integer...
+) where {T}
+    return similar(rng.seed, T, dims)
 end
 
 end
