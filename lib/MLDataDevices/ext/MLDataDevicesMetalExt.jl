@@ -29,18 +29,27 @@ function Internal.unsafe_free_internal!(::Type{MetalDevice}, x::AbstractArray)
 end
 
 # Device Transfer
-function Adapt.adapt_storage(dev::MetalDevice, x::AbstractArray)
+function Adapt.adapt_storage(::MetalDevice{Missing}, x::AbstractArray)
     MLDataDevices.get_device_type(x) <: MetalDevice && return x
-    if dev.eltype === missing
-        # Use Metal.mtl which does automatic eltype conversion (FP64 -> FP32)
-        return Metal.mtl(x)
-    elseif dev.eltype === nothing
-        # Preserve the original eltype
-        return MtlArray(x)
+    return Metal.mtl(x)  # Uses Metal default conversion (FP64 -> FP32)
+end
+
+function Adapt.adapt_storage(::MetalDevice{Nothing}, x::AbstractArray)
+    MLDataDevices.get_device_type(x) <: MetalDevice && return x
+    return MtlArray(x)  # Preserves eltype
+end
+
+function Adapt.adapt_storage(::MetalDevice{T}, x::AbstractArray) where {T<:AbstractFloat}
+    MLDataDevices.get_device_type(x) <: MetalDevice && eltype(x) == T && return x
+    
+    # Convert eltype first, then move to GPU
+    ET = eltype(x)
+    if ET <: AbstractFloat
+        return MtlArray{T}(x)
+    elseif ET <: Complex{<:AbstractFloat}
+        return MtlArray{Complex{T}}(x)
     else
-        # Convert to specified eltype first, then move to GPU
-        x_converted = MLDataDevices._maybe_convert_eltype(dev, x)
-        return MtlArray(x_converted)
+        return MtlArray(x)  # Don't convert non-floating point types
     end
 end
 

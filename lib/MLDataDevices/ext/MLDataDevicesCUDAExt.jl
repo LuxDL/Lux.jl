@@ -6,7 +6,7 @@ using CUDA.CUSPARSE: AbstractCuSparseMatrix, AbstractCuSparseVector, AbstractCuS
 using MLDataDevices: MLDataDevices, Internal, CUDADevice, CPUDevice
 using Random: Random
 
-Internal.with_device(::Type{CUDADevice}, ::Nothing) = CUDADevice()
+Internal.with_device(::Type{CUDADevice}, ::Nothing) = CUDADevice(nothing)
 function Internal.with_device(::Type{CUDADevice}, id::Integer)
     id > length(CUDA.devices()) && throw(
         ArgumentError("id = $id > length(CUDA.devices()) = $(length(CUDA.devices()))")
@@ -58,36 +58,50 @@ function Internal.unsafe_free_internal!(::Type{CUDADevice}, x::AbstractArray)
 end
 
 # Device Transfer
-function Adapt.adapt_storage(dev::CUDADevice{Nothing}, x::AbstractArray)
+function Adapt.adapt_storage(::CUDADevice{D,Missing}, x::AbstractArray) where {D}
     MLDataDevices.get_device_type(x) <: CUDADevice && return x
-    if dev.eltype === missing
-        # Use CUDA.cu which does automatic eltype conversion (FP64 -> FP32)
-        return CUDA.cu(x)
-    elseif dev.eltype === nothing
-        # Preserve the original eltype
-        return CuArray(x)
+    return CUDA.cu(x)  # Uses CUDA default conversion (FP64 -> FP32)
+end
+
+function Adapt.adapt_storage(::CUDADevice{D,Nothing}, x::AbstractArray) where {D}
+    MLDataDevices.get_device_type(x) <: CUDADevice && return x
+    return CuArray(x)  # Preserves eltype
+end
+
+function Adapt.adapt_storage(::CUDADevice{D,T}, x::AbstractArray) where {D,T<:AbstractFloat}
+    MLDataDevices.get_device_type(x) <: CUDADevice && eltype(x) == T && return x
+    
+    # Convert eltype first, then move to GPU
+    ET = eltype(x)
+    if ET <: AbstractFloat
+        return CuArray{T}(x)
+    elseif ET <: Complex{<:AbstractFloat}
+        return CuArray{Complex{T}}(x)
     else
-        # Convert to specified eltype first, then move to GPU
-        x_converted = MLDataDevices._maybe_convert_eltype(dev, x)
-        return CuArray(x_converted)
+        return CuArray(x)  # Don't convert non-floating point types
     end
 end
 
-function Adapt.adapt_storage(to::CUDADevice, x::AbstractArray)
+function Adapt.adapt_storage(to::CUDADevice{D,E}, x::AbstractArray) where {D,E}
     old_dev = CUDA.device()  # remember the current device
     dev = MLDataDevices.get_device(x)
     if !(dev isa CUDADevice)
         CUDA.device!(to.device)
-        if to.eltype === missing
-            # Use CUDA.cu which does automatic eltype conversion (FP64 -> FP32)
-            x_new = CUDA.cu(x)
-        elseif to.eltype === nothing
-            # Preserve the original eltype
-            x_new = CuArray(x)
+        x_new = if E === Missing
+            CUDA.cu(x)  # Uses CUDA default conversion
+        elseif E === Nothing
+            CuArray(x)  # Preserves eltype
+        elseif E <: AbstractFloat
+            ET = eltype(x)
+            if ET <: AbstractFloat
+                CuArray{E}(x)
+            elseif ET <: Complex{<:AbstractFloat}
+                CuArray{Complex{E}}(x)
+            else
+                CuArray(x)  # Don't convert non-floating point types
+            end
         else
-            # Convert to specified eltype first, then move to GPU
-            x_converted = MLDataDevices._maybe_convert_eltype(to, x)
-            x_new = CuArray(x_converted)
+            CuArray(x)
         end
         CUDA.device!(old_dev)
         return x_new

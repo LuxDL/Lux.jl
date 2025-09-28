@@ -1,37 +1,99 @@
-@kwdef struct CPUDevice{E} <: AbstractCPUDevice
-    eltype::E = missing
+struct CPUDevice{T} <: AbstractCPUDevice end
+CPUDevice() = CPUDevice{Missing}()
+
+struct CUDADevice{D,T} <: AbstractGPUDevice
+    device::D
+end
+CUDADevice() = CUDADevice{Nothing,Missing}(nothing)
+CUDADevice(device) = CUDADevice{typeof(device),Missing}(device)
+
+struct AMDGPUDevice{D,T} <: AbstractGPUDevice
+    device::D
+end
+AMDGPUDevice() = AMDGPUDevice{Nothing,Missing}(nothing)
+AMDGPUDevice(device) = AMDGPUDevice{typeof(device),Missing}(device)
+
+struct MetalDevice{T} <: AbstractGPUDevice end
+MetalDevice() = MetalDevice{Missing}()
+
+struct oneAPIDevice{T} <: AbstractGPUDevice end
+oneAPIDevice() = oneAPIDevice{Missing}()
+
+struct ReactantDevice{C,D,S,T} <: AbstractAcceleratorDevice
+    client::C
+    device::D
+    sharding::S
+end
+ReactantDevice() = ReactantDevice{Missing,Missing,Missing,Missing}(missing, missing, missing)
+ReactantDevice(client, device, sharding) = ReactantDevice{typeof(client),typeof(device),typeof(sharding),Missing}(client, device, sharding)
+
+# Helper functions to get the eltype from device types
+get_eltype(::CPUDevice{T}) where {T} = T
+get_eltype(::CUDADevice{D,T}) where {D,T} = T
+get_eltype(::AMDGPUDevice{D,T}) where {D,T} = T
+get_eltype(::MetalDevice{T}) where {T} = T
+get_eltype(::oneAPIDevice{T}) where {T} = T
+get_eltype(::ReactantDevice{C,D,S,T}) where {C,D,S,T} = T
+
+# Helper functions to create devices with specific eltypes
+function with_eltype(::CPUDevice, eltype_target)
+    if eltype_target === nothing
+        return CPUDevice{Nothing}()
+    elseif eltype_target isa Type{<:AbstractFloat}
+        return CPUDevice{eltype_target}()
+    else
+        throw(ArgumentError("eltype must be nothing or a floating-point type"))
+    end
 end
 
-@kwdef struct CUDADevice{D,E} <: AbstractGPUDevice
-    device::D = nothing
-    eltype::E = missing
+function with_eltype(dev::CUDADevice{D}, eltype_target) where {D}
+    if eltype_target === nothing
+        return CUDADevice{D,Nothing}(dev.device)
+    elseif eltype_target isa Type{<:AbstractFloat}
+        return CUDADevice{D,eltype_target}(dev.device)
+    else
+        throw(ArgumentError("eltype must be nothing or a floating-point type"))
+    end
 end
 
-@kwdef struct AMDGPUDevice{D,E} <: AbstractGPUDevice
-    device::D = nothing
-    eltype::E = missing
+function with_eltype(dev::AMDGPUDevice{D}, eltype_target) where {D}
+    if eltype_target === nothing
+        return AMDGPUDevice{D,Nothing}(dev.device)
+    elseif eltype_target isa Type{<:AbstractFloat}
+        return AMDGPUDevice{D,eltype_target}(dev.device)
+    else
+        throw(ArgumentError("eltype must be nothing or a floating-point type"))
+    end
 end
 
-@kwdef struct MetalDevice{E} <: AbstractGPUDevice
-    eltype::E = missing
+function with_eltype(::MetalDevice, eltype_target)
+    if eltype_target === nothing
+        return MetalDevice{Nothing}()
+    elseif eltype_target isa Type{<:AbstractFloat}
+        return MetalDevice{eltype_target}()
+    else
+        throw(ArgumentError("eltype must be nothing or a floating-point type"))
+    end
 end
 
-@kwdef struct oneAPIDevice{E} <: AbstractGPUDevice
-    eltype::E = missing
+function with_eltype(::oneAPIDevice, eltype_target)
+    if eltype_target === nothing
+        return oneAPIDevice{Nothing}()
+    elseif eltype_target isa Type{<:AbstractFloat}
+        return oneAPIDevice{eltype_target}()
+    else
+        throw(ArgumentError("eltype must be nothing or a floating-point type"))
+    end
 end
 
-@kwdef struct ReactantDevice{C,D,S,E} <: AbstractAcceleratorDevice
-    client::C = missing
-    device::D = missing
-    sharding::S = missing
-    eltype::E = missing
-end
-
-# Backward compatibility constructors
-CUDADevice(device) = CUDADevice(; device, eltype=missing)
-AMDGPUDevice(device) = AMDGPUDevice(; device, eltype=missing)
-function ReactantDevice(client, device, sharding)
-    return ReactantDevice(; client, device, sharding, eltype=missing)
+function with_eltype(dev::ReactantDevice{C,D,S}, eltype_target) where {C,D,S}
+    if eltype_target === nothing
+        return ReactantDevice{C,D,S,Nothing}(dev.client, dev.device, dev.sharding)
+    elseif eltype_target isa Type{<:AbstractFloat}
+        return ReactantDevice{C,D,S,eltype_target}(dev.client, dev.device, dev.sharding) 
+    else
+        throw(ArgumentError("eltype must be nothing or a floating-point type"))
+    end
 end
 
 function Base.:(==)(x::ReactantDevice, y::ReactantDevice)
@@ -40,11 +102,6 @@ function Base.:(==)(x::ReactantDevice, y::ReactantDevice)
     end
 
     if x.device !== missing && y.device !== missing && x.device.device != y.device.device
-        return false
-    end
-
-    # Compare eltype fields
-    if x.eltype !== y.eltype
         return false
     end
 
@@ -110,6 +167,98 @@ Return a tuple of supported GPU backends.
 supported_gpu_backends() = map(Internal.get_device_name, GPU_DEVICES)
 
 """
+    gpu_device(device_id::Union{Nothing, Integer}=nothing;
+        force::Bool=false) -> AbstractDevice
+
+Selects GPU device based on the following criteria:
+
+ 1. If `gpu_backend` preference is set and the backend is functional on the system, then
+    that device is selected.
+ 2. Otherwise, an automatic selection algorithm is used. We go over possible device
+    backends in the order specified by `supported_gpu_backends()` and select the first
+    functional backend.
+ 3. If no GPU device is functional and  `force` is `false`, then `cpu_device()` is
+    invoked.
+ 4. If nothing works, an error is thrown.
+
+## Arguments
+
+  - `device_id::Union{Nothing, Integer}`: The device id to select. If `nothing`, then we return
+    the last selected device or if none was selected then we run the autoselection and
+    choose the current device using `CUDA.device()` or `AMDGPU.device()` or similar. If
+    `Integer`, then we select the device with the given id. Note that this is `1`-indexed, in
+    contrast to the `0`-indexed `CUDA.jl`. For example, `id = 4` corresponds to
+    `CUDA.device!(3)`.
+
+!!! warning
+
+    `device_id` is only applicable for `CUDA` and `AMDGPU` backends. For `Metal`, `oneAPI`
+    and `CPU` backends, `device_id` is ignored and a warning is printed.
+
+!!! warning
+
+    `gpu_device` won't select a CUDA device unless both CUDA.jl and cuDNN.jl are loaded.
+    This is to ensure that deep learning operations work correctly.
+    Nonetheless, if cuDNN is not loaded you can still manually create a
+    `CUDADevice` object and use it (e.g. `dev = CUDADevice()`).
+
+## Keyword Arguments
+
+  - `force::Bool`: If `true`, then an error is thrown if no functional GPU
+    device is found.
+"""
+function gpu_device(
+    device_id::Union{Nothing,<:Integer}=nothing;
+    force::Bool=false,
+    force_gpu_usage::Union{Missing,Bool}=missing,
+    eltype=missing,
+)::AbstractDevice
+    if force_gpu_usage !== missing
+        Base.depwarn(
+            "`force_gpu_usage` is deprecated and will be removed in v2. Use \
+             `force` instead.",
+            :gpu_device,
+        )
+        force = force_gpu_usage
+    end
+
+    device_id == 0 && throw(ArgumentError("`device_id` is 1-indexed."))
+
+    if GPU_DEVICE[] !== nothing
+        dev = GPU_DEVICE[]
+        if device_id === nothing
+            force &&
+                !(dev isa AbstractGPUDevice) &&
+                throw(Internal.DeviceSelectionException("GPU"))
+            # Apply eltype if specified
+            if eltype !== missing
+                return with_eltype(dev, eltype)
+            end
+            return dev
+        else
+            selected_device_id = Internal.get_device_id(dev)
+            if selected_device_id !== nothing && selected_device_id == device_id
+                # Apply eltype if specified
+                if eltype !== missing
+                    return with_eltype(dev, eltype)
+                end
+                return dev
+            end
+        end
+    end
+
+    device_type = Internal.get_gpu_device(; force)
+    device = Internal.with_device(device_type, device_id)
+    GPU_DEVICE[] = device
+
+    # Apply eltype if specified
+    if eltype !== missing
+        return with_eltype(device, eltype)
+    end
+    return device
+end
+
+"""
     gpu_backend!() = gpu_backend!("")
     gpu_backend!(backend) = gpu_backend!(string(backend))
     gpu_backend!(backend::AbstractGPUDevice)
@@ -156,6 +305,28 @@ function gpu_backend!(backend::String)
 end
 
 """
+    cpu_device(; eltype=missing) -> CPUDevice
+
+Return a `CPUDevice` object which can be used to transfer data to CPU.
+
+The `eltype` parameter controls element type conversion:
+- `missing` (default): Preserves the original element type
+- `nothing`: Preserves the original element type  
+- `Type{<:AbstractFloat}`: Converts floating-point arrays to the specified type
+"""
+function cpu_device(; eltype=missing)
+    if eltype === missing
+        return CPUDevice{Missing}()
+    elseif eltype === nothing
+        return CPUDevice{Nothing}()
+    elseif eltype isa Type{<:AbstractFloat}
+        return CPUDevice{eltype}()
+    else
+        throw(ArgumentError("eltype must be missing, nothing, or a floating-point type"))
+    end
+end
+
+"""
     reactant_device(;
         force::Bool=false, client=missing, device=missing, sharding=missing, eltype=missing
     ) -> Union{ReactantDevice, CPUDevice}
@@ -170,10 +341,10 @@ specified, then the default client and index are used.
 `Reactant.Sharding.AbstractSharding` is specified, then we use it to shard all abstract
 arrays. Alternatively, pass in a `IdDict` to specify the sharding for specific leaves.
 
-`eltype` is used to specify the element type for arrays transferred to this device. If
-`missing`, the original element type is preserved. If `nothing`, the original element type
-is preserved (same as `missing`). If set to a specific floating point type like `Float32`,
-all floating point arrays will be converted to that type during device transfer.
+The `eltype` parameter controls element type conversion:
+- `missing` (default): Preserves the original element type
+- `nothing`: Preserves the original element type  
+- `Type{<:AbstractFloat}`: Converts floating-point arrays to the specified type
 """
 function reactant_device(;
     force::Bool=false, client=missing, device=missing, sharding=missing, eltype=missing
@@ -181,126 +352,25 @@ function reactant_device(;
     msg = "`ReactantDevice` is not loaded or not functional. Load `Reactant.jl` before \
            calling this function. Defaulting to CPU."
     if loaded(ReactantDevice)
-        functional(ReactantDevice) &&
-            return ReactantDevice(; client, device, sharding, eltype)
+        if functional(ReactantDevice)
+            if eltype === missing
+                return ReactantDevice{typeof(client),typeof(device),typeof(sharding),Missing}(client, device, sharding)
+            elseif eltype === nothing
+                return ReactantDevice{typeof(client),typeof(device),typeof(sharding),Nothing}(client, device, sharding)
+            elseif eltype isa Type{<:AbstractFloat}
+                return ReactantDevice{typeof(client),typeof(device),typeof(sharding),eltype}(client, device, sharding)
+            else
+                throw(ArgumentError("eltype must be missing, nothing, or a floating-point type"))
+            end
+        end
         msg = "`ReactantDevice` is loaded but not functional. Defaulting to CPU."
     end
     force && throw(Internal.DeviceSelectionException("Reactant"))
     @warn msg maxlog = 1
-    return cpu_device()
+    return cpu_device(; eltype)
 end
 
 Base.@deprecate xla_device(; kwargs...) reactant_device(; kwargs...)
-
-# Convenience constructors for common eltype patterns
-"""
-    gpu_device(device_id::Union{Nothing, Integer}=nothing;
-        force::Bool=false, eltype=missing) -> AbstractDevice
-
-Similar to the existing `gpu_device` but with additional `eltype` parameter.
-
-`eltype` controls the element type conversion behavior:
-- `missing` (default): Uses backend-specific default behavior (GPU backends typically convert FP64 → FP32)  
-- `nothing`: Preserves the original element type
-- `Type{<:AbstractFloat}`: Converts all floating point arrays to the specified type
-
-## Examples
-```julia
-# Default behavior (FP64 → FP32 on GPUs)
-dev = gpu_device()
-
-# Preserve element types
-dev = gpu_device(eltype=nothing)  
-
-# Force FP64 on GPU (if supported)
-dev = gpu_device(eltype=Float64)
-
-# Use FP16 for memory efficiency
-dev = gpu_device(eltype=Float16)
-```
-"""
-function gpu_device(
-    device_id::Union{Nothing,<:Integer}=nothing;
-    force::Bool=false,
-    force_gpu_usage::Union{Missing,Bool}=missing,
-    eltype=missing,
-)::AbstractDevice
-    if force_gpu_usage !== missing
-        Base.depwarn(
-            "`force_gpu_usage` is deprecated and will be removed in v2. Use \
-             `force` instead.",
-            :gpu_device,
-        )
-        force = force_gpu_usage
-    end
-
-    device_id == 0 && throw(ArgumentError("`device_id` is 1-indexed."))
-
-    # Get the base device without eltype
-    base_device = _gpu_device_internal(device_id; force)
-
-    # Return device with specified eltype
-    return _with_eltype(base_device, eltype)
-end
-
-# Internal function to get base device (original gpu_device logic)
-function _gpu_device_internal(
-    device_id::Union{Nothing,<:Integer}=nothing; force::Bool=false
-)::AbstractDevice
-    if GPU_DEVICE[] !== nothing
-        dev = GPU_DEVICE[]
-        if device_id === nothing
-            force &&
-                !(dev isa AbstractGPUDevice) &&
-                throw(Internal.DeviceSelectionException("GPU"))
-            return dev
-        else
-            selected_device_id = Internal.get_device_id(dev)
-            selected_device_id !== nothing && selected_device_id == device_id && return dev
-        end
-    end
-
-    device_type = Internal.get_gpu_device(; force)
-    device = Internal.with_device(device_type, device_id)
-    GPU_DEVICE[] = device
-
-    return device
-end
-
-# Helper to create device with specific eltype
-function _with_eltype(device::AbstractDevice, eltype)
-    eltype === missing && return device
-
-    if device isa CPUDevice
-        return CPUDevice(; eltype)
-    elseif device isa CUDADevice
-        return CUDADevice(; device=device.device, eltype)
-    elseif device isa AMDGPUDevice
-        return AMDGPUDevice(; device=device.device, eltype)
-    elseif device isa MetalDevice
-        return MetalDevice(; eltype)
-    elseif device isa oneAPIDevice
-        return oneAPIDevice(; eltype)
-    elseif device isa ReactantDevice
-        return ReactantDevice(;
-            client=device.client, device=device.device, sharding=device.sharding, eltype
-        )
-    else
-        throw(ArgumentError("Unknown device type: $(typeof(device))"))
-    end
-end
-
-"""
-    cpu_device(; eltype=missing) -> CPUDevice
-
-Return a `CPUDevice` object which can be used to transfer data to CPU.
-
-`eltype` controls the element type conversion behavior:
-- `missing` (default): Preserves the original element type
-- `nothing`: Preserves the original element type (same as `missing`)
-- `Type{<:AbstractFloat}`: Converts all floating point arrays to the specified type
-"""
-cpu_device(; eltype=missing) = CPUDevice(; eltype)
 
 """
     default_device_rng(::AbstractDevice)
@@ -444,44 +514,33 @@ for op in (:get_device, :get_device_type)
 end
 
 # Adapt Interface
-function Adapt.adapt_storage(dev::CPUDevice, x::AbstractArray)
-    get_device_type(x) <: CPUDevice && dev.eltype === missing && return x
-    x_cpu = Array(x)
-    return _maybe_convert_eltype(dev, x_cpu)
+function Adapt.adapt_storage(dev::CPUDevice{Missing}, x::AbstractArray)
+    get_device_type(x) <: CPUDevice && return x
+    return Array(x)
 end
+
+function Adapt.adapt_storage(dev::CPUDevice{Nothing}, x::AbstractArray)
+    get_device_type(x) <: CPUDevice && return x
+    return Array(x)  # Preserve eltype
+end
+
+function Adapt.adapt_storage(dev::CPUDevice{T}, x::AbstractArray) where {T<:AbstractFloat}
+    get_device_type(x) <: CPUDevice && eltype(x) == T && return x
+    x_cpu = Array(x)
+    
+    # Only convert floating-point and complex floating-point types
+    ET = eltype(x_cpu)
+    if ET <: AbstractFloat
+        return Array{T}(x_cpu)
+    elseif ET <: Complex{<:AbstractFloat}
+        return Array{Complex{T}}(x_cpu)
+    else
+        return x_cpu  # Don't convert non-floating point types
+    end
+end
+
 Adapt.adapt_storage(to::AbstractDevice, ::Random.TaskLocalRNG) = default_device_rng(to)
 Adapt.adapt_storage(::AbstractDevice, rng::AbstractRNG) = rng
-
-# Helper function for eltype conversion
-function _maybe_convert_eltype(dev::AbstractDevice, x::AbstractArray)
-    eltype_target = dev.eltype
-
-    # If eltype is missing or nothing, preserve the original type
-    if eltype_target === missing || eltype_target === nothing
-        return x
-    end
-
-    # Only convert floating-point and complex floating-point types
-    T = eltype(x)
-    if T <: AbstractFloat
-        eltype_target <: AbstractFloat || throw(
-            ArgumentError(
-                "Can only convert floating point arrays to floating point eltypes"
-            ),
-        )
-        return convert(AbstractArray{eltype_target}, x)
-    elseif T <: Complex{<:AbstractFloat}
-        eltype_target <: AbstractFloat || throw(
-            ArgumentError(
-                "Can only convert complex floating point arrays to floating point eltypes",
-            ),
-        )
-        return convert(AbstractArray{Complex{eltype_target}}, x)
-    else
-        # For non-floating point types, don't convert
-        return x
-    end
-end
 
 """
     isleaf(x) -> Bool

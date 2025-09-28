@@ -1,7 +1,7 @@
 module MLDataDevicesAMDGPUExt
 
 using Adapt: Adapt
-using AMDGPU: AMDGPU, ROCArray
+using AMDGPU: AMDGPU
 using MLDataDevices: MLDataDevices, Internal, AMDGPUDevice, CPUDevice, reset_gpu_device!
 using Random: Random
 
@@ -27,7 +27,7 @@ function MLDataDevices.functional(::Union{AMDGPUDevice,<:Type{AMDGPUDevice}})::B
     return USE_AMD_GPU[]
 end
 
-Internal.with_device(::Type{AMDGPUDevice}, ::Nothing) = AMDGPUDevice()
+Internal.with_device(::Type{AMDGPUDevice}, ::Nothing) = AMDGPUDevice(nothing)
 function Internal.with_device(::Type{AMDGPUDevice}, id::Integer)
     id > length(AMDGPU.devices()) && throw(
         ArgumentError("id = $id > length(AMDGPU.devices()) = $(length(AMDGPU.devices()))"),
@@ -78,36 +78,50 @@ function Internal.unsafe_free_internal!(::Type{AMDGPUDevice}, x::AbstractArray)
 end
 
 # Device Transfer
-function Adapt.adapt_storage(dev::AMDGPUDevice{Nothing}, x::AbstractArray)
+function Adapt.adapt_storage(::AMDGPUDevice{D,Missing}, x::AbstractArray) where {D}
     MLDataDevices.get_device_type(x) <: AMDGPUDevice && return x
-    if dev.eltype === missing
-        # Use AMDGPU.roc which does automatic eltype conversion (FP64 -> FP32)
-        return AMDGPU.roc(x)
-    elseif dev.eltype === nothing
-        # Preserve the original eltype
-        return ROCArray(x)
+    return AMDGPU.roc(x)  # Uses AMDGPU default conversion (FP64 -> FP32)
+end
+
+function Adapt.adapt_storage(::AMDGPUDevice{D,Nothing}, x::AbstractArray) where {D}
+    MLDataDevices.get_device_type(x) <: AMDGPUDevice && return x
+    return ROCArray(x)  # Preserves eltype
+end
+
+function Adapt.adapt_storage(::AMDGPUDevice{D,T}, x::AbstractArray) where {D,T<:AbstractFloat}
+    MLDataDevices.get_device_type(x) <: AMDGPUDevice && eltype(x) == T && return x
+    
+    # Convert eltype first, then move to GPU
+    ET = eltype(x)
+    if ET <: AbstractFloat
+        return ROCArray{T}(x)
+    elseif ET <: Complex{<:AbstractFloat}
+        return ROCArray{Complex{T}}(x)
     else
-        # Convert to specified eltype first, then move to GPU
-        x_converted = MLDataDevices._maybe_convert_eltype(dev, x)
-        return ROCArray(x_converted)
+        return ROCArray(x)  # Don't convert non-floating point types
     end
 end
 
-function Adapt.adapt_storage(to::AMDGPUDevice, x::AbstractArray)
+function Adapt.adapt_storage(to::AMDGPUDevice{D,E}, x::AbstractArray) where {D,E}
     old_dev = AMDGPU.device()  # remember the current device
     dev = MLDataDevices.get_device(x)
     if !(dev isa AMDGPUDevice)
         AMDGPU.device!(to.device)
-        if to.eltype === missing
-            # Use AMDGPU.roc which does automatic eltype conversion (FP64 -> FP32)
-            x_new = AMDGPU.roc(x)
-        elseif to.eltype === nothing
-            # Preserve the original eltype
-            x_new = ROCArray(x)
+        x_new = if E === Missing
+            AMDGPU.roc(x)  # Uses AMDGPU default conversion
+        elseif E === Nothing
+            ROCArray(x)  # Preserves eltype
+        elseif E <: AbstractFloat
+            ET = eltype(x)
+            if ET <: AbstractFloat
+                ROCArray{E}(x)
+            elseif ET <: Complex{<:AbstractFloat}
+                ROCArray{Complex{E}}(x)
+            else
+                ROCArray(x)  # Don't convert non-floating point types
+            end
         else
-            # Convert to specified eltype first, then move to GPU
-            x_converted = MLDataDevices._maybe_convert_eltype(to, x)
-            x_new = ROCArray(x_converted)
+            ROCArray(x)
         end
         AMDGPU.device!(old_dev)
         return x_new

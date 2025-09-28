@@ -90,15 +90,30 @@ Internal.unsafe_free_internal!(::Type{ReactantDevice}, x::AbstractArray) = nothi
 
 # Device Transfer
 Profiler.@annotate "Device Transfer (Reactant)" function Adapt.adapt_storage(
-    dev::ReactantDevice, x::AbstractArray
-)
-    if dev.eltype === missing || dev.eltype === nothing
-        # Preserve original eltype
-        return ConcreteRArray(x; device_to_kwargs(dev, x)...)
-    else
-        # Convert to specified eltype first, then move to device
-        x_converted = MLDataDevices._maybe_convert_eltype(dev, x)
+    dev::ReactantDevice{C,D,S,Missing}, x::AbstractArray
+) where {C,D,S}
+    return ConcreteRArray(x; device_to_kwargs(dev, x)...)  # Preserves eltype
+end
+
+Profiler.@annotate "Device Transfer (Reactant)" function Adapt.adapt_storage(
+    dev::ReactantDevice{C,D,S,Nothing}, x::AbstractArray
+) where {C,D,S}
+    return ConcreteRArray(x; device_to_kwargs(dev, x)...)  # Preserves eltype
+end
+
+Profiler.@annotate "Device Transfer (Reactant)" function Adapt.adapt_storage(
+    dev::ReactantDevice{C,D,S,T}, x::AbstractArray
+) where {C,D,S,T<:AbstractFloat}
+    # Convert eltype first, then move to device
+    ET = eltype(x)
+    if ET <: AbstractFloat
+        x_converted = Array{T}(x)
         return ConcreteRArray(x_converted; device_to_kwargs(dev, x_converted)...)
+    elseif ET <: Complex{<:AbstractFloat}
+        x_converted = Array{Complex{T}}(x)
+        return ConcreteRArray(x_converted; device_to_kwargs(dev, x_converted)...)
+    else
+        return ConcreteRArray(x; device_to_kwargs(dev, x)...)  # Don't convert non-floating point types
     end
 end
 
