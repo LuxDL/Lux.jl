@@ -1,19 +1,36 @@
-struct CPUDevice <: AbstractCPUDevice end
-
-@kwdef struct CUDADevice{D} <: AbstractGPUDevice
-    device::D = nothing
+@kwdef struct CPUDevice{E} <: AbstractCPUDevice
+    eltype::E = missing
 end
-@kwdef struct AMDGPUDevice{D} <: AbstractGPUDevice
-    device::D = nothing
-end
-struct MetalDevice <: AbstractGPUDevice end
-struct oneAPIDevice <: AbstractGPUDevice end
 
-@kwdef struct ReactantDevice{C,D,S} <: AbstractAcceleratorDevice
+@kwdef struct CUDADevice{D,E} <: AbstractGPUDevice
+    device::D = nothing
+    eltype::E = missing
+end
+
+@kwdef struct AMDGPUDevice{D,E} <: AbstractGPUDevice
+    device::D = nothing
+    eltype::E = missing
+end
+
+@kwdef struct MetalDevice{E} <: AbstractGPUDevice
+    eltype::E = missing
+end
+
+@kwdef struct oneAPIDevice{E} <: AbstractGPUDevice
+    eltype::E = missing
+end
+
+@kwdef struct ReactantDevice{C,D,S,E} <: AbstractAcceleratorDevice
     client::C = missing
     device::D = missing
     sharding::S = missing
+    eltype::E = missing
 end
+
+# Backward compatibility constructors
+CUDADevice(device) = CUDADevice(; device, eltype=missing)
+AMDGPUDevice(device) = AMDGPUDevice(; device, eltype=missing)
+ReactantDevice(client, device, sharding) = ReactantDevice(; client, device, sharding, eltype=missing)
 
 function Base.:(==)(x::ReactantDevice, y::ReactantDevice)
     if x.client !== missing && y.client !== missing && x.client.client != y.client.client
@@ -21,6 +38,11 @@ function Base.:(==)(x::ReactantDevice, y::ReactantDevice)
     end
 
     if x.device !== missing && y.device !== missing && x.device.device != y.device.device
+        return false
+    end
+
+    # Compare eltype fields
+    if x.eltype !== y.eltype
         return false
     end
 
@@ -217,7 +239,7 @@ cpu_device() = CPUDevice()
 
 """
     reactant_device(;
-        force::Bool=false, client=missing, device=missing, sharding=missing
+        force::Bool=false, client=missing, device=missing, sharding=missing, eltype=missing
     ) -> Union{ReactantDevice, CPUDevice}
 
 Return a `ReactantDevice` object if functional. Otherwise, throw an error if `force` is
@@ -229,14 +251,19 @@ specified, then the default client and index are used.
 `sharding` is used to specify the sharding strategy. If a
 `Reactant.Sharding.AbstractSharding` is specified, then we use it to shard all abstract
 arrays. Alternatively, pass in a `IdDict` to specify the sharding for specific leaves.
+
+`eltype` is used to specify the element type for arrays transferred to this device. If
+`missing`, the original element type is preserved. If `nothing`, the original element type
+is preserved (same as `missing`). If set to a specific floating point type like `Float32`,
+all floating point arrays will be converted to that type during device transfer.
 """
 function reactant_device(;
-    force::Bool=false, client=missing, device=missing, sharding=missing
+    force::Bool=false, client=missing, device=missing, sharding=missing, eltype=missing
 )
     msg = "`ReactantDevice` is not loaded or not functional. Load `Reactant.jl` before \
            calling this function. Defaulting to CPU."
     if loaded(ReactantDevice)
-        functional(ReactantDevice) && return ReactantDevice(client, device, sharding)
+        functional(ReactantDevice) && return ReactantDevice(; client, device, sharding, eltype)
         msg = "`ReactantDevice` is loaded but not functional. Defaulting to CPU."
     end
     force && throw(Internal.DeviceSelectionException("Reactant"))
@@ -388,12 +415,36 @@ for op in (:get_device, :get_device_type)
 end
 
 # Adapt Interface
-function Adapt.adapt_storage(::CPUDevice, x::AbstractArray)
-    get_device_type(x) <: CPUDevice && return x
-    return Array(x)
+function Adapt.adapt_storage(dev::CPUDevice, x::AbstractArray)
+    get_device_type(x) <: CPUDevice && dev.eltype === missing && return x
+    x_cpu = Array(x)
+    return _maybe_convert_eltype(dev, x_cpu)
 end
 Adapt.adapt_storage(to::AbstractDevice, ::Random.TaskLocalRNG) = default_device_rng(to)
 Adapt.adapt_storage(::AbstractDevice, rng::AbstractRNG) = rng
+
+# Helper function for eltype conversion
+function _maybe_convert_eltype(dev::AbstractDevice, x::AbstractArray)
+    eltype_target = dev.eltype
+    
+    # If eltype is missing or nothing, preserve the original type
+    if eltype_target === missing || eltype_target === nothing
+        return x
+    end
+    
+    # Only convert floating-point and complex floating-point types
+    T = eltype(x)
+    if T <: AbstractFloat
+        eltype_target <: AbstractFloat || throw(ArgumentError("Can only convert floating point arrays to floating point eltypes"))
+        return convert(AbstractArray{eltype_target}, x)
+    elseif T <: Complex{<:AbstractFloat}
+        eltype_target <: AbstractFloat || throw(ArgumentError("Can only convert complex floating point arrays to floating point eltypes"))
+        return convert(AbstractArray{Complex{eltype_target}}, x)
+    else
+        # For non-floating point types, don't convert
+        return x
+    end
+end
 
 """
     isleaf(x) -> Bool

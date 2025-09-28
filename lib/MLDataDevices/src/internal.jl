@@ -43,8 +43,8 @@ get_triggerpkg_name(::ReactantDevice) = "Reactant"
 
 for T in (
     CPUDevice,
-    CUDADevice{Nothing},
-    AMDGPUDevice{Nothing},
+    CUDADevice{Nothing,Missing},
+    AMDGPUDevice{Nothing,Missing},
     MetalDevice,
     oneAPIDevice,
     ReactantDevice,

@@ -92,7 +92,14 @@ Internal.unsafe_free_internal!(::Type{ReactantDevice}, x::AbstractArray) = nothi
 Profiler.@annotate "Device Transfer (Reactant)" function Adapt.adapt_storage(
     dev::ReactantDevice, x::AbstractArray
 )
-    return ConcreteRArray(x; device_to_kwargs(dev, x)...)
+    if dev.eltype === missing || dev.eltype === nothing
+        # Preserve original eltype
+        return ConcreteRArray(x; device_to_kwargs(dev, x)...)
+    else
+        # Convert to specified eltype first, then move to device
+        x_converted = MLDataDevices._maybe_convert_eltype(dev, x)
+        return ConcreteRArray(x_converted; device_to_kwargs(dev, x_converted)...)
+    end
 end
 
 function Adapt.adapt_storage(

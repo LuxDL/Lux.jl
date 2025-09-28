@@ -1,7 +1,7 @@
 module MLDataDevicesAMDGPUExt
 
 using Adapt: Adapt
-using AMDGPU: AMDGPU
+using AMDGPU: AMDGPU, ROCArray
 using MLDataDevices: MLDataDevices, Internal, AMDGPUDevice, CPUDevice, reset_gpu_device!
 using Random: Random
 
@@ -27,7 +27,7 @@ function MLDataDevices.functional(::Union{AMDGPUDevice,<:Type{AMDGPUDevice}})::B
     return USE_AMD_GPU[]
 end
 
-Internal.with_device(::Type{AMDGPUDevice}, ::Nothing) = AMDGPUDevice(nothing)
+Internal.with_device(::Type{AMDGPUDevice}, ::Nothing) = AMDGPUDevice()
 function Internal.with_device(::Type{AMDGPUDevice}, id::Integer)
     id > length(AMDGPU.devices()) && throw(
         ArgumentError("id = $id > length(AMDGPU.devices()) = $(length(AMDGPU.devices()))"),
@@ -78,9 +78,19 @@ function Internal.unsafe_free_internal!(::Type{AMDGPUDevice}, x::AbstractArray)
 end
 
 # Device Transfer
-function Adapt.adapt_storage(::AMDGPUDevice{Nothing}, x::AbstractArray)
+function Adapt.adapt_storage(dev::AMDGPUDevice{Nothing}, x::AbstractArray)
     MLDataDevices.get_device_type(x) <: AMDGPUDevice && return x
-    return AMDGPU.roc(x)
+    if dev.eltype === missing
+        # Use AMDGPU.roc which does automatic eltype conversion (FP64 -> FP32)
+        return AMDGPU.roc(x)
+    elseif dev.eltype === nothing
+        # Preserve the original eltype
+        return ROCArray(x)
+    else
+        # Convert to specified eltype first, then move to GPU
+        x_converted = MLDataDevices._maybe_convert_eltype(dev, x)
+        return ROCArray(x_converted)
+    end
 end
 
 function Adapt.adapt_storage(to::AMDGPUDevice, x::AbstractArray)
@@ -88,7 +98,17 @@ function Adapt.adapt_storage(to::AMDGPUDevice, x::AbstractArray)
     dev = MLDataDevices.get_device(x)
     if !(dev isa AMDGPUDevice)
         AMDGPU.device!(to.device)
-        x_new = AMDGPU.roc(x)
+        if to.eltype === missing
+            # Use AMDGPU.roc which does automatic eltype conversion (FP64 -> FP32)
+            x_new = AMDGPU.roc(x)
+        elseif to.eltype === nothing
+            # Preserve the original eltype
+            x_new = ROCArray(x)
+        else
+            # Convert to specified eltype first, then move to GPU
+            x_converted = MLDataDevices._maybe_convert_eltype(to, x)
+            x_new = ROCArray(x_converted)
+        end
         AMDGPU.device!(old_dev)
         return x_new
     elseif AMDGPU.device_id(dev.device) == AMDGPU.device_id(to.device)

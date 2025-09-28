@@ -29,9 +29,19 @@ function Internal.unsafe_free_internal!(::Type{MetalDevice}, x::AbstractArray)
 end
 
 # Device Transfer
-function Adapt.adapt_storage(::MetalDevice, x::AbstractArray)
+function Adapt.adapt_storage(dev::MetalDevice, x::AbstractArray)
     MLDataDevices.get_device_type(x) <: MetalDevice && return x
-    return Metal.mtl(x)
+    if dev.eltype === missing
+        # Use Metal.mtl which does automatic eltype conversion (FP64 -> FP32)
+        return Metal.mtl(x)
+    elseif dev.eltype === nothing
+        # Preserve the original eltype
+        return MtlArray(x)
+    else
+        # Convert to specified eltype first, then move to GPU
+        x_converted = MLDataDevices._maybe_convert_eltype(dev, x)
+        return MtlArray(x_converted)
+    end
 end
 
 end
