@@ -44,20 +44,26 @@ end
 for (T1, T2) in ((Float64, Float32), (ComplexF64, ComplexF32))
     @eval function Adapt.adapt_storage(dev::oneAPIDevice, x::AbstractArray{$(T1)})
         MLDataDevices.get_device_type(x) <: oneAPIDevice && return x
-        
+
         if dev.eltype === missing
             # Default behavior: warn and convert if FP64 not supported
             if !SUPPORTS_FP64[oneAPI.device()]
                 @warn LazyString(
-                    "Double type is not supported on this device. Using `", $(T2), "` instead."
+                    "Double type is not supported on this device. Using `",
+                    $(T2),
+                    "` instead.",
                 )
                 return oneArray{$(T2)}(x)
             end
             return oneArray(x)
         elseif dev.eltype === nothing
             # Preserve eltype but check device capability
-            if !SUPPORTS_FP64[oneAPI.device()] && $(T1) <: Union{Float64, ComplexF64}
-                throw(ArgumentError("FP64 is not supported on this device and eltype=nothing was specified"))
+            if !SUPPORTS_FP64[oneAPI.device()] && $(T1) <: Union{Float64,ComplexF64}
+                throw(
+                    ArgumentError(
+                        "FP64 is not supported on this device and eltype=nothing was specified",
+                    ),
+                )
             end
             return oneArray(x)
         else
@@ -70,7 +76,7 @@ end
 
 function Adapt.adapt_storage(dev::oneAPIDevice, x::AbstractArray)
     MLDataDevices.get_device_type(x) <: oneAPIDevice && return x
-    
+
     if dev.eltype === missing || dev.eltype === nothing
         # Default behavior for non-FP64 types or when preserving type
         return oneArray(x)
