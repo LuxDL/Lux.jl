@@ -68,7 +68,7 @@ jobs:
         with:
           projects: ${{ inputs.project }}
           julia_version: ${{ inputs.julia_version }}
-          skip: Pkg, TOML, Statistics, LinearAlgebra, Random, Serialization, Test
+          skip: Pkg, TOML, Statistics, LinearAlgebra, Random, Serialization, Test, LuxCore, LuxLib, LuxTestUtils, MLDataDevices, WeightInitializers
 
       # For 1.10 we need to manually develop the packages.
       - name: "Develop Dependencies"
