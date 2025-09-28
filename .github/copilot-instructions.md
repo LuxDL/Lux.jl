@@ -16,6 +16,8 @@ Lux.jl is a Julia deep learning framework focused on explicit parameterization o
   - Setup parameters: `ps, st = Lux.setup(Random.default_rng(), model)`. Remember to load `Random` before using this function.
   - Forward pass: `y, st_new = Lux.apply(model, x, ps, st)`
   - Training: Use `Lux.Training.TrainState` with optimizers from `Optimisers.jl`
+- Adding or deleting dependencies:
+  - Whenever adding or deleting dependencies, use Pkg.jl APIs instead of directly editing Project.toml files
 - Run tests:
   - Full test suite requires external package dependencies that may fail due to network restrictions
   - Use test groups: `LUX_TEST_GROUP=core_layers`, `LUX_TEST_GROUP=normalize_layers`, `LUX_TEST_GROUP=autodiff`, `LUX_TEST_GROUP=recurrent_layers`, `LUX_TEST_GROUP=misc`, `LUX_TEST_GROUP=reactant`
@@ -174,6 +176,8 @@ ls -la examples/
 3. Format code: `julia --startup-file=no --project=@temp -e "using Pkg; Pkg.add(Pkg.PackageSpec(name=\"JuliaFormatter\", version=\"1\")); using JuliaFormatter; format(\".\")`
 4. Validate specific functionality by modifying and running appropriate example
 5. Check that basic loading still works: `julia --startup-file=no --project=. -e "using Lux"`
+6. For all commit messages use conventional commits
+7. Once development is completed, ensure that the versions in Project.toml for each of the relevant packages are updated in accordance with semantic versioning
 
 ### CI/CD information
 
