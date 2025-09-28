@@ -8,7 +8,7 @@ GPUArrays.
 module LuxOps
 
 using ChainRulesCore: ChainRulesCore, NoTangent, ZeroTangent, @thunk, @non_differentiable
-using Compat: @compat
+using SciMLPublic: @public
 using EnzymeCore: EnzymeCore
 using FastClosures: @closure
 using Static: StaticBool, StaticSymbol, known
@@ -250,7 +250,7 @@ falls back to `inv(sqrt(x))`.
 rsqrt(x::Number) = inv(sqrt(x))
 
 # Public API
-@compat(public, (xlogx, xlogy, getproperty, eachslice, foldl_init, multigate, istraining))
+@public (xlogx, xlogy, getproperty, eachslice, foldl_init, multigate, istraining)
 
 end
 

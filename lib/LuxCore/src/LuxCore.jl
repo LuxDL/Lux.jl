@@ -1,6 +1,6 @@
 module LuxCore
 
-using Compat: @compat
+using SciMLPublic: @public
 using DispatchDoctor: @stable
 using Random: Random, AbstractRNG
 
@@ -403,27 +403,24 @@ module Internal
 
 end
 
-@compat(
-    public,
-    (
-        replicate,
-        trainmode,
-        testmode,
-        update_state,
-        contains_lux_layer,
-        check_fmap_condition,
-        initialparameters,
-        initialstates,
-        parameterlength,
-        statelength,
-        outputsize,
-        setup,
-        apply,
-        stateless_apply,
-        display_name,
-        preserves_state_type,
-        StatefulLuxLayer,
-    )
+@public (
+    replicate,
+    trainmode,
+    testmode,
+    update_state,
+    contains_lux_layer,
+    check_fmap_condition,
+    initialparameters,
+    initialstates,
+    parameterlength,
+    statelength,
+    outputsize,
+    setup,
+    apply,
+    stateless_apply,
+    display_name,
+    preserves_state_type,
+    StatefulLuxLayer,
 )
 
 export AbstractLuxLayer, AbstractLuxContainerLayer, AbstractLuxWrapperLayer

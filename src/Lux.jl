@@ -12,7 +12,7 @@ using Adapt: Adapt, adapt
 using ArgCheck: @argcheck
 using ArrayInterface: ArrayInterface
 using ChainRulesCore: ChainRulesCore, NoTangent, @thunk
-using Compat: @compat
+using SciMLPublic: @public
 using ConcreteStructs: @concrete
 using EnzymeCore: EnzymeRules
 using FastClosures: @closure
@@ -190,9 +190,9 @@ export MPIBackend, NCCLBackend, DistributedUtils
 export LuxOps
 
 # Unexported functions that are part of the public API
-@compat public Experimental
-@compat public set_dispatch_doctor_preferences!
-@compat public Serialization
+@public Experimental
+@public set_dispatch_doctor_preferences!
+@public Serialization
 
 # NNlib.jl reexports
 ## Functional API for common layers. Recommended to use the LuxLib versions

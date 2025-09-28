@@ -2,7 +2,7 @@ module Training
 
 using ADTypes:
     AbstractADType, AutoEnzyme, AutoReverseDiff, AutoTracker, AutoZygote, AutoMooncake
-using Compat: @compat
+using SciMLPublic: @public
 using ConcreteStructs: @concrete
 using FastClosures: @closure
 using Functors: Functors, fmap
@@ -359,16 +359,13 @@ function Optimisers.adjust(ts::TrainState; kwargs...)
     return ts
 end
 
-@compat(
-    public,
-    (
-        TrainState,
-        apply_gradients,
-        apply_gradients!,
-        compute_gradients,
-        single_train_step,
-        single_train_step!,
-    )
+@public (
+    TrainState,
+    apply_gradients,
+    apply_gradients!,
+    compute_gradients,
+    single_train_step,
+    single_train_step!,
 )
 
 export AutoEnzyme, AutoReverseDiff, AutoTracker, AutoZygote, AutoMooncake
