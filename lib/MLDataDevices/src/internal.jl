@@ -285,7 +285,7 @@ end
 
 function to_rarray_internal end
 
-# Utility function to faciliate data transfer
+# Utility function to facilitate data transfer
 function array_adapt(
     f::F, ::Type{aType}, ::Type{Missing}, x::AbstractArray{<:AbstractFloat}
 ) where {F,aType}
