@@ -3,7 +3,7 @@
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "zero sum" begin
-            layer = SkipConnection(WrappedFunction(Broadcast.BroadcastFunction(zero)), .+)
+            layer = SkipConnection(+, WrappedFunction(Broadcast.BroadcastFunction(zero)))
             display(layer)
             ps, st = dev(Lux.setup(rng, layer))
             x = aType(randn(rng, Float32, 10, 10, 10, 10))
@@ -14,7 +14,7 @@
         end
 
         @testset "concat size" begin
-            layer = SkipConnection(Dense(10, 10), hcat)
+            layer = SkipConnection(hcat, Dense(10, 10))
             display(layer)
             ps, st = dev(Lux.setup(rng, layer))
             x = aType(randn(rng, Float32, 10, 2))
