@@ -43,8 +43,8 @@ get_triggerpkg_name(::ReactantDevice) = "Reactant"
 
 for T in (
     CPUDevice,
-    CUDADevice{Nothing,Missing},
-    AMDGPUDevice{Nothing,Missing},
+    CUDADevice{Nothing},
+    AMDGPUDevice{Nothing},
     MetalDevice,
     oneAPIDevice,
     ReactantDevice,
@@ -284,5 +284,26 @@ function to_rarray(args...; kwargs...)
 end
 
 function to_rarray_internal end
+
+# Utility function to faciliate data transfer
+array_adapt(f::F, ::Type{aType}, ::Type{Missing}, x::AbstractArray) where {F,aType} = f(x)
+function array_adapt(::F, ::Type{aType}, ::Type{Nothing}, x::AbstractArray) where {F,aType}
+    return aType(x)
+end
+function array_adapt(
+    ::F, ::Type{aType}, ::Type{T}, x::AbstractArray{<:AbstractFloat}
+) where {F,aType,T}
+    return aType{T}(x)
+end
+function array_adapt(
+    ::F, ::Type{aType}, ::Type{T}, x::AbstractArray{<:Complex{<:AbstractFloat}}
+) where {F,aType,T}
+    return aType{Complex{T}}(x)
+end
+function array_adapt(
+    ::F, ::Type{aType}, ::Type{T}, x::AbstractArray{<:Number}
+) where {F,aType,T}
+    return aType(x)
+end
 
 end

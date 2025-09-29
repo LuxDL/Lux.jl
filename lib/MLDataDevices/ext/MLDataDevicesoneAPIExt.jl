@@ -76,14 +76,16 @@ for (T1, T2) in ((Float64, Float32), (ComplexF64, ComplexF32))
     end
 end
 
+oneapi_array_adapt(::Type{T}, x) = Internal.array_adapt(oneArray, oneArray, T, x)
+
 function Adapt.adapt_storage(::oneAPIDevice{Missing}, x::AbstractArray)
     MLDataDevices.get_device_type(x) <: oneAPIDevice && return x
-    return oneArray(x)
+    return oneapi_array_adapt(Missing, x)
 end
 
 function Adapt.adapt_storage(::oneAPIDevice{Nothing}, x::AbstractArray)
     MLDataDevices.get_device_type(x) <: oneAPIDevice && return x
-    return oneArray(x)
+    return oneapi_array_adapt(Nothing, x)
 end
 
 function Adapt.adapt_storage(::oneAPIDevice{T}, x::AbstractArray) where {T<:AbstractFloat}
@@ -91,16 +93,7 @@ function Adapt.adapt_storage(::oneAPIDevice{T}, x::AbstractArray) where {T<:Abst
     if T === Float64 && !SUPPORTS_FP64[oneAPI.device()]
         throw(ArgumentError("FP64 is not supported on this device"))
     end
-
-    # Convert eltype first, then move to GPU
-    ET = eltype(x)
-    if ET <: AbstractFloat
-        return oneArray{T}(x)
-    elseif ET <: Complex{<:AbstractFloat}
-        return oneArray{Complex{T}}(x)
-    else
-        return oneArray(x)  # Don't convert non-floating point types
-    end
+    return oneapi_array_adapt(T, x)
 end
 
 end

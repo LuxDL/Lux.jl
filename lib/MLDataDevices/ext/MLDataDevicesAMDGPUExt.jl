@@ -1,7 +1,7 @@
 module MLDataDevicesAMDGPUExt
 
 using Adapt: Adapt
-using AMDGPU: AMDGPU
+using AMDGPU: AMDGPU, ROCArray
 using MLDataDevices: MLDataDevices, Internal, AMDGPUDevice, CPUDevice, reset_gpu_device!
 using Random: Random
 
@@ -78,30 +78,23 @@ function Internal.unsafe_free_internal!(::Type{AMDGPUDevice}, x::AbstractArray)
 end
 
 # Device Transfer
+amdgpu_array_adapt(::Type{T}, x) = Internal.array_adapt(AMDGPU.roc, ROCArray, T, x)
+
 function Adapt.adapt_storage(::AMDGPUDevice{D,Missing}, x::AbstractArray) where {D}
     MLDataDevices.get_device_type(x) <: AMDGPUDevice && return x
-    return AMDGPU.roc(x)  # Uses AMDGPU default conversion (FP64 -> FP32)
+    return amdgpu_array_adapt(Missing, x)
 end
 
 function Adapt.adapt_storage(::AMDGPUDevice{D,Nothing}, x::AbstractArray) where {D}
     MLDataDevices.get_device_type(x) <: AMDGPUDevice && return x
-    return ROCArray(x)  # Preserves eltype
+    return amdgpu_array_adapt(Nothing, x)
 end
 
 function Adapt.adapt_storage(
-    ::AMDGPUDevice{D,T}, x::AbstractArray
-) where {D,T<:AbstractFloat}
-    MLDataDevices.get_device_type(x) <: AMDGPUDevice && eltype(x) == T && return x
-
-    # Convert eltype first, then move to GPU
-    ET = eltype(x)
-    if ET <: AbstractFloat
-        return ROCArray{T}(x)
-    elseif ET <: Complex{<:AbstractFloat}
-        return ROCArray{Complex{T}}(x)
-    else
-        return ROCArray(x)  # Don't convert non-floating point types
-    end
+    ::AMDGPUDevice{D,T}, x::AbstractArray{ET}
+) where {D,T<:AbstractFloat,ET<:Number}
+    MLDataDevices.get_device_type(x) <: AMDGPUDevice && ET == T && return x
+    return amdgpu_array_adapt(T, x)
 end
 
 function Adapt.adapt_storage(to::AMDGPUDevice{D,E}, x::AbstractArray) where {D,E}
@@ -109,22 +102,7 @@ function Adapt.adapt_storage(to::AMDGPUDevice{D,E}, x::AbstractArray) where {D,E
     dev = MLDataDevices.get_device(x)
     if !(dev isa AMDGPUDevice)
         AMDGPU.device!(to.device)
-        x_new = if E === Missing
-            AMDGPU.roc(x)  # Uses AMDGPU default conversion
-        elseif E === Nothing
-            ROCArray(x)  # Preserves eltype
-        elseif E <: AbstractFloat
-            ET = eltype(x)
-            if ET <: AbstractFloat
-                ROCArray{E}(x)
-            elseif ET <: Complex{<:AbstractFloat}
-                ROCArray{Complex{E}}(x)
-            else
-                ROCArray(x)  # Don't convert non-floating point types
-            end
-        else
-            ROCArray(x)
-        end
+        x_new = amdgpu_array_adapt(to, x)
         AMDGPU.device!(old_dev)
         return x_new
     elseif AMDGPU.device_id(dev.device) == AMDGPU.device_id(to.device)

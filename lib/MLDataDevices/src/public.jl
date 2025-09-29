@@ -1,25 +1,27 @@
-struct CPUDevice{T} <: AbstractCPUDevice end
+const EltypeAdaptorType = Union{Missing,Nothing,<:AbstractFloat}
+
+struct CPUDevice{T <: EltypeAdaptorType} <: AbstractCPUDevice end
 CPUDevice() = CPUDevice{Missing}()
 
-struct CUDADevice{D,T} <: AbstractGPUDevice
+struct CUDADevice{D,T <: EltypeAdaptorType} <: AbstractGPUDevice
     device::D
 end
 CUDADevice() = CUDADevice{Nothing,Missing}(nothing)
 CUDADevice(device) = CUDADevice{typeof(device),Missing}(device)
 
-struct AMDGPUDevice{D,T} <: AbstractGPUDevice
+struct AMDGPUDevice{D,T <: EltypeAdaptorType} <: AbstractGPUDevice
     device::D
 end
 AMDGPUDevice() = AMDGPUDevice{Nothing,Missing}(nothing)
 AMDGPUDevice(device) = AMDGPUDevice{typeof(device),Missing}(device)
 
-struct MetalDevice{T} <: AbstractGPUDevice end
+struct MetalDevice{T <: EltypeAdaptorType} <: AbstractGPUDevice end
 MetalDevice() = MetalDevice{Missing}()
 
-struct oneAPIDevice{T} <: AbstractGPUDevice end
+struct oneAPIDevice{T <: EltypeAdaptorType} <: AbstractGPUDevice end
 oneAPIDevice() = oneAPIDevice{Missing}()
 
-struct ReactantDevice{C,D,S,T} <: AbstractAcceleratorDevice
+struct ReactantDevice{C,D,S,T <: EltypeAdaptorType} <: AbstractAcceleratorDevice
     client::C
     device::D
     sharding::S
@@ -34,12 +36,12 @@ function ReactantDevice(client, device, sharding)
 end
 
 # Helper functions to get the eltype from device types
-get_eltype(::CPUDevice{T}) where {T} = T
-get_eltype(::CUDADevice{D,T}) where {D,T} = T
-get_eltype(::AMDGPUDevice{D,T}) where {D,T} = T
-get_eltype(::MetalDevice{T}) where {T} = T
-get_eltype(::oneAPIDevice{T}) where {T} = T
-get_eltype(::ReactantDevice{C,D,S,T}) where {C,D,S,T} = T
+Base.eltype(::CPUDevice{T}) where {T} = T
+Base.eltype(::CUDADevice{D,T}) where {D,T} = T
+Base.eltype(::AMDGPUDevice{D,T}) where {D,T} = T
+Base.eltype(::MetalDevice{T}) where {T} = T
+Base.eltype(::oneAPIDevice{T}) where {T} = T
+Base.eltype(::ReactantDevice{C,D,S,T}) where {C,D,S,T} = T
 
 # Helper functions to create devices with specific eltypes
 function with_eltype(::CPUDevice, eltype_target)

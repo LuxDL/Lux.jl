@@ -58,28 +58,21 @@ function Internal.unsafe_free_internal!(::Type{CUDADevice}, x::AbstractArray)
 end
 
 # Device Transfer
+cuda_array_adapt(::Type{T}, x) = Internal.array_adapt(CUDA.cu, CuArray, T, x)
+
 function Adapt.adapt_storage(::CUDADevice{D,Missing}, x::AbstractArray) where {D}
     MLDataDevices.get_device_type(x) <: CUDADevice && return x
-    return CUDA.cu(x)  # Uses CUDA default conversion (FP64 -> FP32)
+    return cuda_array_adapt(Missing, x)
 end
 
 function Adapt.adapt_storage(::CUDADevice{D,Nothing}, x::AbstractArray) where {D}
     MLDataDevices.get_device_type(x) <: CUDADevice && return x
-    return CuArray(x)  # Preserves eltype
+    return cuda_array_adapt(Nothing, x)
 end
 
 function Adapt.adapt_storage(::CUDADevice{D,T}, x::AbstractArray) where {D,T<:AbstractFloat}
     MLDataDevices.get_device_type(x) <: CUDADevice && eltype(x) == T && return x
-
-    # Convert eltype first, then move to GPU
-    ET = eltype(x)
-    if ET <: AbstractFloat
-        return CuArray{T}(x)
-    elseif ET <: Complex{<:AbstractFloat}
-        return CuArray{Complex{T}}(x)
-    else
-        return CuArray(x)  # Don't convert non-floating point types
-    end
+    return cuda_array_adapt(T, x)
 end
 
 function Adapt.adapt_storage(to::CUDADevice{D,E}, x::AbstractArray) where {D,E}
@@ -87,22 +80,7 @@ function Adapt.adapt_storage(to::CUDADevice{D,E}, x::AbstractArray) where {D,E}
     dev = MLDataDevices.get_device(x)
     if !(dev isa CUDADevice)
         CUDA.device!(to.device)
-        x_new = if E === Missing
-            CUDA.cu(x)  # Uses CUDA default conversion
-        elseif E === Nothing
-            CuArray(x)  # Preserves eltype
-        elseif E <: AbstractFloat
-            ET = eltype(x)
-            if ET <: AbstractFloat
-                CuArray{E}(x)
-            elseif ET <: Complex{<:AbstractFloat}
-                CuArray{Complex{E}}(x)
-            else
-                CuArray(x)  # Don't convert non-floating point types
-            end
-        else
-            CuArray(x)
-        end
+        x_new = cuda_array_adapt(to, x)
         CUDA.device!(old_dev)
         return x_new
     elseif dev.device == to.device

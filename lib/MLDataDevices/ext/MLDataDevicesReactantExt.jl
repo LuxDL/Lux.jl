@@ -102,18 +102,17 @@ Profiler.@annotate "Device Transfer (Reactant)" function Adapt.adapt_storage(
 end
 
 Profiler.@annotate "Device Transfer (Reactant)" function Adapt.adapt_storage(
-    dev::ReactantDevice{C,D,S,T}, x::AbstractArray
-) where {C,D,S,T<:AbstractFloat}
+    dev::ReactantDevice{C,D,S,T}, x::AbstractArray{ET}
+) where {C,D,S,T<:AbstractFloat,ET}
     # Convert eltype first, then move to device
-    ET = eltype(x)
     if ET <: AbstractFloat
-        x_converted = Array{T}(x)
+        x_converted = convert(AbstractArray{T}, x)
         return ConcreteRArray(x_converted; device_to_kwargs(dev, x_converted)...)
     elseif ET <: Complex{<:AbstractFloat}
-        x_converted = Array{Complex{T}}(x)
+        x_converted = convert(AbstractArray{Complex{T}}, x)
         return ConcreteRArray(x_converted; device_to_kwargs(dev, x_converted)...)
     else
-        return ConcreteRArray(x; device_to_kwargs(dev, x)...)  # Don't convert non-floating point types
+        return ConcreteRArray(x; device_to_kwargs(dev, x)...)
     end
 end
 
