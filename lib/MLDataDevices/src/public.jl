@@ -91,7 +91,9 @@ function Base.:(==)(
         return false
     end
 
-    return T1 !== T2
+    T1 === Missing && return T2 === Missing || T2 === Nothing
+    T2 === Missing && return T1 === Missing || T1 === Nothing
+    return T1 === T2
 end
 
 # XXX: Deprecate in v2
