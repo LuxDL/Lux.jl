@@ -58,7 +58,7 @@ function Internal.unsafe_free_internal!(::Type{CUDADevice}, x::AbstractArray)
 end
 
 # Device Transfer
-cuda_array_adapt(::Type{T}, x) = Internal.array_adapt(CUDA.cu, CuArray, T, x)
+cuda_array_adapt(::Type{T}, x) where {T} = Internal.array_adapt(CUDA.cu, CuArray, T, x)
 
 function Adapt.adapt_storage(::CUDADevice{D,Missing}, x::AbstractArray) where {D}
     MLDataDevices.get_device_type(x) <: CUDADevice && return x

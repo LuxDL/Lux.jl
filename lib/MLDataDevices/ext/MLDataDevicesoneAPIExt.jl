@@ -76,7 +76,7 @@ for (T1, T2) in ((Float64, Float32), (ComplexF64, ComplexF32))
     end
 end
 
-oneapi_array_adapt(::Type{T}, x) = Internal.array_adapt(oneArray, oneArray, T, x)
+oneapi_array_adapt(::Type{T}, x) where {T} = Internal.array_adapt(oneArray, oneArray, T, x)
 
 function Adapt.adapt_storage(::oneAPIDevice{Missing}, x::AbstractArray)
     MLDataDevices.get_device_type(x) <: oneAPIDevice && return x

@@ -78,7 +78,9 @@ function Internal.unsafe_free_internal!(::Type{AMDGPUDevice}, x::AbstractArray)
 end
 
 # Device Transfer
-amdgpu_array_adapt(::Type{T}, x) = Internal.array_adapt(AMDGPU.roc, ROCArray, T, x)
+function amdgpu_array_adapt(::Type{T}, x) where {T}
+    return Internal.array_adapt(AMDGPU.roc, ROCArray, T, x)
+end
 
 function Adapt.adapt_storage(::AMDGPUDevice{D,Missing}, x::AbstractArray) where {D}
     MLDataDevices.get_device_type(x) <: AMDGPUDevice && return x
