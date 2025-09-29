@@ -3,7 +3,7 @@ module Experimental
 using ADTypes: ADTypes
 using ArgCheck: @argcheck
 using ChainRulesCore: ChainRulesCore
-using Compat: @compat
+using SciMLPublic: @public
 using ConcreteStructs: @concrete
 using FastClosures: @closure
 using Functors: Functors, KeyPath, fmap_with_path, fmapstructure_with_path, functor
@@ -25,9 +25,10 @@ include("freeze.jl")
 include("share_parameters.jl")
 include("debug.jl")
 
-@compat public layer_map
-@compat public FrozenLayer, freeze, unfreeze
-@compat public share_parameters
-@compat public DebugLayer, @debug_mode
+@public layer_map
+@public FrozenLayer, freeze, unfreeze
+@public share_parameters
+@public DebugLayer
+@public @debug_mode
 
 end

@@ -1,7 +1,7 @@
 module DistributedUtils
 
 using ChainRulesCore: ChainRulesCore
-using Compat: @compat
+using SciMLPublic: @public
 using ConcreteStructs: @concrete
 using Optimisers: Optimisers
 
@@ -289,22 +289,19 @@ function synchronize!!(
     return Optimisers.Leaf(ps.rule, synchronize!!(backend, ps.state; root), ps.frozen)
 end
 
-@compat(
-    public,
-    (
-        initialized,
-        initialize,
-        get_distributed_backend,
-        local_rank,
-        total_workers,
-        bcast!,
-        allreduce!,
-        reduce!,
-        synchronize!!,
-        DistributedDataContainer,
-        DistributedOptimizer,
-        avg,
-    )
+@public (
+    initialized,
+    initialize,
+    get_distributed_backend,
+    local_rank,
+    total_workers,
+    bcast!,
+    allreduce!,
+    reduce!,
+    synchronize!!,
+    DistributedDataContainer,
+    DistributedOptimizer,
+    avg,
 )
 
 end

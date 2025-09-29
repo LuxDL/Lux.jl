@@ -1,6 +1,6 @@
 module LuxLib
 
-using Compat: @compat
+using SciMLPublic: @public
 using Preferences: @load_preference
 using Reexport: @reexport
 using Static: Static, known
@@ -23,8 +23,6 @@ include("traits.jl")
 include("impl/Impl.jl")
 include("api/API.jl")
 
-@compat(
-    public, (internal_operation_mode, GenericBroadcastOp, GPUBroadcastOp, LoopedArrayOp)
-)
+@public (internal_operation_mode, GenericBroadcastOp, GPUBroadcastOp, LoopedArrayOp)
 
 end
