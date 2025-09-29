@@ -154,6 +154,10 @@ supported_gpu_backends() = map(Internal.get_device_name, GPU_DEVICES)
 
 """
     gpu_device(
+        eltype::Union{Missing, Nothing, Type{<:AbstractFloat}}=missing;
+        kwargs...
+    ) -> AbstractDevice
+    gpu_device(
         device_id::Union{Nothing, Integer}=nothing
         eltype::Union{Missing, Nothing, Type{<:AbstractFloat}}=missing;
         force::Bool=false
@@ -203,6 +207,10 @@ Selects GPU device based on the following criteria:
   - `force::Bool`: If `true`, then an error is thrown if no functional GPU
     device is found.
 """
+function gpu_device(eltype::EltypeAdaptorType; kwargs...) where {EltypeAdaptorType}
+    return gpu_device(nothing, eltype; kwargs...)
+end
+
 function gpu_device(
     device_id::Union{Nothing,<:Integer}=nothing,
     eltype::T=missing;

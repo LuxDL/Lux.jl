@@ -166,10 +166,10 @@ end
     ps = (; weight=x, bias=x, d=(x, x))
 
     return_val(x) = Val(get_device_type(x))  # If it is a compile time constant then type inference will work
-    @test @inferred(return_val(ps)) isa Val{typeof(cpu_device())}
+    @test @inferred(return_val(ps)) isa Val{CPUDevice}
 
     return_val2(x) = Val(get_device(x))
-    @test @inferred(return_val2(ps)) isa Val{cpu_device()}
+    @test @inferred(return_val2(ps)) isa Val{CPUDevice{Missing}()}
 end
 
 @testset "undefined references array" begin
