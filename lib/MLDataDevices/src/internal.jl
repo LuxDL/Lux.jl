@@ -285,4 +285,53 @@ end
 
 function to_rarray_internal end
 
+# Utility function to facilitate data transfer
+function array_adapt(
+    f::F, ::Type{aType}, ::Type{Missing}, x::AbstractArray{<:AbstractFloat}
+) where {F,aType}
+    return f(x)
+end
+function array_adapt(
+    f::F, ::Type{aType}, ::Type{Missing}, x::AbstractArray{<:Complex{<:AbstractFloat}}
+) where {F,aType}
+    return f(x)
+end
+function array_adapt(
+    f::F, ::Type{aType}, ::Type{Missing}, x::AbstractArray{<:Number}
+) where {F,aType}
+    return f(x)
+end
+
+function array_adapt(
+    ::F, ::Type{aType}, ::Type{Nothing}, x::AbstractArray{<:AbstractFloat}
+) where {F,aType}
+    return aType(x)
+end
+function array_adapt(
+    ::F, ::Type{aType}, ::Type{Nothing}, x::AbstractArray{<:Complex{<:AbstractFloat}}
+) where {F,aType}
+    return aType(x)
+end
+function array_adapt(
+    ::F, ::Type{aType}, ::Type{Nothing}, x::AbstractArray{<:Number}
+) where {F,aType}
+    return aType(x)
+end
+
+function array_adapt(
+    ::F, ::Type{aType}, ::Type{T}, x::AbstractArray{<:AbstractFloat}
+) where {F,aType,T}
+    return aType{T}(x)
+end
+function array_adapt(
+    ::F, ::Type{aType}, ::Type{T}, x::AbstractArray{<:Complex{<:AbstractFloat}}
+) where {F,aType,T}
+    return aType{Complex{T}}(x)
+end
+function array_adapt(
+    ::F, ::Type{aType}, ::Type{T}, x::AbstractArray{<:Number}
+) where {F,aType,T}
+    return aType(x)
+end
+
 end

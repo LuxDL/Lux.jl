@@ -1,7 +1,7 @@
 module MLDataDevicesCUDAExt
 
 using Adapt: Adapt
-using CUDA: CUDA
+using CUDA: CUDA, CuArray
 using CUDA.CUSPARSE: AbstractCuSparseMatrix, AbstractCuSparseVector, AbstractCuSparseArray
 using MLDataDevices: MLDataDevices, Internal, CUDADevice, CPUDevice
 using Random: Random
@@ -58,17 +58,29 @@ function Internal.unsafe_free_internal!(::Type{CUDADevice}, x::AbstractArray)
 end
 
 # Device Transfer
-function Adapt.adapt_storage(::CUDADevice{Nothing}, x::AbstractArray)
+cuda_array_adapt(::Type{T}, x) where {T} = Internal.array_adapt(CUDA.cu, CuArray, T, x)
+
+function Adapt.adapt_storage(::CUDADevice{D,Missing}, x::AbstractArray) where {D}
     MLDataDevices.get_device_type(x) <: CUDADevice && return x
-    return CUDA.cu(x)
+    return cuda_array_adapt(Missing, x)
 end
 
-function Adapt.adapt_storage(to::CUDADevice, x::AbstractArray)
+function Adapt.adapt_storage(::CUDADevice{D,Nothing}, x::AbstractArray) where {D}
+    MLDataDevices.get_device_type(x) <: CUDADevice && return x
+    return cuda_array_adapt(Nothing, x)
+end
+
+function Adapt.adapt_storage(::CUDADevice{D,T}, x::AbstractArray) where {D,T<:AbstractFloat}
+    MLDataDevices.get_device_type(x) <: CUDADevice && eltype(x) == T && return x
+    return cuda_array_adapt(T, x)
+end
+
+function Adapt.adapt_storage(to::CUDADevice{D,E}, x::AbstractArray) where {D,E}
     old_dev = CUDA.device()  # remember the current device
     dev = MLDataDevices.get_device(x)
     if !(dev isa CUDADevice)
         CUDA.device!(to.device)
-        x_new = CUDA.cu(x)
+        x_new = cuda_array_adapt(to, x)
         CUDA.device!(old_dev)
         return x_new
     elseif dev.device == to.device
@@ -85,11 +97,27 @@ Adapt.adapt_storage(::CPUDevice, rng::CUDA.RNG) = Random.default_rng()
 
 # Defining as extensions seems to case precompilation errors
 @static if isdefined(CUDA.CUSPARSE, :SparseArrays)
-    function Adapt.adapt_storage(::CPUDevice, x::AbstractCuSparseMatrix)
+    function Adapt.adapt_storage(::CPUDevice{Missing}, x::AbstractCuSparseMatrix)
         return CUDA.CUSPARSE.SparseArrays.SparseMatrixCSC(x)
     end
-    function Adapt.adapt_storage(::CPUDevice, x::AbstractCuSparseVector)
+    function Adapt.adapt_storage(::CPUDevice{Missing}, x::AbstractCuSparseVector)
         return CUDA.CUSPARSE.SparseArrays.SparseVector(x)
+    end
+    function Adapt.adapt_storage(::CPUDevice{Nothing}, x::AbstractCuSparseMatrix)
+        return CUDA.CUSPARSE.SparseArrays.SparseMatrixCSC(x)
+    end
+    function Adapt.adapt_storage(::CPUDevice{Nothing}, x::AbstractCuSparseVector)
+        return CUDA.CUSPARSE.SparseArrays.SparseVector(x)
+    end
+    function Adapt.adapt_storage(
+        ::CPUDevice{T}, x::AbstractCuSparseMatrix
+    ) where {T<:AbstractFloat}
+        return CUDA.CUSPARSE.SparseArrays.SparseMatrixCSC{T}(x)
+    end
+    function Adapt.adapt_storage(
+        ::CPUDevice{T}, x::AbstractCuSparseVector
+    ) where {T<:AbstractFloat}
+        return CUDA.CUSPARSE.SparseArrays.SparseVector{T}(x)
     end
 else
     @warn "CUDA.CUSPARSE seems to have removed SparseArrays as a dependency. Please open \

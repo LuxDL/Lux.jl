@@ -90,9 +90,30 @@ Internal.unsafe_free_internal!(::Type{ReactantDevice}, x::AbstractArray) = nothi
 
 # Device Transfer
 Profiler.@annotate "Device Transfer (Reactant)" function Adapt.adapt_storage(
-    dev::ReactantDevice, x::AbstractArray
-)
-    return ConcreteRArray(x; device_to_kwargs(dev, x)...)
+    dev::ReactantDevice{C,D,S,Missing}, x::AbstractArray
+) where {C,D,S}
+    return ConcreteRArray(x; device_to_kwargs(dev, x)...)  # Preserves eltype
+end
+
+Profiler.@annotate "Device Transfer (Reactant)" function Adapt.adapt_storage(
+    dev::ReactantDevice{C,D,S,Nothing}, x::AbstractArray
+) where {C,D,S}
+    return ConcreteRArray(x; device_to_kwargs(dev, x)...)  # Preserves eltype
+end
+
+Profiler.@annotate "Device Transfer (Reactant)" function Adapt.adapt_storage(
+    dev::ReactantDevice{C,D,S,T}, x::AbstractArray{ET}
+) where {C,D,S,T<:AbstractFloat,ET}
+    # Convert eltype first, then move to device
+    if ET <: AbstractFloat
+        x_converted = convert(AbstractArray{T}, x)
+        return ConcreteRArray(x_converted; device_to_kwargs(dev, x_converted)...)
+    elseif ET <: Complex{<:AbstractFloat}
+        x_converted = convert(AbstractArray{Complex{T}}, x)
+        return ConcreteRArray(x_converted; device_to_kwargs(dev, x_converted)...)
+    else
+        return ConcreteRArray(x; device_to_kwargs(dev, x)...)
+    end
 end
 
 function Adapt.adapt_storage(

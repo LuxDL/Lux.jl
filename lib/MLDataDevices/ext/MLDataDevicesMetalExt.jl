@@ -29,9 +29,21 @@ function Internal.unsafe_free_internal!(::Type{MetalDevice}, x::AbstractArray)
 end
 
 # Device Transfer
-function Adapt.adapt_storage(::MetalDevice, x::AbstractArray)
+metal_array_adapt(::Type{T}, x) where {T} = Internal.array_adapt(Metal.mtl, MtlArray, T, x)
+
+function Adapt.adapt_storage(::MetalDevice{Missing}, x::AbstractArray)
     MLDataDevices.get_device_type(x) <: MetalDevice && return x
-    return Metal.mtl(x)
+    return metal_array_adapt(Missing, x)
+end
+
+function Adapt.adapt_storage(::MetalDevice{Nothing}, x::AbstractArray)
+    MLDataDevices.get_device_type(x) <: MetalDevice && return x
+    return metal_array_adapt(Nothing, x)
+end
+
+function Adapt.adapt_storage(::MetalDevice{T}, x::AbstractArray) where {T<:AbstractFloat}
+    MLDataDevices.get_device_type(x) <: MetalDevice && eltype(x) == T && return x
+    return metal_array_adapt(T, x)
 end
 
 end
