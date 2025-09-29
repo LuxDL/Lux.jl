@@ -231,9 +231,9 @@ function gpu_device(
     if GPU_DEVICE[] !== nothing
         dev = GPU_DEVICE[]
         if device_id === nothing
-            force &&
-                !(dev isa AbstractGPUDevice) &&
+            if force && !(dev isa AbstractGPUDevice)
                 throw(Internal.DeviceSelectionException("GPU"))
+            end
             return with_eltype(dev, eltype)
         else
             selected_device_id = Internal.get_device_id(dev)
@@ -340,7 +340,7 @@ function reactant_device(
     end
     force && throw(Internal.DeviceSelectionException("Reactant"))
     @warn msg maxlog = 1
-    return cpu_device(; eltype)
+    return cpu_device(eltype)
 end
 
 Base.@deprecate xla_device(; kwargs...) reactant_device(; kwargs...)
