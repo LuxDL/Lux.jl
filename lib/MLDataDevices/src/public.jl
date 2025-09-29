@@ -24,8 +24,14 @@ struct ReactantDevice{C,D,S,T} <: AbstractAcceleratorDevice
     device::D
     sharding::S
 end
-ReactantDevice() = ReactantDevice{Missing,Missing,Missing,Missing}(missing, missing, missing)
-ReactantDevice(client, device, sharding) = ReactantDevice{typeof(client),typeof(device),typeof(sharding),Missing}(client, device, sharding)
+function ReactantDevice()
+    return ReactantDevice{Missing,Missing,Missing,Missing}(missing, missing, missing)
+end
+function ReactantDevice(client, device, sharding)
+    return ReactantDevice{typeof(client),typeof(device),typeof(sharding),Missing}(
+        client, device, sharding
+    )
+end
 
 # Helper functions to get the eltype from device types
 get_eltype(::CPUDevice{T}) where {T} = T
@@ -90,7 +96,7 @@ function with_eltype(dev::ReactantDevice{C,D,S}, eltype_target) where {C,D,S}
     if eltype_target === nothing
         return ReactantDevice{C,D,S,Nothing}(dev.client, dev.device, dev.sharding)
     elseif eltype_target isa Type{<:AbstractFloat}
-        return ReactantDevice{C,D,S,eltype_target}(dev.client, dev.device, dev.sharding) 
+        return ReactantDevice{C,D,S,eltype_target}(dev.client, dev.device, dev.sharding)
     else
         throw(ArgumentError("eltype must be nothing or a floating-point type"))
     end
@@ -354,13 +360,27 @@ function reactant_device(;
     if loaded(ReactantDevice)
         if functional(ReactantDevice)
             if eltype === missing
-                return ReactantDevice{typeof(client),typeof(device),typeof(sharding),Missing}(client, device, sharding)
+                return ReactantDevice{
+                    typeof(client),typeof(device),typeof(sharding),Missing
+                }(
+                    client, device, sharding
+                )
             elseif eltype === nothing
-                return ReactantDevice{typeof(client),typeof(device),typeof(sharding),Nothing}(client, device, sharding)
+                return ReactantDevice{
+                    typeof(client),typeof(device),typeof(sharding),Nothing
+                }(
+                    client, device, sharding
+                )
             elseif eltype isa Type{<:AbstractFloat}
-                return ReactantDevice{typeof(client),typeof(device),typeof(sharding),eltype}(client, device, sharding)
+                return ReactantDevice{typeof(client),typeof(device),typeof(sharding),eltype}(
+                    client, device, sharding
+                )
             else
-                throw(ArgumentError("eltype must be missing, nothing, or a floating-point type"))
+                throw(
+                    ArgumentError(
+                        "eltype must be missing, nothing, or a floating-point type"
+                    ),
+                )
             end
         end
         msg = "`ReactantDevice` is loaded but not functional. Defaulting to CPU."
@@ -527,7 +547,7 @@ end
 function Adapt.adapt_storage(dev::CPUDevice{T}, x::AbstractArray) where {T<:AbstractFloat}
     get_device_type(x) <: CPUDevice && eltype(x) == T && return x
     x_cpu = Array(x)
-    
+
     # Only convert floating-point and complex floating-point types
     ET = eltype(x_cpu)
     if ET <: AbstractFloat

@@ -88,9 +88,11 @@ function Adapt.adapt_storage(::AMDGPUDevice{D,Nothing}, x::AbstractArray) where 
     return ROCArray(x)  # Preserves eltype
 end
 
-function Adapt.adapt_storage(::AMDGPUDevice{D,T}, x::AbstractArray) where {D,T<:AbstractFloat}
+function Adapt.adapt_storage(
+    ::AMDGPUDevice{D,T}, x::AbstractArray
+) where {D,T<:AbstractFloat}
     MLDataDevices.get_device_type(x) <: AMDGPUDevice && eltype(x) == T && return x
-    
+
     # Convert eltype first, then move to GPU
     ET = eltype(x)
     if ET <: AbstractFloat

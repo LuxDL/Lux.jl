@@ -41,7 +41,7 @@ end
 
 function Adapt.adapt_storage(::MetalDevice{T}, x::AbstractArray) where {T<:AbstractFloat}
     MLDataDevices.get_device_type(x) <: MetalDevice && eltype(x) == T && return x
-    
+
     # Convert eltype first, then move to GPU
     ET = eltype(x)
     if ET <: AbstractFloat

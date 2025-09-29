@@ -70,7 +70,7 @@ end
 
 function Adapt.adapt_storage(::CUDADevice{D,T}, x::AbstractArray) where {D,T<:AbstractFloat}
     MLDataDevices.get_device_type(x) <: CUDADevice && eltype(x) == T && return x
-    
+
     # Convert eltype first, then move to GPU
     ET = eltype(x)
     if ET <: AbstractFloat

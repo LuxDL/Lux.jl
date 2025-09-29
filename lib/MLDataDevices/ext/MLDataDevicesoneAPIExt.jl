@@ -52,16 +52,22 @@ for (T1, T2) in ((Float64, Float32), (ComplexF64, ComplexF32))
         end
         return oneArray(x)
     end
-    
+
     @eval function Adapt.adapt_storage(::oneAPIDevice{Nothing}, x::AbstractArray{$(T1)})
         MLDataDevices.get_device_type(x) <: oneAPIDevice && return x
-        if !SUPPORTS_FP64[oneAPI.device()] && $(T1) <: Union{Float64, ComplexF64}
-            throw(ArgumentError("FP64 is not supported on this device and eltype=nothing was specified"))
+        if !SUPPORTS_FP64[oneAPI.device()] && $(T1) <: Union{Float64,ComplexF64}
+            throw(
+                ArgumentError(
+                    "FP64 is not supported on this device and eltype=nothing was specified"
+                ),
+            )
         end
         return oneArray(x)
     end
-    
-    @eval function Adapt.adapt_storage(::oneAPIDevice{T}, x::AbstractArray{$(T1)}) where {T<:AbstractFloat}
+
+    @eval function Adapt.adapt_storage(
+        ::oneAPIDevice{T}, x::AbstractArray{$(T1)}
+    ) where {T<:AbstractFloat}
         MLDataDevices.get_device_type(x) <: oneAPIDevice && eltype(x) == T && return x
         if T === Float64 && !SUPPORTS_FP64[oneAPI.device()]
             throw(ArgumentError("FP64 is not supported on this device"))
@@ -85,7 +91,7 @@ function Adapt.adapt_storage(::oneAPIDevice{T}, x::AbstractArray) where {T<:Abst
     if T === Float64 && !SUPPORTS_FP64[oneAPI.device()]
         throw(ArgumentError("FP64 is not supported on this device"))
     end
-    
+
     # Convert eltype first, then move to GPU
     ET = eltype(x)
     if ET <: AbstractFloat
