@@ -40,7 +40,7 @@ jobs:
             loopvec: "false"
     uses: ./.github/workflows/CommonCI.yml
     with:
-      julia_version: "1"
+      julia_version: "1.11"
       project: "lib/LuxLib"
       test_args: "BACKEND_GROUP=cpu LUXLIB_TEST_GROUP=${{ matrix.test_group }} LUXLIB_BLAS_BACKEND=${{ matrix.blas_backend }} LUXLIB_LOAD_LOOPVEC=${{ matrix.loopvec }}"
 

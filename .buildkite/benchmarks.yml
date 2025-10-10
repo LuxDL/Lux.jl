@@ -38,7 +38,7 @@ steps:
       - label: "CUDA: Run Benchmarks"
         plugins:
           - JuliaCI/julia#v1:
-              version: "1"
+              version: "1.11"
         command: |
           julia --project=benchmarks -e 'println("--- :julia: Instantiating project")
               using Pkg;

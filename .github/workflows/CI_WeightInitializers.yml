@@ -19,7 +19,7 @@ jobs:
   test:
     uses: ./.github/workflows/CommonCI.yml
     with:
-      julia_version: "1"
+      julia_version: "1.11"
       project: "lib/WeightInitializers"
       test_args: "BACKEND_GROUP=cpu"
 
