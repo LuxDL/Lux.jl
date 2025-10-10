@@ -16,9 +16,9 @@ LuxCUDA = {path = "../../lib/LuxCUDA"}
 [compat]
 BenchmarkTools = "1.6.0"
 Comonicon = "1.0.8"
-Enzyme = "0.13.74"
+Enzyme = "0.13.81"
 Lux = "1.13.3"
 LuxCUDA = "0.3.3"
 Random = "1.11"
-Reactant = "0.2.120"
+Reactant = "0.2.170"
 julia = "1.11"
