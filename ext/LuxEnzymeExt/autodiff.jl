@@ -4,7 +4,7 @@ function _vector_jacobian_product_impl(f::F, ad::AutoEnzyme, x, v, extra_args...
     ad = normalize_backend(False(), ad)
     @assert ADTypes.mode(ad) isa ADTypes.ReverseMode "VJPs are only supported in reverse \
                                                       mode"
-    dx = fmap(copy, x; exclude=isleaf)
+    dx = fmap(zero, x; exclude=isleaf)
     Enzyme.autodiff(
         ad.mode,
         annotate_function(ad, OOPFunctionWrapper(f)),
