@@ -7,11 +7,12 @@ products efficiently using mixed-mode AD.
 
 ## Backends & AD Packages
 
-| Supported Backends | Packages Needed |
-| :----------------- | :-------------- |
-| `AutoZygote`       | `Zygote.jl`     |
+| Supported Backends | Packages Needed             | Notes                                             |
+| :----------------- | :-------------------------- | :------------------------------------------------ |
+| `AutoEnzyme`       | `Enzyme.jl` / `Reactant.jl` | For nested AD support directly using `Enzyme.jl`. |
+| `AutoZygote`       | `Zygote.jl`                 |                                                   |
 
-!!! warning
+!!! warning "Only for ChainRules-based AD like Zygote"
 
     Gradient wrt `u` in the reverse pass is always dropped.
 
@@ -32,12 +33,13 @@ function vector_jacobian_product(::F, backend::AbstractADType, _, __) where {F}
     throw(ArgumentError("`vector_jacobian_product` is not implemented for `$(backend)`."))
 end
 
-function vector_jacobian_product(f::F, backend::AutoZygote, x, u) where {F}
-    if !is_extension_loaded(Val(:Zygote))
-        error("`Zygote.jl` must be loaded for `vector_jacobian_product` \
-               to work with `$(backend)`.")
+for implemented_backend in (:AutoZygote, :AutoEnzyme)
+    @eval function vector_jacobian_product(
+        f::F, backend::$implemented_backend, x, u
+    ) where {F}
+        assert_backend_loaded(:vector_jacobian_product, backend)
+        return AutoDiffInternalImpl.vector_jacobian_product(f, backend, x, u)
     end
-    return AutoDiffInternalImpl.vector_jacobian_product(f, backend, x, u)
 end
 
 @doc doc"""
@@ -49,11 +51,12 @@ products efficiently using mixed-mode AD.
 
 ## Backends & AD Packages
 
-| Supported Backends | Packages Needed  |
-| :----------------- | :--------------- |
-| `AutoForwardDiff`  |                  |
+| Supported Backends | Packages Needed             | Notes                                             |
+| :----------------- | :-------------------------- | :------------------------------------------------ |
+| `AutoEnzyme`       | `Enzyme.jl` / `Reactant.jl` | For nested AD support directly using `Enzyme.jl`. |
+| `AutoForwardDiff`  |                             |                                                   |
 
-!!! warning
+!!! warning "Only for ChainRules-based AD like Zygote"
 
     Gradient wrt `u` in the reverse pass is always dropped.
 
@@ -74,8 +77,13 @@ function jacobian_vector_product(::F, backend::AbstractADType, _, __) where {F}
     throw(ArgumentError("`jacobian_vector_product` is not implemented for `$(backend)`."))
 end
 
-function jacobian_vector_product(f::F, backend::AutoForwardDiff, x, u) where {F}
-    return AutoDiffInternalImpl.jacobian_vector_product(f, backend, x, u)
+for implemented_backend in (:AutoForwardDiff, :AutoEnzyme)
+    @eval function jacobian_vector_product(
+        f::F, backend::$implemented_backend, x, u
+    ) where {F}
+        assert_backend_loaded(:jacobian_vector_product, backend)
+        return AutoDiffInternalImpl.jacobian_vector_product(f, backend, x, u)
+    end
 end
 
 """
@@ -129,3 +137,19 @@ function batched_jacobian(f::F, backend::AutoZygote, x::AbstractArray) where {F}
     end
     return AutoDiffInternalImpl.batched_jacobian(f, backend, x)
 end
+
+# Utils
+assert_backend_loaded(::Symbol, ::AutoForwardDiff) = nothing
+function assert_backend_loaded(fname::Symbol, ad::AbstractADType)
+    return assert_backend_loaded(fname, ad, adtype_to_backend(ad))
+end
+function assert_backend_loaded(fname::Symbol, ad::AbstractADType, backend::Val{B}) where {B}
+    if !is_extension_loaded(backend)
+        error("$(fname) with `$(ad)` requires $(B).jl to be loaded.")
+    end
+    return nothing
+end
+
+adtype_to_backend(::AutoEnzyme) = Val(:Enzyme)
+adtype_to_backend(::AutoForwardDiff) = Val(:ForwardDiff)
+adtype_to_backend(::AutoZygote) = Val(:Zygote)
