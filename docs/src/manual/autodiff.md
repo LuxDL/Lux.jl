@@ -10,13 +10,13 @@ Lux. Additionally, we provide some convenience functions for working with AD.
 | :------------------------------------------------------------------------------------------------------------------- | :---------------- | :----- | :----- | :-- | :------------------ | :------------ |
 | [`Reactant.jl`](https://github.com/EnzymeAD/Reactant.jl)[^re] + [`Enzyme.jl`](https://github.com/EnzymeAD/Enzyme.jl) | Reverse / Forward | ✔️     | ✔️     | ✔️  | ✔️                  | Tier I        |
 | [`ChainRules.jl`](https://github.com/JuliaDiff/ChainRules.jl)[^cr]                                                   | Reverse           | ✔️     | ✔️     | ❌  | ✔️                  | Tier I        |
-| [`Enzyme.jl`](https://github.com/EnzymeAD/Enzyme.jl)                                                                 | Reverse           | ✔️     | ❓[^q] | ❌  | ❓[^q]              | Tier I[^e]    |
+| [`Enzyme.jl`](https://github.com/EnzymeAD/Enzyme.jl)                                                                 | Reverse / Forward | ✔️     | ❓[^q] | ❌  | ❓[^q]              | Tier I[^e]    |
 | [`Zygote.jl`](https://github.com/FluxML/Zygote.jl)                                                                   | Reverse           | ✔️     | ✔️     | ❌  | ✔️                  | Tier I        |
 | [`ForwardDiff.jl`](https://github.com/JuliaDiff/ForwardDiff.jl)                                                      | Forward           | ✔️     | ✔️     | ❌  | ✔️                  | Tier I        |
-| [`ReverseDiff.jl`](https://github.com/JuliaDiff/ReverseDiff.jl)                                                      | Reverse           | ✔️     | ❌     | ❌  | ❌                  | Tier II       |
-| [`Tracker.jl`](https://github.com/FluxML/Tracker.jl)                                                                 | Reverse           | ✔️     | ✔️     | ❌  | ❌                  | Tier II       |
 | [`Mooncake.jl`](https://github.com/compintell/Mooncake.jl)                                                           | Reverse           | ❓[^q] | ❌     | ❌  | ❌                  | Tier III      |
-| [`Diffractor.jl`](https://github.com/JuliaDiff/Diffractor.jl)                                                        | Forward           | ❓[^q] | ❓[^q] | ❌  | ❓[^q]              | Tier III      |
+| [`ReverseDiff.jl`](https://github.com/JuliaDiff/ReverseDiff.jl)                                                      | Reverse           | ✔️     | ❌     | ❌  | ❌                  | Tier IV       |
+| [`Tracker.jl`](https://github.com/FluxML/Tracker.jl)                                                                 | Reverse           | ✔️     | ✔️     | ❌  | ❌                  | Tier IV       |
+| [`Diffractor.jl`](https://github.com/JuliaDiff/Diffractor.jl)                                                        | Forward           | ❓[^q] | ❓[^q] | ❌  | ❓[^q]              | Tier IV       |
 
 [^e]:
     Currently Enzyme outperforms other AD packages in terms of CPU performance. However,
@@ -56,6 +56,7 @@ Lux. Additionally, we provide some convenience functions for working with AD.
      `Reactant.jl` for GPU as well.
 
 - For TPU Use cases:
+
   1. Use `Reactant.jl`. This is the only supported (and fastest) option.
 
 ## Support Class
@@ -69,5 +70,9 @@ Lux. Additionally, we provide some convenience functions for working with AD.
    here)
 3. **Tier III**: We don't know if these packages currently work with Lux. We'd love to
    add tests for these backends, but currently these are not our priority.
+4. **Tier IV**: At some point we may or may not have supported these frameworks. However,
+   these are not maintained at the moment. Whatever code exists for these frameworks
+   in Lux, may be removed in the future (with a breaking release). It is not recommended
+   to use these frameworks with Lux.
 
 ## Footnotes
