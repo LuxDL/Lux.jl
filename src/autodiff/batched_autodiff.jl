@@ -90,7 +90,9 @@ end
 function batched_jacobian_internal(
     f::F, backend::AbstractADType, x::AbstractArray
 ) where {F}
-    return batched_jacobian_impl(f, backend, x)
+    return batched_jacobian_impl(
+        f, Lux.Training.maybe_wrap_adtype(backend, get_device_type(x)), x
+    )
 end
 
 # ForwardDiff.jl Implementation

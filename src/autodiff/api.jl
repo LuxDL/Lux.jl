@@ -99,6 +99,7 @@ the following properties for `y = f(x)`:
 
 | Supported Backends | Packages Needed |
 |:------------------ |:--------------- |
+| `AutoEnzyme`       | `Reactant.jl`   |
 | `AutoForwardDiff`  |                 |
 | `AutoZygote`       | `Zygote.jl`     |
 
@@ -126,16 +127,13 @@ function batched_jacobian(::F, backend::AbstractADType, x::AbstractArray) where 
     throw(ArgumentError("`batched_jacobian` is not implemented for `$(backend)`."))
 end
 
-function batched_jacobian(f::F, backend::AutoForwardDiff, x::AbstractArray) where {F}
-    return AutoDiffInternalImpl.batched_jacobian(f, backend, x)
-end
-
-function batched_jacobian(f::F, backend::AutoZygote, x::AbstractArray) where {F}
-    if !is_extension_loaded(Val(:Zygote))
-        error("`Zygote.jl` must be loaded for `batched_jacobian` to work with \
-               `$(backend)`.")
+for implemented_backend in (:AutoForwardDiff, :AutoZygote, :AutoEnzyme)
+    @eval function batched_jacobian(
+        f::F, backend::$implemented_backend, x::AbstractArray
+    ) where {F}
+        assert_backend_loaded(:batched_jacobian, backend)
+        return AutoDiffInternalImpl.batched_jacobian(f, backend, x)
     end
-    return AutoDiffInternalImpl.batched_jacobian(f, backend, x)
 end
 
 # Utils

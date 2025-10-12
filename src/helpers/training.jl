@@ -163,6 +163,7 @@ end
 @concrete struct ReactantBackend
     return_gradients <: StaticBool
     sync::Bool
+    ad <: AutoEnzyme
 end
 
 const APPLY_GRAD_DOCSTRING = """
@@ -283,7 +284,7 @@ function maybe_wrap_adtype(
     return_gradients::Utils.BoolType=True(),
     sync::Bool=false,
 )
-    ad isa AutoEnzyme && return ReactantBackend(static(return_gradients), sync)
+    ad isa AutoEnzyme && return ReactantBackend(static(return_gradients), sync, ad)
     throw(ArgumentError("Computing gradients for models on XLA is supported only with \
                          Enzyme.jl (`AutoEnzyme`)."))
 end
