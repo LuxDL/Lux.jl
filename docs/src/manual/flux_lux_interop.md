@@ -8,10 +8,8 @@ while minimizing code duplication and dependency overhead.
 
 The recommended approach is to:
 
-1. **Define your core layers using LuxCore**: Use `LuxCore.jl` as your primary interface
-since it's a lighter dependency than full `Lux.jl`
-2. **Construct a StatefulLuxLayer**: Wrap the layer in a [`StatefulLuxLayer`](@ref) to
-provide a Flux-style interface
+1. **Define your core layers using LuxCore**: Use `LuxCore.jl` as your primary interface since it's a lighter dependency than full `Lux.jl`
+2. **Construct a StatefulLuxLayer**: Wrap the layer in a [`StatefulLuxLayer`](@ref) to provide a Flux-style interface
 
 This strategy allows users to choose their preferred framework while keeping your package's
 core functionality framework-agnostic.
