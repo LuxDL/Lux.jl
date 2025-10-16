@@ -55,3 +55,31 @@
         end
     end
 end
+
+@testitem "AutoDiff APIs: Batched Jacobian" tags = [:reactant] setup = [SharedTestSetup] begin
+    using Reactant, Lux, Zygote, Random, ForwardDiff, Enzyme
+
+    fn(x) = reshape(sum(abs2, x; dims=(1, 2, 3)), 1, :)
+
+    rng = Random.default_rng()
+
+    @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
+        if mode == "amdgpu"
+            @warn "Skipping AMDGPU tests for Reactant"
+            continue
+        end
+
+        if ongpu
+            Reactant.set_default_backend("gpu")
+        else
+            Reactant.set_default_backend("cpu")
+        end
+
+        dev = reactant_device(; force=true)
+
+        x = rand(rng, Float32, 2, 3, 4, 5)
+        x_ra = dev(x)
+
+        # TODO: ....
+    end
+end

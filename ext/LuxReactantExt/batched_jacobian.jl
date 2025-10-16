@@ -14,7 +14,7 @@ struct ApplyWithReshape{F,SZ}
     sz::SZ
 end
 
-(f::ApplyWithReshape)(x) = f.f(reshape(x, f.sz))
+(f::ApplyWithReshape)(x) = reshape(f.f(reshape(x, f.sz)), :, size(x, ndims(x)))
 
 function (f::ApplyWithReshape)(y, x)
     res = f.f(reshape(x, f.sz))
