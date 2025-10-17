@@ -44,7 +44,7 @@ toluxforce = FromFluxAdaptor(; force_preserve=true, preserve_ps_st=true)
         end
 
         @testset "Skip Connection" begin
-            model = dev(Flux.SkipConnection(Flux.Dense(2 => 2), +))
+            model = dev(Flux.SkipConnection(+, Flux.Dense(2 => 2)))
             x = aType(rand(Float32, 2, 1))
 
             model_lux = toluxpsst(model)
