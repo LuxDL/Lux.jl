@@ -42,7 +42,7 @@ path = "../../MLDataDevices"
 [compat]
 AppleAccelerate = "0.4"
 Aqua = "0.8.7"
-BLISBLAS = "0.1"
+BLISBLAS = "0.1, 0.2"
 BenchmarkTools = "1.5"
 CPUSummary = "0.2.6"
 ChainRulesCore = "1.25.1"
