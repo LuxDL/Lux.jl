@@ -1,19 +1,14 @@
 module LuxReactantExt
 
+using ADTypes: ADTypes, AutoEnzyme
 using Enzyme: Enzyme, Const
+using EnzymeCore: EnzymeCore
+using LinearAlgebra: LinearAlgebra
 using Preferences: load_preference
 using Optimisers: Optimisers
 using Reactant:
-    Reactant,
-    Profiler,
-    @compile,
-    @code_hlo,
-    @jit,
-    @opcall,
-    AnyTracedRArray,
-    TracedRArray,
-    TracedRNumber,
-    PrecisionConfig
+    Reactant, Profiler, AnyTracedRArray, TracedRArray, TracedRNumber, PrecisionConfig
+using Reactant: @compile, @code_hlo, @jit, @opcall
 using ReactantCore: ReactantCore, @trace
 using Setfield: @set!
 using Static: True, False
@@ -74,5 +69,6 @@ include("training.jl")
 include("layers.jl")
 include("tracing.jl")
 include("saved_model.jl")
+include("batched_jacobian.jl")
 
 end
