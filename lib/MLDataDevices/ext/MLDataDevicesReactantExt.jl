@@ -85,6 +85,9 @@ function Internal.get_device(::Union{TracedRArray,TracedRNumber})
 end
 Internal.get_device_type(::Union{TracedRArray,TracedRNumber}) = ReactantDevice
 
+Internal.get_device(rng::Reactant.ReactantRNG) = Internal.get_device(rng.seed)
+Internal.get_device_type(rng::Reactant.ReactantRNG) = Internal.get_device_type(rng.seed)
+
 # unsafe_free!
 Internal.unsafe_free_internal!(::Type{ReactantDevice}, x::AbstractArray) = nothing
 
@@ -114,6 +117,28 @@ Profiler.@annotate "Device Transfer (Reactant)" function Adapt.adapt_storage(
     else
         return ConcreteRArray(x; device_to_kwargs(dev, x)...)
     end
+end
+
+# Once https://github.com/EnzymeAD/Reactant.jl/pull/1770/ lands we can directly use
+# `Reactant.to_rarray`
+Profiler.@annotate "Device Transfer (Reactant)" function Adapt.adapt_storage(
+    dev::ReactantDevice, rng::Random.TaskLocalRNG
+)
+    return Reactant.ReactantRNG(
+        dev(Reactant.TracedRandom.make_seed(rng)), Reactant.TracedRandom.rng_algorithm(rng)
+    )
+end
+Profiler.@annotate "Device Transfer (Reactant)" function Adapt.adapt_storage(
+    dev::ReactantDevice, rng::Random.AbstractRNG
+)
+    return Reactant.ReactantRNG(
+        dev(Reactant.TracedRandom.make_seed(rng)), Reactant.TracedRandom.rng_algorithm(rng)
+    )
+end
+Profiler.@annotate "Device Transfer (Reactant)" function Adapt.adapt_storage(
+    ::ReactantDevice, rng::Reactant.ReactantRNG
+)
+    return rng
 end
 
 function Adapt.adapt_storage(
