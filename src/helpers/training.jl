@@ -1,5 +1,6 @@
 module Training
 
+using Adapt: Adapt
 using ADTypes:
     AbstractADType, AutoEnzyme, AutoReverseDiff, AutoTracker, AutoZygote, AutoMooncake
 using SciMLPublic: @public
@@ -12,7 +13,8 @@ using Static: StaticBool, Static, False, True, static
 
 using ..Lux: Lux, Utils, ReactantCompatibleOptimisers
 using LuxCore: LuxCore, AbstractLuxLayer
-using MLDataDevices: MLDataDevices, ReactantDevice, get_device, get_device_type
+using MLDataDevices:
+    MLDataDevices, AbstractDevice, ReactantDevice, get_device, get_device_type
 
 """
     TrainState
@@ -45,6 +47,60 @@ Internal fields:
     optimizer
     optimizer_state
     step::Int
+end
+
+MLDataDevices.isleaf(::TrainState) = true
+
+function Adapt.adapt_structure(to::AbstractDevice, ts::TrainState)
+    return TrainState(
+        nothing,
+        nothing,
+        ts.model,
+        to(ts.parameters),
+        to(ts.states),
+        ts.optimizer,
+        to(ts.optimizer_state),
+        ts.step,
+    )
+end
+
+function Adapt.adapt_structure(to::ReactantDevice, ts::TrainState)
+    @warn """
+    Moving `TrainState` to `ReactantDevice` might lead to unwanted behaviour. This
+    potentially originates from the following style of usage:
+
+    ```julia
+    rdev = reactant_device()
+
+    ps, st = Lux.setup(rng, model)
+    train_state = TrainState(model, ps, st, opt)
+    train_state = train_state |> rdev
+    ```
+
+    Specifically, `ps` and `st` we on the host device when `train_state` is being
+    constructed and later `train_state` is moved to the device. Instead it is recommended
+    to do the following:
+
+    ```julia
+    rdev = reactant_device()
+
+    ps, st = Lux.setup(rng, model) |> rdev
+    train_state = TrainState(model, ps, st, opt)
+    ```
+
+    This ensures the optimizer state and other internal states are on the device on
+    construction.
+    """
+    return TrainState(
+        nothing,
+        nothing,
+        ts.model,
+        to(ts.parameters),
+        to(ts.states),
+        ts.optimizer,
+        to(ts.optimizer_state),
+        ts.step,
+    )
 end
 
 """
@@ -88,10 +144,10 @@ end
 dparameters(cache::TrainingBackendCache, ::True) = cache.dparameters
 
 function Base.show(io::IO, ::MIME"text/plain", ts::TrainState)
-    println(io, "TrainState")
-    println(io, "    model: ", ts.model)
-    println(io, "    # of parameters: ", LuxCore.parameterlength(ts.parameters))
-    println(io, "    # of states: ", LuxCore.statelength(ts.states))
+    println(io, "TrainState(")
+    Lux.PrettyPrinting.big_show(io, ts.model, 4)
+    println(io, "    number of parameters: ", LuxCore.parameterlength(ts.parameters))
+    println(io, "    number of states: ", LuxCore.statelength(ts.states))
     println(io, "    optimizer: ", ts.optimizer)
     print(io, "    step: ", ts.step)
     if ts.cache !== nothing
@@ -101,8 +157,9 @@ function Base.show(io::IO, ::MIME"text/plain", ts::TrainState)
             print(io, "\n    cache: $(nameof(typeof(ts.cache)))")
         end
     end
-    return ts.objective_function !== nothing &&
-           print(io, "\n    objective_function: ", nameof(typeof(ts.objective_function)))
+    ts.objective_function !== nothing &&
+        print(io, "\n    objective_function: ", nameof(typeof(ts.objective_function)))
+    return println(io, "\n)")
 end
 
 @concrete struct ReactantBackend

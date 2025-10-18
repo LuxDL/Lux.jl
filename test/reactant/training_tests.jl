@@ -56,6 +56,7 @@
                 AdamW(0.01f0),
                 OptimiserChain(AccumGrad(5), Adam(0.01f0)),
             )
+                ps, st = xdev(Lux.setup(StableRNG(1234), model))
                 train_state = Training.TrainState(model, ps, st, opt)
 
                 for epoch in 1:100, (xᵢ, yᵢ) in dataloader
