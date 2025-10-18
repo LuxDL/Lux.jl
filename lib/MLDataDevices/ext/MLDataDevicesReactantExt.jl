@@ -116,6 +116,28 @@ Profiler.@annotate "Device Transfer (Reactant)" function Adapt.adapt_storage(
     end
 end
 
+# Once https://github.com/EnzymeAD/Reactant.jl/pull/1770/ lands we can directly use
+# `Reactant.to_rarray`
+Profiler.@annotate "Device Transfer (Reactant)" function Adapt.adapt_storage(
+    dev::ReactantDevice, rng::Random.TaskLocalRNG
+)
+    return Reactant.ReactantRNG(
+        dev(Reactant.TracedRandom.make_seed(rng)), Reactant.TracedRandom.rng_algorithm(rng)
+    )
+end
+Profiler.@annotate "Device Transfer (Reactant)" function Adapt.adapt_storage(
+    dev::ReactantDevice, rng::Random.AbstractRNG
+)
+    return Reactant.ReactantRNG(
+        dev(Reactant.TracedRandom.make_seed(rng)), Reactant.TracedRandom.rng_algorithm(rng)
+    )
+end
+Profiler.@annotate "Device Transfer (Reactant)" function Adapt.adapt_storage(
+    ::ReactantDevice, rng::Reactant.ReactantRNG
+)
+    return rng
+end
+
 function Adapt.adapt_storage(
     ::CPUDevice,
     T::Type{<:Union{<:Reactant.ConcretePJRTNumber,<:Reactant.ConcreteIFRTNumber}},

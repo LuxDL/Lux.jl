@@ -174,3 +174,11 @@ end
         ) MLDataDevices.set_device!(ReactantDevice, nothing, 1)
     end
 end
+
+@testset "Random" begin
+    if MLDataDevices.functional(ReactantDevice)
+        dev = reactant_device()
+        rng = MersenneTwister(123)
+        @test dev(rng) isa Reactant.ReactantRNG
+    end
+end
