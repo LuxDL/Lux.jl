@@ -85,6 +85,9 @@ function Internal.get_device(::Union{TracedRArray,TracedRNumber})
 end
 Internal.get_device_type(::Union{TracedRArray,TracedRNumber}) = ReactantDevice
 
+Internal.get_device(rng::Reactant.ReactantRNG) = Internal.get_device(rng.seed)
+Internal.get_device_type(rng::Reactant.ReactantRNG) = Internal.get_device_type(rng.seed)
+
 # unsafe_free!
 Internal.unsafe_free_internal!(::Type{ReactantDevice}, x::AbstractArray) = nothing
 
