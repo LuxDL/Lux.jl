@@ -88,10 +88,10 @@ end
 dparameters(cache::TrainingBackendCache, ::True) = cache.dparameters
 
 function Base.show(io::IO, ::MIME"text/plain", ts::TrainState)
-    println(io, "TrainState")
-    println(io, "    model: ", ts.model)
-    println(io, "    # of parameters: ", LuxCore.parameterlength(ts.parameters))
-    println(io, "    # of states: ", LuxCore.statelength(ts.states))
+    println(io, "TrainState(")
+    Lux.PrettyPrinting.big_show(io, ts.model, 4)
+    println(io, "    number of parameters: ", LuxCore.parameterlength(ts.parameters))
+    println(io, "    number of states: ", LuxCore.statelength(ts.states))
     println(io, "    optimizer: ", ts.optimizer)
     print(io, "    step: ", ts.step)
     if ts.cache !== nothing
@@ -101,8 +101,9 @@ function Base.show(io::IO, ::MIME"text/plain", ts::TrainState)
             print(io, "\n    cache: $(nameof(typeof(ts.cache)))")
         end
     end
-    return ts.objective_function !== nothing &&
-           print(io, "\n    objective_function: ", nameof(typeof(ts.objective_function)))
+    ts.objective_function !== nothing &&
+        print(io, "\n    objective_function: ", nameof(typeof(ts.objective_function)))
+    return println(io, "\n)")
 end
 
 @concrete struct ReactantBackend
