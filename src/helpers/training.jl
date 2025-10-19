@@ -164,6 +164,7 @@ end
 
 @concrete struct ReactantBackend
     return_gradients <: StaticBool
+    sync::Bool
 end
 
 const APPLY_GRAD_DOCSTRING = """
@@ -206,9 +207,19 @@ function apply_gradients!(ts::TrainState, grads)
     return ts
 end
 
+const SYNC_DOCSTRING = """
+  - `sync`: If `true`, then the compiled reactant function is compiled with `sync=true`.
+    Typically reactant functions are asynchronous, which means if used with profiling or
+    for timing, the timing will be inaccurate. Setting `sync=true` will ensure that the
+    function will finish execution before this function returns. This is only used for
+    Reactant Backend.
 """
-    compute_gradients(ad::AbstractADType, objective_function::Function, data,
-        ts::TrainState)
+
+"""
+    compute_gradients(
+        ad::AbstractADType, objective_function::Function, data, ts::TrainState;
+        sync::Bool=false
+    )
 
 Compute the gradients of the objective function wrt parameters stored in `ts`.
 
@@ -232,6 +243,10 @@ Compute the gradients of the objective function wrt parameters stored in `ts`.
     and any computed statistics.
   - `data`: Data used to compute the gradients.
   - `ts`: Current Training State. See [`TrainState`](@ref).
+
+## Keyword Arguments
+
+$(SYNC_DOCSTRING)
 
 ## Return
 
@@ -257,17 +272,20 @@ A 4-Tuple containing:
     returned in step `i + 1` might be aliased by the old gradients. If you want to prevent
     this, simply use `copy(grads)` or `deepcopy(grads)` to make a copy of the gradients.
 """
-function compute_gradients(ad, obj_fn::F, data, ts::TrainState) where {F}
+function compute_gradients(ad, obj_fn::F, data, ts::TrainState; sync::Bool=false) where {F}
     dev_type = get_device_type((ts.parameters, ts.states))
-    return compute_gradients_impl(maybe_wrap_adtype(ad, dev_type), obj_fn, data, ts)
+    return compute_gradients_impl(maybe_wrap_adtype(ad, dev_type; sync), obj_fn, data, ts)
 end
 
 maybe_wrap_adtype(backend::ReactantBackend, ::Any; kwargs...) = backend
 maybe_wrap_adtype(ad::AbstractADType, ::Any; kwargs...) = ad
 function maybe_wrap_adtype(
-    ad::AbstractADType, ::Type{ReactantDevice}; return_gradients::Utils.BoolType=True()
+    ad::AbstractADType,
+    ::Type{ReactantDevice};
+    return_gradients::Utils.BoolType=True(),
+    sync::Bool=false,
 )
-    ad isa AutoEnzyme && return ReactantBackend(static(return_gradients))
+    ad isa AutoEnzyme && return ReactantBackend(static(return_gradients), sync)
     throw(ArgumentError("Computing gradients for models on XLA is supported only with \
                          Enzyme.jl (`AutoEnzyme`)."))
 end
@@ -326,8 +344,15 @@ function wrap_objective_function(
     return wrapped_objective_function, st_updated, stats
 end
 
+const RETURN_GRADIENTS_DOCSTRING = """
+  - `return_gradients`: If `True()`, the gradients are returned. If `False()`, the returned
+    gradients are `nothing`. Defaults to `True()`. This is only used for Reactant Backend.
 """
-    single_train_step!(backend, obj_fn::F, data, ts::TrainState; return_gradients=True())
+
+"""
+    single_train_step!(
+        backend, obj_fn::F, data, ts::TrainState; return_gradients=True(), sync::Bool=false
+    )
 
 Perform a single training step. Computes the gradients using [`compute_gradients`](@ref) and
 updates the parameters using [`apply_gradients!`](@ref). All backends supported via
@@ -335,8 +360,8 @@ updates the parameters using [`apply_gradients!`](@ref). All backends supported 
 
 ## Keyword Arguments
 
-  - `return_gradients`: If `True()`, the gradients are returned. If `False()`, the returned
-    gradients are `nothing`. Defaults to `True()`. This is only used for Reactant Backend.
+$(RETURN_GRADIENTS_DOCSTRING)
+$(SYNC_DOCSTRING)
 
 ## Return
 
@@ -346,16 +371,23 @@ object for further training steps, else there is no caching and performance will
 suboptimal (and absolutely terrible for backends like `AutoReactant`).
 """
 function single_train_step!(
-    backend, obj_fn::F, data, ts::TrainState; return_gradients::Utils.BoolType=True()
+    backend,
+    obj_fn::F,
+    data,
+    ts::TrainState;
+    return_gradients::Utils.BoolType=True(),
+    sync::Bool=false,
 ) where {F}
     backend = maybe_wrap_adtype(
-        backend, get_device_type((ts.parameters, ts.states)); return_gradients
+        backend, get_device_type((ts.parameters, ts.states)); return_gradients, sync
     )
     return single_train_step_impl!(backend, obj_fn, data, ts)
 end
 
 """
-    single_train_step(backend, obj_fn::F, data, ts::TrainState; return_gradients=True())
+    single_train_step(
+        backend, obj_fn::F, data, ts::TrainState; return_gradients=True(), sync::Bool=false
+    )
 
 Perform a single training step. Computes the gradients using [`compute_gradients`](@ref) and
 updates the parameters using [`apply_gradients`](@ref). All backends supported via
@@ -365,18 +397,23 @@ In most cases you should use [`single_train_step!`](@ref) instead of this functi
 
 ## Keyword Arguments
 
-  - `return_gradients`: If `True()`, the gradients are returned. If `False()`, the returned
-    gradients are `nothing`. Defaults to `True()`. This is only used for Reactant Backend.
+$(RETURN_GRADIENTS_DOCSTRING)
+$(SYNC_DOCSTRING)
 
 ## Return
 
 Returned values are the same as [`single_train_step!`](@ref).
 """
 function single_train_step(
-    backend, obj_fn::F, data, ts::TrainState; return_gradients::Utils.BoolType=True()
+    backend,
+    obj_fn::F,
+    data,
+    ts::TrainState;
+    return_gradients::Utils.BoolType=True(),
+    sync::Bool=false,
 ) where {F}
     backend = maybe_wrap_adtype(
-        backend, get_device_type((ts.parameters, ts.states)); return_gradients
+        backend, get_device_type((ts.parameters, ts.states)); return_gradients, sync
     )
     return single_train_step_impl(backend, obj_fn, data, ts)
 end
