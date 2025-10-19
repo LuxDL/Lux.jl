@@ -1,7 +1,7 @@
 module LuxPreferences
 
 using ArgCheck: @argcheck
-using Preferences: load_preference, has_preference, set_preferences!, @load_preference
+using Preferences: load_preference, has_preference, set_preferences!
 
 using ..Lux: Lux
 
@@ -18,13 +18,13 @@ macro load_preference_with_choices(pref, default, choices)
 end
 
 # Nested AD
-const AUTOMATIC_NESTED_AD_SWITCHING = @load_preference(
-    "automatic_nested_ad_switching", true
+const AUTOMATIC_NESTED_AD_SWITCHING = load_preference(
+    Lux, "automatic_nested_ad_switching", true
 )
 
 # GPU-Aware MPI
-const MPI_CUDA_AWARE = @load_preference("cuda_aware_mpi", false)
-const MPI_ROCM_AWARE = @load_preference("rocm_aware_mpi", false)
+const MPI_CUDA_AWARE = load_preference(Lux, "cuda_aware_mpi", false)
+const MPI_ROCM_AWARE = load_preference(Lux, "rocm_aware_mpi", false)
 
 # Eltype Auto Conversion
 const ELTYPE_MISMATCH_HANDLING = @load_preference_with_choices(
