@@ -20,7 +20,7 @@ Profiler.@annotate "Compile Compute Gradients" function Lux.Training.compute_gra
     backend::ReactantBackend, objective_function::F, data, ts::Training.TrainState
 ) where {F}
     compiled_gradient_function = with_default_precision_config(ts.parameters) do
-        @compile compute_gradients_internal(
+        @compile sync = backend.sync compute_gradients_internal(
             objective_function, ts.model, data, ts.parameters, ts.states
         )
     end
@@ -65,7 +65,9 @@ for inplace in ("!", "")
             update_function = ts.cache.extras.update_function
         else
             update_function = with_default_precision_config(ts.parameters) do
-                @compile Optimisers.$(update_fn)(ts.optimizer_state, ts.parameters, grads)
+                @compile sync = ts.cache.backend.sync Optimisers.$(update_fn)(
+                    ts.optimizer_state, ts.parameters, grads
+                )
             end
 
             @set! ts.cache.extras = merge(ts.cache.extras, (; update_function))
@@ -83,7 +85,7 @@ for inplace in ("!", "")
         backend::ReactantBackend, objective_function::F, data, ts::Training.TrainState
     ) where {F}
         compiled_grad_and_step_function = with_default_precision_config(ts.parameters) do
-            @compile $(internal_fn)(
+            @compile sync = backend.sync $(internal_fn)(
                 objective_function,
                 ts.model,
                 data,
