@@ -65,7 +65,7 @@ for inplace in ("!", "")
             update_function = ts.cache.extras.update_function
         else
             update_function = with_default_precision_config(ts.parameters) do
-                @compile sync = backend.sync Optimisers.$(update_fn)(
+                @compile sync = ts.cache.backend.sync Optimisers.$(update_fn)(
                     ts.optimizer_state, ts.parameters, grads
                 )
             end
