@@ -123,10 +123,8 @@ function TrainState(model::AbstractLuxLayer, ps, st, optimizer::Optimisers.Abstr
     dev = get_device(ps)
     if dev isa ReactantDevice
         optimizer = ReactantCompatibleOptimisers.make_reactant_compatible(optimizer, dev)
-        st_opt = ReactantCompatibleOptimisers.optimisers_setup_with_jit(optimizer, ps)
-    else
-        st_opt = Optimisers.setup(optimizer, ps)
     end
+    st_opt = Optimisers.setup(optimizer, ps)
     return TrainState(nothing, nothing, model, ps, st, optimizer, st_opt, 0)
 end
 

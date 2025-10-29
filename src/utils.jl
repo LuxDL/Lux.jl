@@ -234,6 +234,8 @@ calculate_gain(::typeof(NNlib.selu), _) = 3.0f0 / 4
 
 recursive_unthunk(x) = Functors.fmap(CRC.unthunk, x; exclude=MLDataDevices.isleaf)
 
+convert_eltype(::Type{T}, x::Number) where {T <: Number} = convert(T, x)
+
 end
 
 using .Utils:

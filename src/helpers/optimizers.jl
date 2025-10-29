@@ -2,6 +2,8 @@
 # Optimisers.jl for Reactant compatibility.
 module ReactantCompatibleOptimisers
 
+using ..Lux: Utils
+
 using Optimisers: Optimisers
 using MLDataDevices: ReactantDevice, get_device, with_track_numbers
 
@@ -16,6 +18,29 @@ function Optimisers.apply!(opt::ReactantOptimiser, state, x, y)
 end
 
 Optimisers.init(opt::ReactantOptimiser, ps) = Optimisers.init(opt.opt, ps)
+
+# JITing this is not great atm, since it causes issues without implementing result sharding
+# annotatations
+for common_opt in (:Adam, :AdaMax, :NAdam, :AdamW, :AdaBelief)
+    @eval function Optimisers.init(
+        opt::ReactantOptimiser{<:Optimisers.$(common_opt)}, x::AbstractArray{T}
+    ) where {T}
+        return zero(x), zero(x), Utils.convert_eltype.((T,), opt.opt.beta)
+    end
+end
+
+function Optimisers.init(
+    opt::ReactantOptimiser{<:Optimisers.RAdam}, x::AbstractArray{T}
+) where {T}
+    dev = with_track_numbers(get_device(opt), Integer)
+    return (zero(x), zero(x), Utils.convert_eltype.((T,), opt.opt.beta), dev(1))
+end
+
+function Optimisers.init(
+    opt::ReactantOptimiser{<:Optimisers.OAdam}, x::AbstractArray{T}
+) where {T}
+    return zero(x), zero(x), Utils.convert_eltype.((T,), opt.opt.beta), zero(x)
+end
 
 function Optimisers._adjust(opt::ReactantOptimiser, nt::NamedTuple)
     dev = with_track_numbers(get_device(opt), AbstractFloat)
@@ -60,7 +85,5 @@ function make_reactant_compatible(
     outermost isa Val{true} && return ReactantOptimiser(opt_ra)
     return opt_ra
 end
-
-function optimisers_setup_with_jit end
 
 end
