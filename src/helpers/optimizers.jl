@@ -3,8 +3,6 @@
 module ReactantCompatibleOptimisers
 
 using Optimisers: Optimisers
-
-using ..Lux: Lux, Utils
 using MLDataDevices: ReactantDevice, get_device, with_track_numbers
 
 # We need to wrap in a "ReactantOptimiser" to correctly update the learning rate as such
