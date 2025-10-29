@@ -32,11 +32,13 @@ function device_to_kwargs(dev::ReactantDevice, x)
     kwargs = (;)
     dev.client === missing || (kwargs = (; kwargs..., client=dev.client))
     dev.device === missing || (kwargs = (; kwargs..., device=dev.device))
+
     if dev.sharding !== missing
         if dev.sharding isa IdDict
             if haskey(dev.sharding, x)
                 sharding = dev.sharding[x]
             else
+<<<<<<< HEAD
                 if all(x -> x isa Reactant.Sharding.NoSharding, values(dev.sharding))
                     sharding = Reactant.Sharding.NoSharding()
                 else
@@ -46,6 +48,11 @@ function device_to_kwargs(dev::ReactantDevice, x)
                     @assert length(meshes) == 1 "Multiple meshes are not supported."
                     sharding = Reactant.Sharding.Replicated(only(meshes))
                 end
+=======
+                meshes = unique([sharding.mesh for sharding in values(dev.sharding)])
+                @assert length(meshes) == 1 "Multiple meshes are not supported."
+                sharding = Reactant.Sharding.Replicated(only(meshes))
+>>>>>>> 15e90733 (feat: allow tracking numbers in ReactantDevice)
             end
             @assert sharding isa Reactant.Sharding.AbstractSharding
             kwargs = (; kwargs..., sharding)
