@@ -18,7 +18,16 @@
             @test x_ != x___
 
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(
+                sumabs2first,
+                layer,
+                x,
+                ps,
+                st;
+                atol=1.0f-3,
+                rtol=1.0f-3,
+                ground_truth_eltype=Nothing
+            )
 
             st = Lux.testmode(st)
             @test first(layer(x, ps, st)) == x
@@ -47,7 +56,16 @@ end
             @test x_ != x___
 
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(
+                sumabs2first,
+                layer,
+                x,
+                ps,
+                st;
+                atol=1.0f-3,
+                rtol=1.0f-3,
+                ground_truth_eltype=Nothing
+            )
 
             st = Lux.testmode(st)
             @test first(layer(x, ps, st)) == x
@@ -76,10 +94,28 @@ end
             @test x_ != x___
 
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(
+                sumabs2first,
+                layer,
+                x,
+                ps,
+                st;
+                atol=1.0f-3,
+                rtol=1.0f-3,
+                ground_truth_eltype=Nothing
+            )
 
             @jet layer(x, ps, st_)
-            @test_gradients(sumabs2first, layer, x, ps, st_; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(
+                sumabs2first,
+                layer,
+                x,
+                ps,
+                st_;
+                atol=1.0f-3,
+                rtol=1.0f-3,
+                ground_truth_eltype=Nothing
+            )
 
             st__ = Lux.update_state(st_, :update_mask, Val(true))
             x___, st___ = layer(x, ps, st__)
@@ -88,7 +124,16 @@ end
             @test x___ != x_
 
             @jet layer(x, ps, st__)
-            @test_gradients(sumabs2first, layer, x, ps, st__; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(
+                sumabs2first,
+                layer,
+                x,
+                ps,
+                st__;
+                atol=1.0f-3,
+                rtol=1.0f-3,
+                ground_truth_eltype=Nothing
+            )
         end
     end
 end

@@ -183,7 +183,7 @@ end
 @testitem "Dense StaticArrays" setup = [SharedTestSetup] tags = [:core_layers] begin
     using StaticArrays, Enzyme, ForwardDiff, ComponentArrays
 
-    if LuxTestUtils.ENZYME_TESTING_ENABLED
+    if LuxTestUtils.ENZYME_TESTING_ENABLED[]
         N = 8
         d = Lux.Dense(N => N)
         ps = (; weight=randn(SMatrix{N,N,Float64}), bias=randn(SVector{N,Float64}))

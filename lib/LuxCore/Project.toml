@@ -49,5 +49,5 @@ Setfield = "1"
 Tracker = "0.2.36"
 julia = "1.10"
 
-[workspaces]
+[workspace]
 projects = ["test"]
