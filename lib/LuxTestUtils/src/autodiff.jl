@@ -31,8 +31,9 @@ function gradient(f::F, ::AutoEnzyme{Nothing}, args...) where {F}
 end
 
 function gradient(f::F, ad::AutoEnzyme{<:Enzyme.ReverseMode}, args...) where {F}
-    !ENZYME_TESTING_ENABLED &&
+    if !ENZYME_TESTING_ENABLED[]
         return ntuple(Returns(GradientComputationSkipped()), length(args))
+    end
 
     args_activity = map(args) do x
         needs_gradient(x) && return Enzyme.Duplicated(x, Enzyme.make_zero(x))
@@ -158,7 +159,7 @@ function test_gradients(
         total_length ≤ 32 && push!(backends, AutoForwardDiff())
         total_length ≤ 32 && push!(backends, AutoFiniteDiff())
         # TODO: Move Enzyme out of here once it supports GPUs
-        if enable_enzyme_reverse_mode || ENZYME_TESTING_ENABLED
+        if enable_enzyme_reverse_mode || ENZYME_TESTING_ENABLED[]
             mode = if enzyme_set_runtime_activity
                 Enzyme.set_runtime_activity(Enzyme.Reverse)
             else
