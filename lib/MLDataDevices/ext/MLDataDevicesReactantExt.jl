@@ -34,9 +34,19 @@ function device_to_kwargs(dev::ReactantDevice, x)
     dev.device === missing || (kwargs = (; kwargs..., device=dev.device))
     if dev.sharding !== missing
         if dev.sharding isa IdDict
-            sharding = (
-                haskey(dev.sharding, x) ? dev.sharding[x] : Reactant.Sharding.NoSharding()
-            )
+            if haskey(dev.sharding, x)
+                sharding = dev.sharding[x]
+            else
+                if all(x -> x isa Reactant.Sharding.NoSharding, values(dev.sharding))
+                    sharding = Reactant.Sharding.NoSharding()
+                else
+                    meshes = unique([
+                        getfield(sharding, :mesh) for sharding in values(dev.sharding)
+                    ])
+                    @assert length(meshes) == 1 "Multiple meshes are not supported."
+                    sharding = Reactant.Sharding.Replicated(only(meshes))
+                end
+            end
             @assert sharding isa Reactant.Sharding.AbstractSharding
             kwargs = (; kwargs..., sharding)
         elseif dev.sharding isa Reactant.Sharding.AbstractSharding
@@ -139,6 +149,12 @@ Profiler.@annotate "Device Transfer (Reactant)" function Adapt.adapt_storage(
     ::ReactantDevice, rng::Reactant.ReactantRNG
 )
     return rng
+end
+Profiler.@annotate "Device Transfer (Reactant)" function Adapt.adapt_storage(
+    dev::ReactantDevice{C,D,S,T,TN}, x::Number
+) where {C,D,S,T,TN}
+    typeof(x) <: TN && return ConcreteRNumber(x; device_to_kwargs(dev, x)...)
+    return x
 end
 
 function Adapt.adapt_storage(

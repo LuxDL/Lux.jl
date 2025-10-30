@@ -21,18 +21,26 @@ MetalDevice() = MetalDevice{Missing}()
 struct oneAPIDevice{T<:EltypeAdaptorType} <: AbstractGPUDevice end
 oneAPIDevice() = oneAPIDevice{Missing}()
 
-struct ReactantDevice{C,D,S,T<:EltypeAdaptorType} <: AbstractAcceleratorDevice
+struct ReactantDevice{C,D,S,T<:EltypeAdaptorType,TN} <: AbstractAcceleratorDevice
     client::C
     device::D
     sharding::S
 end
 function ReactantDevice()
-    return ReactantDevice{Missing,Missing,Missing,Missing}(missing, missing, missing)
+    return ReactantDevice{Missing,Missing,Missing,Missing,Union{}}(
+        missing, missing, missing
+    )
 end
-function ReactantDevice(client, device, sharding)
-    return ReactantDevice{typeof(client),typeof(device),typeof(sharding),Missing}(
+function ReactantDevice(client, device, sharding, _::Type{TN}=Union{}) where {TN}
+    return ReactantDevice{typeof(client),typeof(device),typeof(sharding),Missing,TN}(
         client, device, sharding
     )
+end
+
+function with_track_numbers(
+    dev::ReactantDevice{C,D,S,T,Union{}}, _::Type{TN}
+) where {C,D,S,T,TN}
+    return ReactantDevice{C,D,S,T,TN}(dev.client, dev.device, dev.sharding)
 end
 
 # Helper functions to get the eltype from device types
@@ -70,30 +78,38 @@ function with_eltype(::oneAPIDevice, ::Type{T}) where {T<:AbstractFloat}
     return oneAPIDevice{T}()
 end
 
-function with_eltype(dev::ReactantDevice{C,D,S}, ::Missing) where {C,D,S}
-    return ReactantDevice{C,D,S,Missing}(dev.client, dev.device, dev.sharding)
+function with_eltype(dev::ReactantDevice{C,D,S,<:Any,TN}, ::Missing) where {C,D,S,TN}
+    return ReactantDevice{C,D,S,Missing,TN}(dev.client, dev.device, dev.sharding)
 end
-function with_eltype(dev::ReactantDevice{C,D,S}, ::Nothing) where {C,D,S}
-    return ReactantDevice{C,D,S,Nothing}(dev.client, dev.device, dev.sharding)
+function with_eltype(dev::ReactantDevice{C,D,S,<:Any,TN}, ::Nothing) where {C,D,S,TN}
+    return ReactantDevice{C,D,S,Nothing,TN}(dev.client, dev.device, dev.sharding)
 end
-function with_eltype(dev::ReactantDevice{C,D,S}, ::Type{T}) where {C,D,S,T<:AbstractFloat}
-    return ReactantDevice{C,D,S,T}(dev.client, dev.device, dev.sharding)
+function with_eltype(
+    dev::ReactantDevice{C,D,S,<:Any,TN}, ::Type{T}
+) where {C,D,S,TN,T<:AbstractFloat}
+    return ReactantDevice{C,D,S,T,TN}(dev.client, dev.device, dev.sharding)
 end
 
 function Base.:(==)(
-    x::ReactantDevice{<:Any,<:Any,<:Any,T1}, y::ReactantDevice{<:Any,<:Any,<:Any,T2}
-) where {T1,T2}
+    x::ReactantDevice{<:Any,<:Any,<:Any,T1,TN1}, y::ReactantDevice{<:Any,<:Any,<:Any,T2,TN2}
+) where {T1,T2,TN1,TN2}
     if x.client !== missing && y.client !== missing && x.client.client != y.client.client
         return false
     end
 
-    if x.device !== missing && y.device !== missing && x.device.device != y.device.device
+    if (
+        x.device !== missing &&
+        x.device !== nothing && # can be nothing if objects are sharded
+        y.device !== missing &&
+        y.device !== nothing && # can be nothing if objects are sharded
+        x.device.device != y.device.device
+    )
         return false
     end
 
     T1 === Missing && return T2 === Missing || T2 === Nothing
     T2 === Missing && return T1 === Missing || T1 === Nothing
-    return T1 === T2
+    return T1 === T2 && TN1 === TN2
 end
 
 # XXX: Deprecate in v2
@@ -311,7 +327,8 @@ cpu_device(eltype::T=missing) where {T} = with_eltype(CPUDevice(), eltype)
 
 """
     reactant_device(;
-        force::Bool=false, client=missing, device=missing, sharding=missing, eltype=missing
+        force::Bool=false, client=missing, device=missing, sharding=missing, eltype=missing,
+        track_numbers::Type{TN}=Union{}
     ) -> Union{ReactantDevice, CPUDevice}
 
 Return a `ReactantDevice` object if functional. Otherwise, throw an error if `force` is
@@ -324,19 +341,28 @@ specified, then the default client and index are used.
 `Reactant.Sharding.AbstractSharding` is specified, then we use it to shard all abstract
 arrays. Alternatively, pass in a `IdDict` to specify the sharding for specific leaves.
 
+`track_numbers` can be specified to convert numbers of specified subtypes to be traced.
+
 The `eltype` parameter controls element type conversion:
 
   - `missing/nothing` (default): Preserves the original element type
   - `Type{<:AbstractFloat}`: Converts floating-point arrays to the specified type
 """
 function reactant_device(
-    eltype::T=missing; force::Bool=false, client=missing, device=missing, sharding=missing
-) where {T}
+    eltype::T=missing;
+    force::Bool=false,
+    client=missing,
+    device=missing,
+    sharding=missing,
+    track_numbers::Type{TN}=Union{},
+) where {T,TN}
     msg = "`ReactantDevice` is not loaded or not functional. Load `Reactant.jl` before \
            calling this function. Defaulting to CPU."
     if loaded(ReactantDevice)
         if functional(ReactantDevice)
-            return with_eltype(ReactantDevice(client, device, sharding), eltype)
+            return with_track_numbers(
+                with_eltype(ReactantDevice(client, device, sharding), eltype), track_numbers
+            )
         end
         msg = "`ReactantDevice` is loaded but not functional. Defaulting to CPU."
     end
