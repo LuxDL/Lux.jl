@@ -1,7 +1,9 @@
 module LuxReactantExt
 
+using ADTypes: AutoEnzyme
 using Enzyme: Enzyme, Const
 using Preferences: load_preference
+using Random: Random
 using Optimisers: Optimisers
 using Reactant:
     Reactant,
@@ -21,7 +23,8 @@ using Static: True, False
 using Lux: Lux, LuxOps, Training, Utils, StatefulLuxLayer
 using Lux.Training: TrainingBackendCache, ReactantBackend
 using LuxCore: LuxCore, AbstractLuxLayer
-using MLDataDevices: ReactantDevice, get_device
+using LuxLib: LuxLib
+using MLDataDevices: MLDataDevices, ReactantDevice, reactant_device, get_device
 
 Lux.is_extension_loaded(::Val{:Reactant}) = true
 
@@ -74,5 +77,7 @@ include("training.jl")
 include("layers.jl")
 include("tracing.jl")
 include("saved_model.jl")
+
+include("precompile_workloads.jl")
 
 end
