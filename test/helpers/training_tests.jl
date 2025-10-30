@@ -80,7 +80,7 @@ end
             ongpu &&
                 (ad isa AutoReverseDiff || ad isa AutoEnzyme || ad isa AutoMooncake) &&
                 continue
-            !LuxTestUtils.ENZYME_TESTING_ENABLED && ad isa AutoEnzyme && continue
+            !LuxTestUtils.ENZYME_TESTING_ENABLED[] && ad isa AutoEnzyme && continue
 
             ps, st = dev(Lux.setup(rng, model))
             tstate = Training.TrainState(model, ps, st, opt)
