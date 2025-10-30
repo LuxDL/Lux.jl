@@ -49,7 +49,7 @@ end
 
 function Optimisers._adjust(opt::ReactantOptimiser{<:Optimisers.AccumGrad}, nt::NamedTuple)
     dev = with_track_numbers(get_device(opt), Integer)
-    return ReactantOptimiser(Optimisers._adjust(opt.opt, dev(nt_tracked)))
+    return ReactantOptimiser(Optimisers._adjust(opt.opt, dev(nt)))
 end
 
 # Convert existing Optimisers.jl rules to ReactantOptimisers
