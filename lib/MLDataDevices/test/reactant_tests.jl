@@ -184,3 +184,13 @@ end
         @test dev(rng) isa Reactant.ReactantRNG
     end
 end
+
+@testset "Track Numbers" begin
+    if MLDataDevices.functional(ReactantDevice)
+        dev = reactant_device(; track_numbers=Float32)
+        x = dev(2.0f0)
+        @test x isa ConcreteRNumber{Float32}
+        x = dev(2.0)
+        @test x isa Float64
+    end
+end
