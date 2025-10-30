@@ -29,7 +29,7 @@ jobs:
           - reactant
     uses: ./.github/workflows/CommonCI.yml
     with:
-      julia_version: "1.11"
+      julia_version: "1.12"
       project: "lib/MLDataDevices"
       test_args: "BACKEND_GROUP=${{ matrix.group }}"
       os: ${{ matrix.os }}
