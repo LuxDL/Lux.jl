@@ -13,6 +13,11 @@ struct ReactantOptimiser{T} <: Optimisers.AbstractRule
     opt::T
 end
 
+function Base.show(io::IO, opt::ReactantOptimiser)
+    print(io, "ReactantOptimiser(", opt.opt, ")")
+    return nothing
+end
+
 function Optimisers.apply!(opt::ReactantOptimiser, state, x, y)
     return Optimisers.apply!(opt.opt, state, x, y)
 end
@@ -53,37 +58,24 @@ function Optimisers._adjust(opt::ReactantOptimiser{<:Optimisers.AccumGrad}, nt::
 end
 
 # Convert existing Optimisers.jl rules to ReactantOptimisers
-function make_reactant_compatible(
-    opt::Optimisers.OptimiserChain, dev::ReactantDevice, outermost=Val(true)
-)
-    opt_ra = Optimisers.OptimiserChain(
-        make_reactant_compatible.(opt.opts, (dev,), Val(false))...
+function make_reactant_compatible(opt::Optimisers.OptimiserChain, dev::ReactantDevice)
+    return ReactantOptimiser(
+        Optimisers.OptimiserChain(make_reactant_compatible.(opt.opts, (dev,))...)
     )
-    outermost isa Val{true} && return ReactantOptimiser(opt_ra)
-    return opt_ra
 end
 
-function make_reactant_compatible(
-    opt::Optimisers.AbstractRule, dev::ReactantDevice, outermost=Val(true)
-)
-    opt_ra = with_track_numbers(dev, AbstractFloat)(opt)
-    outermost isa Val{true} && return ReactantOptimiser(opt_ra)
-    return opt_ra
+function make_reactant_compatible(opt::Optimisers.AbstractRule, dev::ReactantDevice)
+    return ReactantOptimiser(with_track_numbers(dev, AbstractFloat)(opt))
 end
 
-function make_reactant_compatible(
-    opt::Optimisers.AccumGrad, dev::ReactantDevice, outermost=Val(true)
-)
-    # ignore outermost we will need to update the fields
+function make_reactant_compatible(opt::Optimisers.AccumGrad, dev::ReactantDevice)
     return ReactantOptimiser(with_track_numbers(dev, Integer)(opt))
 end
 
-function make_reactant_compatible(
-    opt::Optimisers.ClipNorm, dev::ReactantDevice, outermost=Val(true)
-)
-    opt_ra = Optimisers.ClipNorm(with_track_numbers(dev, Integer)(opt.omega), opt.p, false)
-    outermost isa Val{true} && return ReactantOptimiser(opt_ra)
-    return opt_ra
+function make_reactant_compatible(opt::Optimisers.ClipNorm, dev::ReactantDevice)
+    return ReactantOptimiser(
+        Optimisers.ClipNorm(with_track_numbers(dev, Integer)(opt.omega), opt.p, false)
+    )
 end
 
 end
