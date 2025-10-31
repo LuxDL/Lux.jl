@@ -9,12 +9,11 @@
 ENV["XLA_REACTANT_GPU_MEM_FRACTION"] = get(ENV, "XLA_REACTANT_GPU_MEM_FRACTION", "0.98")
 
 using ConcreteStructs,
-    Comonicon,
+    ArgParse,
     DataAugmentation,
     DataDeps,
     Dates,
     Enzyme,
-    Functors,
     FileIO,
     ImageCore,
     ImageShow,
@@ -27,9 +26,9 @@ using ConcreteStructs,
     Printf,
     Random,
     Reactant,
-    StableRNGs,
     Statistics,
-    TensorBoardLogger
+    TensorBoardLogger,
+    OhMyThreads
 
 const IN_VSCODE = isdefined(Main, :VSCodeServer)
 
@@ -460,6 +459,7 @@ end
 # This allows us to automatically download the dataset when we run the code.
 
 @concrete struct FlowersDataset
+    image_size
     image_files
     transform
 end
@@ -487,29 +487,35 @@ function FlowersDataset(image_size::Dims{2})
         ScaleKeepAspect(image_size) |>
         CenterResizeCrop(image_size) |>
         Maybe(FlipX{2}()) |>
-        ImageToTensor() |>
-        ToEltype(Float32)
-    return FlowersDataset(image_files, transform)
+        ImageToTensor()
+    return FlowersDataset(image_size, image_files, transform)
 end
 
 Base.length(ds::FlowersDataset) = length(ds.image_files)
 
 function Base.getindex(ds::FlowersDataset, i::Int)
-    return collect(itemdata(apply(ds.transform, Image(load(ds.image_files[i])))))
+    return Float32.(itemdata(apply(ds.transform, Image(load(ds.image_files[i])))))
 end
 
-Base.getindex(ds::FlowersDataset, idxs) = stack(Base.Fix1(getindex, ds), idxs)
+function Base.getindex(ds::FlowersDataset, idxs)
+    imgs = Array{Float32,4}(undef, ds.image_size..., 3, length(idxs))
+    tforeach(1:length(idxs)) do i
+        img = Image(load(ds.image_files[idxs[i]]))
+        copyto!(view(imgs, :, :, :, i), itemdata(apply(ds.transform, img)))
+    end
+    return imgs
+end
 
 function loss_function(model, ps, st, data)
     (noises, images, pred_noises, pred_images), stₙ = Lux.apply(model, data, ps, st)
     noise_loss = MSELoss()(pred_noises, noises)
     image_loss = MSELoss()(pred_images, images)
-    return (noise_loss, stₙ, (; image_loss, noise_loss))
+    return noise_loss, stₙ, (; image_loss, noise_loss)
 end
 
 # ## Entry Point for our code
 
-Comonicon.@main function main(;
+function main(;
     epochs::Int=100,
     image_size::Int=128,
     batchsize::Int=128,
@@ -642,7 +648,7 @@ Comonicon.@main function main(;
                 AutoEnzyme(), loss_function, data, tstate; return_gradients=Val(false)
             )
 
-            @assert !isnan(loss) && loss ≥ 0 "NaN or Negative loss encountered!"
+            @assert !isnan(loss) "NaN loss ($(loss)) encountered!"
 
             total_samples += size(data, ndims(data))
 
@@ -705,4 +711,121 @@ Comonicon.@main function main(;
     @printf "[%s] [Info] Saving final model\n" now(UTC)
 
     return tstate
+end
+
+function get_argparse_settings()
+    s = ArgParseSettings(; autofix_names=true)
+    #! format: off
+    @add_arg_table s begin
+        "--epochs"
+            help = "Number of epochs to train"
+            arg_type = Int
+            default = 100
+        "--image-size"
+            help = "Input image size (square)"
+            arg_type = Int
+            default = 128
+        "--batchsize"
+            help = "Training batch size"
+            arg_type = Int
+            default = 128
+        "--learning-rate-start"
+            help = "Starting learning rate"
+            arg_type = Float32
+            default = 3.0f-3
+        "--learning-rate-end"
+            help = "Final learning rate"
+            arg_type = Float32
+            default = 1.0f-4
+        "--weight-decay"
+            help = "Weight decay (AdamW lambda)"
+            arg_type = Float32
+            default = 1.0f-6
+        "--checkpoint-interval"
+            help = "Save checkpoint every N epochs"
+            arg_type = Int
+            default = 25
+        "--expt-dir"
+            help = "Experiment output directory"
+            arg_type = String
+            default = ""
+        "--diffusion-steps"
+            help = "Number of DDIM reverse diffusion steps"
+            arg_type = Int
+            default = 80
+        "--generate-image-interval"
+            help = "Generate and log images every N epochs"
+            arg_type = Int
+            default = 5
+        # model hyper params
+        "--channels"
+            help = "UNet channels per stage"
+            arg_type = Int
+            nargs = '+'
+            default = [32, 64, 96, 128]
+        "--block-depth"
+            help = "Number of residual blocks per stage"
+            arg_type = Int
+            default = 2
+        "--min-freq"
+            help = "Sinusoidal embedding min frequency"
+            arg_type = Float32
+            default = 1.0f0
+        "--max-freq"
+            help = "Sinusoidal embedding max frequency"
+            arg_type = Float32
+            default = 1000.0f0
+        "--embedding-dims"
+            help = "Sinusoidal embedding dimension"
+            arg_type = Int
+            default = 32
+        "--min-signal-rate"
+            help = "Minimum signal rate"
+            arg_type = Float32
+            default = 0.02f0
+        "--max-signal-rate"
+            help = "Maximum signal rate"
+            arg_type = Float32
+            default = 0.95f0
+        # inference specific
+        "--inference"
+            help = "Run in inference-only mode"
+            action = :store_true
+        "--saved-model-path"
+            help = "Path to JLD2 checkpoint (required with --inference)"
+            arg_type = String
+        "--generate-n-images"
+            help = "Number of images to generate during inference or periodic logging"
+            arg_type = Int
+            default = 12
+    end
+    #! format: on
+    return s
+end
+
+if abspath(PROGRAM_FILE) == @__FILE__
+    args = parse_args(ARGS, get_argparse_settings(); as_symbols=true)
+
+    main(;
+        epochs=args[:epochs],
+        image_size=args[:image_size],
+        batchsize=args[:batchsize],
+        learning_rate_start=args[:learning_rate_start],
+        learning_rate_end=args[:learning_rate_end],
+        weight_decay=args[:weight_decay],
+        checkpoint_interval=args[:checkpoint_interval],
+        expt_dir=args[:expt_dir],
+        diffusion_steps=args[:diffusion_steps],
+        generate_image_interval=args[:generate_image_interval],
+        channels=args[:channels],
+        block_depth=args[:block_depth],
+        min_freq=args[:min_freq],
+        max_freq=args[:max_freq],
+        embedding_dims=args[:embedding_dims],
+        min_signal_rate=args[:min_signal_rate],
+        max_signal_rate=args[:max_signal_rate],
+        inference_mode=args[:inference],
+        saved_model_path=args[:saved_model_path],
+        generate_n_images=args[:generate_n_images],
+    )
 end
