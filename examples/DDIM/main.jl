@@ -191,7 +191,6 @@ function (u::UNet)((noisy_images, noise_variances), ps, st::NamedTuple)
     @assert size(noise_variances)[1:3] == (1, 1, 1)
     @assert size(noisy_images, 4) == size(noise_variances, 4)
 
-    ## TODO: make this into a repeat instead of upsample
     emb, st_upsample = u.upsample(
         sinusoidal_embedding(noise_variances, u.min_freq, u.max_freq, u.embedding_dims),
         ps.upsample,
@@ -221,7 +220,7 @@ function (u::UNet)((noisy_images, noise_variances), ps, st::NamedTuple)
     x, st_conv_out = u.conv_out(x, ps.conv_out, st.conv_out)
 
     return (
-        (x, (emb, tmp, noisy_images, noise_variances)),
+        x,
         (;
             conv_in=st_conv_in,
             conv_out=st_conv_out,
@@ -257,9 +256,9 @@ function denoise(
     noisy_images = T.(noisy_images)
     signal_rates = T.(signal_rates)
 
-    pred_noises, others = unet((noisy_images, noise_rates .^ 2))
+    pred_noises = unet((noisy_images, noise_rates .^ 2))
     pred_images = @. (noisy_images - pred_noises * noise_rates) / signal_rates
-    return pred_noises, pred_images, (others..., signal_rates)
+    return pred_noises, pred_images
 end
 
 function denoise!(
@@ -320,14 +319,9 @@ function (ddim::DDIM)(x::AbstractArray{T,4}, ps, st::NamedTuple) where {T}
     noisy_images = @. signal_rates * images + noise_rates * noises
 
     unet = StatefulLuxLayer{true}(ddim.unet, ps.unet, st.unet)
-    pred_noises, pred_images, others = denoise(
-        unet, noisy_images, noise_rates, signal_rates
-    )
+    pred_noises, pred_images = denoise(unet, noisy_images, noise_rates, signal_rates)
 
-    return (
-        (noises, images, pred_noises, pred_images, others),
-        (; rng, bn=st_bn, unet=unet.st),
-    )
+    return ((noises, images, pred_noises, pred_images), (; rng, bn=st_bn, unet=unet.st))
 end
 
 ## Helper Functions for Image Generation
@@ -507,10 +501,10 @@ end
 Base.getindex(ds::FlowersDataset, idxs) = stack(Base.Fix1(getindex, ds), idxs)
 
 function loss_function(model, ps, st, data)
-    (noises, images, pred_noises, pred_images, others), stₙ = Lux.apply(model, data, ps, st)
-    noise_loss = MAELoss()(pred_noises, noises)
-    image_loss = MAELoss()(pred_images, images)
-    return noise_loss, stₙ, (; image_loss, noise_loss, others)
+    (noises, images, pred_noises, pred_images), stₙ = Lux.apply(model, data, ps, st)
+    noise_loss = MSELoss()(pred_noises, noises)
+    image_loss = MSELoss()(pred_images, images)
+    return (noise_loss, stₙ, (; image_loss, noise_loss))
 end
 
 # ## Entry Point for our code
@@ -518,7 +512,7 @@ end
 Comonicon.@main function main(;
     epochs::Int=100,
     image_size::Int=128,
-    batchsize::Int=2,
+    batchsize::Int=128,
     learning_rate_start::Float32=1.0f-3,
     learning_rate_end::Float32=1.0f-5,
     weight_decay::Float32=1.0f-6,
@@ -527,10 +521,8 @@ Comonicon.@main function main(;
     diffusion_steps::Int=80,
     generate_image_interval::Int=5,
     ## model hyper params
-    # channels::Vector{Int}=[32, 64, 96, 128],
-    # block_depth::Int=2,
-    channels::Vector{Int}=[32, 64],
-    block_depth::Int=1,
+    channels::Vector{Int}=[32, 64, 96, 128],
+    block_depth::Int=2,
     min_freq::Float32=1.0f0,
     max_freq::Float32=1000.0f0,
     embedding_dims::Int=32,
@@ -541,8 +533,10 @@ Comonicon.@main function main(;
     saved_model_path=nothing,
     generate_n_images::Int=12,
 )
-    isempty(expt_dir) &&
-        (expt_dir = joinpath(@__DIR__, string(now(UTC)) * "_" * uppercase(randstring(4))))
+    if isempty(expt_dir)
+        expt_dir =
+            joinpath(@__DIR__, string(now(UTC)) * "_" * uppercase(randstring(4))) * "_ddim"
+    end
     isdir(expt_dir) || mkpath(expt_dir)
 
     @printf "[%s] [Info] Experiment directory: %s\n" now(UTC) expt_dir
@@ -617,14 +611,14 @@ Comonicon.@main function main(;
         alignment=[:center, :center, :center, :center, :center],
     )
 
-    # @printf "[%s] [Info] Compiling generate function\n" now(UTC)
-    # time_start = time()
-    # generate_compiled = @compile generate(
-    #     model, ps, Lux.testmode(st), diffusion_steps, generate_n_images
-    # )
-    # @printf "[%s] [Info] Compiled generate function in %.6f seconds\n" now(UTC) (
-    #     time() - time_start
-    # )
+    @printf "[%s] [Info] Compiling generate function\n" now(UTC)
+    time_start = time()
+    generate_compiled = @compile generate(
+        model, ps, Lux.testmode(st), diffusion_steps, generate_n_images
+    )
+    @printf "[%s] [Info] Compiled generate function in %.6f seconds\n" now(UTC) (
+        time() - time_start
+    )
 
     image_losses = Vector{Float32}(undef, length(data_loader))
     noise_losses = Vector{Float32}(undef, length(data_loader))
@@ -644,36 +638,11 @@ Comonicon.@main function main(;
 
         start_time = time()
         for (i, data) in enumerate(data_loader)
-            (gs, loss, stats, tstate) = Training.single_train_step!(
-                AutoEnzyme(), loss_function, data, tstate; return_gradients=Val(true)
+            (_, loss, stats, tstate) = Training.single_train_step!(
+                AutoEnzyme(), loss_function, data, tstate; return_gradients=Val(false)
             )
-            @show loss
-            # @assert !isnan(loss) "NaN loss encountered!"
-            if isnan(loss)
-                for o in stats.others
-                    @show any(isnan, Array(o))
-                    # display(o)
-                end
-                println("-------------------------")
-                Lux.Functors.fmap_with_path(ps) do kp, p
-                    if p isa AbstractArray
-                        println("[p] ", kp, " : ", any(isnan, Array(p)))
-                    end
-                end
-                println("-------------------------")
-                Lux.Functors.fmap_with_path(st) do kp, p
-                    if p isa AbstractArray
-                        println("[s] ", kp, " : ", any(isnan, Array(p)))
-                    end
-                end
-                println("-------------------------")
-                Lux.Functors.fmap_with_path(gs) do kp, p
-                    if p isa AbstractArray
-                        println("[g] ", kp, " : ", any(isnan, Array(p)))
-                    end
-                end
-                throw(ArgumentError("NaN loss encountered!"))
-            end
+
+            @assert !isnan(loss) && loss ≥ 0 "NaN or Negative loss encountered!"
 
             total_samples += size(data, ndims(data))
 
