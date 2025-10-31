@@ -135,7 +135,6 @@ end
 
     ndevices = length(Reactant.devices())
 
-    # TODO: ensure lux tests are being run with IFRT
     if ndevices ≥ 8 && Reactant.XLA.runtime() isa Val{:IFRT}
         mesh = Sharding.Mesh(reshape(Reactant.devices()[1:8], (2, 4)), (:model, :batch))
 

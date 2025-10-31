@@ -112,7 +112,20 @@ for inplace in ("!", "")
 
         $(ps_expr)
 
-        inputs = (
+        compiled_grad_and_step_function = with_default_precision_config(ts.parameters) do
+            @compile sync = backend.sync $(internal_fn)(
+                objective_function,
+                ts.model,
+                data,
+                ps,
+                ts.states,
+                ts.optimizer_state,
+                dps,
+                is_sharded,
+            )
+        end
+
+        grads, ps, loss, stats, st, opt_state = compiled_grad_and_step_function(
             objective_function,
             ts.model,
             data,
@@ -122,12 +135,6 @@ for inplace in ("!", "")
             dps,
             is_sharded,
         )
-
-        compiled_grad_and_step_function = with_default_precision_config(ts.parameters) do
-            @compile sync = backend.sync $(internal_fn)(inputs...)
-        end
-
-        grads, ps, loss, stats, st, opt_state = compiled_grad_and_step_function(inputs...)
 
         cache = TrainingBackendCache(
             backend, False(), dps, (; compiled_grad_and_step_function, is_sharded)
@@ -175,10 +182,8 @@ for inplace in ("!", "")
         )
 
         opt_state, psₙ = Optimisers.update!(opt_state, ps, dps)
-        if is_sharded
-            # Ensure sharding of input and output states are consistent
-            mark_same_sharding_group(st, stₙ)
-        end
+        # Ensure sharding of input and output states are consistent
+        is_sharded && mark_same_sharding_group(st, stₙ)
 
         return nothing, psₙ, loss, stats, stₙ, opt_state
     end
@@ -191,10 +196,8 @@ for inplace in ("!", "")
         )
 
         opt_state, psₙ = Optimisers.update!(opt_state, ps, dps)
-        if is_sharded
-            # Ensure sharding of input and output states are consistent
-            mark_same_sharding_group(st, stₙ)
-        end
+        # Ensure sharding of input and output states are consistent
+        is_sharded && mark_same_sharding_group(st, stₙ)
 
         return dps, psₙ, loss, stats, stₙ, opt_state
     end
@@ -203,8 +206,6 @@ end
 mark_same_sharding_group(args...) = Functors.fmap(mark_same_sharding_group_inner, args...)
 
 function mark_same_sharding_group_inner(arg1::Union{TracedRArray,TracedRNumber}, args...)
-    # TODO: enable once upstream PR is merged
-    # @opcall sharding_group(arg1, args...)
-    return nothing
+    return @opcall sharding_group(arg1, args...)
 end
 mark_same_sharding_group_inner(arg1, args...) = nothing
