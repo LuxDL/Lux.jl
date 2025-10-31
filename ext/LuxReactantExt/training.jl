@@ -4,8 +4,10 @@ function objective_function_wrapper(objective_function::F, model, ps, st, data) 
 end
 
 function compute_gradients_internal!(
-    dps, objective_function::F, model, data, ps, st
+    dps, objective_function::F, model, data, ps, st, zeroed_grads::Bool=false
 ) where {F}
+    zeroed_grads || Enzyme.make_zero!(dps)
+
     _, (loss, stₙ, stats) = Enzyme.autodiff(
         Enzyme.set_abi(Enzyme.ReverseWithPrimal, Reactant.ReactantABI),
         Const(objective_function_wrapper),
@@ -20,7 +22,7 @@ end
 
 function compute_gradients_internal(objective_function::F, model, data, ps, st) where {F}
     return compute_gradients_internal!(
-        Enzyme.make_zero(ps), objective_function, model, data, ps, st
+        Enzyme.make_zero(ps), objective_function, model, data, ps, st, true
     )
 end
 
@@ -89,7 +91,7 @@ for inplace in ("!", "")
     end
 
     ps_expr = if inplace == "!"
-        :(ps = tstate.parameters)
+        :(ps = ts.parameters)
     else
         :(ps = Functors.fmap(copy, ts.parameters; exclude=MLDataDevices.isleaf))
     end
