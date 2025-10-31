@@ -570,7 +570,6 @@ Comonicon.@main function main(;
         min_signal_rate,
         max_signal_rate,
     )
-    ps, st = Lux.setup(rng, model) |> xdev
 
     if inference_mode
         @assert saved_model_path !== nothing "`saved_model_path` must be specified for \
@@ -592,6 +591,8 @@ Comonicon.@main function main(;
         end
         return nothing
     end
+
+    ps, st = Lux.setup(rng, model) |> xdev
 
     tb_dir = joinpath(expt_dir, "tb_logs")
     @printf "[%s] [Info] Tensorboard logs being saved to %s. Run tensorboard with \
