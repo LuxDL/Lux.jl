@@ -201,7 +201,8 @@ end
 mark_same_sharding_group(args...) = Functors.fmap(mark_same_sharding_group_inner, args...)
 
 function mark_same_sharding_group_inner(arg1::Union{TracedRArray,TracedRNumber}, args...)
-    @opcall sharding_group(arg1, args...)
+    # TODO: enable once upstream PR is merged
+    # @opcall sharding_group(arg1, args...)
     return nothing
 end
 mark_same_sharding_group_inner(arg1, args...) = nothing
