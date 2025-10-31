@@ -101,25 +101,12 @@ function main(;
 
     @printf "Total Trainable Parameters: %0.4f M\n" (Lux.parameterlength(ps) / 1.0e6)
 
-    val_loss_compiled = Reactant.with_config(;
-        dot_general_precision=PrecisionConfig.HIGH,
-        convolution_precision=PrecisionConfig.HIGH,
-    ) do
-        @compile loss_function(gcn, ps, Lux.testmode(st), (features, targets, adj, val_idx))
-    end
+    val_loss_compiled = @compile loss_function(
+        gcn, ps, Lux.testmode(st), (features, targets, adj, val_idx)
+    )
 
-    train_model_compiled = Reactant.with_config(;
-        dot_general_precision=PrecisionConfig.HIGH,
-        convolution_precision=PrecisionConfig.HIGH,
-    ) do
-        @compile gcn((features, adj, train_idx), ps, Lux.testmode(st))
-    end
-    val_model_compiled = Reactant.with_config(;
-        dot_general_precision=PrecisionConfig.HIGH,
-        convolution_precision=PrecisionConfig.HIGH,
-    ) do
-        @compile gcn((features, adj, val_idx), ps, Lux.testmode(st))
-    end
+    train_model_compiled = @compile gcn((features, adj, train_idx), ps, Lux.testmode(st))
+    val_model_compiled = @compile gcn((features, adj, val_idx), ps, Lux.testmode(st))
 
     best_loss_val = Inf
     cnt = 0
@@ -177,33 +164,28 @@ function main(;
         end
     end
 
-    Reactant.with_config(;
-        dot_general_precision=PrecisionConfig.HIGH,
-        convolution_precision=PrecisionConfig.HIGH,
-    ) do
-        test_loss = @jit(
-            loss_function(
-                gcn,
-                train_state.parameters,
-                Lux.testmode(train_state.states),
-                (features, targets, adj, test_idx),
-            )
-        )[1]
-        test_acc = accuracy(
-            Array(
-                @jit(
-                    gcn(
-                        (features, adj, test_idx),
-                        train_state.parameters,
-                        Lux.testmode(train_state.states),
-                    )
-                )[1],
-            ),
-            Array(targets)[:, test_idx],
+    test_loss = @jit(
+        loss_function(
+            gcn,
+            train_state.parameters,
+            Lux.testmode(train_state.states),
+            (features, targets, adj, test_idx),
         )
+    )[1]
+    test_acc = accuracy(
+        Array(
+            @jit(
+                gcn(
+                    (features, adj, test_idx),
+                    train_state.parameters,
+                    Lux.testmode(train_state.states),
+                )
+            )[1],
+        ),
+        Array(targets)[:, test_idx],
+    )
 
-        @printf "Test Loss: %.6f\tTest Acc: %.4f%%\n" test_loss test_acc
-    end
+    @printf "Test Loss: %.6f\tTest Acc: %.4f%%\n" test_loss test_acc
     return nothing
 end
 

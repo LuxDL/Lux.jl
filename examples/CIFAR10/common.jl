@@ -98,12 +98,7 @@ function train_model(
 
     x_ra = rand(rng, prec_jl, size(first(trainloader)[1])) |> dev
     @printf "[Info] Compiling model with Reactant.jl\n"
-    model_compiled = Reactant.with_config(;
-        dot_general_precision=PrecisionConfig.HIGH,
-        convolution_precision=PrecisionConfig.HIGH,
-    ) do
-        @compile model(x_ra, ps, Lux.testmode(st))
-    end
+    model_compiled = @compile model(x_ra, ps, Lux.testmode(st))
     @printf "[Info] Model compiled!\n"
 
     loss_fn = CrossEntropyLoss(; logits=Val(true))

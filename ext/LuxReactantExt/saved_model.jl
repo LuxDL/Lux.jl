@@ -1,12 +1,7 @@
 function Lux.Serialization.export_as_tf_saved_model_internal(
     saved_model_path::String, model::AbstractLuxLayer, x, ps, st
 )
-    compiled_model = Reactant.with_config(;
-        dot_general_precision=Reactant.PrecisionConfig.HIGH,
-        convolution_precision=Reactant.PrecisionConfig.HIGH,
-    ) do
-        @compile serializable = true model(x, ps, st)
-    end
+    compiled_model = @compile serializable = true model(x, ps, st)
 
     # get the locations of the model inputs, parameters and states
     input_locations = Union{String,Int}[]
