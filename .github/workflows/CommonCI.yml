@@ -45,6 +45,7 @@ jobs:
     runs-on: ${{ inputs.os }}
     env:
       TMPDIR: ${{ github.workspace }}/tmp
+      XLA_FLAGS: --xla_force_host_platform_device_count=8
     steps:
       - uses: actions/checkout@v5
       - name: Create TMPDIR

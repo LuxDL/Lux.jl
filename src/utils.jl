@@ -218,9 +218,6 @@ matrix_to_array(x::SMatrix{L,1,T}, ::AbstractVector) where {L,T} = SVector{L,T}(
 matrix_to_array(x::AbstractMatrix, ::AbstractMatrix) = x
 matrix_to_array(x::AbstractMatrix, y::AbstractArray) = reshape(x, :, size(y)[2:end]...)
 
-function to_rarray end
-function promote_to end
-
 # This should probably be in WeightInitializers.jl
 calculate_gain(_, __) = 1.0f0
 calculate_gain(::typeof(identity), _) = 1.0f0
@@ -236,6 +233,8 @@ calculate_gain(::typeof(NNlib.leakyrelu), x) = typeof(x)(√(2 / (1 + x^2)))
 calculate_gain(::typeof(NNlib.selu), _) = 3.0f0 / 4
 
 recursive_unthunk(x) = Functors.fmap(CRC.unthunk, x; exclude=MLDataDevices.isleaf)
+
+convert_eltype(::Type{T}, x::Number) where {T<:Number} = convert(T, x)
 
 end
 

@@ -1,6 +1,7 @@
 module LuxReactantExt
 
-using Enzyme: Enzyme, Const
+using Enzyme: Enzyme, Active, Const, Duplicated
+using Functors: Functors
 using Preferences: load_preference
 using Optimisers: Optimisers
 using Reactant:
@@ -21,11 +22,9 @@ using Static: True, False
 using Lux: Lux, LuxOps, Training, Utils, StatefulLuxLayer
 using Lux.Training: TrainingBackendCache, ReactantBackend
 using LuxCore: LuxCore, AbstractLuxLayer
-using MLDataDevices: ReactantDevice, get_device
+using MLDataDevices: MLDataDevices, ReactantDevice, get_device
 
 Lux.is_extension_loaded(::Val{:Reactant}) = true
-
-Utils.to_rarray(x; kwargs...) = Reactant.to_rarray(x; kwargs...)
 
 Utils.contiguous(x::AnyTracedRArray) = ReactantCore.materialize_traced_array(x)
 
@@ -33,26 +32,12 @@ Utils.eltype(::Type{<:TracedRArray{T,N}}) where {T,N} = T
 Utils.eltype(::Type{<:TracedRNumber{T}}) where {T} = T
 Utils.eltype(x::Reactant.AnyTracedRArray) = Reactant.unwrapped_eltype(x)
 
-function Utils.promote_to(::Type{T}, x::Number) where {T<:Number}
-    x isa Reactant.TracedType && return x
-    return Reactant.ConcreteRNumber{T}(x)
-end
-
-# For CUDA use `PrecisionConfig.HIGH`. For other backends use `PrecisionConfig.DEFAULT`.
 function default_precision_config(ps)
     precision_config_preference = lowercase(
         load_preference(Lux, "precision_config", "auto")
     )
 
-    if precision_config_preference == "auto"
-        rdev = get_device(ps)
-        rdev isa ReactantDevice || return PrecisionConfig.DEFAULT
-        device = rdev.device === missing ? Reactant.XLA.default_device() : rdev.device
-        device_kind = string(device)
-        contains(device_kind, "CUDA") && return PrecisionConfig.HIGH
-        return PrecisionConfig.DEFAULT
-    end
-
+    precision_config_preference == "auto" && return PrecisionConfig.DEFAULT
     precision_config_preference == "default" && return PrecisionConfig.DEFAULT
     precision_config_preference == "high" && return PrecisionConfig.HIGH
     precision_config_preference == "highest" && return PrecisionConfig.HIGHEST
