@@ -1,6 +1,7 @@
 module LuxReactantExt
 
-using Enzyme: Enzyme, Const
+using Enzyme: Enzyme, Active, Const, Duplicated
+using Functors: Functors
 using Preferences: load_preference
 using Optimisers: Optimisers
 using Reactant:
@@ -21,7 +22,7 @@ using Static: True, False
 using Lux: Lux, LuxOps, Training, Utils, StatefulLuxLayer
 using Lux.Training: TrainingBackendCache, ReactantBackend
 using LuxCore: LuxCore, AbstractLuxLayer
-using MLDataDevices: ReactantDevice, get_device
+using MLDataDevices: MLDataDevices, ReactantDevice, get_device
 
 Lux.is_extension_loaded(::Val{:Reactant}) = true
 

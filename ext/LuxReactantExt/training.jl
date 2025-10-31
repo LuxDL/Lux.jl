@@ -3,17 +3,25 @@ function objective_function_wrapper(objective_function::F, model, ps, st, data) 
     return loss, Reactant.ignore_derivatives(stₙ), Reactant.ignore_derivatives(stats)
 end
 
-function compute_gradients_internal(objective_function::F, model, data, ps, st) where {F}
-    (_, _, dps, _, _), (loss, stₙ, stats) = Enzyme.gradient(
+function compute_gradients_internal!(
+    dps, objective_function::F, model, data, ps, st
+) where {F}
+    _, (loss, stₙ, stats) = Enzyme.autodiff(
         Enzyme.set_abi(Enzyme.ReverseWithPrimal, Reactant.ReactantABI),
         Const(objective_function_wrapper),
         Const(objective_function),
         Const(model),
-        ps,
+        Duplicated(ps, dps),
         Const(st),
         Const(data),
     )
     return dps, loss, stats, stₙ
+end
+
+function compute_gradients_internal(objective_function::F, model, data, ps, st) where {F}
+    return compute_gradients_internal!(
+        Enzyme.make_zero(ps), objective_function, model, data, ps, st
+    )
 end
 
 Profiler.@annotate "Compile Compute Gradients" function Lux.Training.compute_gradients_impl(
@@ -80,34 +88,47 @@ for inplace in ("!", "")
         return ts
     end
 
+    ps_expr = if inplace == "!"
+        :(ps = tstate.parameters)
+    else
+        :(ps = Functors.fmap(copy, ts.parameters; exclude=MLDataDevices.isleaf))
+    end
+
     # XXX: recompile with a warning if new input types are used
     @eval Profiler.@annotate "Compile Train Step" function Lux.Training.$(fname)(
         backend::ReactantBackend, objective_function::F, data, ts::Training.TrainState
     ) where {F}
-        compiled_grad_and_step_function = with_default_precision_config(ts.parameters) do
-            @compile sync = backend.sync $(internal_fn)(
-                objective_function,
-                ts.model,
-                data,
-                ts.parameters,
-                ts.states,
-                ts.optimizer_state,
-                backend.return_gradients,
-            )
+        device = get_device((ts.parameters, ts.states, ts.optimizer_state, data))
+        @assert device isa ReactantDevice
+        is_sharded = device.device === nothing
+
+        dps = if backend.return_gradients isa True
+            Functors.fmap(Utils.zero, ts.parameters; exclude=MLDataDevices.isleaf)
+        else
+            nothing
         end
 
-        grads, ps, loss, stats, st, opt_state = compiled_grad_and_step_function(
+        $(ps_expr)
+
+        inputs = (
             objective_function,
             ts.model,
             data,
-            ts.parameters,
+            ps,
             ts.states,
             ts.optimizer_state,
-            backend.return_gradients,
+            dps,
+            is_sharded,
         )
 
+        compiled_grad_and_step_function = with_default_precision_config(ts.parameters) do
+            @compile sync = backend.sync $(internal_fn)(inputs...)
+        end
+
+        grads, ps, loss, stats, st, opt_state = compiled_grad_and_step_function(inputs...)
+
         cache = TrainingBackendCache(
-            backend, False(), nothing, (; compiled_grad_and_step_function)
+            backend, False(), dps, (; compiled_grad_and_step_function, is_sharded)
         )
         @set! ts.cache = cache
         @set! ts.objective_function = objective_function
@@ -120,7 +141,7 @@ for inplace in ("!", "")
     end
 
     @eval Profiler.@annotate "Train Step" function Lux.Training.$(fname)(
-        backend::ReactantBackend,
+        ::ReactantBackend,
         obj_fn::F,
         data,
         ts::Training.TrainState{<:TrainingBackendCache{<:ReactantBackend},F},
@@ -132,7 +153,8 @@ for inplace in ("!", "")
             ts.parameters,
             ts.states,
             ts.optimizer_state,
-            backend.return_gradients,
+            ts.cache.dparameters,
+            ts.cache.extras.is_sharded,
         )
 
         @set! ts.states = st
@@ -143,24 +165,43 @@ for inplace in ("!", "")
         return grads, loss, stats, ts
     end
 
-    # XXX: Inplace version not actually inplace
     @eval function $(internal_fn)(
-        objective_function::F, model, data, ps, st, opt_state, ::False
+        objective_function::F, model, data, ps, st, opt_state, ::Nothing, is_sharded::Bool
     ) where {F}
         dps, loss, stats, stₙ = compute_gradients_internal(
             objective_function, model, data, ps, st
         )
-        opt_state, ps = Optimisers.$(update_fn)(opt_state, ps, dps)
-        return nothing, ps, loss, stats, stₙ, opt_state
+
+        opt_state, psₙ = Optimisers.update!(opt_state, ps, dps)
+        if is_sharded
+            # Ensure sharding of input and output states are consistent
+            mark_same_sharding_group(st, stₙ)
+        end
+
+        return nothing, psₙ, loss, stats, stₙ, opt_state
     end
 
     @eval function $(internal_fn)(
-        objective_function::F, model, data, ps, st, opt_state, ::True
+        objective_function::F, model, data, ps, st, opt_state, dps, is_sharded::Bool
     ) where {F}
-        dps, loss, stats, stₙ = compute_gradients_internal(
-            objective_function, model, data, ps, st
+        dps, loss, stats, stₙ = compute_gradients_internal!(
+            dps, objective_function, model, data, ps, st
         )
-        opt_state, ps = Optimisers.$(update_fn)(opt_state, ps, dps)
-        return dps, ps, loss, stats, stₙ, opt_state
+
+        opt_state, psₙ = Optimisers.update!(opt_state, ps, dps)
+        if is_sharded
+            # Ensure sharding of input and output states are consistent
+            mark_same_sharding_group(st, stₙ)
+        end
+
+        return dps, psₙ, loss, stats, stₙ, opt_state
     end
 end
+
+mark_same_sharding_group(args...) = Functors.fmap(mark_same_sharding_group_inner, args...)
+
+function mark_same_sharding_group_inner(arg1::Union{TracedRArray,TracedRNumber}, args...)
+    @opcall sharding_group(arg1, args...)
+    return nothing
+end
+mark_same_sharding_group_inner(arg1, args...) = nothing

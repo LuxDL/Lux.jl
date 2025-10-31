@@ -129,3 +129,45 @@ end
     )
     @test loss isa Number
 end
+
+@testitem "Reactant Distributed: Training API" tags = [:reactant] setup = [SharedTestSetup] begin
+    using Lux, Random, Reactant, Optimisers
+
+    ndevices = length(Reactant.devices())
+
+    # TODO: ensure lux tests are being run with IFRT
+    if ndevices ≥ 8 && Reactant.XLA.runtime() isa Val{:IFRT}
+        mesh = Sharding.Mesh(reshape(Reactant.devices()[1:8], (2, 4)), (:model, :batch))
+
+        model_device = reactant_device(;
+            sharding=Sharding.DimsSharding(mesh, (-2,), (:model,))
+        )
+        batch_device = reactant_device(;
+            sharding=Sharding.DimsSharding(mesh, (-1,), (:batch,))
+        )
+
+        model = Chain(
+            Chain(Dense(4 => 32), BatchNorm(32, relu)),
+            Chain(Dense(32 => 32), BatchNorm(32, relu)),
+            Dense(32 => 4),
+        )
+        ps, st = Lux.setup(Random.default_rng(), model) |> model_device
+
+        x = rand(Float32, 4, 128) |> batch_device
+        y = rand(Float32, 4, 128) |> batch_device
+
+        train_state = Training.TrainState(model, ps, st, Adam(0.001f0))
+
+        _, loss, _, train_state = Training.single_train_step(
+            AutoEnzyme(), MSELoss(), (x, y), train_state
+        )
+        @test loss isa Reactant.ConcreteRNumber
+        @test length(Reactant.XLA.devices(Reactant.XLA.sharding(loss.data))) == 8
+
+        _, loss, _, train_state = Training.single_train_step(
+            AutoEnzyme(), MSELoss(), (x, y), train_state
+        )
+        @test loss isa Reactant.ConcreteRNumber
+        @test length(Reactant.XLA.devices(Reactant.XLA.sharding(loss.data))) == 8
+    end
+end
