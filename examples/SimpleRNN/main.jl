@@ -160,12 +160,7 @@ function main(model_type)
 
     train_state = Training.TrainState(model, ps, st, Adam(0.01f0))
     model_compiled = if dev isa ReactantDevice
-        Reactant.with_config(;
-            dot_general_precision=PrecisionConfig.HIGH,
-            convolution_precision=PrecisionConfig.HIGH,
-        ) do
-            @compile model(first(train_loader)[1], ps, Lux.testmode(st))
-        end
+        @compile model(first(train_loader)[1], ps, Lux.testmode(st))
     else
         model
     end

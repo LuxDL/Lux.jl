@@ -23,12 +23,7 @@
 
     Lux.Serialization.export_as_tf_saved_model(model_dir, model, x, ps, st)
 
-    res = Reactant.with_config(;
-        dot_general_precision=Reactant.PrecisionConfig.HIGH,
-        convolution_precision=Reactant.PrecisionConfig.HIGH,
-    ) do
-        Array(@jit(model(x, ps, Lux.testmode(st)))[1])
-    end
+    res = Array(@jit(model(x, ps, Lux.testmode(st)))[1])
 
     tf = pyimport("tensorflow")
     np = pyimport("numpy")

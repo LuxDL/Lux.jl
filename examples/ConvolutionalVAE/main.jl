@@ -259,19 +259,9 @@ function main(;
     ps, st = xdev(Lux.setup(rng, cvae))
 
     z = xdev(randn(Float32, num_latent_dims, num_samples))
-    decode_compiled = Reactant.with_config(;
-        dot_general_precision=PrecisionConfig.HIGH,
-        convolution_precision=PrecisionConfig.HIGH,
-    ) do
-        @compile decode(cvae, z, ps, Lux.testmode(st))
-    end
+    decode_compiled = @compile decode(cvae, z, ps, Lux.testmode(st))
     x = xdev(randn(Float32, image_size..., 1, batchsize))
-    cvae_compiled = Reactant.with_config(;
-        dot_general_precision=PrecisionConfig.HIGH,
-        convolution_precision=PrecisionConfig.HIGH,
-    ) do
-        @compile cvae(x, ps, Lux.testmode(st))
-    end
+    cvae_compiled = @compile cvae(x, ps, Lux.testmode(st))
 
     train_dataloader = xdev(loadmnist(batchsize, image_size))
 
