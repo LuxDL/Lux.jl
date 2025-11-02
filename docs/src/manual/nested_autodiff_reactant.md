@@ -14,13 +14,24 @@ function ∇potential(potential, x)
     colons = [Colon() for _ in 1:ndims(x)]
     @trace for i in 1:length(x)
         dxᵢ = dxs[colons..., i]
-        res = only(Enzyme.autodiff(
-            Enzyme.set_abi(Forward, Reactant.ReactantABI), potential, Duplicated(x, dxᵢ)
-        ))
+        res = only(Enzyme.autodiff(Forward, potential, Duplicated(x, dxᵢ)))
         @allowscalar ∇p[i] = res[i]
     end
     return ∇p
+    # TODO: needs https://github.com/EnzymeAD/Enzyme-JAX/issues/1469
+    # return Enzyme.autodiff(
+    #     Forward, Const(potential), StackedBatchDuplicated(x, stack(onehot(x)))
+    # )
 end
+
+model = Dense(5 => 5, gelu)
+ps, st = Lux.setup(Random.default_rng(), model) |> xdev
+pnet = StatefulLuxLayer(model, ps, st)
+
+x_ra = randn(Float32, 5, 3) |> xdev
+
+@code_hlo pnet(x_ra)
+@code_hlo ∇potential(pnet, x_ra)
 
 function ∇²potential(potential, x)
     dxs = stack(onehot(x))
@@ -29,13 +40,19 @@ function ∇²potential(potential, x)
     @trace for i in 1:length(x)
         dxᵢ = dxs[colons..., i]
         res = only(Enzyme.autodiff(
-            Enzyme.set_abi(Forward, Reactant.ReactantABI),
-            ∇potential, Const(potential), Duplicated(x, dxᵢ)
+            Forward, ∇potential, Const(potential), Duplicated(x, dxᵢ)
         ))
         @allowscalar ∇²p[i] = res[i]
     end
     return ∇²p
+    # TODO: needs https://github.com/EnzymeAD/Enzyme-JAX/issues/1469
+    # return Enzyme.autodiff(
+    #     Forward, Const(∇potential), Const(potential),
+    #     StackedBatchDuplicated(x, stack(onehot(x)))
+    # )
 end
+
+@code_hlo ∇²potential(pnet, x_ra)
 
 struct PotentialNet{P} <: AbstractLuxWrapperLayer{:potential}
     potential::P

@@ -9,12 +9,6 @@ In this manual, we will explore how to use automatic differentiation (AD) inside
 or loss functions and have Lux automatically switch the AD backend with a faster one when
 needed.
 
-!!! tip "Reactant Support"
-
-    Reactant + Lux natively supports Nested AD (even higher dimensions). If you are using
-    Reactant, please see the [Nested AD with Reactant](@ref nested_autodiff_reactant)
-    manual.
-
 !!! tip "Disabling Nested AD Switching"
 
     Don't wan't Lux to do this switching for you? You can disable it by setting the
@@ -34,23 +28,23 @@ using ComponentArrays, FiniteDiff
 First let's set the stage using some minor changes that need to be made for this feature to
 work:
 
-  - Switching only works if a [`StatefulLuxLayer`](@ref) is being used, with the following
-    function calls:
-    - For operations on the inputs:
-      - `(<some-function> ∘ <StatefulLuxLayer>)(x::AbstractArray)`
-      - `(<StatefulLuxLayer> ∘ <some-function>)(x::AbstractArray)`
-      - `(<StatefulLuxLayer>)(x::AbstractArray)`
-    - For operations on the parameters:
-      - `(<some-function> ∘ Base.Fix1(<StatefulLuxLayer>, x))(ps)`
-      - `(Base.Fix1(<StatefulLuxLayer>, x) ∘ <some-function>)(ps)`
-      - `(Base.Fix1(<StatefulLuxLayer>, x))(ps)`
-  - Currently we have custom routines implemented for:
-    - `Zygote.<gradient|jacobian>`
-    - `ForwardDiff.<gradient|jacobian>`
-    - [`vector_jacobian_product`](@ref)
-    - [`jacobian_vector_product`](@ref)
-    - [`batched_jacobian`](@ref)
-  - Switching only happens for `ChainRules` compatible AD libraries.
+- Switching only works if a [`StatefulLuxLayer`](@ref) is being used, with the following
+  function calls:
+  - For operations on the inputs:
+    - `(<some-function> ∘ <StatefulLuxLayer>)(x::AbstractArray)`
+    - `(<StatefulLuxLayer> ∘ <some-function>)(x::AbstractArray)`
+    - `(<StatefulLuxLayer>)(x::AbstractArray)`
+  - For operations on the parameters:
+    - `(<some-function> ∘ Base.Fix1(<StatefulLuxLayer>, x))(ps)`
+    - `(Base.Fix1(<StatefulLuxLayer>, x) ∘ <some-function>)(ps)`
+    - `(Base.Fix1(<StatefulLuxLayer>, x))(ps)`
+- Currently we have custom routines implemented for:
+  - `Zygote.<gradient|jacobian>`
+  - `ForwardDiff.<gradient|jacobian>`
+  - [`vector_jacobian_product`](@ref)
+  - [`jacobian_vector_product`](@ref)
+  - [`batched_jacobian`](@ref)
+- Switching only happens for `ChainRules` compatible AD libraries.
 
 We plan to capture `DifferentiationInterface`, and `Enzyme.autodiff` calls in the
 future (PRs are welcome).
@@ -245,14 +239,14 @@ nothing; # hide
 Hutchinson Trace Estimation often shows up in machine learning literature to provide a fast
 estimate of the trace of a Jacobian Matrix. This is based off of
 [Hutchinson 1990](https://www.nowozin.net/sebastian/blog/thoughts-on-trace-estimation-in-deep-learning.html)
-which computes the estimated trace of a matrix ``A \in \mathbb{R}^{D \times D}`` using
-random vectors ``v \in \mathbb{R}^{D}`` s.t. ``\mathbb{E}\left[v v^T\right] = I``.
+which computes the estimated trace of a matrix `A \in \mathbb{R}^{D \times D}` using
+random vectors `v \in \mathbb{R}^{D}` s.t. `\mathbb{E}\left[v v^T\right] = I`.
 
 ```math
 \text{Tr}(A) = \mathbb{E}\left[v^T A v\right] = \frac{1}{V} \sum_{i = 1}^V v_i^T A v_i
 ```
 
-We can use this to compute the trace of a Jacobian Matrix ``J \in \mathbb{R}^{D \times D}``
+We can use this to compute the trace of a Jacobian Matrix `J \in \mathbb{R}^{D \times D}`
 using the following algorithm:
 
 ```math
@@ -261,12 +255,12 @@ using the following algorithm:
 
 Note that we can compute this using two methods:
 
-1. Compute ``v_i^T J`` using a Vector-Jacobian product and then do a matrix-vector product
+1. Compute `v_i^T J` using a Vector-Jacobian product and then do a matrix-vector product
    to get the trace.
-2. Compute ``J v_i`` using a Jacobian-Vector product and then do a matrix-vector product to
+2. Compute `J v_i` using a Jacobian-Vector product and then do a matrix-vector product to
    get the trace.
 
-For simplicity, we will use a single sample of ``v_i`` to compute the trace. Additionally,
+For simplicity, we will use a single sample of `v_i` to compute the trace. Additionally,
 we will fix the sample to ensure that our tests against the finite difference implementation
 are not affected by the randomness in the sample.
 
