@@ -59,7 +59,7 @@ end
 @testitem "AutoDiff APIs: Batched Jacobian" tags = [:reactant] setup = [SharedTestSetup] begin
     using Reactant, Lux, Zygote, Random, ForwardDiff, Enzyme
 
-    fn(x) = reshape(sum(abs2, x; dims=(1, 2, 3)), 1, :)
+    fn(x) = reshape(sum(abs2, x; dims=(2, 3)), size(x, 1), :)
 
     rng = Random.default_rng()
 
