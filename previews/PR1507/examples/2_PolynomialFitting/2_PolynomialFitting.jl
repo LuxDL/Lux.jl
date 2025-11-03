@@ -65,12 +65,9 @@ end
 
 tstate = main(tstate, vjp_rule, (x, y), 250)
 
-forward_pass = Reactant.with_config(;
-    dot_general_precision=PrecisionConfig.HIGH,
-    convolution_precision=PrecisionConfig.HIGH,
-) do
-    @compile Lux.apply(tstate.model, xdev(x), tstate.parameters, Lux.testmode(tstate.states))
-end
+forward_pass = @compile Lux.apply(
+    tstate.model, xdev(x), tstate.parameters, Lux.testmode(tstate.states)
+)
 
 y_pred = cdev(
     first(
