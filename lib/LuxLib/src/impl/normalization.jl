@@ -174,10 +174,6 @@ function reshape_norm_dims(x::AbstractArray, dims::Dims)
     return reshape(x, get_norm_reshape_dims(dims, length(x)))
 end
 
-# reshape_norm_dims is a constant source of runtime activity for Enzyme. Define custom
-# rules to avoid this.
-EnzymeRules.@easy_rule(reshape_norm_dims(x, dims), (reshape(Ω, size(x)), @Constant))
-
 @inbounds function get_norm_reshape_dims(sx::NTuple{N,<:Int}, ly::Int) where {N}
     if ly == sx[N - 1]
         return ntuple(i -> i == N - 1 ? ly : 1, N)

@@ -28,7 +28,8 @@ end
 
     @test check_no_implicit_imports(LuxLib) === nothing
     @test check_no_stale_explicit_imports(
-        LuxLib; ignore=(:TrackedVector, :TrackedMatrix, :batched_mul, :batched_matmul)
+        LuxLib;
+        ignore=(:TrackedVector, :TrackedMatrix, :batched_mul, :batched_matmul, :Annotation),
     ) === nothing
     @test check_no_self_qualified_accesses(LuxLib) === nothing
     @test check_all_explicit_imports_via_owners(LuxLib) === nothing
