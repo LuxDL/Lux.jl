@@ -44,13 +44,9 @@ function CRC.rrule(
     return LossFunctionImpl.fused_agg(sum, lfn, x, y), ∇fused_agg
 end
 
-# COV_EXCL_START
-
 EnzymeRules.@easy_rule(
     LossFunctionImpl.fused_agg(fn::typeof(sum), lfn::LossFunctions.Traits.Loss, x, y),
     (@Constant, @Constant, LossFunctions.deriv(lfn, x, y) .* Ω, @Constant)
 )
-
-# COV_EXCL_STOP
 
 end

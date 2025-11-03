@@ -171,62 +171,12 @@ end
 
 reshape_norm_dims(::Nothing, ::Dims) = nothing
 function reshape_norm_dims(x::AbstractArray, dims::Dims)
-    if Utils.within_enzyme_autodiff()
-        y = similar(x, get_norm_reshape_dims(dims, length(x)))
-        reshape_norm_dims!(y, x)
-        return y
-    else
-        return reshape(x, get_norm_reshape_dims(dims, length(x)))
-    end
+    return reshape(x, get_norm_reshape_dims(dims, length(x)))
 end
 
-function reshape_norm_dims!(y::AbstractArray, x::AbstractArray)
-    copyto!(vec(y), vec(x))
-    return nothing
-end
-
-function CRC.rrule(::typeof(reshape_norm_dims), x::AbstractArray, dims::Dims)
-    y = reshape_norm_dims(x, dims)
-    ∇reshape_norm_dims = @closure Δ -> begin
-        ∂x = CRC.@thunk reshape(recursive_unthunk(Δ), size(x))
-        return ∂∅, ∂x, ∂∅
-    end
-    return y, ∇reshape_norm_dims
-end
-
-# COV_EXCL_START
 # reshape_norm_dims is a constant source of runtime activity for Enzyme. Define custom
 # rules to avoid this.
-function EnzymeRules.augmented_primal(
-    cfg::EnzymeRules.RevConfigWidth{1},
-    ::EnzymeCore.Const{typeof(reshape_norm_dims)},
-    ::Type{EnzymeCore.Const{Nothing}},
-    y::EnzymeCore.Annotation{<:AbstractArray},
-    x::EnzymeCore.Annotation{<:AbstractArray},
-)
-    if EnzymeRules.needs_primal(cfg)
-        copyto!(vec(y.val), vec(x.val))
-    end
-    return EnzymeRules.AugmentedReturn(nothing, nothing, ())
-end
-
-function EnzymeRules.reverse(
-    ::EnzymeRules.RevConfigWidth{1},
-    ::EnzymeCore.Const{typeof(reshape_norm_dims)},
-    ::Type{EnzymeCore.Const{Nothing}},
-    tape,
-    y::EnzymeCore.Annotation{<:AbstractArray},
-    x::EnzymeCore.Annotation{<:AbstractArray},
-)
-    if !(typeof(y) <: EnzymeCore.Const)
-        if !(typeof(x) <: EnzymeCore.Const)
-            copyto!(vec(x.dval), vec(y.dval))
-        end
-        fill!(y.dval, false)
-    end
-    return ntuple(Returns(nothing), 2)
-end
-# COV_EXCL_STOP
+EnzymeRules.@easy_rule(reshape_norm_dims(x, dims), (reshape(Ω, size(x)), @Constant))
 
 @inbounds function get_norm_reshape_dims(sx::NTuple{N,<:Int}, ly::Int) where {N}
     if ly == sx[N - 1]
