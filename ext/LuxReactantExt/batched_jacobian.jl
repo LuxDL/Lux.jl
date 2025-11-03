@@ -127,14 +127,11 @@ function _batched_jacobian_forward_impl(f::F, ad::AutoEnzyme, x::AbstractArray) 
 
     dy = similar(y, size(y, 1), size(x, 1), size(x, 2))
     @trace track_numbers = false for i in 1:size(x, 1)
-        dyᵢ = Enzyme.make_zero(y)
-        Enzyme.autodiff(
-            ad.mode,
-            Utils.annotate_enzyme_function(ad, f′),
-            Duplicated(y, dyᵢ),
-            Duplicated(x, bx[:, :, i]),
+        dy[:, i, :] = only(
+            Enzyme.autodiff(
+                ad.mode, Utils.annotate_enzyme_function(ad, f′), Duplicated(x, bx[:, :, i])
+            ),
         )
-        dy[:, i, :] = dyᵢ
     end
     return dy
 end
