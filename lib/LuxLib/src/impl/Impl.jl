@@ -7,7 +7,7 @@ using StaticArraysCore: StaticVector, SArray
 using Static: StaticBool, True, False, static
 
 using ChainRulesCore: ChainRulesCore, NoTangent, HasReverseMode, RuleConfig
-using EnzymeCore: EnzymeCore, EnzymeRules
+using EnzymeCore: EnzymeCore, EnzymeRules, Annotation
 using ForwardDiff: ForwardDiff
 
 using KernelAbstractions: KernelAbstractions, @kernel, @Const, @index
