@@ -295,11 +295,11 @@ most layers of a neural network. The identity mapping is scaled by the `gain` pa
 ```jldoctest
 julia> identity_init(Xoshiro(123), Float32, 5, 5)
 5×5 Matrix{Float32}:
- 1.0  1.0  1.0  1.0  1.0
- 1.0  1.0  1.0  1.0  1.0
- 1.0  1.0  1.0  1.0  1.0
- 1.0  1.0  1.0  1.0  1.0
- 1.0  1.0  1.0  1.0  1.0
+ 1.0  0.0  0.0  0.0  0.0
+ 0.0  1.0  0.0  0.0  0.0
+ 0.0  0.0  1.0  0.0  0.0
+ 0.0  0.0  0.0  1.0  0.0
+ 0.0  0.0  0.0  0.0  1.0
 
 julia> identity_init(Xoshiro(123), Float32, 3, 3, 1, 1; gain=1.5)
 3×3×1×1 Array{Float32, 4}:
@@ -317,8 +317,7 @@ function identity_init(
     if length(dims) == 2
         rows, cols = dims
         mat = DeviceAgnostic.zeros(rng, T, rows, cols)
-        diag_indices = 1:min(rows, cols)
-        fill!(view(mat, diag_indices, diag_indices), T(gain))
+        fill!(view(mat, diagind(mat)), T(gain))
         return circshift(mat, shift)
     end
 
