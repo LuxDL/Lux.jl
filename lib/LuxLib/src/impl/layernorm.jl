@@ -41,7 +41,7 @@ function expand_layernorm_dims(
 ) where {xT,γT,βT,N,M}
     new_γ_size = (size(γ)..., ntuple(i -> 1, N - M)...)
     new_β_size = (size(β)..., ntuple(i -> 1, N - M)...)
-    return reshape(γ, new_γ_size), reshape(β, new_β_size)
+    return Utils.safe_reshape(γ, new_γ_size...), Utils.safe_reshape(β, new_β_size...)
 end
 
 function expand_layernorm_dims(

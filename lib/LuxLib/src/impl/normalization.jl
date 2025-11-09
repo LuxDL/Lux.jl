@@ -171,7 +171,7 @@ end
 
 reshape_norm_dims(::Nothing, ::Dims) = nothing
 function reshape_norm_dims(x::AbstractArray, dims::Dims)
-    return reshape(x, get_norm_reshape_dims(dims, length(x)))
+    return Utils.safe_reshape(x, get_norm_reshape_dims(dims, length(x))...)
 end
 
 @inbounds function get_norm_reshape_dims(sx::NTuple{N,<:Int}, ly::Int) where {N}

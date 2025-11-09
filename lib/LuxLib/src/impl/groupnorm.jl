@@ -10,11 +10,15 @@ function groupnorm(
     act::F,
     ϵ,
 ) where {F,N,xT}
-    x′ = reshape(x, size(x)[1:(N - 2)]..., size(x, N - 1) ÷ groups, groups, size(x, N))
+    x′ = Utils.safe_reshape(
+        x, size(x)[1:(N - 2)]..., size(x, N - 1) ÷ groups, groups, size(x, N)
+    )
     (μ, σ²), _ = compute_batch_statistics(
         x′, nothing, nothing, groupnorm_reduce_dims(x), False(), nothing
     )
-    return reshape(groupnorm_affine_normalize(act, x′, μ, σ², γ, β, ϵ), size(x))
+    return Utils.safe_reshape(
+        groupnorm_affine_normalize(act, x′, μ, σ², γ, β, ϵ), size(x)...
+    )
 end
 
 function groupnorm_affine_normalize(
@@ -58,8 +62,8 @@ end
 ) where {F,N,xT,μT,σ²T}
     reshape_calls = if γ != Nothing
         quote
-            γ′ = reshape(γ, 1, size(x, N - 2), size(x, N - 1), 1)
-            β′ = reshape(β, 1, size(x, N - 2), size(x, N - 1), 1)
+            γ′ = Utils.safe_reshape(γ, 1, size(x, N - 2), size(x, N - 1), 1)
+            β′ = Utils.safe_reshape(β, 1, size(x, N - 2), size(x, N - 1), 1)
         end
     else
         quote
@@ -69,13 +73,13 @@ end
     end
 
     return quote
-        x′ = reshape(x, :, size(x, N - 2), size(x, N - 1), size(x, N))
-        μ′ = reshape(μ, 1, 1, size(x, N - 1), size(x, N))
-        σ²′ = reshape(σ², 1, 1, size(x, N - 1), size(x, N))
+        x′ = Utils.safe_reshape(x, :, size(x, N - 2), size(x, N - 1), size(x, N))
+        μ′ = Utils.safe_reshape(μ, 1, 1, size(x, N - 1), size(x, N))
+        σ²′ = Utils.safe_reshape(σ², 1, 1, size(x, N - 1), size(x, N))
         $(reshape_calls)
-        return reshape(
+        return Utils.safe_reshape(
             groupnorm_affine_normalize_internal(opmode, act, x′, μ′, σ²′, γ′, β′, ϵ),
-            size(x),
+            size(x)...,
         )
     end
 end
