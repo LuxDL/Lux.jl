@@ -87,10 +87,10 @@ function batchnorm_affine_normalize(
     β::Optional{<:AbstractVector},
     ϵ,
 ) where {F,xT,μT,σ²T,N}
-    x′ = reshape(x, :, size(x, N - 1), size(x, N))
-    return reshape(
+    x′ = Utils.safe_reshape(x, :, size(x, N - 1), size(x, N))
+    return Utils.safe_reshape(
         batchnorm_affine_normalize_internal(opmode, act, x′, vec(μ), vec(σ²), γ, β, ϵ),
-        size(x),
+        size(x)...,
     )
 end
 

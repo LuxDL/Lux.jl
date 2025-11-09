@@ -44,46 +44,9 @@ function CRC.rrule(
     return LossFunctionImpl.fused_agg(sum, lfn, x, y), ∇fused_agg
 end
 
-# COV_EXCL_START
-
-function EnzymeRules.augmented_primal(
-    cfg::EnzymeRules.RevConfigWidth{1},
-    func::EnzymeCore.Const{typeof(LossFunctionImpl.fused_agg)},
-    ::Type{<:EnzymeCore.Active},
-    agg_f::EnzymeCore.Const{typeof(sum)},
-    lfn::EnzymeCore.Const{<:LossFunctions.Traits.Loss},
-    x::EnzymeCore.Annotation{<:AbstractArray},
-    y::EnzymeCore.Const,
+EnzymeRules.@easy_rule(
+    LossFunctionImpl.fused_agg(fn::typeof(sum), lfn::LossFunctions.Traits.Loss, x, y),
+    (@Constant, @Constant, LossFunctions.deriv(lfn, x, y) .* Ω, @Constant)
 )
-    primal =
-        EnzymeRules.needs_primal(cfg) ? func.val(agg_f.val, lfn.val, x.val, y.val) : nothing
-
-    cache_x = EnzymeRules.overwritten(cfg)[4] ? copy(x.val) : nothing
-    cache_y = EnzymeRules.overwritten(cfg)[5] ? copy(y.val) : nothing
-
-    return EnzymeRules.AugmentedReturn(primal, nothing, (cache_x, cache_y))
-end
-
-function EnzymeRules.reverse(
-    cfg::EnzymeRules.RevConfigWidth{1},
-    ::EnzymeCore.Const{typeof(LossFunctionImpl.fused_agg)},
-    dret::EnzymeCore.Active,
-    (cache_x, cache_y),
-    agg_f::EnzymeCore.Const{typeof(sum)},
-    lfn::EnzymeCore.Const{<:LossFunctions.Traits.Loss},
-    x::EnzymeCore.Annotation{<:AbstractArray},
-    y::EnzymeCore.Const,
-)
-    EnzymeRules.overwritten(cfg)[4] || (cache_x = x.val)
-    EnzymeRules.overwritten(cfg)[5] || (cache_y = y.val)
-
-    if !(typeof(x) <: EnzymeCore.Const)
-        @. x.dval = LossFunctions.deriv(lfn.val, cache_x, cache_y) * dret.val
-    end
-
-    return ntuple(Returns(nothing), 4)
-end
-
-# COV_EXCL_STOP
 
 end

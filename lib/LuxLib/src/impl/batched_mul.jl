@@ -226,12 +226,7 @@ function batched_matmul_cpu!(
         batched_matmul_loopvec_impl!(z, x, y)
         return nothing
     end
-    if Utils.within_enzyme_autodiff()
-        # XXX: https://github.com/LuxDL/Lux.jl/issues/1024
-        fallback_batched_matmul!(z, LoopedArrayOp(), x, y)
-    else
-        NNlib.batched_mul!(z, x, y)
-    end
+    NNlib.batched_mul!(z, x, y)
     return nothing
 end
 

@@ -1,7 +1,7 @@
 module Utils
 
 using ChainRulesCore: ChainRulesCore
-using EnzymeCore: EnzymeCore, EnzymeRules
+using EnzymeCore: EnzymeCore, EnzymeRules, Annotation
 using FastClosures: @closure
 using Functors: Functors
 using ForwardDiff: ForwardDiff
@@ -40,8 +40,42 @@ ofeltype_array(::Type{T}, ::Nothing) where {T} = nothing
 contiguous(x::AbstractArray) = x
 contiguous(x::SubArray) = copy(x)
 
-safe_reshape(x::AbstractArray, dims...) = reshape(x, dims...)
+safe_reshape(x::AbstractArray, dims...) = safe_reshape_internal(x, dims)
 safe_reshape(::Nothing, dims...) = nothing
+
+safe_reshape_internal(x::AbstractArray, dims) = reshape(x, dims)
+
+# reshape sometimes causes trouble inside ReshapedArray for Enzyme. This is a workaround
+# for that.
+struct EnzymeRulesReshapeJacobian{T,N,D,A<:AbstractArray{T,N}} <: AbstractArray{T,2}
+    x::A
+    outsize::D
+end
+
+Base.size(J::EnzymeRulesReshapeJacobian) = (prod(J.outsize), length(J.x))
+
+function EnzymeRules.multiply_fwd_into(
+    previous, J::EnzymeRulesReshapeJacobian, x::AbstractArray
+)
+    reshaped_x = reshape(x, J.outsize...)
+    previous === nothing && return reshaped_x
+    @. previous += reshaped_x
+    return previous
+end
+
+function EnzymeRules.multiply_rev_into(
+    previous, J::EnzymeRulesReshapeJacobian, x::AbstractArray
+)
+    reshaped_x = reshape(x, size(J.x)...)
+    previous === nothing && return reshaped_x
+    @. previous += reshaped_x
+    return previous
+end
+
+EnzymeRules.@easy_rule(
+    safe_reshape_internal(x::AbstractArray, dims),
+    (EnzymeRulesReshapeJacobian(x, size(Ω)), @Constant),
+)
 
 remove_tracking(x) = x
 remove_tracking(x::AbstractArray) = x
