@@ -25,11 +25,22 @@
                 @test α1_ra ≈ α1 atol = 1.0f-3 rtol = 1.0f-3
 
                 @testset "Gradient Check" begin
-                    ∂q_zyg, ∂k_zyg, ∂v_zyg =
-                        Zygote.gradient(
-                            sum ∘ first ∘ scaled_dot_product_attention, q, k, v
-                        ) |> cpu_device()
+                    function scaled_dot_product_attention_fd(q, k, v)
+                        dq_fd = Reactant.TestUtils.finite_difference_gradient(
+                            q -> sum(scaled_dot_product_attention(q, k, v)[1]), q
+                        )
+                        dk_fd = Reactant.TestUtils.finite_difference_gradient(
+                            k -> sum(scaled_dot_product_attention(q, k, v)[1]), k
+                        )
+                        dv_fd = Reactant.TestUtils.finite_difference_gradient(
+                            v -> sum(scaled_dot_product_attention(q, k, v)[1]), v
+                        )
+                        return dq_fd, dk_fd, dv_fd
+                    end
 
+                    ∂q_fd, ∂k_fd, ∂v_fd = @jit scaled_dot_product_attention_fd(
+                        q_ra, k_ra, v_ra
+                    )
                     ∂q_reactant, ∂k_reactant, ∂v_reactant = @jit Enzyme.gradient(
                         Reverse,
                         Const(sum ∘ first ∘ scaled_dot_product_attention),
@@ -38,9 +49,9 @@
                         v_ra,
                     )
 
-                    @test ∂q_zyg ≈ ∂q_reactant atol = 1.0f-3 rtol = 1.0f-3
-                    @test ∂k_zyg ≈ ∂k_reactant atol = 1.0f-3 rtol = 1.0f-3
-                    @test ∂v_zyg ≈ ∂v_reactant atol = 1.0f-3 rtol = 1.0f-3
+                    @test ∂q_fd ≈ ∂q_reactant atol = 1.0f-3 rtol = 1.0f-3
+                    @test ∂k_fd ≈ ∂k_reactant atol = 1.0f-3 rtol = 1.0f-3
+                    @test ∂v_fd ≈ ∂v_reactant atol = 1.0f-3 rtol = 1.0f-3
                 end
 
                 function sdpa(q, k, v)
@@ -66,16 +77,27 @@
                 @test α2_ra ≈ α2 atol = 1.0f-3 rtol = 1.0f-3
 
                 @testset "Gradient Check" begin
-                    ∂q2_zyg, ∂k2_zyg, ∂v2_zyg =
-                        Zygote.gradient(sum ∘ first ∘ sdpa, q2, k2, v2) |> cpu_device()
+                    function sdpa_fd(q, k, v)
+                        dq_fd = Reactant.TestUtils.finite_difference_gradient(
+                            q -> sum(sdpa(q, k, v)[1]), q
+                        )
+                        dk_fd = Reactant.TestUtils.finite_difference_gradient(
+                            k -> sum(sdpa(q, k, v)[1]), k
+                        )
+                        dv_fd = Reactant.TestUtils.finite_difference_gradient(
+                            v -> sum(sdpa(q, k, v)[1]), v
+                        )
+                        return dq_fd, dk_fd, dv_fd
+                    end
 
+                    ∂q_fd, ∂k_fd, ∂v_fd = @jit sdpa_fd(q2_ra, k2_ra, v2_ra)
                     ∂q2_reactant, ∂k2_reactant, ∂v2_reactant = @jit Enzyme.gradient(
                         Reverse, Const(sum ∘ first ∘ sdpa), q2_ra, k2_ra, v2_ra
                     )
 
-                    @test ∂q2_zyg ≈ ∂q2_reactant atol = 1.0f-3 rtol = 1.0f-3
-                    @test ∂k2_zyg ≈ ∂k2_reactant atol = 1.0f-3 rtol = 1.0f-3
-                    @test ∂v2_zyg ≈ ∂v2_reactant atol = 1.0f-3 rtol = 1.0f-3
+                    @test ∂q_fd ≈ ∂q2_reactant atol = 1.0f-3 rtol = 1.0f-3
+                    @test ∂k_fd ≈ ∂k2_reactant atol = 1.0f-3 rtol = 1.0f-3
+                    @test ∂v_fd ≈ ∂v2_reactant atol = 1.0f-3 rtol = 1.0f-3
                 end
 
                 @test y1 ≈ y2 atol = 1.0f-3 rtol = 1.0f-3

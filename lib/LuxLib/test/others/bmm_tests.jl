@@ -416,7 +416,7 @@ end
 end
 
 @testitem "Generalized Batched MatMul" tags = [:misc] begin
-    using Reactant, Enzyme, LuxLib, NNlib, Zygote
+    using Reactant, Enzyme, LuxLib, NNlib
 
     @testset "Last 2 dims are batch dims" begin
         x = randn(Float32, 3, 4, 5, 2)
@@ -437,11 +437,17 @@ end
         @test bmm_nnlib ≈ bmm_luxlib atol = 1.0e-3 rtol = 1.0e-3
         @test bmm_luxlib ≈ bmm_reactant atol = 1.0e-3 rtol = 1.0e-3
 
-        ∂x_zyg, ∂y_zyg = Zygote.gradient(sum ∘ bmm, x, y)
+        function bmm_fd(x, y)
+            dx = Reactant.TestUtils.finite_difference_gradient(x -> sum(bmm(x, y)), x)
+            dy = Reactant.TestUtils.finite_difference_gradient(y -> sum(bmm(x, y)), y)
+            return dx, dy
+        end
+
+        ∂x_fd, ∂y_fd = @jit bmm_fd(x_ra, y_ra)
         ∂x_reactant, ∂y_reactant = @jit Enzyme.gradient(Reverse, sum ∘ bmm, x_ra, y_ra)
 
-        @test ∂x_zyg ≈ ∂x_reactant atol = 1.0e-3 rtol = 1.0e-3
-        @test ∂y_zyg ≈ ∂y_reactant atol = 1.0e-3 rtol = 1.0e-3
+        @test ∂x_fd ≈ ∂x_reactant atol = 1.0e-3 rtol = 1.0e-3
+        @test ∂y_fd ≈ ∂y_reactant atol = 1.0e-3 rtol = 1.0e-3
     end
 
     @testset "Middle dims are batch dims" begin
@@ -469,10 +475,16 @@ end
         @test bmm_nnlib ≈ bmm_luxlib atol = 1.0e-3 rtol = 1.0e-3
         @test bmm_luxlib ≈ bmm_reactant atol = 1.0e-3 rtol = 1.0e-3
 
-        ∂x_zyg, ∂y_zyg = Zygote.gradient(sum ∘ bmm, x, y)
+        function bmm_fd(x, y)
+            dx_fd = Reactant.TestUtils.finite_difference_gradient(x -> sum(bmm(x, y)), x)
+            dy_fd = Reactant.TestUtils.finite_difference_gradient(y -> sum(bmm(x, y)), y)
+            return dx_fd, dy_fd
+        end
+
+        ∂x_fd, ∂y_fd = @jit bmm_fd(x_ra, y_ra)
         ∂x_reactant, ∂y_reactant = @jit Enzyme.gradient(Reverse, sum ∘ bmm, x_ra, y_ra)
 
-        @test ∂x_zyg ≈ ∂x_reactant atol = 1.0e-3 rtol = 1.0e-3
-        @test ∂y_zyg ≈ ∂y_reactant atol = 1.0e-3 rtol = 1.0e-3
+        @test ∂x_fd ≈ ∂x_reactant atol = 1.0e-3 rtol = 1.0e-3
+        @test ∂y_fd ≈ ∂y_reactant atol = 1.0e-3 rtol = 1.0e-3
     end
 end
