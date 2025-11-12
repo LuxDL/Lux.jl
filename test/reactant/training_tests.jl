@@ -167,3 +167,19 @@ end
         @test length(Reactant.XLA.devices(Reactant.XLA.sharding(loss.data))) == 8
     end
 end
+
+@testitem "Reactant.Compiler.Thunk in TrainState" tags = [:reactant] setup = [
+    SharedTestSetup
+] begin
+    using Lux, Random, Reactant, Optimisers
+
+    rdev = reactant_device(; force=true)
+
+    model = Dense(10, 10)
+    ps, st = Lux.setup(Random.default_rng(), model) |> rdev
+    x = rand(10) |> rdev
+
+    model_compiled = @compile model(x, ps, st)
+
+    @test_throws ArgumentError Training.TrainState(model_compiled, ps, st, Adam())
+end
