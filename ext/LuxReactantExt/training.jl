@@ -28,7 +28,7 @@ train_state = Training.TrainState(model_compiled, ps, st, Adam())
 ```
 
 Instead avoid compiling the model and pass it directly to `TrainState`. When
-`single_train_step` or other function are called on the `TrainState`, the
+`single_train_step` or other functions are called on the `TrainState`, the
 model will be compiled automatically.
 
 ```julia
