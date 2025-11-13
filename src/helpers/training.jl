@@ -31,6 +31,7 @@ Training State containing:
 Internal fields:
 
   - `cache`: Cached values. Implementations are free to use this for whatever they want.
+  - `allocator_cache`: Used by GPUArrays compatible backends to cache memory allocations.
   - `objective_function`: Objective function might be cached.
 
 !!! warning
@@ -40,6 +41,7 @@ Internal fields:
 """
 @concrete struct TrainState
     cache
+    allocator_cache
     objective_function
     model
     parameters
@@ -54,6 +56,7 @@ MLDataDevices.isleaf(::TrainState) = true
 function Adapt.adapt_structure(to::AbstractDevice, ts::TrainState)
     return TrainState(
         nothing,
+        get_allocator_cache(to),
         nothing,
         ts.model,
         to(ts.parameters),
@@ -94,6 +97,7 @@ function Adapt.adapt_structure(to::ReactantDevice, ts::TrainState)
     return TrainState(
         nothing,
         nothing,
+        nothing,
         ts.model,
         to(ts.parameters),
         to(ts.states),
@@ -125,8 +129,12 @@ function TrainState(model::AbstractLuxLayer, ps, st, optimizer::Optimisers.Abstr
         optimizer = ReactantCompatibleOptimisers.make_reactant_compatible(optimizer, dev)
     end
     st_opt = Optimisers.setup(optimizer, ps)
-    return TrainState(nothing, nothing, model, ps, st, optimizer, st_opt, 0)
+    return TrainState(
+        nothing, get_allocator_cache(dev), nothing, model, ps, st, optimizer, st_opt, 0
+    )
 end
+
+get_allocator_cache(::AbstractDevice) = nothing
 
 @concrete struct TrainingBackendCache
     backend
@@ -190,6 +198,17 @@ function apply_gradients(ts::TrainState, grads)
     )
         return apply_gradients_reactant(ts, grads)
     end
+    return apply_gradients_with_allocator_cache(ts.allocator_cache, ts, grads)
+end
+
+# apply_gradients -> apply_gradients_reactant (for ReactantBackend)
+#                 -> apply_gradients_with_allocator_cache -> apply_gradients_impl
+
+function apply_gradients_with_allocator_cache(::Nothing, ts::TrainState, grads)
+    return apply_gradients_impl(ts, grads)
+end
+
+function apply_gradients_impl(ts::TrainState, grads)
     optimizer_state, ps = Optimisers.update(ts.optimizer_state, ts.parameters, grads)
     @set! ts.parameters = ps
     @set! ts.optimizer_state = optimizer_state
@@ -197,7 +216,7 @@ function apply_gradients(ts::TrainState, grads)
     return ts
 end
 
-function apply_gradients_reactant end
+function apply_gradients_reactant end # updated in ReactantExt
 
 """
     apply_gradients!(ts::TrainState, grads)
@@ -214,12 +233,23 @@ function apply_gradients!(ts::TrainState, grads)
     )
         return apply_gradients_reactant!(ts, grads)
     end
+    return apply_gradients_with_allocator_cache!(ts.allocator_cache, ts, grads)
+end
+
+# apply_gradients! -> apply_gradients_reactant! (for ReactantBackend)
+#                  -> apply_gradients_with_allocator_cache! -> apply_gradients_impl!
+
+function apply_gradients_with_allocator_cache!(::Nothing, ts::TrainState, grads)
+    return apply_gradients_impl!(ts, grads)
+end
+
+function apply_gradients_impl!(ts::TrainState, grads)
     Optimisers.update!(ts.optimizer_state, ts.parameters, grads)
     @set! ts.step = ts.step + 1
     return ts
 end
 
-function apply_gradients_reactant! end
+function apply_gradients_reactant! end # updated in ReactantExt
 
 const SYNC_DOCSTRING = """
   - `sync`: If `true`, then the compiled reactant function is compiled with `sync=true`.
@@ -288,20 +318,17 @@ A 4-Tuple containing:
 """
 function compute_gradients(ad, obj_fn::F, data, ts::TrainState; sync::Bool=false) where {F}
     dev_type = get_device_type((ts.parameters, ts.states))
-    return compute_gradients_impl(maybe_wrap_adtype(ad, dev_type; sync), obj_fn, data, ts)
+    return compute_gradients_impl_with_allocator_cache(
+        maybe_wrap_adtype(ad, dev_type; sync), ts.allocator_cache, obj_fn, data, ts
+    )
 end
 
-maybe_wrap_adtype(backend::ReactantBackend, ::Any; kwargs...) = backend
-maybe_wrap_adtype(ad::AbstractADType, ::Any; kwargs...) = ad
-function maybe_wrap_adtype(
-    ad::AbstractADType,
-    ::Type{ReactantDevice};
-    return_gradients::Utils.BoolType=True(),
-    sync::Bool=false,
-)
-    ad isa AutoEnzyme && return ReactantBackend(static(return_gradients), sync)
-    throw(ArgumentError("Computing gradients for models on XLA is supported only with \
-                         Enzyme.jl (`AutoEnzyme`)."))
+# compute_gradients -> compute_gradients_impl_with_allocator_cache -> compute_gradients_impl
+
+function compute_gradients_impl_with_allocator_cache(
+    backend, ::Nothing, obj_fn::F, data, ts::TrainState
+) where {F}
+    return compute_gradients_impl(backend, obj_fn, data, ts)
 end
 
 function compute_gradients_impl(ad, ::F, _, ts::TrainState) where {F}
@@ -326,6 +353,19 @@ for package in (:Zygote, :Tracker, :ReverseDiff, :Enzyme, :Mooncake)
     @eval function check_if_compute_gradients_implemented(::$(adtype))
         throw(ArgumentError($msg))
     end
+end
+
+maybe_wrap_adtype(backend::ReactantBackend, ::Any; kwargs...) = backend
+maybe_wrap_adtype(ad::AbstractADType, ::Any; kwargs...) = ad
+function maybe_wrap_adtype(
+    ad::AbstractADType,
+    ::Type{ReactantDevice};
+    return_gradients::Utils.BoolType=True(),
+    sync::Bool=false,
+)
+    ad isa AutoEnzyme && return ReactantBackend(static(return_gradients), sync)
+    throw(ArgumentError("Computing gradients for models on XLA is supported only with \
+                         Enzyme.jl (`AutoEnzyme`)."))
 end
 
 function generate_wrappers(::F, m, ps, st, data, ::False) where {F}
@@ -395,7 +435,9 @@ function single_train_step!(
     backend = maybe_wrap_adtype(
         backend, get_device_type((ts.parameters, ts.states)); return_gradients, sync
     )
-    return single_train_step_impl!(backend, obj_fn, data, ts)
+    return single_train_step_impl_with_allocator_cache!(
+        backend, ts.allocator_cache, obj_fn, data, ts
+    )
 end
 
 """
@@ -429,16 +471,29 @@ function single_train_step(
     backend = maybe_wrap_adtype(
         backend, get_device_type((ts.parameters, ts.states)); return_gradients, sync
     )
-    return single_train_step_impl(backend, obj_fn, data, ts)
+    return single_train_step_impl_with_allocator_cache(
+        backend, ts.allocator_cache, obj_fn, data, ts
+    )
 end
+
+# single_train_step -> single_train_step_impl_with_allocator_cache -> single_train_step_impl
 
 for inplace in ("!", "")
     step = Symbol(:single_train_step_impl, inplace)
+    step_allocator_cache = Symbol(:single_train_step_impl_with_allocator_cache, inplace)
     apply_fn = Symbol(:apply_gradients, inplace)
-    @eval function $(step)(backend, obj_fn::F, data, ts::TrainState) where {F}
-        grads, loss, stats, ts = compute_gradients(backend, obj_fn, data, ts)
-        ts = $(apply_fn)(ts, grads)
-        return grads, loss, stats, ts
+    @eval begin
+        function $(step_allocator_cache)(
+            backend, ::Nothing, obj_fn::F, data, ts::TrainState
+        ) where {F}
+            return $(step)(backend, obj_fn, data, ts)
+        end
+
+        function $(step)(backend, obj_fn::F, data, ts::TrainState) where {F}
+            grads, loss, stats, ts = compute_gradients(backend, obj_fn, data, ts)
+            ts = $(apply_fn)(ts, grads)
+            return grads, loss, stats, ts
+        end
     end
 end
 
