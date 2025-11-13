@@ -156,7 +156,7 @@ function train_model!(model, ps, st, x_data, y_data, num_epochs=1000)
         end
     end
 
-    return model, ps, st
+    return model, train_state.parameters, train_state.states
 end
 
 train_model!(model, ps, st, x_data, y_data)
@@ -175,12 +175,16 @@ packages mentioned in this documentation are available via the Julia General Reg
 
 You can install all those packages via `import Pkg; Pkg.add(<package name>)`.
 
-## XLA (CPU/GPU/TPU) Support
+## Reactant & XLA (CPU/GPU/TPU) Support
 
 Lux.jl supports XLA compilation for CPU, GPU, and TPU using
 [Reactant.jl](https://github.com/EnzymeAD/Reactant.jl).
 
-## GPU Support
+## Native Julia GPU Support
+
+!!! warning
+
+    Using accelerators via Reactant and XLA is the preferred way to use GPUs with Lux.jl.
 
 GPU Support for Lux.jl requires loading additional packages:
 

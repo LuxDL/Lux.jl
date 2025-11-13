@@ -204,8 +204,6 @@ for inplace in ("!", "")
             @set! ts.objective_function = objective_function
         end
 
-        @show typeof(dparameters)
-
         grads, ps, loss, stats, st, opt_state = compiled_grad_and_step_function(
             objective_function,
             ts.model,
