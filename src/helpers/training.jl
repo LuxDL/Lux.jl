@@ -124,7 +124,7 @@ function TrainState(model::AbstractLuxLayer, ps, st, optimizer::Optimisers.Abstr
     )
 end
 
-get_allocator_cache(::AbstractDevice) = nothing
+get_allocator_cache(_) = nothing
 
 @concrete struct TrainingBackendCache
     backend
