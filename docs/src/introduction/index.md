@@ -20,12 +20,11 @@ Pkg.add("Lux")
 
 !!! tip "Pre-Requisites"
 
-    You need to install `Optimisers` and `Zygote` if not done already.
-    `Pkg.add(["Optimisers", "Zygote"])`
+    You need to install `Optimisers`, `Reactant` and `Enzyme` if not done already.
+    `Pkg.add(["Optimisers", "Enzyme", "Reactant"])`
 
 ```@example quickstart
-using Lux, Random, Optimisers, Zygote
-# using LuxCUDA, AMDGPU, Metal, oneAPI # Optional packages for GPU support
+using Lux, Random, Optimisers, Enzyme, Reactant
 ```
 
 We take randomness very seriously
@@ -40,7 +39,7 @@ Build the model
 
 ```@example quickstart
 # Construct the layer
-model = Chain(Dense(128, 256, tanh), Chain(Dense(256, 1, tanh), Dense(1, 10)))
+model = Chain(Dense(128, 256, tanh), Chain(Dense(256, 256, tanh), Dense(256, 10)))
 ```
 
 Models don't hold parameters and states so initialize them. From there on, we can just use
@@ -49,7 +48,7 @@ API that provides an uniform API over all supported AD systems.
 
 ```@example quickstart
 # Get the device determined by Lux
-dev = gpu_device()
+dev = reactant_device()
 
 # Parameter and State Variables
 ps, st = Lux.setup(rng, model) |> dev
@@ -58,25 +57,35 @@ ps, st = Lux.setup(rng, model) |> dev
 x = rand(rng, Float32, 128, 2) |> dev
 
 # Run the model
-y, st = Lux.apply(model, x, ps, st)
+## We need to use @jit to compile and run the model with Reactant
+y, st = @jit Lux.apply(model, x, ps, st)
+
+## For best performance, first compile the model with Reactant and then run it
+apply_compiled = @compile Lux.apply(model, x, ps, st)
+apply_compiled(model, x, ps, st)
 
 # Gradients
 ## First construct a TrainState
-train_state = Lux.Training.TrainState(model, ps, st, Adam(0.0001f0))
+train_state = Training.TrainState(model, ps, st, Adam(0.0001f0))
 
 ## We can compute the gradients using Training.compute_gradients
+## TrainState handles compilation internally
 gs, loss, stats, train_state = Lux.Training.compute_gradients(
-    AutoZygote(), MSELoss(),
-    (x, dev(rand(rng, Float32, 10, 2))), train_state
+    AutoEnzyme(),
+    MSELoss(),
+    (x, dev(rand(rng, Float32, 10, 2))),
+    train_state
 )
 
 ## Optimization
 train_state = Training.apply_gradients!(train_state, gs) # or Training.apply_gradients (no `!` at the end)
 
-# Both these steps can be combined into a single call
+# Both these steps can be combined into a single call (preferred approach)
 gs, loss, stats, train_state = Training.single_train_step!(
-    AutoZygote(), MSELoss(),
-    (x, dev(rand(rng, Float32, 10, 2))), train_state
+    AutoEnzyme(),
+    MSELoss(),
+    (x, dev(rand(rng, Float32, 10, 2))),
+    train_state
 )
 ```
 

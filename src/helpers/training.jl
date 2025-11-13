@@ -184,12 +184,20 @@ Update the parameters stored in `ts` using the gradients `grads`.
 $(APPLY_GRAD_DOCSTRING)
 """
 function apply_gradients(ts::TrainState, grads)
+    if (
+        (ts.cache isa TrainingBackendCache && ts.cache.backend isa ReactantBackend) ||
+        get_device_type(grads) <: ReactantDevice
+    )
+        return apply_gradients_reactant(ts, grads)
+    end
     optimizer_state, ps = Optimisers.update(ts.optimizer_state, ts.parameters, grads)
     @set! ts.parameters = ps
     @set! ts.optimizer_state = optimizer_state
     @set! ts.step = ts.step + 1
     return ts
 end
+
+function apply_gradients_reactant end
 
 """
     apply_gradients!(ts::TrainState, grads)
@@ -200,10 +208,18 @@ of [`apply_gradients`](@ref).
 $(APPLY_GRAD_DOCSTRING)
 """
 function apply_gradients!(ts::TrainState, grads)
+    if (
+        (ts.cache isa TrainingBackendCache && ts.cache.backend isa ReactantBackend) ||
+        get_device_type(grads) <: ReactantDevice
+    )
+        return apply_gradients_reactant!(ts, grads)
+    end
     Optimisers.update!(ts.optimizer_state, ts.parameters, grads)
     @set! ts.step = ts.step + 1
     return ts
 end
+
+function apply_gradients_reactant! end
 
 const SYNC_DOCSTRING = """
   - `sync`: If `true`, then the compiled reactant function is compiled with `sync=true`.
