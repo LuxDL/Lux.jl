@@ -1,6 +1,6 @@
 module Internal
 
-using Functors: fmap
+using Functors: fleaves
 using Preferences: load_preference
 using Random: AbstractRNG
 
@@ -272,7 +272,7 @@ unsafe_free_internal!(::Type, x::AbstractArray) = nothing
 unsafe_free_internal!(_) = nothing
 
 function unsafe_free!(x)
-    fmap(unsafe_free_internal!, x)
+    foreach(unsafe_free_internal!, fleaves(x))
     return nothing
 end
 
