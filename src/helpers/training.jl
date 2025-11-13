@@ -41,8 +41,8 @@ Internal fields:
 """
 @concrete struct TrainState
     cache
-    allocator_cache
     objective_function
+    allocator_cache
     model
     parameters
     states
@@ -56,8 +56,8 @@ MLDataDevices.isleaf(::TrainState) = true
 function Adapt.adapt_structure(to::AbstractDevice, ts::TrainState)
     return TrainState(
         nothing,
-        get_allocator_cache(to),
         nothing,
+        get_allocator_cache(to),
         ts.model,
         to(ts.parameters),
         to(ts.states),
@@ -94,17 +94,7 @@ function Adapt.adapt_structure(to::ReactantDevice, ts::TrainState)
     This ensures the optimizer state and other internal states are on the device on
     construction.
     """
-    return TrainState(
-        nothing,
-        nothing,
-        nothing,
-        ts.model,
-        to(ts.parameters),
-        to(ts.states),
-        ts.optimizer,
-        to(ts.optimizer_state),
-        ts.step,
-    )
+    return @invoke Adapt.adapt_structure(to::AbstractDevice, ts::TrainState)
 end
 
 """
@@ -130,7 +120,7 @@ function TrainState(model::AbstractLuxLayer, ps, st, optimizer::Optimisers.Abstr
     end
     st_opt = Optimisers.setup(optimizer, ps)
     return TrainState(
-        nothing, get_allocator_cache(dev), nothing, model, ps, st, optimizer, st_opt, 0
+        nothing, nothing, get_allocator_cache(dev), model, ps, st, optimizer, st_opt, 0
     )
 end
 
