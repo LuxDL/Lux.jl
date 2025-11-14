@@ -367,7 +367,9 @@ function generate_wrappers(::F, m, ps, st, data, ::False, ::StaticBool) where {F
     return Ref{Any}(), Ref{NamedTuple}()
 end
 
-function generate_wrappers(objective_function::F, m, ps, st, data, ::True, ::False) where {F}
+function generate_wrappers(
+    objective_function::F, m, ps, st, data, ::True, ::False
+) where {F}
     _, stₙ, statsₙ = objective_function(m, ps, st, data)
     return Ref{typeof(stₙ)}(stₙ), Ref{NamedTuple}()  # State type is not preserved
 end
