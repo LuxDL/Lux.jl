@@ -9,9 +9,10 @@ Invalid TrainState construction using a compiled function.
 
 `TrainState` is being constructed with a reactant compiled function, i.e. a
 `Reactant.Compiler.Thunk`. This is likely a mistake as the model should be
-passed in directly without being compiled first.
+passed in directly without being compiled first. When `single_train_step` or other
+functions are called on the `TrainState`, the model will be compiled automatically.
 
-This is likely originating from the following style of usage:
+The correct usage is:
 
 ```julia
 using Lux, Reactant, Random, Optimisers
@@ -22,17 +23,25 @@ model = Dense(10, 10)
 ps, st = Lux.setup(Random.default_rng(), model) |> rdev
 x = rand(10) |> rdev
 
+train_state = TrainState(model, ps, st, Adam())
+```
+
+The error originates because the model is being compiled first, which is not
+supported. **The following is the incorrect way, which potentially causes this
+error.**
+
+```julia
+using Lux, Reactant, Random, Optimisers
+
+rdev = reactant_device()
+
+model = Dense(10, 10)
+ps, st = Lux.setup(Random.default_rng(), model)
+x = rand(10) |> rdev
+
 model_compiled = @compile model(x, ps, st)
 
 train_state = Training.TrainState(model_compiled, ps, st, Adam())
-```
-
-Instead avoid compiling the model and pass it directly to `TrainState`. When
-`single_train_step` or other functions are called on the `TrainState`, the
-model will be compiled automatically.
-
-```julia
-train_state = Training.TrainState(model, ps, st, Adam())
 ```
 
 For end-to-end usage example refer to the documentation:
