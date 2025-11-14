@@ -260,9 +260,7 @@ end
 
     tstate = Training.TrainState(model, ps, st, opt)
 
-    _, _, _, tstate_new = @inferred Training.compute_gradients(
-        AutoEnzyme(), mse, (x, x), tstate
-    )
+    _, _, _, tstate_new = Training.compute_gradients(AutoEnzyme(), mse, (x, x), tstate)
 
     @test tstate_new.states !== tstate.states
 
@@ -271,14 +269,12 @@ end
 
     tstate = Training.TrainState(model, ps, st, opt)
 
-    _, _, _, tstate_new = @inferred Training.compute_gradients(
-        AutoEnzyme(), mse, (x, x), tstate
-    )
+    _, _, _, tstate_new = Training.compute_gradients(AutoEnzyme(), mse, (x, x), tstate)
 
     @test @inferred(Training.compute_gradients(AutoEnzyme(), mse, (x, x), tstate_new)) isa
         Any
 
-    _, _, _, tstate_new2 = @inferred Training.compute_gradients(
+    _, _, _, tstate_new2 = Training.compute_gradients(
         AutoEnzyme(), mse2, (x, x), tstate_new
     )
     @test hasfield(typeof(tstate_new2.cache.extras), :forward)
@@ -293,9 +289,7 @@ end
 
     tstate = Training.TrainState(model, ps, st, opt)
 
-    _, _, _, tstate_new = @inferred Training.compute_gradients(
-        AutoEnzyme(), mse, (x, x), tstate
-    )
+    _, _, _, tstate_new = Training.compute_gradients(AutoEnzyme(), mse, (x, x), tstate)
 
     @test tstate_new.states !== tstate.states
 
@@ -304,14 +298,12 @@ end
 
     tstate = Training.TrainState(model, ps, st, opt)
 
-    _, _, _, tstate_new = @inferred Training.compute_gradients(
-        AutoEnzyme(), mse, (x, x), tstate
-    )
+    _, _, _, tstate_new = Training.compute_gradients(AutoEnzyme(), mse, (x, x), tstate)
 
     @test @inferred(Training.compute_gradients(AutoEnzyme(), mse, (x, x), tstate_new)) isa
         Any
 
-    _, _, _, tstate_new2 = @inferred Training.compute_gradients(
+    _, _, _, tstate_new2 = Training.compute_gradients(
         AutoEnzyme(), mse2, (x, x), tstate_new
     )
     @test hasfield(typeof(tstate_new2.cache.extras), :forward)

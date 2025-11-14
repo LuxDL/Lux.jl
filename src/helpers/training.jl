@@ -358,7 +358,7 @@ function maybe_wrap_adtype(
                          Enzyme.jl (`AutoEnzyme`)."))
 end
 
-function generate_wrappers(::F, m, ps, st, data, ::False) where {F}
+function generate_wrappers(::F, m, ps, st, data, ::False, ::StaticBool) where {F}
     @warn "Detected function wrapper generation with function being updated between calls. \
            This will generate type-unstable code. A possible reason for this is \
            `TrainState` was compiled (first call to `compute_gradients`) with function \
@@ -367,8 +367,13 @@ function generate_wrappers(::F, m, ps, st, data, ::False) where {F}
     return Ref{Any}(), Ref{NamedTuple}()
 end
 
+function generate_wrappers(objective_function::F, m, ps, st, data, ::True, ::False) where {F}
+    _, stₙ, statsₙ = objective_function(m, ps, st, data)
+    return Ref{typeof(stₙ)}(stₙ), Ref{NamedTuple}()  # State type is not preserved
+end
+
 # Run the code when trying to compile the function for the first time.
-function generate_wrappers(objective_function::F, m, ps, st, data, ::True) where {F}
+function generate_wrappers(objective_function::F, m, ps, st, data, ::True, ::True) where {F}
     _, stₙ, statsₙ = objective_function(m, ps, st, data)
     return Ref{typeof(stₙ)}(stₙ), Ref{typeof(statsₙ)}(statsₙ)
 end
@@ -376,7 +381,15 @@ end
 function wrap_objective_function(
     objective_function::F, m, ps, st, data, first_try::StaticBool
 ) where {F}
-    st_updated, stats = generate_wrappers(objective_function, m, ps, st, data, first_try)
+    st_updated, stats = generate_wrappers(
+        objective_function,
+        m,
+        ps,
+        st,
+        data,
+        first_try,
+        static(LuxCore.preserves_state_type(m)),
+    )
 
     wrapped_objective_function = @closure (model, ps, st, data) -> begin
         loss, st_, stats_ = objective_function(model, ps, st, data)
