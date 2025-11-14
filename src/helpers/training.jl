@@ -69,20 +69,11 @@ end
 
 function Adapt.adapt_structure(to::ReactantDevice, ts::TrainState)
     @warn """
-    Moving `TrainState` to `ReactantDevice` might lead to unwanted behaviour. This
-    potentially originates from the following style of usage:
+    Moving `TrainState` to `ReactantDevice` might lead to unwanted behaviour.
 
-    ```julia
-    rdev = reactant_device()
-
-    ps, st = Lux.setup(rng, model)
-    train_state = TrainState(model, ps, st, opt)
-    train_state = train_state |> rdev
-    ```
-
-    Specifically, `ps` and `st` we on the host device when `train_state` is being
-    constructed and later `train_state` is moved to the device. Instead it is recommended
-    to do the following:
+    Move the `ps` and `st` to the device before constructing the `TrainState`.
+    This ensures the optimizer state and other internal states are on the device on
+    construction. Prefer using the following style:
 
     ```julia
     rdev = reactant_device()
@@ -91,8 +82,18 @@ function Adapt.adapt_structure(to::ReactantDevice, ts::TrainState)
     train_state = TrainState(model, ps, st, opt)
     ```
 
-    This ensures the optimizer state and other internal states are on the device on
-    construction.
+    This warning potentially originates from having `ps` and `st` on the host when
+    constructing the `TrainState`, and later moving the `TrainState` to the device.
+    **The following is the incorrect way, which potentially causes this warning to
+    appear.**
+
+    ```julia
+    rdev = reactant_device()
+
+    ps, st = Lux.setup(rng, model)
+    train_state = TrainState(model, ps, st, opt)
+    train_state = train_state |> rdev
+    ```
     """
     return @invoke Adapt.adapt_structure(to::AbstractDevice, ts::TrainState)
 end
