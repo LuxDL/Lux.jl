@@ -53,7 +53,7 @@ Test Broken
 ```
 """
 macro jet(expr, args...)
-    !JET_TESTING_ENABLED && return :()
+    !JET_TESTING_ENABLED[] && return :()
 
     all_args, call_extras, opt_extras = [], [], []
     target_modules_set = false

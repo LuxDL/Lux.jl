@@ -19,5 +19,5 @@ jobs:
   test:
     uses: ./.github/workflows/CommonCI.yml
     with:
-      julia_version: "1.11"
+      julia_version: "1.12"
       project: "lib/LuxTestUtils"
