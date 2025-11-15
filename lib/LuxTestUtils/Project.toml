@@ -1,7 +1,7 @@
 name = "LuxTestUtils"
 uuid = "ac9de150-d08f-4546-94fb-7472b5760531"
-authors = ["Avik Pal <avikpal@mit.edu>"]
 version = "2.0.1"
+authors = ["Avik Pal <avikpal@mit.edu>"]
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -19,8 +19,8 @@ Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
-[sources]
-MLDataDevices = {path = "../MLDataDevices"}
+[sources.MLDataDevices]
+path = "../MLDataDevices"
 
 [compat]
 ADTypes = "1.10"
@@ -32,7 +32,7 @@ Enzyme = "0.13.81"
 FiniteDiff = "2.23.1"
 ForwardDiff = "0.10.36, 1"
 Functors = "0.5"
-JET = "0.9.6, 0.10"
+JET = "0.9.6, 0.10, 0.11"
 MLDataDevices = "1.6.10"
 Optimisers = "0.3.4, 0.4"
 Test = "1.10"
