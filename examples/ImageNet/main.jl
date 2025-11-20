@@ -226,7 +226,7 @@ function construct_model(;
     rng::AbstractRNG, model_name::String, model_args, pretrained::Bool=false
 )
     model = getproperty(Vision, Symbol(model_name))(model_args...; pretrained)
-    ps, st = gdev(Lux.setup(rng, model))
+    ps, st = Lux.setup(rng, model) |> gdev
 
     sensible_println("=> model `$(model_name)` created.")
     pretrained && sensible_println("==> using pre-trained model`")
@@ -549,7 +549,7 @@ Comonicon.@main function main(;
 
     ckpt = load_checkpoint(rpath)
     if !isnothing(ckpt)
-        ps, st = gdev((ckpt.ps, ckpt.st))
+        ps, st = (ckpt.ps, ckpt.st) |> gdev
         initial_step = ckpt.step
         sensible_println("=> training started from $(initial_step)")
     else

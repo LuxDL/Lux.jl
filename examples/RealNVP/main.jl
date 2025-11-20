@@ -223,12 +223,12 @@ function main(;
     rng = Random.default_rng()
     Random.seed!(rng, 0)
 
-    dataloader = Iterators.cycle(
-        xdev(load_moons_dataloader(rng, Float32, n_train_samples; batchsize, noise))
-    )
+    dataloader = load_moons_dataloader(
+            rng, Float32, n_train_samples; batchsize, noise,
+        ) |> xdev |> Iterators.cycle
 
     model = RealNVP(; n_transforms, dist_dims=2, hidden_dims, n_layers)
-    ps, st = xdev(Lux.setup(rng, model))
+    ps, st = Lux.setup(rng, model) |> xdev
     opt = Adam(lr)
 
     train_state = Training.TrainState(model, ps, st, opt)

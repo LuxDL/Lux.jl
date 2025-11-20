@@ -128,8 +128,11 @@ function create_model(
     Random.seed!(rng, 0)
 
     ps, st = Lux.setup(rng, model)
-    ps = dev((use_named_tuple ? ps : ComponentArray(ps)))
-    st = dev(st)
+    if !use_named_tuple
+        ps = ComponentArray(ps)
+    end
+    ps = ps |> dev
+    st = st |> dev
 
     return model, ps, st
 end
@@ -239,7 +242,7 @@ model, ps, st = create_model(NeuralODE)
 
 model_stateful, ps_stateful, st_stateful = create_model(StatefulNeuralODE)
 
-x = gpu_device()(ones(Float32, 28, 28, 1, 3));
+x = ones(Float32, 28, 28, 1, 3) |> gpu_device();
 
 # NeuralODE is not type stable due to the boxing of `st`
 

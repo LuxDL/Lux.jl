@@ -69,7 +69,7 @@ const loss_function = MSELoss()
 const cdev = cpu_device()
 const xdev = reactant_device()
 
-ps, st = xdev(Lux.setup(rng, model))
+ps, st = Lux.setup(rng, model) |> xdev
 
 # ## Training
 
@@ -104,11 +104,9 @@ forward_pass = @compile Lux.apply(
     tstate.model, xdev(x), tstate.parameters, Lux.testmode(tstate.states)
 )
 
-y_pred = cdev(
-    first(
-        forward_pass(tstate.model, xdev(x), tstate.parameters, Lux.testmode(tstate.states))
-    ),
-)
+y_pred = forward_pass(
+        tstate.model, xdev(x), tstate.parameters, Lux.testmode(tstate.states)
+    ) |> first |> cdev
 nothing #hide
 
 # Let's plot the results
