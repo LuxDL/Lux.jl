@@ -7,11 +7,11 @@ function (r::Lux.Recurrence)(x::AnyTracedRArray, ps, st::NamedTuple)
     sequence = similar(x, size(out)..., N)
 
     sequence[idxs..., 1] = out
-    @trace for i in 2:N
+    @trace checkpointing = r.checkpointing mincut = r.mincut for i in 2:N
         (out, carry), st = r.cell((Lux.get_time_dimension(x, i, r.ordering), carry), ps, st)
         sequence[idxs..., i] = out
     end
 
     r.return_sequence isa False && return (out, st)
-    return LuxOps.eachslice(sequence, Val(ndims(sequence))), st
+    return eachslice(sequence; dims=ndims(sequence)), st
 end

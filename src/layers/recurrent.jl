@@ -55,9 +55,13 @@ function init_rnn_bias(rng::AbstractRNG, init_bias, hidden_dims, bias_len)
 end
 
 """
-    Recurrence(cell;
+    Recurrence(
+        cell;
         ordering::AbstractTimeSeriesDataBatchOrdering=BatchLastIndex(),
-        return_sequence::Bool=false)
+        return_sequence::Bool=false,
+        checkpointing::Bool=false,
+        mincut::Bool=false,
+    )
 
 Wraps a recurrent cell (like [`RNNCell`](@ref), [`LSTMCell`](@ref), [`GRUCell`](@ref)) to
 automatically operate over a sequence of inputs.
@@ -79,6 +83,10 @@ automatically operate over a sequence of inputs.
     the last output. Defaults to `false`.
   - `ordering`: The ordering of the batch and time dimensions in the input. Defaults to
     `BatchLastIndex()`. Alternatively can be set to `TimeLastIndex()`.
+  - `checkpointing`: If `true`, we will using checkpointing for the reverse mode
+    differentiation. *(Only for Reactant)*
+  - `mincut`: If `true`, we will using mincut for the reverse mode differentiation.
+    *(Only for Reactant)*
 
 # Extended Help
 
@@ -119,15 +127,23 @@ struct Recurrence{R<:StaticBool,C,O<:AbstractTimeSeriesDataBatchOrdering} <:
     cell::C
     ordering::O
     return_sequence::R
+    checkpointing::Bool
+    mincut::Bool
 
     function Recurrence(
-        cell::C, ordering::AbstractTimeSeriesDataBatchOrdering, return_sequence::R
+        cell::C,
+        ordering::AbstractTimeSeriesDataBatchOrdering,
+        return_sequence::R,
+        checkpointing::Bool,
+        mincut::Bool,
     ) where {C,R}
         @assert cell isa Union{
             <:AbstractRecurrentCell,
             <:Experimental.DebugLayer{<:Any,<:Any,<:AbstractRecurrentCell},
         }
-        return new{R,C,typeof(ordering)}(cell, ordering, return_sequence)
+        return new{R,C,typeof(ordering)}(
+            cell, ordering, return_sequence, checkpointing, mincut
+        )
     end
 end
 
@@ -135,8 +151,10 @@ function Recurrence(
     cell;
     ordering::AbstractTimeSeriesDataBatchOrdering=BatchLastIndex(),
     return_sequence::Bool=false,
+    checkpointing::Bool=false,
+    mincut::Bool=false,
 )
-    return Recurrence(cell, ordering, static(return_sequence))
+    return Recurrence(cell, ordering, static(return_sequence), checkpointing, mincut)
 end
 
 function (r::Recurrence)(x::AbstractArray, ps, st::NamedTuple)
