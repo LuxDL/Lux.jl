@@ -1,7 +1,43 @@
 # https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
 version: 2
+enable-beta-ecosystems: true
 updates:
   - package-ecosystem: "github-actions"
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+
+  - package-ecosystem: "julia"
+    directories:
+      # Location of Julia projects
+      - "/"
+      - "/docs"
+      - "/test"
+      - "/LuxCore"
+      - "/LuxCore/test"
+      - "/LuxCUDA"
+      - "/LuxCUDA/test"
+      - "/LuxLib"
+      - "/LuxLib/test"
+      - "/LuxTestUtils"
+      - "/LuxTestUtils/test"
+      - "/MLDataDevices"
+      - "/MLDataDevices/test"
+      - "/WeightInitializers"
+      - "/WeightInitializers/test"
+      # Example directories
+      - "/examples/*"
+    schedule:
+      interval: "daily"
+    labels:
+      - "dependencies 🖇️"
+    groups:
+      julia-major-updates:
+        update-types:
+          - "major"
+      julia-minor-updates:
+        update-types:
+          - "minor"
+      julia-patch-updates:
+        update-types:
+          - "patch"
