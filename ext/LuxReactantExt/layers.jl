@@ -1,17 +1,21 @@
 # Recurrent Layers
 function (r::Lux.Recurrence)(x::AnyTracedRArray, ps, st::NamedTuple)
     idxs = ntuple(Returns(Colon()), ndims(x) - 1)
-    N = Lux.time_dimension_size(x, r.ordering)
+    N = time_dimension_size(x, r.ordering)
 
-    (out, carry), st = r.cell(Lux.get_time_dimension(x, 1, r.ordering), ps, st)
-    sequence = similar(x, size(out)..., N)
+    # execute the first step to get the types
+    tmp = get_time_dimension(x, 1, r.ordering)
+    carry, _ = init_recurrent_state(r.cell, tmp, ps, st)
+    (tmp_result, _), _ = r.cell(tmp, ps, st)
 
-    sequence[idxs..., 1] = out
-    @trace for i in 2:N
-        (out, carry), st = r.cell((Lux.get_time_dimension(x, i, r.ordering), carry), ps, st)
+    final_result = similar(tmp_result)
+    sequence = similar(tmp_result, size(tmp_result)..., N)
+    @trace checkpointing = r.checkpointing mincut = r.mincut for i in 1:N
+        (out, carry), st = r.cell((get_time_dimension(x, i, r.ordering), carry), ps, st)
+        final_result[idxs...] = out
         sequence[idxs..., i] = out
     end
 
-    r.return_sequence isa False && return (out, st)
-    return LuxOps.eachslice(sequence, Val(ndims(sequence))), st
+    r.return_sequence isa False && return (final_result, st)
+    return eachslice(sequence; dims=ndims(sequence)), st
 end
