@@ -78,7 +78,7 @@ Base.length(t::TimeWrapper) = length(t.t)
 
 Base.getindex(t::TimeWrapper, i) = TimeWrapper(t.t[i])
 
-dataloader = gdev(DataLoader((ode_data, TimeWrapper(t)); batchsize=8))
+dataloader = DataLoader((ode_data, TimeWrapper(t)); batchsize=8) |> gdev
 nothing #hide
 
 # ## Training the model
@@ -101,8 +101,8 @@ function train_model(dataloader)
     model = Chain(Dense(2, 32, tanh), Dense(32, 32, tanh), Dense(32, 2))
     ps, st = Lux.setup(Random.default_rng(), model)
 
-    ps_ca = gdev(ComponentArray(ps))
-    st = gdev(st)
+    ps_ca = ComponentArray(ps) |> gdev
+    st = st |> gdev
 
     function callback(state, l)
         if state.iter == 1 || state.iter % 25 == 0
@@ -153,7 +153,7 @@ nothing #hide
 dudt(u, p, t) = trained_model(u, p)
 prob = ODEProblem(dudt, gdev(u0), (tspan[1], tspan[2]), trained_model.ps)
 sol = solve(prob, Tsit5(); saveat=t)
-pred = cdev(convert(AbstractArray, sol))
+pred = convert(AbstractArray, sol) |> cdev
 
 begin
     fig = Figure()

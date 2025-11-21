@@ -74,8 +74,8 @@ end
 
 # ## Define the Training Loop
 function train(model, dev=cpu_device(); rng=Random.default_rng(), kwargs...)
-    train_dataloader, test_dataloader = dev(loadmnist(128, 0.9))
-    ps, st = dev(Lux.setup(rng, model))
+    train_dataloader, test_dataloader = loadmnist(128, 0.9) |> dev
+    ps, st = Lux.setup(rng, model) |> dev
 
     vjp = dev isa ReactantDevice ? AutoEnzyme() : AutoZygote()
 

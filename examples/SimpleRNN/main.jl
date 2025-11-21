@@ -152,11 +152,11 @@ function main(model_type)
     cdev = cpu_device()
 
     ## Get the dataloaders
-    train_loader, val_loader = dev(get_dataloaders())
+    train_loader, val_loader = get_dataloaders() |> dev
 
     ## Create the model
     model = model_type(2, 8, 1)
-    ps, st = dev(Lux.setup(Random.default_rng(), model))
+    ps, st = Lux.setup(Random.default_rng(), model) |> dev
 
     train_state = Training.TrainState(model, ps, st, Adam(0.01f0))
     model_compiled = if dev isa ReactantDevice
@@ -200,7 +200,7 @@ function main(model_type)
         )
     end
 
-    return cpu_device()((train_state.parameters, train_state.states))
+    return (train_state.parameters, train_state.states) |> cdev
 end
 
 ps_trained, st_trained = main(SpiralClassifier)

@@ -501,7 +501,7 @@ function Base.getindex(ds::FlowersDataset, idxs)
     imgs = Array{Float32,4}(undef, ds.image_size..., 3, length(idxs))
     tforeach(1:length(idxs)) do i
         img = Image(load(ds.image_files[idxs[i]]))
-        copyto!(view(imgs, :, :, :, i), itemdata(apply(ds.transform, img)))
+        return copyto!(view(imgs, :, :, :, i), itemdata(apply(ds.transform, img)))
     end
     return imgs
 end

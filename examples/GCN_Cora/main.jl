@@ -91,10 +91,10 @@ function main(;
     rng = Random.default_rng()
     Random.seed!(rng, 0)
 
-    features, targets, adj, (train_idx, val_idx, test_idx) = xdev(loadcora())
+    features, targets, adj, (train_idx, val_idx, test_idx) = loadcora() |> xdev
 
     gcn = GCN(size(features, 1), hidden_dim, size(targets, 1); nb_layers, dropout, use_bias)
-    ps, st = xdev(Lux.setup(rng, gcn))
+    ps, st = Lux.setup(rng, gcn) |> xdev
     opt = iszero(weight_decay) ? Adam(lr) : AdamW(; eta=lr, lambda=weight_decay)
 
     train_state = Training.TrainState(gcn, ps, st, opt)
