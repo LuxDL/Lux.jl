@@ -59,7 +59,6 @@ end
         cell;
         ordering::AbstractTimeSeriesDataBatchOrdering=BatchLastIndex(),
         return_sequence::Bool=false,
-        checkpointing::Bool=false,
         mincut::Bool=false,
     )
 
@@ -83,8 +82,6 @@ automatically operate over a sequence of inputs.
     the last output. Defaults to `false`.
   - `ordering`: The ordering of the batch and time dimensions in the input. Defaults to
     `BatchLastIndex()`. Alternatively can be set to `TimeLastIndex()`.
-  - `checkpointing`: If `true`, we will using checkpointing for the reverse mode
-    differentiation. *(Only for Reactant)*
   - `mincut`: If `true`, we will using mincut for the reverse mode differentiation.
     *(Only for Reactant)*
 
@@ -127,6 +124,8 @@ struct Recurrence{R<:StaticBool,C,O<:AbstractTimeSeriesDataBatchOrdering} <:
     cell::C
     ordering::O
     return_sequence::R
+    # FIXME: checkpointing is intentionally not documented.
+    #        See https://github.com/LuxDL/Lux.jl/pull/1561#issuecomment-3564283063
     checkpointing::Bool
     mincut::Bool
 
