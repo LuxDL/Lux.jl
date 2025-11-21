@@ -251,6 +251,9 @@ function applyrecurrentcell(l::AbstractRecurrentCell, x, ps, st, carry)
 end
 applyrecurrentcell(l::AbstractRecurrentCell, x, ps, st, ::Nothing) = apply(l, x, ps, st)
 
+# Used to construct the initial state of the recurrent cell
+function init_recurrent_state end
+
 @doc doc"""
     RNNCell(in_dims => out_dims, activation=tanh; use_bias=True(), train_state=False(),
         init_bias=nothing, init_weight=nothing, init_recurrent_weight=init_weight,
@@ -361,15 +364,20 @@ end
 
 initialstates(rng::AbstractRNG, ::RNNCell) = (rng=Utils.sample_replicate(rng),)
 
-function (rnn::RNNCell{False})(x::AbstractMatrix, ps, st::NamedTuple)
+function init_recurrent_state(rnn::RNNCell{False}, x::AbstractMatrix, ps, st::NamedTuple)
     rng = replicate(st.rng)
     hidden_state = init_rnn_hidden_state(rng, rnn, x)
-    return rnn((x, (hidden_state,)), ps, merge(st, (; rng)))
+    return (hidden_state,), merge(st, (; rng))
 end
 
-function (rnn::RNNCell{True})(x::AbstractMatrix, ps, st::NamedTuple)
+function init_recurrent_state(::RNNCell{True}, x::AbstractMatrix, ps, st::NamedTuple)
     hidden_state = init_trainable_rnn_hidden_state(ps.hidden_state, x)
-    return rnn((x, (hidden_state,)), ps, st)
+    return (hidden_state,), st
+end
+
+function (rnn::RNNCell)(x::AbstractMatrix, ps, st::NamedTuple)
+    hidden_state, st = init_recurrent_state(rnn, x, ps, st)
+    return rnn((x, hidden_state), ps, st)
 end
 
 @trace function (rnn::RNNCell)(
@@ -565,31 +573,42 @@ end
 
 initialstates(rng::AbstractRNG, ::LSTMCell) = (rng=Utils.sample_replicate(rng),)
 
-function (lstm::LSTMCell{False,False})(x::AbstractMatrix, ps, st::NamedTuple)
+function init_recurrent_state(
+    lstm::LSTMCell{False,False}, x::AbstractMatrix, ps, st::NamedTuple
+)
     rng = replicate(st.rng)
     hidden_state = init_rnn_hidden_state(rng, lstm, x)
     memory = init_rnn_hidden_state(rng, lstm, x)
-    return lstm((x, (hidden_state, memory)), ps, merge(st, (; rng)))
+    return (hidden_state, memory), merge(st, (; rng))
 end
 
-function (lstm::LSTMCell{True,False})(x::AbstractMatrix, ps, st::NamedTuple)
+function init_recurrent_state(
+    lstm::LSTMCell{True,False}, x::AbstractMatrix, ps, st::NamedTuple
+)
     rng = replicate(st.rng)
     hidden_state = init_trainable_rnn_hidden_state(ps.hidden_state, x)
     memory = init_rnn_hidden_state(rng, lstm, x)
-    return lstm((x, (hidden_state, memory)), ps, merge(st, (; rng)))
+    return (hidden_state, memory), merge(st, (; rng))
 end
 
-function (lstm::LSTMCell{False,True})(x::AbstractMatrix, ps, st::NamedTuple)
+function init_recurrent_state(
+    lstm::LSTMCell{False,True}, x::AbstractMatrix, ps, st::NamedTuple
+)
     rng = replicate(st.rng)
     hidden_state = init_rnn_hidden_state(rng, lstm, x)
     memory = init_trainable_rnn_hidden_state(ps.memory, x)
-    return lstm((x, (hidden_state, memory)), ps, merge(st, (; rng)))
+    return (hidden_state, memory), merge(st, (; rng))
 end
 
-function (lstm::LSTMCell{True,True})(x::AbstractMatrix, ps, st::NamedTuple)
+function init_recurrent_state(::LSTMCell{True,True}, x::AbstractMatrix, ps, st::NamedTuple)
     hidden_state = init_trainable_rnn_hidden_state(ps.hidden_state, x)
     memory = init_trainable_rnn_hidden_state(ps.memory, x)
-    return lstm((x, (hidden_state, memory)), ps, st)
+    return (hidden_state, memory), st
+end
+
+function (lstm::LSTMCell)(x::AbstractMatrix, ps, st::NamedTuple)
+    hidden_state, st = init_recurrent_state(lstm, x, ps, st)
+    return lstm((x, hidden_state), ps, st)
 end
 
 const _LSTMCellInputType = Tuple{<:AbstractMatrix,Tuple{<:AbstractMatrix,<:AbstractMatrix}}
@@ -762,16 +781,20 @@ end
 
 initialstates(rng::AbstractRNG, ::GRUCell) = (rng=Utils.sample_replicate(rng),)
 
-function (gru::GRUCell{True})(x::AbstractMatrix, ps, st::NamedTuple)
+function init_recurrent_state(::GRUCell{True}, x::AbstractMatrix, ps, st::NamedTuple)
     hidden_state = init_trainable_rnn_hidden_state(ps.hidden_state, x)
-    return gru((x, (hidden_state,)), ps, st)
+    return (hidden_state,), st
 end
 
-function (gru::GRUCell{False})(x::AbstractMatrix, ps, st::NamedTuple)
+function init_recurrent_state(gru::GRUCell{False}, x::AbstractMatrix, ps, st::NamedTuple)
     rng = replicate(st.rng)
-    st = merge(st, (; rng))
     hidden_state = init_rnn_hidden_state(rng, gru, x)
-    return gru((x, (hidden_state,)), ps, st)
+    return (hidden_state,), merge(st, (; rng))
+end
+
+function (gru::GRUCell)(x::AbstractMatrix, ps, st::NamedTuple)
+    hidden_state, st = init_recurrent_state(gru, x, ps, st)
+    return gru((x, hidden_state), ps, st)
 end
 
 const _GRUCellInputType = Tuple{<:AbstractMatrix,Tuple{<:AbstractMatrix}}

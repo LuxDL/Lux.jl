@@ -21,6 +21,7 @@ using Static: True, False
 
 using Lux: Lux, LuxOps, Training, Utils, StatefulLuxLayer
 using Lux.Training: TrainingBackendCache, ReactantBackend
+using Lux: get_time_dimension, time_dimension_size, init_recurrent_state
 using LuxCore: LuxCore, AbstractLuxLayer
 using MLDataDevices: MLDataDevices, ReactantDevice, get_device
 
