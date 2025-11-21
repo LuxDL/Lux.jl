@@ -101,18 +101,32 @@ function CRC.rrule(
 end
 
 function activation!(
+    y::AbstractArray, ::AbstractInternalArrayOpMode, ::typeof(identity), x::AbstractArray
+)
+    y === x || copyto!(y, x)
+    return nothing
+end
+function activation!(
+    y::AbstractArray, mode::AbstractInternalArrayOpMode, σ::F, x::AbstractArray
+) where {F}
+    return activation_impl!(y, mode, σ, x)
+end
+
+function activation_impl!(
     y::AbstractArray, ::AbstractInternalArrayOpMode, σ::F, x::AbstractArray
 ) where {F}
     broadcast!(σ, y, x)
     return nothing
 end
-function activation!(y::AbstractArray, ::LoopedArrayOp, σ::F, x::AbstractArray) where {F}
+function activation_impl!(
+    y::AbstractArray, ::LoopedArrayOp, σ::F, x::AbstractArray
+) where {F}
     activation_simd_loop!(y, σ, x)
     return nothing
 end
 
 function activation_simd_loop!(y::AbstractArray, σ::F, x::AbstractArray) where {F}
-    return @simd ivdep for I in eachindex(y, x)
+    @simd ivdep for I in eachindex(y, x)
         @inbounds y[I] = σ(x[I])
     end
 end
