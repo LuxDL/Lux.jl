@@ -25,21 +25,8 @@
                 @test α1_ra ≈ α1 atol = 1.0f-3 rtol = 1.0f-3
 
                 @testset "Gradient Check" begin
-                    function scaled_dot_product_attention_fd(q, k, v)
-                        dq_fd = Reactant.TestUtils.finite_difference_gradient(
-                            q -> sum(scaled_dot_product_attention(q, k, v)[1]), q
-                        )
-                        dk_fd = Reactant.TestUtils.finite_difference_gradient(
-                            k -> sum(scaled_dot_product_attention(q, k, v)[1]), k
-                        )
-                        dv_fd = Reactant.TestUtils.finite_difference_gradient(
-                            v -> sum(scaled_dot_product_attention(q, k, v)[1]), v
-                        )
-                        return dq_fd, dk_fd, dv_fd
-                    end
-
-                    ∂q_fd, ∂k_fd, ∂v_fd = @jit scaled_dot_product_attention_fd(
-                        q_ra, k_ra, v_ra
+                    ∂q_fd, ∂k_fd, ∂v_fd = @jit Reactant.TestUtils.finite_difference_gradient(
+                        sum ∘ first ∘ scaled_dot_product_attention, q_ra, k_ra, v_ra
                     )
                     ∂q_reactant, ∂k_reactant, ∂v_reactant = @jit Enzyme.gradient(
                         Reverse,
@@ -77,20 +64,9 @@
                 @test α2_ra ≈ α2 atol = 1.0f-3 rtol = 1.0f-3
 
                 @testset "Gradient Check" begin
-                    function sdpa_fd(q, k, v)
-                        dq_fd = Reactant.TestUtils.finite_difference_gradient(
-                            q -> sum(sdpa(q, k, v)[1]), q
-                        )
-                        dk_fd = Reactant.TestUtils.finite_difference_gradient(
-                            k -> sum(sdpa(q, k, v)[1]), k
-                        )
-                        dv_fd = Reactant.TestUtils.finite_difference_gradient(
-                            v -> sum(sdpa(q, k, v)[1]), v
-                        )
-                        return dq_fd, dk_fd, dv_fd
-                    end
-
-                    ∂q_fd, ∂k_fd, ∂v_fd = @jit sdpa_fd(q2_ra, k2_ra, v2_ra)
+                    ∂q_fd, ∂k_fd, ∂v_fd = @jit Reactant.TestUtils.finite_difference_gradient(
+                        sum ∘ first ∘ sdpa, q2_ra, k2_ra, v2_ra
+                    )
                     ∂q2_reactant, ∂k2_reactant, ∂v2_reactant = @jit Enzyme.gradient(
                         Reverse, Const(sum ∘ first ∘ sdpa), q2_ra, k2_ra, v2_ra
                     )
