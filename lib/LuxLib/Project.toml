@@ -68,7 +68,7 @@ LuxLibcuDNNExt = ["CUDA", "cuDNN"]
 
 [compat]
 AMDGPU = "0.9.6, 1, 2"
-AppleAccelerate = "0.4"
+AppleAccelerate = "0.4, 0.5"
 ArrayInterface = "7.17.1"
 BLISBLAS = "0.1, 0.2"
 CPUSummary = "0.2.6"

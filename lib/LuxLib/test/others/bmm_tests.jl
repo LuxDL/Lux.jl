@@ -419,8 +419,8 @@ end
     using Reactant, Enzyme, LuxLib, NNlib
 
     @testset "Last 2 dims are batch dims" begin
-        x = randn(Float32, 3, 4, 5, 2)
-        y = randn(Float32, 5, 4, 5, 1)
+        x = Reactant.TestUtils.construct_test_array(Float32, 3, 4, 5, 2)
+        y = Reactant.TestUtils.construct_test_array(Float32, 5, 4, 5, 1)
 
         x_ra = Reactant.to_rarray(x)
         y_ra = Reactant.to_rarray(y)
@@ -438,7 +438,7 @@ end
         @test bmm_luxlib ≈ bmm_reactant atol = 1.0e-3 rtol = 1.0e-3
 
         ∂x_fd, ∂y_fd = @jit Reactant.TestUtils.finite_difference_gradient(
-            sum ∘ bmm, x_ra, y_ra
+            sum ∘ bmm, Float64.(x_ra), Float64.(y_ra)
         )
         ∂x_reactant, ∂y_reactant = @jit Enzyme.gradient(Reverse, sum ∘ bmm, x_ra, y_ra)
 
@@ -447,8 +447,8 @@ end
     end
 
     @testset "Middle dims are batch dims" begin
-        x = randn(Float32, 3, 5, 2, 4)
-        y = randn(Float32, 4, 5, 1, 5)
+        x = Reactant.TestUtils.construct_test_array(Float32, 3, 5, 2, 4)
+        y = Reactant.TestUtils.construct_test_array(Float32, 4, 5, 1, 5)
 
         x_ra = Reactant.to_rarray(x)
         y_ra = Reactant.to_rarray(y)
@@ -472,7 +472,7 @@ end
         @test bmm_luxlib ≈ bmm_reactant atol = 1.0e-3 rtol = 1.0e-3
 
         ∂x_fd, ∂y_fd = @jit Reactant.TestUtils.finite_difference_gradient(
-            sum ∘ bmm, x_ra, y_ra
+            sum ∘ bmm, Float64.(x_ra), Float64.(y_ra)
         )
         ∂x_reactant, ∂y_reactant = @jit Enzyme.gradient(Reverse, sum ∘ bmm, x_ra, y_ra)
 

@@ -6,9 +6,18 @@
             n, lenq, lenkv = 15, 3, 4
 
             @testset for batch_size in [1, 2, (2, 1, 3)], nheads in [1, 3, 5]
-                q = rand(Float32, n ÷ nheads, nheads, lenq, batch_size...) |> aType
-                k = rand(Float32, n ÷ nheads, nheads, lenkv, batch_size...) |> aType
-                v = rand(Float32, n ÷ nheads, nheads, lenkv, batch_size...) |> aType
+                q =
+                    Reactant.TestUtils.construct_test_array(
+                        Float32, n ÷ nheads, nheads, lenq, batch_size...
+                    ) |> aType
+                k =
+                    Reactant.TestUtils.construct_test_array(
+                        Float32, n ÷ nheads, nheads, lenkv, batch_size...
+                    ) |> aType
+                v =
+                    Reactant.TestUtils.construct_test_array(
+                        Float32, n ÷ nheads, nheads, lenkv, batch_size...
+                    ) |> aType
                 y1, α1 = scaled_dot_product_attention(q, k, v) |> cpu_device()
 
                 @test y1 isa Array{Float32,length(batch_size) + 3}
@@ -26,7 +35,10 @@
 
                 @testset "Gradient Check" begin
                     ∂q_fd, ∂k_fd, ∂v_fd = @jit Reactant.TestUtils.finite_difference_gradient(
-                        sum ∘ first ∘ scaled_dot_product_attention, q_ra, k_ra, v_ra
+                        sum ∘ first ∘ scaled_dot_product_attention,
+                        Float64.(q_ra),
+                        Float64.(k_ra),
+                        Float64.(v_ra),
                     )
                     ∂q_reactant, ∂k_reactant, ∂v_reactant = @jit Enzyme.gradient(
                         Reverse,
@@ -36,9 +48,9 @@
                         v_ra,
                     )
 
-                    @test ∂q_fd ≈ ∂q_reactant atol = 1.0f-3 rtol = 1.0f-3
-                    @test ∂k_fd ≈ ∂k_reactant atol = 1.0f-3 rtol = 1.0f-3
-                    @test ∂v_fd ≈ ∂v_reactant atol = 1.0f-3 rtol = 1.0f-3
+                    @test ∂q_fd ≈ ∂q_reactant atol = 1e-3 rtol = 1e-3
+                    @test ∂k_fd ≈ ∂k_reactant atol = 1e-3 rtol = 1e-3
+                    @test ∂v_fd ≈ ∂v_reactant atol = 1e-3 rtol = 1e-3
                 end
 
                 function sdpa(q, k, v)
@@ -65,7 +77,10 @@
 
                 @testset "Gradient Check" begin
                     ∂q_fd, ∂k_fd, ∂v_fd = @jit Reactant.TestUtils.finite_difference_gradient(
-                        sum ∘ first ∘ sdpa, q2_ra, k2_ra, v2_ra
+                        sum ∘ first ∘ sdpa,
+                        Float64.(q2_ra),
+                        Float64.(k2_ra),
+                        Float64.(v2_ra),
                     )
                     ∂q2_reactant, ∂k2_reactant, ∂v2_reactant = @jit Enzyme.gradient(
                         Reverse, Const(sum ∘ first ∘ sdpa), q2_ra, k2_ra, v2_ra
