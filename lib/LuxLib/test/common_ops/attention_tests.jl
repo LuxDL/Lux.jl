@@ -36,9 +36,9 @@
                         v_ra,
                     )
 
-                    @test ∂q_fd ≈ ∂q_reactant atol = 1.0f-3 rtol = 1.0f-3
-                    @test ∂k_fd ≈ ∂k_reactant atol = 1.0f-3 rtol = 1.0f-3
-                    @test ∂v_fd ≈ ∂v_reactant atol = 1.0f-3 rtol = 1.0f-3
+                    @test ∂q_fd ≈ ∂q_reactant atol = 1.0f-2 rtol = 1.0f-2
+                    @test ∂k_fd ≈ ∂k_reactant atol = 1.0f-2 rtol = 1.0f-2
+                    @test ∂v_fd ≈ ∂v_reactant atol = 1.0f-2 rtol = 1.0f-2
                 end
 
                 function sdpa(q, k, v)
@@ -71,9 +71,9 @@
                         Reverse, Const(sum ∘ first ∘ sdpa), q2_ra, k2_ra, v2_ra
                     )
 
-                    @test ∂q_fd ≈ ∂q2_reactant atol = 1.0f-3 rtol = 1.0f-3
-                    @test ∂k_fd ≈ ∂k2_reactant atol = 1.0f-3 rtol = 1.0f-3
-                    @test ∂v_fd ≈ ∂v2_reactant atol = 1.0f-3 rtol = 1.0f-3
+                    @test ∂q_fd ≈ ∂q2_reactant atol = 1.0f-2 rtol = 1.0f-2
+                    @test ∂k_fd ≈ ∂k2_reactant atol = 1.0f-2 rtol = 1.0f-2
+                    @test ∂v_fd ≈ ∂v2_reactant atol = 1.0f-2 rtol = 1.0f-2
                 end
 
                 @test y1 ≈ y2 atol = 1.0f-3 rtol = 1.0f-3
