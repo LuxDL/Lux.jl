@@ -67,7 +67,7 @@ function Lux.convert_flux_model(l::Flux.SkipConnection; kwargs...)
     else
         Lux.convert_flux_model(l.connection; kwargs...)
     end
-    return Lux.SkipConnection(Lux.convert_flux_model(l.layers; kwargs...), connection)
+    return Lux.SkipConnection(connection, Lux.convert_flux_model(l.layers; kwargs...))
 end
 
 function Lux.convert_flux_model(l::Flux.Bilinear; preserve_ps_st::Bool=false, kwargs...)
