@@ -25,19 +25,7 @@ updates:
       - "/MLDataDevices/test"
       - "/WeightInitializers"
       - "/WeightInitializers/test"
-      # Example directories
-      - "/examples/*"
+      # FIXME: seems to take forever to run
+      # - "/examples/*"
     schedule:
-      interval: "daily"
-    labels:
-      - "dependencies 🖇️"
-    groups:
-      julia-major-updates:
-        update-types:
-          - "major"
-      julia-minor-updates:
-        update-types:
-          - "minor"
-      julia-patch-updates:
-        update-types:
-          - "patch"
+      interval: "weekly"
