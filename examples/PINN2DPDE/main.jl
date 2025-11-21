@@ -116,38 +116,36 @@ analytical_solution(xyt) = analytical_solution(xyt[1, :], xyt[2, :], xyt[3, :])
 nothing #hide
 #-
 
-begin
-    grid_len = 16
+grid_len = 16
 
-    grid = range(0.0f0, 2.0f0; length=grid_len)
-    xyt = stack([[elem...] for elem in vec(collect(Iterators.product(grid, grid, grid)))])
+grid = range(0.0f0, 2.0f0; length=grid_len)
+xyt = stack([[elem...] for elem in vec(collect(Iterators.product(grid, grid, grid)))])
 
-    target_data = reshape(analytical_solution(xyt), 1, :)
+target_data = reshape(analytical_solution(xyt), 1, :)
 
-    bc_len = 512
+bc_len = 512
 
-    x = collect(range(0.0f0, 2.0f0; length=bc_len))
-    y = collect(range(0.0f0, 2.0f0; length=bc_len))
-    t = collect(range(0.0f0, 2.0f0; length=bc_len))
+x = collect(range(0.0f0, 2.0f0; length=bc_len))
+y = collect(range(0.0f0, 2.0f0; length=bc_len))
+t = collect(range(0.0f0, 2.0f0; length=bc_len))
 
-    xyt_bc = hcat(
-        stack((x, y, zeros(Float32, bc_len)); dims=1),
-        stack((zeros(Float32, bc_len), y, t); dims=1),
-        stack((ones(Float32, bc_len) .* 2, y, t); dims=1),
-        stack((x, zeros(Float32, bc_len), t); dims=1),
-        stack((x, ones(Float32, bc_len) .* 2, t); dims=1),
-    )
-    target_bc = reshape(analytical_solution(xyt_bc), 1, :)
+xyt_bc = hcat(
+    stack((x, y, zeros(Float32, bc_len)); dims=1),
+    stack((zeros(Float32, bc_len), y, t); dims=1),
+    stack((ones(Float32, bc_len) .* 2, y, t); dims=1),
+    stack((x, zeros(Float32, bc_len), t); dims=1),
+    stack((x, ones(Float32, bc_len) .* 2, t); dims=1),
+)
+target_bc = reshape(analytical_solution(xyt_bc), 1, :)
 
-    min_target_bc, max_target_bc = extrema(target_bc)
-    min_data, max_data = extrema(target_data)
-    min_pde_val, max_pde_val = min(min_data, min_target_bc), max(max_data, max_target_bc)
+min_target_bc, max_target_bc = extrema(target_bc)
+min_data, max_data = extrema(target_data)
+min_pde_val, max_pde_val = min(min_data, min_target_bc), max(max_data, max_target_bc)
 
-    xyt = (xyt .- minimum(xyt)) ./ (maximum(xyt) .- minimum(xyt))
-    xyt_bc = (xyt_bc .- minimum(xyt_bc)) ./ (maximum(xyt_bc) .- minimum(xyt_bc))
-    target_bc = (target_bc .- min_pde_val) ./ (max_pde_val - min_pde_val)
-    target_data = (target_data .- min_pde_val) ./ (max_pde_val - min_pde_val)
-end
+xyt = (xyt .- minimum(xyt)) ./ (maximum(xyt) .- minimum(xyt))
+xyt_bc = (xyt_bc .- minimum(xyt_bc)) ./ (maximum(xyt_bc) .- minimum(xyt_bc))
+target_bc = (target_bc .- min_pde_val) ./ (max_pde_val - min_pde_val)
+target_data = (target_data .- min_pde_val) ./ (max_pde_val - min_pde_val)
 nothing #hide
 
 # ## Training
