@@ -104,9 +104,10 @@ forward_pass = @compile Lux.apply(
     tstate.model, xdev(x), tstate.parameters, Lux.testmode(tstate.states)
 )
 
-y_pred = forward_pass(
-        tstate.model, xdev(x), tstate.parameters, Lux.testmode(tstate.states)
-    ) |> first |> cdev
+y_pred =
+    forward_pass(tstate.model, xdev(x), tstate.parameters, Lux.testmode(tstate.states)) |>
+    first |>
+    cdev
 nothing #hide
 
 # Let's plot the results

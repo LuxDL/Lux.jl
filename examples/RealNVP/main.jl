@@ -223,9 +223,10 @@ function main(;
     rng = Random.default_rng()
     Random.seed!(rng, 0)
 
-    dataloader = load_moons_dataloader(
-            rng, Float32, n_train_samples; batchsize, noise,
-        ) |> xdev |> Iterators.cycle
+    dataloader =
+        load_moons_dataloader(rng, Float32, n_train_samples; batchsize, noise) |>
+        xdev |>
+        Iterators.cycle
 
     model = RealNVP(; n_transforms, dist_dims=2, hidden_dims, n_layers)
     ps, st = Lux.setup(rng, model) |> xdev
