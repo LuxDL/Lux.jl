@@ -31,7 +31,14 @@ begin
     fig = Figure()
     ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
 
-    l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3, color=:blue)
+    l = lines!(
+        ax,
+        x[1, :],
+        x -> evalpoly(x, (0, -2, 1));
+        linewidth=3,
+        color=:blue,
+        label="Data Points",
+    )
     s = scatter!(
         ax,
         x[1, :],
@@ -41,9 +48,10 @@ begin
         color=:orange,
         strokecolor=:black,
         strokewidth=2,
+        label="True Quadratic Function",
     )
 
-    axislegend(ax, [l, s], ["True Quadratic Function", "Data Points"])
+    axislegend(ax)
 
     fig
 end
@@ -116,7 +124,13 @@ begin
     fig = Figure()
     ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
 
-    l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3)
+    l = lines!(
+        ax,
+        x[1, :],
+        x -> evalpoly(x, (0, -2, 1));
+        linewidth=3,
+        label="True Quadratic Function",
+    )
     s1 = scatter!(
         ax,
         x[1, :],
@@ -126,6 +140,7 @@ begin
         color=:orange,
         strokecolor=:black,
         strokewidth=2,
+        label="Actual Data",
     )
     s2 = scatter!(
         ax,
@@ -136,9 +151,10 @@ begin
         color=:green,
         strokecolor=:black,
         strokewidth=2,
+        label="Predictions",
     )
 
-    axislegend(ax, [l, s1, s2], ["True Quadratic Function", "Actual Data", "Predictions"])
+    axislegend(ax)
 
     fig
 end
