@@ -96,6 +96,7 @@ jobs:
       - name: Run Tutorials
         run: julia --color=yes --project=docs --threads=auto docs/tutorials.jl
         env:
+          LUX_DOCS_DRAFT_BUILD: true # FIXME: remove before merging
           TUTORIAL_BACKEND_GROUP: "CPU"
           BUILDKITE_PARALLEL_JOB_COUNT: 4
           BUILDKITE_PARALLEL_JOB: ${{ matrix.group }}

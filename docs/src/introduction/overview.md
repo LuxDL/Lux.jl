@@ -51,7 +51,7 @@ Lux.jl takes a **Reactant-first approach** to deliver exceptional performance an
 
 * **Truly immutable models** - No *unexpected internal mutations* since all layers are
   implemented as pure functions. All layers are also *deterministic* given the parameters
-  and state: if a layer is supposed to be stochastic (say [`Dropout`](@ref)), the state
+  and state: if a layer is supposed to be stochastic (say [`Lux.Dropout`](@ref)), the state
   must contain a seed which is then updated after the function call.
 
 * **Easy Parameter Manipulation** -- By separating parameter data and layer structures,

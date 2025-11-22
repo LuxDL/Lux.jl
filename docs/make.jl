@@ -13,15 +13,6 @@ if DRAFT_MODE
     end
 end
 
-deploy_config = Documenter.auto_detect_deploy_system()
-deploy_decision = Documenter.deploy_folder(
-    deploy_config;
-    repo="github.com/LuxDL/Lux.jl",
-    devbranch="main",
-    devurl="dev",
-    push_preview=true,
-)
-
 warnonly = [:linkcheck]
 if DRAFT_MODE
     push!(warnonly, :cross_references)
@@ -40,8 +31,7 @@ makedocs(;
         repo="github.com/LuxDL/Lux.jl",
         devbranch="main",
         devurl="dev",
-        deploy_url="https://lux.csail.mit.edu",
-        deploy_decision,
+        deploy_url="https://lux.csail.mit.edu"
     ),
     plugins=[CitationBibliography(joinpath(@__DIR__, "references.bib"))],
     draft=DRAFT_MODE,
