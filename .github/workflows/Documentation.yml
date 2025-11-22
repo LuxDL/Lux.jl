@@ -33,45 +33,45 @@ concurrency:
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 
 jobs:
-  # tutorial-cuda:
-    # if: ${{ !contains(github.event.head_commit.message, '[skip docs]') }}
-    # runs-on: ubuntu-latest
-    # steps:
-    #   - name: Trigger CUDA Tutorial Build
-    #     id: buildkite-build
-    #     uses: buildkite/trigger-pipeline-action@v2.4.1
-    #     with:
-    #       buildkite_api_access_token: ${{ secrets.BUILDKITE_TOKEN }}
-    #       pipeline: "julialang/lux-dot-jl"
-    #       commit: ${{ github.event.pull_request.head.sha }}
-    #       branch: ${{ github.event.pull_request.head.ref }}
-    #       message: |
-    #         Triggered from PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}
-    #       send_pull_request: true
-    #       pull_request_base_branch: ${{ github.event.pull_request.base.ref }}
-    #       build_env_vars: >-
-    #         {
-    #           "LUX_CUDA_TUTORIALS": "1",
-    #           "GITHUB_PR_NUMBER": "${{ github.event.pull_request.number }}"
-    #         }
+  tutorial-cuda:
+    if: ${{ !contains(github.event.head_commit.message, '[skip docs]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger CUDA Tutorial Build
+        id: buildkite-build
+        uses: buildkite/trigger-pipeline-action@v2.4.1
+        with:
+          buildkite_api_access_token: ${{ secrets.BUILDKITE_TOKEN }}
+          pipeline: "julialang/lux-dot-jl"
+          commit: ${{ github.event.pull_request.head.sha }}
+          branch: ${{ github.event.pull_request.head.ref }}
+          message: |
+            Triggered from PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}
+          send_pull_request: true
+          pull_request_base_branch: ${{ github.event.pull_request.base.ref }}
+          build_env_vars: >-
+            {
+              "LUX_CUDA_TUTORIALS": "1",
+              "GITHUB_PR_NUMBER": "${{ github.event.pull_request.number }}"
+            }
 
-    #   - name: Download CUDA Tutorial Artifacts
-    #     uses: EnricoMi/download-buildkite-artifact-action@v1
-    #     with:
-    #       buildkite_token: ${{ secrets.BUILDKITE_TOKEN }}
-    #       buildkite_build_url: ${{ steps.buildkite-build.outputs.url }}
-    #       ignore_build_states: blocked,canceled,skipped,not_run
-    #       ignore_job_states: timed_out,failed
-    #       output_path: artifacts
-    #       poll_interval: 30
+      - name: Download CUDA Tutorial Artifacts
+        uses: EnricoMi/download-buildkite-artifact-action@v1
+        with:
+          buildkite_token: ${{ secrets.BUILDKITE_TOKEN }}
+          buildkite_build_url: ${{ steps.buildkite-build.outputs.url }}
+          ignore_build_states: blocked,canceled,skipped,not_run
+          ignore_job_states: timed_out,failed
+          output_path: artifacts
+          poll_interval: 30
 
-    #   - name: Upload Tutorial Artifacts
-    #     uses: actions/upload-artifact@v5
-    #     with:
-    #       name: "tutorial-cuda"
-    #       path: artifacts/**/*
-    #       retention-days: 90
-    #       if-no-files-found: error
+      - name: Upload Tutorial Artifacts
+        uses: actions/upload-artifact@v5
+        with:
+          name: "tutorial-cuda"
+          path: artifacts/**/*
+          retention-days: 90
+          if-no-files-found: error
 
   tutorial-cpu:
     if: ${{ !contains(github.event.head_commit.message, '[skip docs]') }}
@@ -99,7 +99,6 @@ jobs:
           TUTORIAL_BACKEND_GROUP: "CPU"
           BUILDKITE_PARALLEL_JOB_COUNT: 4
           BUILDKITE_PARALLEL_JOB: ${{ matrix.group }}
-          JULIA_DEBUG: "Documenter"
           LD_LIBRARY_PATH: ""
       - name: Upload Tutorial Artifacts
         uses: actions/upload-artifact@v5
@@ -152,6 +151,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 env:
-  LUX_DOCS_DRAFT_BUILD: "true" # FIXME: remove before merging
+  JULIA_DEBUG: "Documenter,Reactant,Reactant_jll,Lux"
   DATADEPS_ALWAYS_ACCEPT: true
   GKSwstype: "100" # https://discourse.julialang.org/t/generation-of-documentation-fails-qt-qpa-xcb-could-not-connect-to-display/60988

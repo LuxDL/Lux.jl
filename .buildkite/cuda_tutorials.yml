@@ -24,6 +24,5 @@ steps:
         timeout_in_minutes: 120
 
 env:
-  LUX_DOCS_DRAFT_BUILD: "true" # FIXME: remove before merging
   DATADEPS_ALWAYS_ACCEPT: true
   GKSwstype: "100" # https://discourse.julialang.org/t/generation-of-documentation-fails-qt-qpa-xcb-could-not-connect-to-display/60988
