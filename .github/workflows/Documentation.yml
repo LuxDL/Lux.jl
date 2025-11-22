@@ -28,6 +28,10 @@ on:
     tags:
       - "*"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
 jobs:
   tutorial-cuda:
     if: ${{ !contains(github.event.head_commit.message, '[skip docs]') }}
