@@ -96,7 +96,7 @@ jobs:
           LD_LIBRARY_PATH: ""
           JULIA_PKG_SERVER: ""
       - name: Upload Tutorial Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         with:
           name: "tutorial-cpu-${{ matrix.group }}"
           path: |
