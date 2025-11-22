@@ -55,3 +55,51 @@
         end
     end
 end
+
+@testitem "AutoDiff APIs: Batched Jacobian" tags = [:reactant] setup = [SharedTestSetup] begin
+    using Reactant, Lux, Zygote, Random, Enzyme
+
+    rng = Random.default_rng()
+
+    models = (
+        Chain(
+            Conv((3, 3), 2 => 4, gelu; pad=SamePad()),
+            Conv((3, 3), 4 => 2, gelu; pad=SamePad()),
+            FlattenLayer(),
+            Dense(18 => 2),
+        ),
+        Chain(Dense(2, 4, gelu), Dense(4, 2)),
+    )
+    Xs = (randn(rng, Float32, 3, 3, 2, 4), randn(rng, Float32, 2, 4))
+
+    @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
+        if mode == "amdgpu"
+            @warn "Skipping AMDGPU tests for Reactant"
+            continue
+        end
+
+        if ongpu
+            Reactant.set_default_backend("gpu")
+        else
+            Reactant.set_default_backend("cpu")
+        end
+
+        dev = reactant_device(; force=true)
+
+        @testset "$(size(X))" for (model, X) in zip(models, Xs)
+            ps, st = Lux.setup(rng, model)
+            X_ra = dev(X)
+
+            smodel = StatefulLuxLayer(model, ps, st)
+            smodel_ra = StatefulLuxLayer(model, dev(ps), dev(st))
+
+            J = batched_jacobian(smodel, AutoZygote(), X)
+            J_ra = @jit batched_jacobian(smodel_ra, AutoEnzyme(; mode=Enzyme.Reverse), X_ra)
+            J_ra2 = @jit batched_jacobian(
+                smodel_ra, AutoEnzyme(; mode=Enzyme.Forward), X_ra
+            )
+            @test J ≈ J_ra atol = 1.0e-3 rtol = 1.0e-3
+            @test J ≈ J_ra2 atol = 1.0e-3 rtol = 1.0e-3
+        end
+    end
+end

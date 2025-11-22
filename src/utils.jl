@@ -1,5 +1,6 @@
 module Utils
 
+using ADTypes: ADTypes, AutoEnzyme
 using ArrayInterface: ArrayInterface
 using ArgCheck: @argcheck
 using ChainRulesCore: ChainRulesCore, @non_differentiable, NoTangent
@@ -8,6 +9,7 @@ using EnzymeCore: EnzymeRules
 using ForwardDiff: Dual
 using Functors: Functors, fmapstructure
 using Random: AbstractRNG
+using Setfield: @set
 using Static: Static, StaticBool, StaticInteger, StaticSymbol
 using StaticArraysCore: SMatrix, SVector
 
@@ -235,6 +237,12 @@ calculate_gain(::typeof(NNlib.selu), _) = 3.0f0 / 4
 recursive_unthunk(x) = Functors.fmap(CRC.unthunk, x; exclude=MLDataDevices.isleaf)
 
 convert_eltype(::Type{T}, x::Number) where {T<:Number} = convert(T, x)
+
+normalize_autoenzyme_mode(mode, ad::AutoEnzyme) = ad
+normalize_autoenzyme_mode(mode, ad::AutoEnzyme{Nothing}) = @set(ad.mode = mode)
+
+annotate_enzyme_function(::AutoEnzyme{<:Any,Nothing}, f::F) where {F} = f
+annotate_enzyme_function(::AutoEnzyme{<:Any,A}, f::F) where {F,A} = A(f)
 
 end
 
