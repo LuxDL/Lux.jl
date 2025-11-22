@@ -1,0 +1,163 @@
+name: Documentation
+
+permissions:
+  contents: write # contents permission to update benchmark contents in gh-pages branch
+  statuses: read
+  deployments: write # deployments permission to deploy GitHub pages website
+  pages: write
+  id-token: write
+  pull-requests: write
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "src/**/*"
+      - "ext/**/*"
+      - "test/**/*"
+      - "Project.toml"
+      - "docs/**/*"
+      - "examples/**/*"
+      - ".buildkite/**/*"
+      - ".github/workflows/Documentation.yml"
+      - "lib/**/*"
+  push:
+    branches:
+      - main
+    tags:
+      - "*"
+
+jobs:
+  tutorial-cuda:
+    if: ${{ !contains(github.event.head_commit.message, '[skip docs]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger CUDA Tutorial Build
+        id: buildkite-build
+        uses: buildkite/trigger-pipeline-action@v2.4.1
+        with:
+          buildkite_api_access_token: ${{ secrets.BUILDKITE_TOKEN }}
+          pipeline: ".buildkite/cuda_tutorials.yml"
+
+      - name: Download CUDA Tutorial Artifacts
+        uses: EnricoMi/download-buildkite-artifact-action@v1
+        with:
+          buildkite_token: ${{ secrets.BUILDKITE_TOKEN }}
+          buildkite_build_url: ${{ steps.buildkite-build.outputs.url }}
+          ignore_build_states: blocked,canceled,skipped,not_run
+          ignore_job_states: timed_out,failed
+          output_path: artifacts
+          poll_interval: 30
+
+      - name: Print CUDA Tutorial Artifacts
+        run: |
+          echo "CUDA tutorial artifacts:"
+          ls -lah artifacts
+
+      - name: Print Folder Tree
+        uses: jaywcjlove/github-action-folder-tree@main
+        with:
+          exclude: "node_modules|dist|.git|.husky"
+          path: ./src
+          depth: 4
+
+  tutorial-cpu:
+    if: ${{ !contains(github.event.head_commit.message, '[skip docs]') }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@v6
+      - name: Collect Workflow Telemetry
+        uses: catchpoint/workflow-telemetry-action@v2
+        with:
+          comment_on_pr: false
+          job_summary: true
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: "1.11"
+      - uses: julia-actions/cache@v2
+        with:
+          cache-name: julia-cache;workflow=tutorial-cpu-${{ matrix.group }}-${{ github.event_name }}-${{ github.event.repository.default_branch }}-${{ github.sha }}
+      - name: Run Tutorials
+        run: julia --color=yes --project=docs --threads=auto docs/tutorials.jl
+        env:
+          TUTORIAL_BACKEND_GROUP: "CPU"
+          BUILDKITE_PARALLEL_JOB_COUNT: 4
+          BUILDKITE_PARALLEL_JOB: ${{ matrix.group }}
+          JULIA_DEBUG: "Documenter"
+          LD_LIBRARY_PATH: ""
+          JULIA_PKG_SERVER: ""
+      - name: Upload Tutorial Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: "tutorial-cpu-${{ matrix.group }}"
+          path: |
+            docs/src/tutorials/beginner/**/*
+            docs/src/tutorials/intermediate/**/*
+            docs/src/tutorials/advanced/**/*
+            tutorial_deps/*
+            **/*.cov
+            docs/src/public/examples/**/*
+          retention-days: 90
+          if-no-files-found: error
+
+  # documentation:
+  #   if: ${{ !contains(github.event.head_commit.message, '[skip docs]') }}
+  #   runs-on: ubuntu-latest
+  #   needs: [tutorial-cpu]
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #     - name: Collect Workflow Telemetry
+  #       uses: catchpoint/workflow-telemetry-action@v2
+  #       with:
+  #         comment_on_pr: false
+  #         job_summary: true
+  #     - uses: julia-actions/setup-julia@v2
+  #       with:
+  #         version: "1.11"
+  #     - uses: julia-actions/cache@v2
+  #       with:
+  #         cache-name: julia-cache;workflow=documentation-${{ github.event_name }}-${{ github.event.repository.default_branch }}-${{ github.sha }}
+  #     # Download CPU tutorial artifacts from all matrix groups
+  #     - name: Download CPU Tutorial Artifacts (group 0)
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: tutorial-cpu-0
+  #         path: tutorial_artifacts/cpu/0
+  #     - name: Download CPU Tutorial Artifacts (group 1)
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: tutorial-cpu-1
+  #         path: tutorial_artifacts/cpu/1
+  #     - name: Download CPU Tutorial Artifacts (group 2)
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: tutorial-cpu-2
+  #         path: tutorial_artifacts/cpu/2
+  #     - name: Download CPU Tutorial Artifacts (group 3)
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: tutorial-cpu-3
+  #         path: tutorial_artifacts/cpu/3
+  #     # Placeholder: Download CUDA artifacts produced by external Buildkite pipeline
+  #     - name: Download CUDA Tutorial Artifacts (Buildkite)
+  #       run: |
+  #         echo "(Placeholder) CUDA artifact download step requires Buildkite API token."
+  #         echo "Please add a secret or variable and replace this placeholder."
+  #     # Build documentation (final build, no draft flag)
+  #     - name: Build Documentation
+  #       run: julia --color=yes --project=docs --threads=auto docs/make.jl
+  #       env:
+  #         JULIA_DEBUG: "Documenter"
+  #         DATADEPS_ALWAYS_ACCEPT: true
+  #         JULIA_PKG_SERVER: ""
+
+env:
+  LUX_DOCS_DRAFT_BUILD: "true" # FIXME: remove before merging
+  DATADEPS_ALWAYS_ACCEPT: true
+  JULIA_PKG_SERVER: ""
+  GKSwstype: "100" # https://discourse.julialang.org/t/generation-of-documentation-fails-qt-qpa-xcb-could-not-connect-to-display/60988

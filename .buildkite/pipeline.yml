@@ -83,21 +83,6 @@ steps:
             #     agents:
             #       queue: "juliagpu"
 
-            - label: "Documentation"
-              path:
-                - "src/"
-                - "ext/"
-                - "test/"
-                - "Project.toml"
-                - "docs/"
-                - "examples/"
-                - ".buildkite/"
-                - "lib"
-              config:
-                command: "buildkite-agent pipeline upload .buildkite/documentation.yml"
-                agents:
-                  queue: "juliagpu"
-
             - label: "Downstream"
               path:
                 - "src/"
@@ -129,11 +114,3 @@ steps:
       # Disable benchmarks for now
       # # Benchmarks
       # buildkite-agent pipeline upload .buildkite/benchmarks.yml
-
-  - label: "Triggering Documentation Pipeline (Main Branch / Tag)"
-    if: build.tag != null || build.branch == "main"
-    agents:
-      queue: "juliagpu"
-    command: |
-      # Documentation
-      buildkite-agent pipeline upload .buildkite/documentation.yml

@@ -1,0 +1,66 @@
+steps:
+  - group: ":open_book: Build & Deploy Documentation"
+    if: build.message !~ /\[skip docs\]/ && !build.pull_request.draft
+    steps:
+      - label: "Tutorial Build [%N/%t] CUDA Runners"
+        key: "tutorial-build-cuda"
+        parallelism: 4
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "1.11"
+        command: julia --code-coverage=user --color=yes --project=docs --threads=auto docs/tutorials.jl
+        env:
+          TUTORIAL_BACKEND_GROUP: "CUDA"
+        agents:
+          queue: "juliagpu"
+          cuda: "*"
+        artifact_paths:
+          - "docs/src/tutorials/beginner/**/*"
+          - "docs/src/tutorials/intermediate/**/*"
+          - "docs/src/tutorials/advanced/**/*"
+          - "tutorial_deps/*"
+          - "**/*.cov"
+          - "docs/src/public/examples/**/*"
+        timeout_in_minutes: 120
+
+      # - label: "Final Documentation Build"
+      #   depends_on:
+      #     - "tutorial-build-cuda"
+      #     - "tutorial-build-cpu"
+      #   plugins:
+      #     - JuliaCI/julia#v1:
+      #         version: "1.11"
+      #     - JuliaCI/julia-coverage#v1:
+      #         codecov: true
+      #         dirs:
+      #           - src
+      #           - ext
+      #     - sv-oss/node-n#v0.1.2:
+      #         node-version: v20
+      #   command: |
+      #     echo "+++ :node: Instantiate NPM"
+      #     cd docs/
+      #     npm i
+      #     cd ..
+
+      #     buildkite-agent artifact download "**/*" . --build $BUILDKITE_BUILD_ID
+
+      #     julia --code-coverage=user --color=yes --project=docs -e '
+      #       println("--- :julia: Instantiating project")
+      #       using Pkg
+      #       Pkg.instantiate()
+      #       println("+++ :julia: Building documentation")
+      #       include("docs/make.jl")'
+      #   agents:
+      #     queue: "juliagpu"
+      #     cuda: "*"
+      #   env:
+      #     JULIA_DEBUG: "Documenter"
+      #     LD_LIBRARY_PATH: ""
+      #   timeout_in_minutes: 120
+
+env:
+  LUX_DOCS_DRAFT_BUILD: "true" # FIXME: remove before merging
+  DATADEPS_ALWAYS_ACCEPT: true
+  JULIA_PKG_SERVER: ""
+  GKSwstype: "100" # https://discourse.julialang.org/t/generation-of-documentation-fails-qt-qpa-xcb-could-not-connect-to-display/60988
