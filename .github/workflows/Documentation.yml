@@ -42,7 +42,18 @@ jobs:
         uses: buildkite/trigger-pipeline-action@v2.4.1
         with:
           buildkite_api_access_token: ${{ secrets.BUILDKITE_TOKEN }}
-          pipeline: ".buildkite/cuda_tutorials.yml"
+          pipeline: "julialang/lux-dot-jl"
+          commit: ${{ github.event.pull_request.head.sha }}
+          branch: ${{ github.event.pull_request.head.ref }}
+          message: |
+            Triggered from PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}
+          send_pull_request: true
+          pull_request_base_branch: ${{ github.event.pull_request.base.ref }}
+          build_env_vars: >-
+            {
+              "LUX_CUDA_TUTORIALS": "1",
+              "GITHUB_PR_NUMBER": "${{ github.event.pull_request.number }}"
+            }
 
       - name: Download CUDA Tutorial Artifacts
         uses: EnricoMi/download-buildkite-artifact-action@v1
@@ -63,7 +74,7 @@ jobs:
         uses: jaywcjlove/github-action-folder-tree@main
         with:
           exclude: "node_modules|dist|.git|.husky"
-          path: ./src
+          path: ./artifacts
           depth: 4
 
   tutorial-cpu:
