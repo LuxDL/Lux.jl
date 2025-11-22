@@ -81,6 +81,7 @@ function _batched_jacobian_reverse_impl(f::F, ad::AutoEnzyme, x::AbstractArray) 
         Enzyme.autodiff(
             ad.mode,
             Utils.annotate_enzyme_function(ad, f′),
+            Duplicated,
             Duplicated(y, dy[:, :, i]),
             Duplicated(x, dxᵢ),
         )
@@ -129,7 +130,10 @@ function _batched_jacobian_forward_impl(f::F, ad::AutoEnzyme, x::AbstractArray) 
     @trace track_numbers = false for i in 1:size(x, 1)
         dy[:, i, :] = only(
             Enzyme.autodiff(
-                ad.mode, Utils.annotate_enzyme_function(ad, f′), Duplicated(x, bx[:, :, i])
+                ad.mode,
+                Utils.annotate_enzyme_function(ad, f′),
+                Duplicated,
+                Duplicated(x, bx[:, :, i]),
             ),
         )
     end
