@@ -63,6 +63,7 @@ if Reactant.Reactant_jll.is_available()
             )
         end
 
+        Reactant.clear_oc_cache()
         Reactant.set_default_backend(orig_backend)
     end
 end
