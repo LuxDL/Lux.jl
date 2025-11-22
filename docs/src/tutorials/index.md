@@ -35,7 +35,7 @@ const beginner = [
   },
   {
     href: "https://luxdl.github.io/Boltz.jl/stable/tutorials/1_GettingStarted",
-    src: "https://production-media.paperswithcode.com/datasets/ImageNet-0000000008-f2e87edd_Y0fT5zg.jpg",
+    src: "https://blog.roboflow.com/content/images/2021/06/image-18.png",
     caption: "Pre-Built Deep Learning Models",
     desc: "Use Boltz.jl to load pre-built DL and SciML models."
   }

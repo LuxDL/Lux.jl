@@ -14,7 +14,7 @@ steps:
                 - "ext/"
                 - "test/"
                 - "Project.toml"
-                - ".buildkite/"
+                - ".buildkite/testing.yml"
                 - "lib/"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing.yml"
@@ -24,7 +24,7 @@ steps:
             - label: "LuxCUDA"
               path:
                 - "lib/LuxCUDA/"
-                - ".buildkite/"
+                - ".buildkite/testing_luxcuda.yml"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing_luxcuda.yml"
                 agents:
@@ -33,7 +33,7 @@ steps:
             - label: "WeightInitializers"
               path:
                 - "lib/WeightInitializers/"
-                - ".buildkite/"
+                - ".buildkite/testing_weightinitializers.yml"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing_weightinitializers.yml"
                 agents:
@@ -42,7 +42,7 @@ steps:
             - label: "MLDataDevices"
               path:
                 - "lib/MLDataDevices/"
-                - ".buildkite/"
+                - ".buildkite/testing_mldatadevices.yml"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing_mldatadevices.yml"
                 agents:
@@ -51,7 +51,7 @@ steps:
             - label: "LuxLib"
               path:
                 - "lib/LuxLib/"
-                - ".buildkite/"
+                - ".buildkite/testing_luxlib.yml"
                 - "lib/LuxTestUtils/"
                 - "lib/LuxCore/"
                 - "lib/MLDataDevices/"
@@ -63,7 +63,7 @@ steps:
             - label: "LuxTestUtils"
               path:
                 - "lib/LuxTestUtils/"
-                - ".buildkite/"
+                - ".buildkite/testing_luxtestutils.yml"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing_luxtestutils.yml"
                 agents:
@@ -83,28 +83,13 @@ steps:
             #     agents:
             #       queue: "juliagpu"
 
-            - label: "Documentation"
-              path:
-                - "src/"
-                - "ext/"
-                - "test/"
-                - "Project.toml"
-                - "docs/"
-                - "examples/"
-                - ".buildkite/"
-                - "lib"
-              config:
-                command: "buildkite-agent pipeline upload .buildkite/documentation.yml"
-                agents:
-                  queue: "juliagpu"
-
             - label: "Downstream"
               path:
                 - "src/"
                 - "ext/"
                 - "lib/"
                 - "Project.toml"
-                - ".buildkite/"
+                - ".buildkite/downstream.yml"
               if: build.pull_request.labels includes "run downstream test"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/downstream.yml"
@@ -129,11 +114,3 @@ steps:
       # Disable benchmarks for now
       # # Benchmarks
       # buildkite-agent pipeline upload .buildkite/benchmarks.yml
-
-  - label: "Triggering Documentation Pipeline (Main Branch / Tag)"
-    if: build.tag != null || build.branch == "main"
-    agents:
-      queue: "juliagpu"
-    command: |
-      # Documentation
-      buildkite-agent pipeline upload .buildkite/documentation.yml

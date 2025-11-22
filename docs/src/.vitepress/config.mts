@@ -492,5 +492,7 @@ export default defineConfig({
         timeStyle: "medium",
       },
     },
+    metaChunk: true,
+    mpa: true,
   },
 });

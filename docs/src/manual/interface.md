@@ -233,4 +233,4 @@ Instead this shows the flexibility you have for how your parameters can be struc
 States are always type constrained to be `NamedTuple`. The structure of the input state
 **must** match that of the output state, i.e. `keys(st_in) == keys(st_out)`. This doesn't
 imply that types of the input and output state match. To generate efficient code, we often
-do dispatch on the state, for example, [`Dropout`](@ref), [`BatchNorm`](@ref), etc.
+do dispatch on the state, for example, [`Lux.Dropout`](@ref), [`BatchNorm`](@ref), etc.
