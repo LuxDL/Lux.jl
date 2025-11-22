@@ -389,21 +389,21 @@ Layer behaves differently based on input type:
  1. If the input `x` is a tuple of length `N + 1`, then the `layers` must be a tuple of
     length `N`. The computation is as follows
 
-```julia
-y = x[1]
-for i in 1:N
-    y = connection(x[i + 1], layers[i](y))
-end
-```
+    ```julia
+    y = x[1]
+    for i in 1:N
+        y = connection(x[i + 1], layers[i](y))
+    end
+    ```
 
  2. Any other kind of input
 
-```julia
-y = x
-for i in 1:N
-    y = connection(x, layers[i](y))
-end
-```
+    ```julia
+    y = x
+    for i in 1:N
+        y = connection(x, layers[i](y))
+    end
+    ```
 
 ## Returns
 
