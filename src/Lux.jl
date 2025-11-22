@@ -123,7 +123,7 @@ include("serialization/serialization.jl")
 # Deprecations for v2
 include("deprecations.jl")
 
-# Precompile common workloads
+# Precompile Common Workloads
 include("precompile_workloads.jl")
 
 # Layers
