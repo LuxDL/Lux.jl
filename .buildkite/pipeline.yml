@@ -15,7 +15,6 @@ steps:
                 - "test/"
                 - "Project.toml"
                 - ".buildkite/testing.yml"
-                - ".buildkite/pipeline.yml"
                 - "lib/"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing.yml"
@@ -26,7 +25,6 @@ steps:
               path:
                 - "lib/LuxCUDA/"
                 - ".buildkite/testing_luxcuda.yml"
-                - ".buildkite/pipeline.yml"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing_luxcuda.yml"
                 agents:
@@ -36,7 +34,6 @@ steps:
               path:
                 - "lib/WeightInitializers/"
                 - ".buildkite/testing_weightinitializers.yml"
-                - ".buildkite/pipeline.yml"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing_weightinitializers.yml"
                 agents:
@@ -46,7 +43,6 @@ steps:
               path:
                 - "lib/MLDataDevices/"
                 - ".buildkite/testing_mldatadevices.yml"
-                - ".buildkite/pipeline.yml"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing_mldatadevices.yml"
                 agents:
@@ -56,7 +52,6 @@ steps:
               path:
                 - "lib/LuxLib/"
                 - ".buildkite/testing_luxlib.yml"
-                - ".buildkite/pipeline.yml"
                 - "lib/LuxTestUtils/"
                 - "lib/LuxCore/"
                 - "lib/MLDataDevices/"
@@ -69,7 +64,6 @@ steps:
               path:
                 - "lib/LuxTestUtils/"
                 - ".buildkite/testing_luxtestutils.yml"
-                - ".buildkite/pipeline.yml"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing_luxtestutils.yml"
                 agents:
@@ -96,7 +90,6 @@ steps:
                 - "lib/"
                 - "Project.toml"
                 - ".buildkite/downstream.yml"
-                - ".buildkite/pipeline.yml"
               if: build.pull_request.labels includes "run downstream test"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/downstream.yml"
