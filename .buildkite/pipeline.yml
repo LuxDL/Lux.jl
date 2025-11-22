@@ -14,7 +14,8 @@ steps:
                 - "ext/"
                 - "test/"
                 - "Project.toml"
-                - ".buildkite/"
+                - ".buildkite/testing.yml"
+                - ".buildkite/pipeline.yml"
                 - "lib/"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing.yml"
@@ -24,7 +25,8 @@ steps:
             - label: "LuxCUDA"
               path:
                 - "lib/LuxCUDA/"
-                - ".buildkite/"
+                - ".buildkite/testing_luxcuda.yml"
+                - ".buildkite/pipeline.yml"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing_luxcuda.yml"
                 agents:
@@ -33,7 +35,8 @@ steps:
             - label: "WeightInitializers"
               path:
                 - "lib/WeightInitializers/"
-                - ".buildkite/"
+                - ".buildkite/testing_weightinitializers.yml"
+                - ".buildkite/pipeline.yml"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing_weightinitializers.yml"
                 agents:
@@ -42,7 +45,8 @@ steps:
             - label: "MLDataDevices"
               path:
                 - "lib/MLDataDevices/"
-                - ".buildkite/"
+                - ".buildkite/testing_mldatadevices.yml"
+                - ".buildkite/pipeline.yml"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing_mldatadevices.yml"
                 agents:
@@ -51,7 +55,8 @@ steps:
             - label: "LuxLib"
               path:
                 - "lib/LuxLib/"
-                - ".buildkite/"
+                - ".buildkite/testing_luxlib.yml"
+                - ".buildkite/pipeline.yml"
                 - "lib/LuxTestUtils/"
                 - "lib/LuxCore/"
                 - "lib/MLDataDevices/"
@@ -63,7 +68,8 @@ steps:
             - label: "LuxTestUtils"
               path:
                 - "lib/LuxTestUtils/"
-                - ".buildkite/"
+                - ".buildkite/testing_luxtestutils.yml"
+                - ".buildkite/pipeline.yml"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing_luxtestutils.yml"
                 agents:
@@ -89,7 +95,8 @@ steps:
                 - "ext/"
                 - "lib/"
                 - "Project.toml"
-                - ".buildkite/"
+                - ".buildkite/downstream.yml"
+                - ".buildkite/pipeline.yml"
               if: build.pull_request.labels includes "run downstream test"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/downstream.yml"
