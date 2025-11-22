@@ -31,7 +31,7 @@ makedocs(;
         repo="github.com/LuxDL/Lux.jl",
         devbranch="main",
         devurl="dev",
-        deploy_url="https://lux.csail.mit.edu"
+        deploy_url="https://lux.csail.mit.edu",
     ),
     plugins=[CitationBibliography(joinpath(@__DIR__, "references.bib"))],
     draft=DRAFT_MODE,
