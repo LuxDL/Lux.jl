@@ -1,0 +1,5 @@
+[deps]
+huggingface_hub = ""
+
+[pip.deps]
+torch = ""
