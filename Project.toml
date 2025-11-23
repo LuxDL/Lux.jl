@@ -1,7 +1,7 @@
 name = "Lux"
 uuid = "b2108857-7c20-44ae-9111-449ecde12c47"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "1.26.0"
+version = "1.27.0"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -56,10 +56,10 @@ Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [sources]
-LuxCore = {path = "lib/LuxCore"}
-LuxLib = {path = "lib/LuxLib"}
-MLDataDevices = {path = "lib/MLDataDevices"}
-WeightInitializers = {path = "lib/WeightInitializers"}
+LuxCore = { path = "lib/LuxCore" }
+LuxLib = { path = "lib/LuxLib" }
+MLDataDevices = { path = "lib/MLDataDevices" }
+WeightInitializers = { path = "lib/WeightInitializers" }
 
 [extensions]
 LuxComponentArraysExt = "ComponentArrays"
@@ -71,7 +71,16 @@ LuxMLUtilsExt = "MLUtils"
 LuxMPIExt = "MPI"
 LuxMPINCCLExt = ["CUDA", "MPI", "NCCL"]
 LuxMooncakeExt = "Mooncake"
-LuxReactantExt = ["Enzyme", "Reactant"]
+LuxReactantExt = [
+    "Enzyme",
+    "Reactant",
+    "ReactantCore",
+    "LuxLib",
+    "MLDataDevices",
+    "Optimisers",
+    "NNlib",
+    "Statistics",
+]
 LuxReverseDiffExt = ["FunctionWrappers", "ReverseDiff"]
 LuxSimpleChainsExt = "SimpleChains"
 LuxTrackerExt = "Tracker"

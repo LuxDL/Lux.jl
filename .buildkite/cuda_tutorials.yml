@@ -1,0 +1,28 @@
+steps:
+  - group: ":open_book: Build & Deploy Documentation"
+    if: build.message !~ /\[skip docs\]/
+    steps:
+      - label: "Tutorial Build [%N/%t] CUDA Runners"
+        key: "tutorial-build-cuda"
+        parallelism: 4
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "1.11"
+        command: julia --code-coverage=user --color=yes --project=docs --threads=auto docs/tutorials.jl
+        env:
+          TUTORIAL_BACKEND_GROUP: "CUDA"
+        agents:
+          queue: "juliagpu"
+          cuda: "*"
+        artifact_paths:
+          - "docs/src/tutorials/beginner/**/*"
+          - "docs/src/tutorials/intermediate/**/*"
+          - "docs/src/tutorials/advanced/**/*"
+          - "tutorial_deps/*"
+          - "**/*.cov"
+          - "docs/src/public/examples/**/*"
+        timeout_in_minutes: 120
+
+env:
+  DATADEPS_ALWAYS_ACCEPT: true
+  GKSwstype: "100" # https://discourse.julialang.org/t/generation-of-documentation-fails-qt-qpa-xcb-could-not-connect-to-display/60988

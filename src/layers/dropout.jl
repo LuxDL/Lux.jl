@@ -26,7 +26,7 @@ AlphaDropout layer.
 
 Call [`Lux.testmode`](@ref) to switch to test mode.
 
-See also [`Dropout`](@ref), [`VariationalHiddenDropout`](@ref)
+See also [`Lux.Dropout`](@ref), [`VariationalHiddenDropout`](@ref)
 """
 struct AlphaDropout{T<:Real} <: AbstractLuxLayer
     p::T
@@ -152,7 +152,7 @@ retained until [`Lux.update_state(l, :update_mask, Val(true))`](@ref) is called.
 
 Call [`Lux.testmode`](@ref) to switch to test mode.
 
-See also [`AlphaDropout`](@ref), [`Dropout`](@ref)
+See also [`AlphaDropout`](@ref), [`Lux.Dropout`](@ref)
 """
 @concrete struct VariationalHiddenDropout{T} <: AbstractLuxLayer
     p::T
