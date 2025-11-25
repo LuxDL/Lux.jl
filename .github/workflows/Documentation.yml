@@ -65,11 +65,47 @@ jobs:
           output_path: artifacts
           poll_interval: 30
 
+      - name: "Combine CUDA Tutorial Artifacts"
+        run: |
+          set -e
+
+          SOURCE_DIR="artifacts"
+          OUTPUT_DIR="artifacts_combined"
+
+          mkdir -p "$OUTPUT_DIR"
+
+          # Check if source directory exists
+          if [ ! -d "$SOURCE_DIR" ]; then
+            echo "Error: Source directory '$SOURCE_DIR' not found"
+            exit 1
+          fi
+
+          BUILD_DIRS=$(find "$SOURCE_DIR" -mindepth 1 -type d -name "Tutorial-Build-*")
+
+          [ -n "$BUILD_DIRS" ] || { echo "Error: No Tutorial-Build directories found"; exit 1; }
+
+          echo "$BUILD_DIRS" | while read dir; do
+            echo "Processing: $dir"
+            rsync -av --ignore-existing "$dir/" "$OUTPUT_DIR/"
+          done
+
+          # Verify
+          [ "$(ls -A $OUTPUT_DIR)" ] || { echo "Error: Merge produced empty directory"; exit 1; }
+
+          echo "✓ Merge complete!"
+        shell: bash
+
       - name: Upload Tutorial Artifacts
         uses: actions/upload-artifact@v5
         with:
           name: "tutorial-cuda"
-          path: artifacts/**/*
+          path: |
+            artifacts_combined/docs/src/tutorials/beginner/**/*
+            artifacts_combined/docs/src/tutorials/intermediate/**/*
+            artifacts_combined/docs/src/tutorials/advanced/**/*
+            artifacts_combined/tutorial_deps/*
+            artifacts_combined/**/*.cov
+            artifacts_combined/docs/src/public/examples/**/*
           retention-days: 90
           if-no-files-found: error
 
@@ -149,6 +185,39 @@ jobs:
       - uses: julia-actions/julia-docdeploy@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: "Generate coverage"
+        run: |
+          using Pkg
+          Pkg.activate("coveragetempenv", shared=true)
+
+          Pkg.add(PackageSpec(name="CoverageTools"))
+
+          using CoverageTools
+
+          projectdirs = ["."]
+          isdir("lib") && append!(projectdirs, readdir("lib/"; join=true))
+
+          directories = []
+          for projectdir in projectdirs
+              if isdir(joinpath(projectdir, "src"))
+                  push!(directories, joinpath(projectdir, "src"))
+              end
+              if isdir(joinpath(projectdir, "ext"))
+                  push!(directories, joinpath(projectdir, "ext"))
+              end
+          end
+          filter!(isdir, directories)
+
+          pfs = mapreduce(process_folder, vcat, directories)
+          LCOV.writefile("lcov.info", pfs)
+        shell: julia --color=yes --threads=auto {0}
+      - uses: codecov/codecov-action@v5
+        with:
+          files: lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
+          fail_ci_if_error: false
 
 env:
   JULIA_DEBUG: "Documenter,Reactant,Reactant_jll,Lux"
