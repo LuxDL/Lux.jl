@@ -1,0 +1,259 @@
+        2 ```@meta
+     1129 EditURL = "../../../../examples/PolynomialFitting/main.jl"
+      503 ```
+      751 
+      256 # Fitting a Polynomial using MLP
+      495 
+        6 In this tutorial we will fit a MultiLayer Perceptron (MLP) on data generated from a
+        - polynomial.
+      250 
+      499 ## Package Imports
+        1 
+        - ````julia
+        - using Lux, ADTypes, LuxAMDGPU, LuxCUDA, Optimisers, Printf, Random, Statistics, Zygote
+        - using CairoMakie
+        - ````
+        - 
+        - ## Dataset
+        - 
+        - Generate 128 datapoints from the polynomial $y = x^2 - 2x$.
+        - 
+        - ````julia
+        - function generate_data(rng::AbstractRNG)
+        -     x = reshape(collect(range(-2.0f0, 2.0f0, 128)), (1, 128))
+        -     y = evalpoly.(x, ((0, -2, 1),)) .+ randn(rng, (1, 128)) .* 0.1f0
+        -     return (x, y)
+        - end
+        - ````
+        - 
+        - ````
+        - generate_data (generic function with 1 method)
+        - ````
+        - 
+        - Initialize the random number generator and fetch the dataset.
+        - 
+        - ````julia
+        - rng = MersenneTwister()
+        - Random.seed!(rng, 12345)
+        - 
+        - (x, y) = generate_data(rng)
+        - ````
+        - 
+        - ````
+        - (Float32[-2.0 -1.968504 -1.9370079 -1.9055119 -1.8740157 -1.8425196 -1.8110236 -1.7795275 -1.7480315 -1.7165354 -1.6850394 -1.6535434 -1.6220472 -1.5905511 -1.5590551 -1.527559 -1.496063 -1.464567 -1.4330709 -1.4015749 -1.3700787 -1.3385826 -1.3070866 -1.2755905 -1.2440945 -1.2125984 -1.1811024 -1.1496063 -1.1181102 -1.0866141 -1.0551181 -1.023622 -0.992126 -0.96062994 -0.92913383 -0.8976378 -0.86614174 -0.8346457 -0.8031496 -0.77165353 -0.7401575 -0.70866144 -0.6771653 -0.6456693 -0.61417323 -0.5826772 -0.5511811 -0.51968503 -0.48818898 -0.4566929 -0.42519686 -0.39370078 -0.36220473 -0.33070865 -0.2992126 -0.26771653 -0.23622048 -0.20472442 -0.17322835 -0.14173229 -0.11023622 -0.07874016 -0.047244094 -0.015748031 0.015748031 0.047244094 0.07874016 0.11023622 0.14173229 0.17322835 0.20472442 0.23622048 0.26771653 0.2992126 0.33070865 0.36220473 0.39370078 0.42519686 0.4566929 0.48818898 0.51968503 0.5511811 0.5826772 0.61417323 0.6456693 0.6771653 0.70866144 0.7401575 0.77165353 0.8031496 0.8346457 0.8661417
+        - ````
+        - 
+        - Let's visualize the dataset
+        - 
+        - ````julia
+        - begin
+        -     fig = Figure()
+        -     ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
+        - 
+        -     l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3, color=:blue)
+        -     s = scatter!(ax, x[1, :], y[1, :]; markersize=12, alpha=0.5,
+        -         color=:orange, strokecolor=:black, strokewidth=2)
+        - 
+        -     axislegend(ax, [l, s], ["True Quadratic Function", "Data Points"])
+        - 
+        -     fig
+        - end
+        - ````
+        - 
+        - ```@raw html
+        - <img width=600 height=450 style='object-fit: contain; height: auto;' src="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAABLAAAAOECAIAAAA+D1+tAAAABmJLR0QA/wD/AP+gvaeTAAAgAElEQVR4nOzdd1xT1/sH8CdEhkwFlI0DEBVxgYJWRUQFxYWKWhd11dHtqLZaV79qW7RqrXW2Dhx1VcVJcaBgERVBAUUFZIW9ww5Jfn9cf5cYpqxA+Lxf/ePcc8+9ee6VJnlyzj2HIxaLCQAAAAAAAFofBVkHAAAAAAAAALKBhBAAAAAAAKCVQkIIAAAAAADQSiEhBAAAAAAAaKWQEAIAAAAAALRSSAgBAAAAAABaKSSEAAAAAAAArRQSQgAAAAAAgFYKCSEAAAAAAEArhYQQAAAAAACglUJCCAAAAAAA0EohIQQAAAAAAGilkBACAAAAAAC0UkgIAQAAAAAAWikkhAAAAAAAAK0UEkIAAAAAAIBWCgkhAAAAAABAK4WEEAAAAAAAoJVCQggAAAAAANBKISEEAAAAAABopZAQAgAAAAAAtFJICAEAAAAAAFopJIQAAAAAAACtFBJCAAAAAACAVgoJIQAAAAAAQCuFhBAAAAAAAKCVQkIIAAAAAADQSiEhBAAAAAAAaKWQEAIAAAAAALRSSAgBAAAAAABaqTayDqDF43A4sg4BAAAAAADkllgsbryTo4cQAAAAAACglUIPYcNo1Kz9gyQnJwsEAn19fSUlJVnHAtAAeDyeUCg0MjLicrmyjgWgAcTHxxORqamprAMBaABCoZDH43G5XCMjI1nHAtAASktLU1JSFBUVDQwMZB3LO00wGhE9hAAAAAAAAK0UEkIAAAAAAIBWCgkhAAAAAABAK4WEEAAAAAAAoJVCQggAAAAAANBKISEEAAAAAABopZAQAgAAAAAAtFJICAEAAAAAAFopJIQAAAAAAACtVBtZBwAAAADQ7HA4HFmHAA
+        - ```
+        - 
+        - ## Neural Network
+        - 
+        - For this problem, you should not be using a neural network. But let's still do that!
+        - 
+        - ````julia
+        - model = Chain(Dense(1 => 16, relu), Dense(16 => 1))
+        - ````
+        - 
+        - ````
+        - Chain(
+        -     layer_1 = Dense(1 => 16, relu),     # 32 parameters
+        -     layer_2 = Dense(16 => 1),           # 17 parameters
+        - )         # Total: 49 parameters,
+        -           #        plus 0 states.
+        - ````
+        - 
+        - ## Optimizer
+        - 
+        - We will use Adam from Optimisers.jl
+        - 
+        - ````julia
+        - opt = Adam(0.03f0)
+        - ````
+        - 
+        - ````
+        - Adam(0.03, (0.9, 0.999), 1.0e-8)
+        - ````
+        - 
+        - ## Loss Function
+        - 
+        - We will use the `Lux.Training` API so we need to ensure that our loss function takes 4
+        - inputs -- model, parameters, states and data. The function must return 3 values -- loss,
+        - updated_state, and any computed statistics.
+        - 
+        - ````julia
+        - function loss_function(model, ps, st, data)
+        -     y_pred, st = Lux.apply(model, data[1], ps, st)
+        -     mse_loss = mean(abs2, y_pred .- data[2])
+        -     return mse_loss, st, ()
+        - end
+        - ````
+        - 
+        - ````
+        - loss_function (generic function with 1 method)
+        - ````
+        - 
+        - ## Training
+        - 
+        - First we will create a [`Lux.Experimental.TrainState`](@ref) which is essentially a
+        - convenience wrapper over parameters, states and optimizer states.
+        - 
+        - ````julia
+        - tstate = Lux.Experimental.TrainState(rng, model, opt)
+        - ````
+        - 
+        - ````
+        - Lux.Experimental.TrainState{Lux.Chain{@NamedTuple{layer_1::Lux.Dense{true, typeof(NNlib.relu), typeof(WeightInitializers.glorot_uniform), typeof(WeightInitializers.zeros32)}, layer_2::Lux.Dense{true, typeof(identity), typeof(WeightInitializers.glorot_uniform), typeof(WeightInitializers.zeros32)}}, Nothing}, @NamedTuple{layer_1::@NamedTuple{weight::CUDA.CuArray{Float32, 2, CUDA.Mem.DeviceBuffer}, bias::CUDA.CuArray{Float32, 2, CUDA.Mem.DeviceBuffer}}, layer_2::@NamedTuple{weight::CUDA.CuArray{Float32, 2, CUDA.Mem.DeviceBuffer}, bias::CUDA.CuArray{Float32, 2, CUDA.Mem.DeviceBuffer}}}, @NamedTuple{layer_1::@NamedTuple{}, layer_2::@NamedTuple{}}, @NamedTuple{layer_1::@NamedTuple{weight::Optimisers.Leaf{Optimisers.Adam, Tuple{CUDA.CuArray{Float32, 2, CUDA.Mem.DeviceBuffer}, CUDA.CuArray{Float32, 2, CUDA.Mem.DeviceBuffer}, Tuple{Float32, Float32}}}, bias::Optimisers.Leaf{Optimisers.Adam, Tuple{CUDA.CuArray{Float32, 2, CUDA.Mem.DeviceBuffer}, CUDA.CuArray{Float32, 2, CUDA.Mem.DeviceBuffer}, Tuple{Float32, Float32}}
+        - ````
+        - 
+        - Now we will use Zygote for our AD requirements.
+        - 
+        - ````julia
+        - vjp_rule = AutoZygote()
+        - ````
+        - 
+        - ````
+        - ADTypes.AutoZygote()
+        - ````
+        - 
+        - Finally the training loop.
+        - 
+        - ````julia
+        - function main(tstate::Lux.Experimental.TrainState, vjp, data, epochs)
+        -     data = data .|> gpu_device()
+        -     for epoch in 1:epochs
+        -         grads, loss, stats, tstate = Lux.Training.compute_gradients(
+        -             vjp, loss_function, data, tstate)
+        -         if epoch % 50 == 1 || epoch == epochs
+        -             @printf "Epoch: %3d \t Loss: %.5g\n" epoch loss
+        -         end
+        -         tstate = Lux.Training.apply_gradients(tstate, grads)
+        -     end
+        -     return tstate
+        - end
+        - 
+        - dev_cpu = cpu_device()
+        - dev_gpu = gpu_device()
+        - 
+        - tstate = main(tstate, vjp_rule, (x, y), 250)
+        - y_pred = dev_cpu(Lux.apply(tstate.model, dev_gpu(x), tstate.parameters, tstate.states)[1])
+        - ````
+        - 
+        - ````
+        - Epoch:   1 	 Loss: 9.4373
+        - Epoch:  51 	 Loss: 0.086228
+        - Epoch: 101 	 Loss: 0.033642
+        - Epoch: 151 	 Loss: 0.021989
+        - Epoch: 201 	 Loss: 0.017344
+        - Epoch: 250 	 Loss: 0.013794
+        - 
+        - ````
+        - 
+        - Let's plot the results
+        - 
+        - ````julia
+        - begin
+        -     fig = Figure()
+        -     ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
+        - 
+        -     l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3)
+        -     s1 = scatter!(ax, x[1, :], y[1, :]; markersize=12, alpha=0.5,
+        -         color=:orange, strokecolor=:black, strokewidth=2)
+        -     s2 = scatter!(ax, x[1, :], y_pred[1, :]; markersize=12, alpha=0.5,
+        -         color=:green, strokecolor=:black, strokewidth=2)
+        - 
+        -     axislegend(ax, [l, s1, s2], ["True Quadratic Function", "Actual Data", "Predictions"])
+        - 
+        -     fig
+        - end
+        - ````
+        - 
+        - ```@raw html
+        - <img width=600 height=450 style='object-fit: contain; height: auto;' src="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAABLAAAAOECAIAAAA+D1+tAAAABmJLR0QA/wD/AP+gvaeTAAAgAElEQVR4nOzdZ1wUV/s38Gt36R2p0tTQjCgoaCBqjGgEjSiWoBh7S9R0saWYWBKNN7b4xFgwiYpibDGC9a9GLNhRFFRA2tJ7W9qy7O7zYsiwLFV6+X0/vpg9c2bmmmHdnWvPmXM4UqmUAAAAAAAAoPvhtncAAAAAAAAA0D6QEAIAAAAAAHRTSAgBAAAAAAC6KSSEAAAAAAAA3RQSQgAAAAAAgG4KCSEAAAAAAEA3hYQQAAAAAACgm0JCCAAAAAAA0E0hIQQAAAAAAOimkBACAAAAAAB0U0gIAQAAAAAAuikkhAAAAAAAAN0UEkIAAAAAAIBuCgkhAAAAAABAN4WEEAAAAAAAoJtCQggAAAAAANBNISEEAAAAAADoppAQAgAAAAAAdFNICAEAAAAAALopJIQAAAAAAADdFBJCAAAAAACAbgoJIQAAAAAAQDeFhBAAAAAAAKCbQkIIAAAAAADQTSEhBAAAAAAA6KaQEAIAAAAAAHRTSAgBAAAAAAC6KSSEAAAAAAAA3RQSQgAAAAAAgG4KCSEAAAAAAEA3pdDeAXR6HA6nvUMAAAAAAIAuSyqVtt7O0UIIAAAAAADQTaGFsGW0atb+WtLS0kQikbGxsZKSUnvHAtACUlJSxGKxqakpj8dr71gAWkBiYiIRWVhYtHcgAC1ALBanpKTweDxTU9P2jgWgBZSXl6enpysqKvbs2bO9Y6nUBr0R0UIIAAAAAADQTSEhBAAAAAAA6KaQEAIAAAAAAHRTSAgBAAAAAAC6KSSEAAAAAAAA3RQSQgAAAAAAgG4KCSEAAAAAAEA3hYQQAAAAAACgm0JCCAAAAAAA0E0ptHcAAAAAAB0Oh8Np7x
+        - ```
+        - 
+        - ## Appendix
+        - 
+        - ````julia
+        - using InteractiveUtils
+        - InteractiveUtils.versioninfo()
+        - if @isdefined(LuxCUDA) && CUDA.functional(); println(); CUDA.versioninfo(); end
+        - if @isdefined(LuxAMDGPU) && LuxAMDGPU.functional(); println(); AMDGPU.versioninfo(); end
+        - ````
+        - 
+        - ````
+        - Julia Version 1.10.2
+        - Commit bd47eca2c8a (2024-03-01 10:14 UTC)
+        - Build Info:
+        -   Official https://julialang.org/ release
+        - Platform Info:
+        -   OS: Linux (x86_64-linux-gnu)
+        -   CPU: 48 × AMD EPYC 7402 24-Core Processor
+        -   WORD_SIZE: 64
+        -   LIBM: libopenlibm
+        -   LLVM: libLLVM-15.0.7 (ORCJIT, znver2)
+        - Threads: 48 default, 0 interactive, 24 GC (on 2 virtual cores)
+        - Environment:
+        -   LD_LIBRARY_PATH = /usr/local/nvidia/lib:/usr/local/nvidia/lib64
+        -   JULIA_DEPOT_PATH = /root/.cache/julia-buildkite-plugin/depots/01872db4-8c79-43af-ab7d-12abac4f24f6
+        -   JULIA_PROJECT = /var/lib/buildkite-agent/builds/gpuci-11/julialang/lux-dot-jl/docs/Project.toml
+        -   JULIA_AMDGPU_LOGGING_ENABLED = true
+        -   JULIA_DEBUG = Literate
+        -   JULIA_CPU_THREADS = 2
+        -   JULIA_NUM_THREADS = 48
+        -   JULIA_LOAD_PATH = @:@v#.#:@stdlib
+        -   JULIA_CUDA_HARD_MEMORY_LIMIT = 25%
+        - 
+        - CUDA runtime 12.3, artifact installation
+        - CUDA driver 12.4
+        - NVIDIA driver 550.54.14
+        - 
+        - CUDA libraries: 
+        - - CUBLAS: 12.3.4
+        - - CURAND: 10.3.4
+        - - CUFFT: 11.0.12
+        - - CUSOLVER: 11.5.4
+        - - CUSPARSE: 12.2.0
+        - - CUPTI: 21.0.0
+        - - NVML: 12.0.0+550.54.14
+        - 
+        - Julia packages: 
+        - - CUDA: 5.2.0
+        - - CUDA_Driver_jll: 0.7.0+1
+        - - CUDA_Runtime_jll: 0.11.1+0
+        - 
+        - Toolchain:
+        - - Julia: 1.10.2
+        - - LLVM: 15.0.7
+        - 
+        - Environment:
+        - - JULIA_CUDA_HARD_MEMORY_LIMIT: 25%
+        - 
+        - 1 device:
+        -   0: NVIDIA A100-PCIE-40GB MIG 1g.5gb (sm_80, 4.600 GiB / 4.750 GiB available)
+        - ┌ Warning: LuxAMDGPU is loaded but the AMDGPU is not functional.
+        - └ @ LuxAMDGPU ~/.cache/julia-buildkite-plugin/depots/01872db4-8c79-43af-ab7d-12abac4f24f6/packages/LuxAMDGPU/sGa0S/src/LuxAMDGPU.jl:19
+        - 
+        - ````
+        - 
+        - ---
+        - 
+        - *This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
+        - 
