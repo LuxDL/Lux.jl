@@ -27,7 +27,7 @@ const EXTRA_PKGS = PackageSpec[]
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
     push!(EXTRA_PKGS, PackageSpec(; name="AMDGPU"))
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "metal") &&
-    push!(EXTRA_PKGS, PackageSpec("Metal"))
+    push!(EXTRA_PKGS, PackageSpec(; name="Metal", version="1.9"))
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "oneapi") &&
     push!(EXTRA_PKGS, PackageSpec("oneAPI"))
 
