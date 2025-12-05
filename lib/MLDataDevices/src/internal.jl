@@ -301,6 +301,11 @@ function array_adapt(
 ) where {F,aType}
     return f(x)
 end
+function array_adapt(
+    f::F, ::Type{aType}, ::Type{Missing}, x::AbstractArray{<:AbstractChar}
+) where {F,aType}
+    return f(x)
+end
 
 function array_adapt(
     ::F, ::Type{aType}, ::Type{Nothing}, x::AbstractArray{<:AbstractFloat}
@@ -317,6 +322,11 @@ function array_adapt(
 ) where {F,aType}
     return aType(x)
 end
+function array_adapt(
+    ::F, ::Type{aType}, ::Type{Nothing}, x::AbstractArray{<:AbstractChar}
+) where {F,aType}
+    return aType(x)
+end
 
 function array_adapt(
     ::F, ::Type{aType}, ::Type{T}, x::AbstractArray{<:AbstractFloat}
@@ -330,6 +340,11 @@ function array_adapt(
 end
 function array_adapt(
     ::F, ::Type{aType}, ::Type{T}, x::AbstractArray{<:Number}
+) where {F,aType,T}
+    return aType(x)
+end
+function array_adapt(
+    ::F, ::Type{aType}, ::Type{T}, x::AbstractArray{<:AbstractChar}
 ) where {F,aType,T}
     return aType(x)
 end
