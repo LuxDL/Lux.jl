@@ -389,7 +389,7 @@ end
 
                 v = kaiming_normal(rng, n_in, n_out)
                 σ2 = sqrt(2 / n_out)
-                @test 0.9σ2 < std(v) < 1.1σ2 broken = backend in ["oneapi", "metal"]
+                @test 0.9σ2 < std(v) < 1.1σ2 broken = backend in ["oneapi"]
             end
 
             # Type
