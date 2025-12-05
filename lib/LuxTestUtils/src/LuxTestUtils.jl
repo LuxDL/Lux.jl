@@ -6,6 +6,7 @@ using DispatchDoctor: allow_unstable
 using Functors: Functors
 using MLDataDevices: cpu_device, gpu_device, get_device, get_device_type, AbstractGPUDevice
 using Optimisers: Optimisers
+using Pkg: PackageSpec
 using Test:
     Test,
     Error,
@@ -53,6 +54,7 @@ catch err
     global ENZYME_TESTING_ENABLED = false
 end
 
+include("package_install.jl")
 include("test_softfail.jl")
 include("autodiff.jl")
 include("jet.jl")

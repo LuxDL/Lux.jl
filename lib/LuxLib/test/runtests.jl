@@ -19,8 +19,6 @@ end
 const PARSED_TEST_ARGS = parse_test_args()
 
 const BACKEND_GROUP = lowercase(get(PARSED_TEST_ARGS, "BACKEND_GROUP", "all"))
-const EXTRA_PKGS = PackageSpec[]
-const EXTRA_DEV_PKGS = PackageSpec[]
 
 const LUXLIB_BLAS_BACKEND = lowercase(
     get(PARSED_TEST_ARGS, "LUXLIB_BLAS_BACKEND", "default")
@@ -28,25 +26,11 @@ const LUXLIB_BLAS_BACKEND = lowercase(
 @assert LUXLIB_BLAS_BACKEND in ("default", "appleaccelerate", "blis", "mkl")
 @info "Running tests with BLAS backend: $(LUXLIB_BLAS_BACKEND)"
 
-if (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda")
-    if isdir(joinpath(@__DIR__, "../../LuxCUDA"))
-        @info "Using local LuxCUDA"
-        push!(EXTRA_DEV_PKGS, PackageSpec(; path=joinpath(@__DIR__, "../../LuxCUDA")))
-    else
-        push!(EXTRA_PKGS, PackageSpec(; name="LuxCUDA"))
-    end
-end
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
-    push!(EXTRA_PKGS, PackageSpec(; name="AMDGPU"))
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "oneapi") &&
-    push!(EXTRA_PKGS, PackageSpec(; name="oneAPI"))
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "metal") &&
-    push!(EXTRA_PKGS, PackageSpec(; name="Metal"))
+const EXTRA_PKGS = LuxTestUtils.packages_to_install(BACKEND_GROUP)
 
-if !isempty(EXTRA_PKGS) || !isempty(EXTRA_DEV_PKGS)
-    @info "Installing Extra Packages for testing" EXTRA_PKGS EXTRA_DEV_PKGS
+if !isempty(EXTRA_PKGS)
+    @info "Installing Extra Packages for testing" EXTRA_PKGS
     isempty(EXTRA_PKGS) || Pkg.add(EXTRA_PKGS)
-    isempty(EXTRA_DEV_PKGS) || Pkg.develop(EXTRA_DEV_PKGS)
     Base.retry_load_extensions()
     Pkg.instantiate()
 end

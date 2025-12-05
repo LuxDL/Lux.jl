@@ -1,4 +1,4 @@
-using Lux, MLDataDevices, Pkg
+using Lux, MLDataDevices, Pkg, LuxTestUtils
 
 if !@isdefined(BACKEND_GROUP)
     const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "all"))
@@ -8,27 +8,23 @@ if !@isdefined(LUX_CURRENT_TEST_GROUP)
     const LUX_CURRENT_TEST_GROUP = lowercase(get(ENV, "LUX_CURRENT_TEST_GROUP", "all"))
 end
 
-if (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
-    LUX_CURRENT_TEST_GROUP != "reactant"
+if LuxTestUtils.test_cuda(BACKEND_GROUP) && LUX_CURRENT_TEST_GROUP != "reactant"
     using LuxCUDA
 end
 
-if BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu"
+if LuxTestUtils.test_amdgpu(BACKEND_GROUP)
     using AMDGPU
 end
 
 cpu_testing() = BACKEND_GROUP == "all" || BACKEND_GROUP == "cpu"
 function cuda_testing()
-    return (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
-           MLDataDevices.functional(CUDADevice)
+    return LuxTestUtils.test_cuda(BACKEND_GROUP) && MLDataDevices.functional(CUDADevice)
 end
 function cuda_reactant_testing()
-    return (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
-           LUX_CURRENT_TEST_GROUP == "reactant"
+    return LuxTestUtils.test_cuda(BACKEND_GROUP) && LUX_CURRENT_TEST_GROUP == "reactant"
 end
 function amdgpu_testing()
-    return (BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
-           MLDataDevices.functional(AMDGPUDevice)
+    return LuxTestUtils.test_amdgpu(BACKEND_GROUP) && MLDataDevices.functional(AMDGPUDevice)
 end
 
 const MODES = begin

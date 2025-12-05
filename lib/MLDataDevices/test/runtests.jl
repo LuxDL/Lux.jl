@@ -1,5 +1,6 @@
 using Pkg: Pkg, PackageSpec
 using Test
+using LuxTestUtils
 
 function parse_test_args()
     test_args_from_env = @isdefined(TEST_ARGS) ? TEST_ARGS : ARGS
@@ -18,32 +19,11 @@ const PARSED_TEST_ARGS = parse_test_args()
 
 const BACKEND_GROUP = lowercase(get(PARSED_TEST_ARGS, "BACKEND_GROUP", "none"))
 
-const EXTRA_PKGS = PackageSpec[]
-const EXTRA_DEV_PKGS = PackageSpec[]
+const EXTRA_PKGS = LuxTestUtils.packages_to_install(BACKEND_GROUP)
 
-if (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda")
-    if isdir(joinpath(@__DIR__, "../../LuxCUDA"))
-        @info "Using local LuxCUDA"
-        push!(EXTRA_DEV_PKGS, PackageSpec(; path=joinpath(@__DIR__, "../../LuxCUDA")))
-    else
-        push!(EXTRA_PKGS, PackageSpec(; name="LuxCUDA"))
-    end
-end
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
-    push!(EXTRA_PKGS, PackageSpec(; name="AMDGPU"))
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "oneapi") &&
-    push!(EXTRA_PKGS, PackageSpec(; name="oneAPI"))
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "opencl") && begin
-    push!(EXTRA_PKGS, PackageSpec(; name="OpenCL"))
-    push!(EXTRA_PKGS, PackageSpec(; name="pocl_jll"))
-end
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "metal") &&
-    push!(EXTRA_PKGS, PackageSpec(; name="Metal"))
-
-if !isempty(EXTRA_PKGS) || !isempty(EXTRA_DEV_PKGS)
-    @info "Installing Extra Packages for testing" EXTRA_PKGS EXTRA_DEV_PKGS
+if !isempty(EXTRA_PKGS)
+    @info "Installing Extra Packages for testing" EXTRA_PKGS
     isempty(EXTRA_PKGS) || Pkg.add(EXTRA_PKGS)
-    isempty(EXTRA_DEV_PKGS) || Pkg.develop(EXTRA_DEV_PKGS)
     Base.retry_load_extensions()
     Pkg.instantiate()
 end
