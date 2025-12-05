@@ -298,3 +298,18 @@ end
     @test get_device(x) == CPUDevice()
     @test get_device_type(x) == CPUDevice
 end
+
+@testset "Character Arrays" begin
+    # Test CPU device with character arrays
+    cdev = cpu_device()
+    char_array = ['a', 'b', 'c', 'd']
+    char_array_cpu = cdev(char_array)
+    @test char_array_cpu isa Array{Char}
+    @test char_array_cpu == char_array
+    @test get_device(char_array_cpu) isa CPUDevice
+
+    # Test GPU device with character arrays
+    gdev = gpu_device()
+    char_array_gpu = gdev(char_array)
+    @test get_device(char_array_gpu) isa parameterless_type(typeof(gdev))
+end

@@ -169,6 +169,25 @@ using FillArrays, Zygote  # Extensions
         y = device(x)
         @test x === y
     end
+
+    @testset "Character Arrays" begin
+        # Test that character arrays can be transferred to GPU
+        char_array = ['a', 'b', 'c']
+        char_array_xpu = device(char_array)
+
+        if MLDataDevices.functional(CUDADevice)
+            @test char_array_xpu isa CuArray{Char}
+            @test Array(char_array_xpu) == char_array
+
+            # Test transfer back to CPU
+            char_array_cpu = cpu_device()(char_array_xpu)
+            @test char_array_cpu isa Array{Char}
+            @test char_array_cpu == char_array
+        else
+            @test char_array_xpu isa Array{Char}
+            @test char_array_xpu == char_array
+        end
+    end
 end
 
 @testset "Functions" begin
