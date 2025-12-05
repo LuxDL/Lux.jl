@@ -1,6 +1,6 @@
 @testsetup module SharedTestSetup
 
-using GPUArrays, GPUArraysCore, Random, StableRNGs
+using GPUArrays, GPUArraysCore, Random, StableRNGs, LuxTestUtils
 
 GPUArraysCore.allowscalar(false)
 
@@ -16,7 +16,7 @@ if BACKEND_GROUP == "all" || BACKEND_GROUP == "cpu"
         ],
     )
 end
-if BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda"
+if LuxTestUtils.test_cuda(BACKEND_GROUP)
     using CUDA
     if CUDA.functional()
         append!(RNGS_ARRTYPES, [
@@ -29,7 +29,7 @@ if BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda"
         @assert BACKEND_GROUP == "all" "Expected CUDA.functional() to be true"
     end
 end
-if BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu"
+if LuxTestUtils.test_amdgpu(BACKEND_GROUP)
     using AMDGPU
     if AMDGPU.functional()
         append!(RNGS_ARRTYPES, [
@@ -42,7 +42,7 @@ if BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu"
         @assert BACKEND_GROUP == "all" "Expected AMDGPU.functional() to be true"
     end
 end
-if BACKEND_GROUP == "all" || BACKEND_GROUP == "metal"
+if LuxTestUtils.test_metal(BACKEND_GROUP)
     using Metal
     if Metal.functional()
         push!(RNGS_ARRTYPES, (Metal.gpuarrays_rng(), MtlArray, false, "metal"))
@@ -50,7 +50,7 @@ if BACKEND_GROUP == "all" || BACKEND_GROUP == "metal"
         @assert BACKEND_GROUP == "all" "Expected Metal.functional() to be true"
     end
 end
-if BACKEND_GROUP == "all" || BACKEND_GROUP == "oneapi"
+if LuxTestUtils.test_oneapi(BACKEND_GROUP)
     using oneAPI
     using oneAPI: oneL0
 

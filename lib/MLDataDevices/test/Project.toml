@@ -8,6 +8,7 @@ ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
 FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 Functors = "d9f16b24-f501-4c13-a1f2-28368ffc5196"
+LuxTestUtils = "ac9de150-d08f-4546-94fb-7472b5760531"
 MLUtils = "f1d291b0-491e-4a28-83b9-f70985020b54"
 OneHotArrays = "0b1bfda6-eb8a-41d2-88d8-f5af5cad476f"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
@@ -19,6 +20,9 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
+
+[sources]
+LuxTestUtils = {path = "../../LuxTestUtils"}
 
 [compat]
 Adapt = "4"

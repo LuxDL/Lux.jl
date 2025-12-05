@@ -1,8 +1,8 @@
-using MLDataDevices, MLUtils, Test
+using MLDataDevices, MLUtils, Test, LuxTestUtils
 
 const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "none"))
 
-if BACKEND_GROUP == "cuda" || BACKEND_GROUP == "all"
+if LuxTestUtils.test_cuda(BACKEND_GROUP)
     using LuxCUDA
 end
 
@@ -11,15 +11,15 @@ if BACKEND_GROUP != "cuda"
     using Reactant
 end
 
-if BACKEND_GROUP == "amdgpu" || BACKEND_GROUP == "all"
+if LuxTestUtils.test_amdgpu(BACKEND_GROUP)
     using AMDGPU
 end
 
-if BACKEND_GROUP == "metal" || BACKEND_GROUP == "all"
+if LuxTestUtils.test_metal(BACKEND_GROUP)
     using Metal
 end
 
-if BACKEND_GROUP == "oneapi" || BACKEND_GROUP == "all"
+if LuxTestUtils.test_oneapi(BACKEND_GROUP)
     using oneAPI
 end
 
