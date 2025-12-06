@@ -57,7 +57,7 @@ const MODELS_LIST = Any[
     ),
     (Maxout(() -> Dense(5 => 4, tanh), 3), randn(Float32, 5, 2)),
     (Bilinear((2, 2) => 3), randn(Float32, 2, 3)),
-    (SkipConnection(Dense(2 => 2), vcat), randn(Float32, 2, 3)),
+    (SkipConnection(vcat, Dense(2 => 2)), randn(Float32, 2, 3)),
     (ConvTranspose((3, 3), 3 => 2; stride=2), rand(Float32, 5, 5, 3, 1)),
     (StatefulRecurrentCell(RNNCell(3 => 5)), rand(Float32, 3, 2)),
     (StatefulRecurrentCell(RNNCell(3 => 5, gelu)), rand(Float32, 3, 2)),
