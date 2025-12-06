@@ -40,7 +40,7 @@ end
 
         for ad in (AutoZygote(), AutoTracker(), AutoReverseDiff(), AutoEnzyme())
             ongpu && (ad isa AutoReverseDiff || ad isa AutoEnzyme) && continue
-            !LuxTestUtils.ENZYME_TESTING_ENABLED && ad isa AutoEnzyme && continue
+            !LuxTestUtils.ENZYME_TESTING_ENABLED[] && ad isa AutoEnzyme && continue
 
             grads, _, _, _ = Training.compute_gradients(ad, _loss_function, x, tstate)
             tstate_ = Training.apply_gradients(tstate, grads)
@@ -80,7 +80,7 @@ end
             ongpu &&
                 (ad isa AutoReverseDiff || ad isa AutoEnzyme || ad isa AutoMooncake) &&
                 continue
-            !LuxTestUtils.ENZYME_TESTING_ENABLED && ad isa AutoEnzyme && continue
+            !LuxTestUtils.ENZYME_TESTING_ENABLED[] && ad isa AutoEnzyme && continue
 
             ps, st = dev(Lux.setup(rng, model))
             tstate = Training.TrainState(model, ps, st, opt)
@@ -192,7 +192,7 @@ end
 end
 
 @testitem "Training API Enzyme Runtime Mode" setup = [SharedTestSetup] tags = [:misc] skip =
-    :(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
+    :(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED[]) begin
     using Lux, Random, Enzyme, Optimisers
 
     function makemodel(n)
@@ -241,7 +241,7 @@ end
 
 @testitem "Enzyme: Invalidate Cache on State Update" setup = [SharedTestSetup] tags = [
     :misc
-] skip = :(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
+] skip = :(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED[]) begin
     using ADTypes, Optimisers
 
     mse = MSELoss()
