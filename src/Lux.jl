@@ -193,6 +193,20 @@ export LuxOps
 @public Experimental
 @public set_dispatch_doctor_preferences!
 @public Serialization
+@public (
+    initialparameters,
+    initialstates,
+    parameterlength,
+    statelength,
+    outputsize,
+    update_state,
+    trainmode,
+    testmode,
+    setup,
+    apply,
+    replicate,
+    preserves_state_type,
+)
 
 # NNlib.jl reexports
 ## Functional API for common layers. Recommended to use the LuxLib versions
