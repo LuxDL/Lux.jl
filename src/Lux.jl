@@ -45,6 +45,21 @@ import LuxCore:
     preserves_state_type
 
 @reexport using LuxCore, LuxLib, MLDataDevices, WeightInitializers
+
+@public (
+    initialparameters,
+    initialstates,
+    parameterlength,
+    statelength,
+    outputsize,
+    update_state,
+    trainmode,
+    testmode,
+    setup,
+    apply,
+    replicate,
+    preserves_state_type,
+)
 using NNlib:
     NNlib,
     DenseConvDims,
