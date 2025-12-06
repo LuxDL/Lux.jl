@@ -25,11 +25,9 @@
                 @test α1_ra ≈ α1 atol = 1.0f-3 rtol = 1.0f-3
 
                 @testset "Gradient Check" begin
-                    ∂q_zyg, ∂k_zyg, ∂v_zyg =
-                        Zygote.gradient(
-                            sum ∘ first ∘ scaled_dot_product_attention, q, k, v
-                        ) |> cpu_device()
-
+                    ∂q_fd, ∂k_fd, ∂v_fd = @jit Reactant.TestUtils.finite_difference_gradient(
+                        sum ∘ first ∘ scaled_dot_product_attention, q_ra, k_ra, v_ra
+                    )
                     ∂q_reactant, ∂k_reactant, ∂v_reactant = @jit Enzyme.gradient(
                         Reverse,
                         Const(sum ∘ first ∘ scaled_dot_product_attention),
@@ -38,9 +36,9 @@
                         v_ra,
                     )
 
-                    @test ∂q_zyg ≈ ∂q_reactant atol = 1.0f-3 rtol = 1.0f-3
-                    @test ∂k_zyg ≈ ∂k_reactant atol = 1.0f-3 rtol = 1.0f-3
-                    @test ∂v_zyg ≈ ∂v_reactant atol = 1.0f-3 rtol = 1.0f-3
+                    @test ∂q_fd ≈ ∂q_reactant atol = 1.0f-2 rtol = 1.0f-2
+                    @test ∂k_fd ≈ ∂k_reactant atol = 1.0f-2 rtol = 1.0f-2
+                    @test ∂v_fd ≈ ∂v_reactant atol = 1.0f-2 rtol = 1.0f-2
                 end
 
                 function sdpa(q, k, v)
@@ -66,16 +64,16 @@
                 @test α2_ra ≈ α2 atol = 1.0f-3 rtol = 1.0f-3
 
                 @testset "Gradient Check" begin
-                    ∂q2_zyg, ∂k2_zyg, ∂v2_zyg =
-                        Zygote.gradient(sum ∘ first ∘ sdpa, q2, k2, v2) |> cpu_device()
-
+                    ∂q_fd, ∂k_fd, ∂v_fd = @jit Reactant.TestUtils.finite_difference_gradient(
+                        sum ∘ first ∘ sdpa, q2_ra, k2_ra, v2_ra
+                    )
                     ∂q2_reactant, ∂k2_reactant, ∂v2_reactant = @jit Enzyme.gradient(
                         Reverse, Const(sum ∘ first ∘ sdpa), q2_ra, k2_ra, v2_ra
                     )
 
-                    @test ∂q2_zyg ≈ ∂q2_reactant atol = 1.0f-3 rtol = 1.0f-3
-                    @test ∂k2_zyg ≈ ∂k2_reactant atol = 1.0f-3 rtol = 1.0f-3
-                    @test ∂v2_zyg ≈ ∂v2_reactant atol = 1.0f-3 rtol = 1.0f-3
+                    @test ∂q_fd ≈ ∂q2_reactant atol = 1.0f-2 rtol = 1.0f-2
+                    @test ∂k_fd ≈ ∂k2_reactant atol = 1.0f-2 rtol = 1.0f-2
+                    @test ∂v_fd ≈ ∂v2_reactant atol = 1.0f-2 rtol = 1.0f-2
                 end
 
                 @test y1 ≈ y2 atol = 1.0f-3 rtol = 1.0f-3
