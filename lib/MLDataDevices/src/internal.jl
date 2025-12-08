@@ -327,9 +327,9 @@ function array_adapt(
     f::F, ::Type{aType}, ::Type{Missing}, x::AbstractArray{T}
 ) where {F,aType,T}
     isbitstype(T) || error(
-        "Cannot move array with element type `$(T)` to device. Element type must be an " *
-        "`isbits` type (e.g., Number, Char, or custom immutable struct with only " *
-        "`isbits` fields).",
+        "Cannot move array with element type `$(T)` to device. Element type must be an \
+        `isbits` type (e.g., Number, Char, or custom immutable struct with only \
+        `isbits` fields)."
     )
     return f(x)
 end
@@ -338,18 +338,18 @@ function array_adapt(
     ::F, ::Type{aType}, ::Type{Nothing}, x::AbstractArray{T}
 ) where {F,aType,T}
     isbitstype(T) || error(
-        "Cannot move array with element type `$(T)` to device. Element type must be an " *
-        "`isbits` type (e.g., Number, Char, or custom immutable struct with only " *
-        "`isbits` fields).",
+        "Cannot move array with element type `$(T)` to device. Element type must be an \
+        `isbits` type (e.g., Number, Char, or custom immutable struct with only \
+        `isbits` fields)."
     )
     return aType(x)
 end
 
 function array_adapt(::F, ::Type{aType}, ::Type{E}, x::AbstractArray{T}) where {F,aType,E,T}
     isbitstype(T) || error(
-        "Cannot move array with element type `$(T)` to device. Element type must be an " *
-        "`isbits` type (e.g., Number, Char, or custom immutable struct with only " *
-        "`isbits` fields).",
+        "Cannot move array with element type `$(T)` to device. Element type must be an \
+        `isbits` type (e.g., Number, Char, or custom immutable struct with only \
+        `isbits` fields)."
     )
     return aType(x)
 end
