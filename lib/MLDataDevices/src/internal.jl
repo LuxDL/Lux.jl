@@ -286,7 +286,8 @@ end
 function to_rarray_internal end
 
 # Utility function to facilitate data transfer
-# For AbstractFloat and Complex{<:AbstractFloat}, we handle Missing and Nothing specially
+# For AbstractFloat and Complex{<:AbstractFloat} arrays, we provide specialized methods to avoid
+# ambiguity with the general fallback and to enable efficient type conversion when needed.
 function array_adapt(
     f::F, ::Type{aType}, ::Type{Missing}, x::AbstractArray{<:AbstractFloat}
 ) where {F,aType}
@@ -321,7 +322,7 @@ function array_adapt(
     return aType{Complex{T}}(x)
 end
 
-# Fallback for isbits types (e.g., Number, Char, or custom structs that are isbits)
+# Fallback for all other isbits types (e.g., Int32, Char, or custom immutable structs)
 function array_adapt(
     f::F, ::Type{aType}, ::Type{Missing}, x::AbstractArray{T}
 ) where {F,aType,T}
