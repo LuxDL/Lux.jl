@@ -33,8 +33,10 @@ end
     push!(EXTRA_PKGS, PackageSpec(; name="AMDGPU"))
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "oneapi") &&
     push!(EXTRA_PKGS, PackageSpec(; name="oneAPI"))
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "opencl") &&
-    append!(EXTRA_PKGS, [PackageSpec(; name="OpenCL"), PackageSpec(; name="pocl_jll")])
+(BACKEND_GROUP == "all" || BACKEND_GROUP == "opencl") && begin
+    push!(EXTRA_PKGS, PackageSpec(; name="OpenCL"))
+    push!(EXTRA_PKGS, PackageSpec(; name="pocl_jll"))
+end
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "metal") &&
     push!(EXTRA_PKGS, PackageSpec(; name="Metal"))
 

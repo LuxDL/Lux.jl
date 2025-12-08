@@ -24,7 +24,7 @@ if BACKEND_GROUP == "oneapi" || BACKEND_GROUP == "all"
 end
 
 if BACKEND_GROUP == "opencl" || BACKEND_GROUP == "all"
-    using OpenCL
+    using OpenCL, pocl_jll
 end
 
 DEVICES = [CPUDevice, CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice, OpenCLDevice, ReactantDevice]
