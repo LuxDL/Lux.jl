@@ -123,8 +123,8 @@
         oneapi_old = oneAPIDevice()
         @test oneapi_old isa oneAPIDevice{Missing}
         
-        oneapi_old = OpenCLDevice()
-        @test oneapi_old isa OpenCLDevice{Missing}
+        opencl_old = OpenCLDevice()
+        @test opencl_old isa OpenCLDevice{Missing}
 
         reactant_old = ReactantDevice()
         @test reactant_old isa ReactantDevice{Missing,Missing,Missing,Missing}

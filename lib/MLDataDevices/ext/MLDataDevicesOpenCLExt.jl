@@ -18,7 +18,7 @@ end
 
 MLDataDevices.loaded(::Union{OpenCLDevice,Type{<:OpenCLDevice}}) = true
 function MLDataDevices.functional(::Union{OpenCLDevice,Type{<:OpenCLDevice}})
-    return clfunctional =  try
+    return try
         cl.device()
         true
     catch
