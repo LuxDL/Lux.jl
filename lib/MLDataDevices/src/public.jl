@@ -22,7 +22,7 @@ struct oneAPIDevice{T<:EltypeAdaptorType} <: AbstractGPUDevice end
 oneAPIDevice() = oneAPIDevice{Missing}()
 
 struct OpenCLDevice{T<:EltypeAdaptorType} <: AbstractGPUDevice end
-OpenCLDevice() = CLDevice{Missing}()
+OpenCLDevice() = OpenCLDevice{Missing}()
 
 struct ReactantDevice{C,D,S,T<:EltypeAdaptorType,TN} <: AbstractAcceleratorDevice
     client::C

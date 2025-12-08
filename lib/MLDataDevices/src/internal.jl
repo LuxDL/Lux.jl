@@ -20,7 +20,7 @@ using ..MLDataDevices:
     loaded,
     functional
 
-for dev in (CPUDevice, MetalDevice, oneAPIDevice)
+for dev in (CPUDevice, MetalDevice, oneAPIDevice, OpenCLDevice)
     msg = "`device_id` is not applicable for `$dev`."
     @eval begin
         with_device(::Type{$dev}, ::Nothing) = $dev()
