@@ -349,4 +349,33 @@ function array_adapt(
     return aType(x)
 end
 
+# Fallback for isbits types (e.g., custom structs that are isbits)
+function array_adapt(
+    f::F, ::Type{aType}, ::Type{Missing}, x::AbstractArray{T}
+) where {F,aType,T}
+    isbitstype(T) || error(
+        "The function `array_adapt` exists, but no method is defined for this " *
+        "combination of argument types.",
+    )
+    return f(x)
+end
+
+function array_adapt(
+    ::F, ::Type{aType}, ::Type{Nothing}, x::AbstractArray{T}
+) where {F,aType,T}
+    isbitstype(T) || error(
+        "The function `array_adapt` exists, but no method is defined for this " *
+        "combination of argument types.",
+    )
+    return aType(x)
+end
+
+function array_adapt(::F, ::Type{aType}, ::Type{E}, x::AbstractArray{T}) where {F,aType,E,T}
+    isbitstype(T) || error(
+        "The function `array_adapt` exists, but no method is defined for this " *
+        "combination of argument types.",
+    )
+    return aType(x)
+end
+
 end
