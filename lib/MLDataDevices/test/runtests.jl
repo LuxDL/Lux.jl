@@ -33,6 +33,9 @@ end
     push!(EXTRA_PKGS, PackageSpec(; name="AMDGPU"))
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "oneapi") &&
     push!(EXTRA_PKGS, PackageSpec(; name="oneAPI"))
+(BACKEND_GROUP == "all" || BACKEND_GROUP == "opencl") &&
+    push!(EXTRA_PKGS, PackageSpec(; name="OpenCL"))
+    push!(EXTRA_PKGS, PackageSpec(; name="pocl_jll"))
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "metal") &&
     push!(EXTRA_PKGS, PackageSpec(; name="Metal"))
 
@@ -46,7 +49,7 @@ end
 
 @testset "MLDataDevices Tests" begin
     all_files = map(
-        Base.Fix2(*, "_tests.jl"), ["reactant", "cuda", "amdgpu", "metal", "oneapi"]
+        Base.Fix2(*, "_tests.jl"), ["reactant", "cuda", "amdgpu", "metal", "oneapi", "opencl"]
     )
     file_names = if BACKEND_GROUP == "all"
         all_files

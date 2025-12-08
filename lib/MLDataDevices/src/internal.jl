@@ -12,6 +12,7 @@ using ..MLDataDevices:
     AMDGPUDevice,
     MetalDevice,
     oneAPIDevice,
+    OpenCLDevice,
     ReactantDevice,
     UnknownDevice,
     supported_gpu_backends,
@@ -30,7 +31,7 @@ for dev in (CPUDevice, MetalDevice, oneAPIDevice)
     end
 end
 
-for name in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI)
+for name in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI, :OpenCL)
     tpkg = name === :CPU ? "" : string(name)
     ldev = Symbol(name, :Device)
     @eval begin
@@ -47,6 +48,7 @@ for T in (
     AMDGPUDevice{Nothing},
     MetalDevice,
     oneAPIDevice,
+    OpenCLDevice,
     ReactantDevice,
 )
     @eval get_device_id(::$(T)) = nothing
@@ -116,7 +118,8 @@ function get_gpu_device(; force::Bool)
         a. `CUDA.jl` and `cuDNN.jl` (or just `LuxCUDA.jl`) for  NVIDIA CUDA Support.
         b. `AMDGPU.jl` for AMD GPU ROCM Support.
         c. `Metal.jl` for Apple Metal GPU Support. (Experimental)
-        d. `oneAPI.jl` for Intel oneAPI GPU Support. (Experimental)""" maxlog = 1
+        d. `oneAPI.jl` for Intel oneAPI GPU Support. (Experimental)
+        d. `OpenCL.jl` for OpenCL support. (Experimental)""" maxlog = 1
     return CPUDevice
 end
 
