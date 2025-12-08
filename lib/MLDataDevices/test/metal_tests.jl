@@ -132,6 +132,29 @@ using FillArrays, Zygote  # Extensions
         y = device(x)
         @test x === y
     end
+
+    @testset "IsBits Types" begin
+        # Test that custom isbits types can be transferred to GPU
+        struct SimpleBitsMetal
+            field::Int32
+        end
+
+        isbits_array = [SimpleBitsMetal(1), SimpleBitsMetal(2), SimpleBitsMetal(3)]
+        isbits_array_xpu = device(isbits_array)
+
+        if MLDataDevices.functional(MetalDevice)
+            @test isbits_array_xpu isa MtlArray{SimpleBitsMetal}
+            @test Array(isbits_array_xpu) == isbits_array
+
+            # Test transfer back to CPU
+            isbits_array_cpu = cpu_device()(isbits_array_xpu)
+            @test isbits_array_cpu isa Array{SimpleBitsMetal}
+            @test isbits_array_cpu == isbits_array
+        else
+            @test isbits_array_xpu isa Array{SimpleBitsMetal}
+            @test isbits_array_xpu == isbits_array
+        end
+    end
 end
 
 @testset "Functions" begin
