@@ -286,70 +286,20 @@ end
 function to_rarray_internal end
 
 # Utility function to facilitate data transfer
-function array_adapt(
-    f::F, ::Type{aType}, ::Type{Missing}, x::AbstractArray{<:AbstractFloat}
-) where {F,aType}
-    return f(x)
-end
-function array_adapt(
-    f::F, ::Type{aType}, ::Type{Missing}, x::AbstractArray{<:Complex{<:AbstractFloat}}
-) where {F,aType}
-    return f(x)
-end
-function array_adapt(
-    f::F, ::Type{aType}, ::Type{Missing}, x::AbstractArray{<:Number}
-) where {F,aType}
-    return f(x)
-end
-function array_adapt(
-    f::F, ::Type{aType}, ::Type{Missing}, x::AbstractArray{<:AbstractChar}
-) where {F,aType}
-    return f(x)
-end
-
-function array_adapt(
-    ::F, ::Type{aType}, ::Type{Nothing}, x::AbstractArray{<:AbstractFloat}
-) where {F,aType}
-    return aType(x)
-end
-function array_adapt(
-    ::F, ::Type{aType}, ::Type{Nothing}, x::AbstractArray{<:Complex{<:AbstractFloat}}
-) where {F,aType}
-    return aType(x)
-end
-function array_adapt(
-    ::F, ::Type{aType}, ::Type{Nothing}, x::AbstractArray{<:Number}
-) where {F,aType}
-    return aType(x)
-end
-function array_adapt(
-    ::F, ::Type{aType}, ::Type{Nothing}, x::AbstractArray{<:AbstractChar}
-) where {F,aType}
-    return aType(x)
-end
-
+# For AbstractFloat and Complex{<:AbstractFloat}, we keep specialized methods for type conversion
+# when a specific type parameter is provided
 function array_adapt(
     ::F, ::Type{aType}, ::Type{T}, x::AbstractArray{<:AbstractFloat}
-) where {F,aType,T}
+) where {F,aType,T<:AbstractFloat}
     return aType{T}(x)
 end
 function array_adapt(
     ::F, ::Type{aType}, ::Type{T}, x::AbstractArray{<:Complex{<:AbstractFloat}}
-) where {F,aType,T}
+) where {F,aType,T<:AbstractFloat}
     return aType{Complex{T}}(x)
 end
-function array_adapt(
-    ::F, ::Type{aType}, ::Type{T}, x::AbstractArray{<:Number}
-) where {F,aType,T}
-    return aType(x)
-end
-function array_adapt(
-    ::F, ::Type{aType}, ::Type{T}, x::AbstractArray{<:AbstractChar}
-) where {F,aType,T}
-    return aType(x)
-end
 
-# Fallback for isbits types (e.g., custom structs that are isbits)
+# Fallback for isbits types (e.g., Number, Char, or custom structs that are isbits)
 function array_adapt(
     f::F, ::Type{aType}, ::Type{Missing}, x::AbstractArray{T}
 ) where {F,aType,T}
