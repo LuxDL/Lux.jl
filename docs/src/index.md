@@ -83,7 +83,7 @@ Reactant.set_default_backend("cpu")
 const dev = reactant_device()
 ```
 
-```julia [GPU Backend]
+```julia [GPU Backend (CUDA / ROCM)]
 using Reactant, Lux
 Reactant.set_default_backend("gpu")
 
@@ -93,6 +93,13 @@ const dev = reactant_device()
 ```julia [TPU Backend]
 using Reactant, Lux
 Reactant.set_default_backend("tpu")
+
+const dev = reactant_device()
+```
+
+```julia [Tenstorrent Backend (Experimental)]
+using Reactant, Lux
+Reactant.set_default_backend("tt")
 
 const dev = reactant_device()
 ```
