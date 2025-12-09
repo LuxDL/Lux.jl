@@ -186,9 +186,15 @@ Lux.jl supports XLA compilation for CPU, GPU, and TPU using
 
     Using accelerators via Reactant and XLA is the preferred way to use GPUs with Lux.jl.
 
+!!! danger "AMD GPU Users"
+
+    For AMD GPUs, we **strongly recommend using Reactant** instead of native AMDGPU.jl
+    support. Native AMDGPU.jl support is experimental with known issues including deadlocks.
+    Reactant provides superior performance and reliability for AMD hardware.
+
 GPU Support for Lux.jl requires loading additional packages:
 
 - [`LuxCUDA.jl`](https://github.com/LuxDL/LuxCUDA.jl) for CUDA support.
-- [`AMDGPU.jl`](https://github.com/JuliaGPU/AMDGPU.jl) for AMDGPU support.
+- [`AMDGPU.jl`](https://github.com/JuliaGPU/AMDGPU.jl) for AMDGPU support (not recommended, use Reactant instead).
 - [`Metal.jl`](https://github.com/JuliaGPU/Metal.jl) for Apple Metal support.
 - [`oneAPI.jl`](https://github.com/JuliaGPU/oneAPI.jl) for oneAPI support.

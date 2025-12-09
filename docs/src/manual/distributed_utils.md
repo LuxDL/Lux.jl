@@ -97,5 +97,6 @@ And that's pretty much it!
 
 1. Currently we don't run tests with CUDA or ROCM aware MPI, use those features at your own
    risk. We are working on adding tests for these features.
-2. AMDGPU support is mostly experimental and causes deadlocks in certain situations, this is
-   being investigated. If you have a minimal reproducer for this, please open an issue.
+2. Native AMDGPU.jl support is experimental and causes deadlocks in certain situations. **For
+   AMD GPUs, we strongly recommend using Reactant instead of native AMDGPU.jl for distributed
+   training.** If you have a minimal reproducer for AMDGPU.jl issues, please open an issue.

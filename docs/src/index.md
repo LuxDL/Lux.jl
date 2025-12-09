@@ -83,7 +83,7 @@ Reactant.set_default_backend("cpu")
 const dev = reactant_device()
 ```
 
-```julia [GPU Backend]
+```julia [GPU Backend (CUDA / ROCM)]
 using Reactant, Lux
 Reactant.set_default_backend("gpu")
 
@@ -97,6 +97,13 @@ Reactant.set_default_backend("tpu")
 const dev = reactant_device()
 ```
 
+```julia [Tenstorrent Backend (Experimental)]
+using Reactant, Lux
+Reactant.set_default_backend("tt")
+
+const dev = reactant_device()
+```
+
 :::
 
 ## Want GPU Support?
@@ -105,6 +112,11 @@ const dev = reactant_device()
 
     In almost all cases, we recommend using Reactant.jl for GPU support.
 
+!!! warning "AMD GPU Support"
+
+    For AMD GPUs, we **strongly recommend using Reactant** instead of AMDGPU.jl directly.
+    Native AMDGPU.jl support is experimental and has known limitations including deadlocks
+    in certain situations. Reactant provides better performance and reliability for AMD GPUs.
 
 Install the following package(s):
 
