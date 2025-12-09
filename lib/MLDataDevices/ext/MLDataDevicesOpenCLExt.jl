@@ -5,7 +5,7 @@ using GPUArrays: GPUArrays
 using MLDataDevices: MLDataDevices, Internal, OpenCLDevice, reset_gpu_device!
 using OpenCL: OpenCL, cl, CLArray
 
-const SUPPORTS_FP64 = Dict{cl.Device,Bool}()
+const SUPPORTS_FP64 = Dict{cl.Device, Bool}()
 
 function __init__()
     reset_gpu_device!()
@@ -16,14 +16,14 @@ function __init__()
     return nothing
 end
 
-MLDataDevices.loaded(::Union{OpenCLDevice,Type{<:OpenCLDevice}}) = true
-function MLDataDevices.functional(::Union{OpenCLDevice,Type{<:OpenCLDevice}})
+MLDataDevices.loaded(::Union{OpenCLDevice, Type{<:OpenCLDevice}}) = true
+function MLDataDevices.functional(::Union{OpenCLDevice, Type{<:OpenCLDevice}})
     return try
         cl.device()
         true
     catch
         false
-    end     
+    end
 end
 
 # Default RNG
@@ -59,7 +59,7 @@ for (T1, T2) in ((Float64, Float32), (ComplexF64, ComplexF32))
 
     @eval function Adapt.adapt_storage(::OpenCLDevice{Nothing}, x::AbstractArray{$(T1)})
         MLDataDevices.get_device_type(x) <: OpenCLDevice && return x
-        if !SUPPORTS_FP64[cl.device()] && $(T1) <: Union{Float64,ComplexF64}
+        if !SUPPORTS_FP64[cl.device()] && $(T1) <: Union{Float64, ComplexF64}
             throw(
                 ArgumentError(
                     "FP64 is not supported on this device and eltype=nothing was specified"
@@ -70,8 +70,8 @@ for (T1, T2) in ((Float64, Float32), (ComplexF64, ComplexF32))
     end
 
     @eval function Adapt.adapt_storage(
-        ::OpenCLDevice{T}, x::AbstractArray{$(T1)}
-    ) where {T<:AbstractFloat}
+            ::OpenCLDevice{T}, x::AbstractArray{$(T1)}
+        ) where {T <: AbstractFloat}
         MLDataDevices.get_device_type(x) <: OpenCLDevice && eltype(x) == T && return x
         if T === Float64 && !SUPPORTS_FP64[cl.device()]
             throw(ArgumentError("FP64 is not supported on this device"))
@@ -92,7 +92,7 @@ function Adapt.adapt_storage(::OpenCLDevice{Nothing}, x::AbstractArray)
     return opencl_array_adapt(Nothing, x)
 end
 
-function Adapt.adapt_storage(::OpenCLDevice{T}, x::AbstractArray) where {T<:AbstractFloat}
+function Adapt.adapt_storage(::OpenCLDevice{T}, x::AbstractArray) where {T <: AbstractFloat}
     MLDataDevices.get_device_type(x) <: OpenCLDevice && eltype(x) == T && return x
     if T === Float64 && !SUPPORTS_FP64[cl.device()]
         throw(ArgumentError("FP64 is not supported on this device"))
@@ -101,4 +101,3 @@ function Adapt.adapt_storage(::OpenCLDevice{T}, x::AbstractArray) where {T<:Abst
 end
 
 end
-
