@@ -33,81 +33,81 @@ concurrency:
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 
 jobs:
-  tutorial-cuda:
-    if: ${{ !contains(github.event.head_commit.message, '[skip docs]') }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger CUDA Tutorial Build
-        id: buildkite-build
-        uses: buildkite/trigger-pipeline-action@v2.4.1
-        with:
-          buildkite_api_access_token: ${{ secrets.BUILDKITE_TOKEN }}
-          pipeline: "julialang/lux-dot-jl"
-          commit: ${{ github.event.pull_request.head.sha }}
-          branch: ${{ github.event.pull_request.head.ref }}
-          message: |
-            Triggered from PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}
-          send_pull_request: true
-          pull_request_base_branch: ${{ github.event.pull_request.base.ref }}
-          build_env_vars: >-
-            {
-              "LUX_CUDA_TUTORIALS": "1",
-              "GITHUB_PR_NUMBER": "${{ github.event.pull_request.number }}"
-            }
+  # tutorial-cuda:
+  #   if: ${{ !contains(github.event.head_commit.message, '[skip docs]') }}
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Trigger CUDA Tutorial Build
+  #       id: buildkite-build
+  #       uses: buildkite/trigger-pipeline-action@v2.4.1
+  #       with:
+  #         buildkite_api_access_token: ${{ secrets.BUILDKITE_TOKEN }}
+  #         pipeline: "julialang/lux-dot-jl"
+  #         commit: ${{ github.event.pull_request.head.sha }}
+  #         branch: ${{ github.event.pull_request.head.ref }}
+  #         message: |
+  #           Triggered from PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}
+  #         send_pull_request: true
+  #         pull_request_base_branch: ${{ github.event.pull_request.base.ref }}
+  #         build_env_vars: >-
+  #           {
+  #             "LUX_CUDA_TUTORIALS": "1",
+  #             "GITHUB_PR_NUMBER": "${{ github.event.pull_request.number }}"
+  #           }
 
-      - name: Download CUDA Tutorial Artifacts
-        uses: EnricoMi/download-buildkite-artifact-action@v1
-        with:
-          buildkite_token: ${{ secrets.BUILDKITE_TOKEN }}
-          buildkite_build_url: ${{ steps.buildkite-build.outputs.url }}
-          ignore_build_states: blocked,canceled,skipped,not_run
-          ignore_job_states: timed_out,failed
-          output_path: artifacts
-          poll_interval: 30
+  #     - name: Download CUDA Tutorial Artifacts
+  #       uses: EnricoMi/download-buildkite-artifact-action@v1
+  #       with:
+  #         buildkite_token: ${{ secrets.BUILDKITE_TOKEN }}
+  #         buildkite_build_url: ${{ steps.buildkite-build.outputs.url }}
+  #         ignore_build_states: blocked,canceled,skipped,not_run
+  #         ignore_job_states: timed_out,failed
+  #         output_path: artifacts
+  #         poll_interval: 30
 
-      - name: "Combine CUDA Tutorial Artifacts"
-        run: |
-          set -e
+  #     - name: "Combine CUDA Tutorial Artifacts"
+  #       run: |
+  #         set -e
 
-          SOURCE_DIR="artifacts"
-          OUTPUT_DIR="artifacts_combined"
+  #         SOURCE_DIR="artifacts"
+  #         OUTPUT_DIR="artifacts_combined"
 
-          mkdir -p "$OUTPUT_DIR"
+  #         mkdir -p "$OUTPUT_DIR"
 
-          # Check if source directory exists
-          if [ ! -d "$SOURCE_DIR" ]; then
-            echo "Error: Source directory '$SOURCE_DIR' not found"
-            exit 1
-          fi
+  #         # Check if source directory exists
+  #         if [ ! -d "$SOURCE_DIR" ]; then
+  #           echo "Error: Source directory '$SOURCE_DIR' not found"
+  #           exit 1
+  #         fi
 
-          BUILD_DIRS=$(find "$SOURCE_DIR" -mindepth 1 -type d -name "Tutorial-Build-*")
+  #         BUILD_DIRS=$(find "$SOURCE_DIR" -mindepth 1 -type d -name "Tutorial-Build-*")
 
-          [ -n "$BUILD_DIRS" ] || { echo "Error: No Tutorial-Build directories found"; exit 1; }
+  #         [ -n "$BUILD_DIRS" ] || { echo "Error: No Tutorial-Build directories found"; exit 1; }
 
-          echo "$BUILD_DIRS" | while read dir; do
-            echo "Processing: $dir"
-            rsync -av --ignore-existing "$dir/" "$OUTPUT_DIR/"
-          done
+  #         echo "$BUILD_DIRS" | while read dir; do
+  #           echo "Processing: $dir"
+  #           rsync -av --ignore-existing "$dir/" "$OUTPUT_DIR/"
+  #         done
 
-          # Verify
-          [ "$(ls -A $OUTPUT_DIR)" ] || { echo "Error: Merge produced empty directory"; exit 1; }
+  #         # Verify
+  #         [ "$(ls -A $OUTPUT_DIR)" ] || { echo "Error: Merge produced empty directory"; exit 1; }
 
-          echo "✓ Merge complete!"
-        shell: bash
+  #         echo "✓ Merge complete!"
+  #       shell: bash
 
-      - name: Upload Tutorial Artifacts
-        uses: actions/upload-artifact@v5
-        with:
-          name: "tutorial-cuda"
-          path: |
-            artifacts_combined/docs/src/tutorials/beginner/**/*
-            artifacts_combined/docs/src/tutorials/intermediate/**/*
-            artifacts_combined/docs/src/tutorials/advanced/**/*
-            artifacts_combined/tutorial_deps/*
-            artifacts_combined/**/*.cov
-            artifacts_combined/docs/src/public/examples/**/*
-          retention-days: 90
-          if-no-files-found: error
+  #     - name: Upload Tutorial Artifacts
+  #       uses: actions/upload-artifact@v5
+  #       with:
+  #         name: "tutorial-cuda"
+  #         path: |
+  #           artifacts_combined/docs/src/tutorials/beginner/**/*
+  #           artifacts_combined/docs/src/tutorials/intermediate/**/*
+  #           artifacts_combined/docs/src/tutorials/advanced/**/*
+  #           artifacts_combined/tutorial_deps/*
+  #           artifacts_combined/**/*.cov
+  #           artifacts_combined/docs/src/public/examples/**/*
+  #         retention-days: 90
+  #         if-no-files-found: error
 
   tutorial-cpu:
     if: ${{ !contains(github.event.head_commit.message, '[skip docs]') }}
@@ -115,7 +115,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [0, 1, 2, 3]
+        group: [0, 1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@v6
       - name: Collect Workflow Telemetry
@@ -133,7 +133,7 @@ jobs:
         run: julia --color=yes --project=docs --threads=auto docs/tutorials.jl
         env:
           TUTORIAL_BACKEND_GROUP: "CPU"
-          BUILDKITE_PARALLEL_JOB_COUNT: 4
+          BUILDKITE_PARALLEL_JOB_COUNT: 6
           BUILDKITE_PARALLEL_JOB: ${{ matrix.group }}
           LD_LIBRARY_PATH: ""
       - name: Upload Tutorial Artifacts
@@ -153,7 +153,8 @@ jobs:
   documentation:
     if: ${{ !contains(github.event.head_commit.message, '[skip docs]') }}
     runs-on: ubuntu-latest
-    needs: [tutorial-cpu, tutorial-cuda]
+    # needs: [tutorial-cpu, tutorial-cuda]
+    needs: [tutorial-cpu]
     steps:
       - uses: actions/checkout@v6
         with:
