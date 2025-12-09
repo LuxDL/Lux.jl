@@ -38,5 +38,6 @@ hardswish
 tanhshrink
 trelu
 gelu_tanh
+gelu_sigmoid
 gelu_erf
 ```
