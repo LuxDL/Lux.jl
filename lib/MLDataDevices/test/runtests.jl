@@ -50,7 +50,8 @@ end
 
 @testset "MLDataDevices Tests" begin
     all_files = map(
-        Base.Fix2(*, "_tests.jl"), ["reactant", "cuda", "amdgpu", "metal", "oneapi", "opencl"]
+        Base.Fix2(*, "_tests.jl"),
+        ["reactant", "cuda", "amdgpu", "metal", "oneapi", "opencl"],
     )
     file_names = if BACKEND_GROUP == "all"
         all_files

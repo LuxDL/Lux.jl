@@ -122,7 +122,7 @@
 
         oneapi_old = oneAPIDevice()
         @test oneapi_old isa oneAPIDevice{Missing}
-        
+
         opencl_old = OpenCLDevice()
         @test opencl_old isa OpenCLDevice{Missing}
 

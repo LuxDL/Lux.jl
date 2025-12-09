@@ -27,7 +27,15 @@ if BACKEND_GROUP == "opencl" || BACKEND_GROUP == "all"
     using OpenCL, pocl_jll
 end
 
-DEVICES = [CPUDevice, CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice, OpenCLDevice, ReactantDevice]
+DEVICES = [
+    CPUDevice,
+    CUDADevice,
+    AMDGPUDevice,
+    MetalDevice,
+    oneAPIDevice,
+    OpenCLDevice,
+    ReactantDevice,
+]
 
 freed_if_can_be_freed(x) = freed_if_can_be_freed(get_device_type(x), x)
 freed_if_can_be_freed(::Type{CPUDevice}, x) = true

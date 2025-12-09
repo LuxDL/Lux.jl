@@ -142,7 +142,7 @@ end
         CUDADevice(),
         MetalDevice(),
         oneAPIDevice(),
-        OpenCLDevice()
+        OpenCLDevice(),
     )
         backend_name = if backend isa Symbol
             string(backend)

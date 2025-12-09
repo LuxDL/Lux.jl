@@ -199,4 +199,3 @@ end
         ) MLDataDevices.set_device!(OpenCLDevice, nothing, 1)
     end
 end
-
