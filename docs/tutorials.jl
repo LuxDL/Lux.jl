@@ -4,7 +4,7 @@ const BEGINNER_TUTORIALS = [
     ("Basics",                  "CPU",   true),
     ("PolynomialFitting",       "CUDA",  true),
     ("SimpleRNN",               "CUDA",  true),
-    ("SimpleChains",            "CUDA",  true),
+    ("SimpleChains",            "CUDA",  false),
     ("OptimizationIntegration", "CPU",   true),
 ]
 const INTERMEDIATE_TUTORIALS = [
