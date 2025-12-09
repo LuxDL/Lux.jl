@@ -17,12 +17,7 @@ end
 
 MLDataDevices.loaded(::Union{OpenCLDevice,Type{<:OpenCLDevice}}) = true
 function MLDataDevices.functional(::Union{OpenCLDevice,Type{<:OpenCLDevice}})
-    return try
-        cl.device()
-        true
-    catch
-        false
-    end
+    return !isempty(cl.platforms()) && !isempty(cl.devices(cl.platform()))
 end
 
 # Default RNG

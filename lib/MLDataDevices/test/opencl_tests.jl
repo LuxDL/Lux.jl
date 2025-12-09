@@ -11,9 +11,7 @@ end
 
 using OpenCL, pocl_jll
 
-try
-    cl.device()
-catch
+if !MLDataDevices.functional(OpenCLDevice)
     @warn "OpenCL.jl is not functional. Skipping OpenCL tests."
     exit()
 end
