@@ -15,6 +15,12 @@ supported_gpu_backends()
     automatically select Reactant backend if available. Additionally to force Reactant to
     use `gpu`, you can run `Reactant.set_default_backend("gpu")` (this is automatic).
 
+!!! danger "AMD GPU Support"
+
+    For AMD GPUs, we **strongly recommend using Reactant** instead of native AMDGPU.jl.
+    Native AMDGPU.jl support is experimental with known limitations including deadlocks
+    in distributed training. Use `reactant_device()` with Reactant for better AMD GPU support.
+
 !!! danger "Metal Support"
 
     Support for Metal GPUs should be considered extremely experimental at this point.
