@@ -1,23 +1,23 @@
 #! format: off
 const BEGINNER_TUTORIALS = [
-    # tutorial name             device   should_run?
-    ("Basics",                  "CPU",   true),
-    ("PolynomialFitting",       "CUDA",  true),
-    ("SimpleRNN",               "CUDA",  true),
-    ("SimpleChains",            "CUDA",  false),
-    ("OptimizationIntegration", "CPU",   true),
+    # tutorial name             device  should_run?
+    ("Basics",                  "CPU",  true),
+    ("PolynomialFitting",       "CPU",  true),
+    ("SimpleRNN",               "CPU",  true),
+    ("SimpleChains",            "CPU",  false),
+    ("OptimizationIntegration", "CPU",  true),
 ]
 const INTERMEDIATE_TUTORIALS = [
-    ("NeuralODE",               "CUDA", false),
+    ("NeuralODE",               "CPU",  false),
     ("BayesianNN",              "CPU",  false),
-    ("HyperNet",                "CUDA", true),
-    ("PINN2DPDE",               "CUDA", true),
-    ("ConvolutionalVAE",        "CUDA", true),
-    ("GCN_Cora",                "CUDA", true),
+    ("HyperNet",                "CPU",  true),
+    ("PINN2DPDE",               "CPU",  true),
+    ("ConvolutionalVAE",        "CPU",  true),
+    ("GCN_Cora",                "CPU",  true),
     ("RealNVP",                 "CPU",  false),
     ("LSTMEncoderDecoder",      "CPU",  true),
     ("CIFAR10/conv_mixer.jl",   "CPU",  false),
-    ("CIFAR10/simple_cnn.jl",   "CUDA", false),
+    ("CIFAR10/simple_cnn.jl",   "CPU",  false),
     ("CIFAR10/resnet20.jl",     "CPU",  false),
 ]
 const ADVANCED_TUTORIALS = [
@@ -112,7 +112,7 @@ asyncmap(TUTORIALS_BUILDING; ntasks=NTASKS) do (i, (d, (input_path, should_run))
 
     withenv(
         "JULIA_NUM_THREADS" => "$(Threads.nthreads())",
-        "JULIA_CUDA_HARD_MEMORY_LIMIT" => "$(100 ÷ NTASKS)%",
+        "JULIA_CPU_HARD_MEMORY_LIMIT" => "$(100 ÷ NTASKS)%",
         "JULIA_PKG_PRECOMPILE_AUTO" => "0",
         "JULIA_DEBUG" => "Literate",
     ) do
