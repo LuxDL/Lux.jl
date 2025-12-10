@@ -1,3 +1,7 @@
+if BACKEND_GROUP == "opencl" || BACKEND_GROUP == "all"
+    using OpenCL, pocl_jll
+end
+
 using MLDataDevices, MLUtils, Test
 
 const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "none"))
@@ -21,10 +25,6 @@ end
 
 if BACKEND_GROUP == "oneapi" || BACKEND_GROUP == "all"
     using oneAPI
-end
-
-if BACKEND_GROUP == "opencl" || BACKEND_GROUP == "all"
-    using OpenCL, pocl_jll
 end
 
 DEVICES = [

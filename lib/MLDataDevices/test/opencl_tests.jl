@@ -1,3 +1,5 @@
+using OpenCL, pocl_jll
+
 using MLDataDevices, Random, Test
 using ArrayInterface: parameterless_type
 
@@ -8,8 +10,6 @@ using ArrayInterface: parameterless_type
     @test_throws MLDataDevices.Internal.DeviceSelectionException gpu_device(; force=true)
     @test_throws Exception default_device_rng(OpenCLDevice())
 end
-
-using OpenCL, pocl_jll
 
 if !MLDataDevices.functional(OpenCLDevice)
     @warn "OpenCL.jl is not functional. Skipping OpenCL tests."
