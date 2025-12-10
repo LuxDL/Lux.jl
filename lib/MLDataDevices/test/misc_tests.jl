@@ -137,10 +137,12 @@ end
         :AMDGPU,
         :oneAPI,
         :Metal,
+        :OpenCL,
         AMDGPUDevice(),
         CUDADevice(),
         MetalDevice(),
         oneAPIDevice(),
+        OpenCLDevice(),
     )
         backend_name = if backend isa Symbol
             string(backend)

@@ -21,7 +21,7 @@ export gpu_device, cpu_device
 export xla_device, reactant_device
 
 export CPUDevice
-export CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice
+export CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice, OpenCLDevice
 export XLADevice, ReactantDevice
 export get_device, get_device_type
 

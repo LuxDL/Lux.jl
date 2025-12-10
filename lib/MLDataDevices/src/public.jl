@@ -21,6 +21,9 @@ MetalDevice() = MetalDevice{Missing}()
 struct oneAPIDevice{T<:EltypeAdaptorType} <: AbstractGPUDevice end
 oneAPIDevice() = oneAPIDevice{Missing}()
 
+struct OpenCLDevice{T<:EltypeAdaptorType} <: AbstractGPUDevice end
+OpenCLDevice() = OpenCLDevice{Missing}()
+
 struct ReactantDevice{C,D,S,T<:EltypeAdaptorType,TN} <: AbstractAcceleratorDevice
     client::C
     device::D
@@ -49,6 +52,7 @@ Base.eltype(::CUDADevice{D,T}) where {D,T} = T
 Base.eltype(::AMDGPUDevice{D,T}) where {D,T} = T
 Base.eltype(::MetalDevice{T}) where {T} = T
 Base.eltype(::oneAPIDevice{T}) where {T} = T
+Base.eltype(::OpenCLDevice{T}) where {T} = T
 Base.eltype(::ReactantDevice{C,D,S,T}) where {C,D,S,T} = T
 
 # Helper functions to create devices with specific eltypes
@@ -76,6 +80,12 @@ with_eltype(::oneAPIDevice, ::Nothing) = oneAPIDevice{Nothing}()
 with_eltype(::oneAPIDevice, ::Missing) = oneAPIDevice{Missing}()
 function with_eltype(::oneAPIDevice, ::Type{T}) where {T<:AbstractFloat}
     return oneAPIDevice{T}()
+end
+
+with_eltype(::OpenCLDevice, ::Nothing) = OpenCLDevice{Nothing}()
+with_eltype(::OpenCLDevice, ::Missing) = OpenCLDevice{Missing}()
+function with_eltype(::OpenCLDevice, ::Type{T}) where {T<:AbstractFloat}
+    return OpenCLDevice{T}()
 end
 
 function with_eltype(dev::ReactantDevice{C,D,S,<:Any,TN}, ::Missing) where {C,D,S,TN}
@@ -141,12 +151,13 @@ Checks if the trigger package for the device is loaded. Trigger packages are as 
   - `AMDGPU.jl` for AMD GPU ROCM Support.
   - `Metal.jl` for Apple Metal GPU Support.
   - `oneAPI.jl` for Intel oneAPI GPU Support.
+  - `OpenCL.jl` for OpenCL support.
 """
 loaded(x) = false
 loaded(::Union{CPUDevice,Type{<:CPUDevice}}) = true
 
 # Order is important here
-const GPU_DEVICES = (CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice)
+const GPU_DEVICES = (CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice, OpenCLDevice)
 
 const GPU_DEVICE = Ref{Union{Nothing,AbstractDevice}}(nothing)
 
@@ -204,13 +215,13 @@ Selects GPU device based on the following criteria:
     the device.
     - `missing` (default): Device specific. For `CUDADevice` this calls `CUDA.cu(x)`,
       for `AMDGPUDevice` this calls `AMDGPU.roc(x)`, for `MetalDevice` this calls
-      `Metal.mtl(x)`, for `oneAPIDevice` this calls `oneArray(x)`.
+      `Metal.mtl(x)`, for `oneAPIDevice` this calls `oneArray(x)`, for `OpenCLDevice` this calls `CLArray(x)`.
     - `nothing`: Preserves the original element type.
     - `Type{<:AbstractFloat}`: Converts floating-point arrays to the specified type.
 
 !!! warning
 
-    `device_id` is only applicable for `CUDA` and `AMDGPU` backends. For `Metal`, `oneAPI`
+    `device_id` is only applicable for `CUDA` and `AMDGPU` backends. For `Metal`, `oneAPI`, `OpenCL`
     and `CPU` backends, `device_id` is ignored and a warning is printed.
 
 !!! warning
@@ -475,6 +486,8 @@ function set_device!(::Type{T}, dev_or_id) where {T<:AbstractDevice}
         @warn "Support for Multi Device Metal hasn't been implemented yet. Ignoring the device setting."
     T === oneAPIDevice &&
         @warn "Support for Multi Device oneAPI hasn't been implemented yet. Ignoring the device setting."
+    T === OpenCLDevice &&
+        @warn "Support for Multi Device OpenCL hasn't been implemented yet. Ignoring the device setting."
     T === CPUDevice &&
         @warn "Setting device for `CPUDevice` doesn't make sense. Ignoring the device setting."
     T === ReactantDevice &&

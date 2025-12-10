@@ -26,6 +26,7 @@ jobs:
           - windows-latest
         group:
           - cpu
+          - opencl
           - reactant
     uses: ./.github/workflows/CommonCI.yml
     with:
@@ -40,6 +41,7 @@ jobs:
       matrix:
         group:
           - cpu
+          - opencl
           - reactant
     uses: ./.github/workflows/CommonCI.yml
     with:
