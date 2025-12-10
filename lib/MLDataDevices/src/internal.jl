@@ -119,7 +119,7 @@ function get_gpu_device(; force::Bool)
         b. `AMDGPU.jl` for AMD GPU ROCM Support.
         c. `Metal.jl` for Apple Metal GPU Support. (Experimental)
         d. `oneAPI.jl` for Intel oneAPI GPU Support. (Experimental)
-        d. `OpenCL.jl` for OpenCL support. (Experimental)""" maxlog = 1
+        e. `OpenCL.jl` for OpenCL support. (Experimental)""" maxlog = 1
     return CPUDevice
 end
 
