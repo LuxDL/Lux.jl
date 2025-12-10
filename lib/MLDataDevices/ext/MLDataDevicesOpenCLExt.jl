@@ -2,8 +2,8 @@ module MLDataDevicesOpenCLExt
 
 using Adapt: Adapt
 using GPUArrays: GPUArrays
-using MLDataDevices: MLDataDevices, Internal, OpenCLDevice, reset_gpu_device!
 using OpenCL: OpenCL, cl, CLArray
+using MLDataDevices: MLDataDevices, Internal, OpenCLDevice, reset_gpu_device!
 
 const SUPPORTS_FP64 = Dict{cl.Device,Bool}()
 
@@ -17,7 +17,7 @@ end
 
 MLDataDevices.loaded(::Union{OpenCLDevice,Type{<:OpenCLDevice}}) = true
 function MLDataDevices.functional(::Union{OpenCLDevice,Type{<:OpenCLDevice}})
-    return !isempty(cl.platforms()) && !isempty(cl.devices(cl.platform()))
+    return !isempty(cl.platforms()) && !isempty(vcat(cl.devices.(cl.platforms())...))
 end
 
 # Default RNG
