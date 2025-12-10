@@ -1,10 +1,10 @@
+const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "none"))
+
 if BACKEND_GROUP == "opencl" || BACKEND_GROUP == "all"
     using OpenCL, pocl_jll
 end
 
 using MLDataDevices, MLUtils, Test
-
-const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "none"))
 
 if BACKEND_GROUP == "cuda" || BACKEND_GROUP == "all"
     using LuxCUDA
