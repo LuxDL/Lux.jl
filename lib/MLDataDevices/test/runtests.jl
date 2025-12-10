@@ -57,6 +57,8 @@ end
         all_files
     elseif BACKEND_GROUP ∈ ("cpu", "none")
         []
+    elseif BACKEND_GROUP == "opencl"
+        ["opencl_tests.jl", "openclcpu_tests.jl"]
     else
         [BACKEND_GROUP * "_tests.jl"]
     end
