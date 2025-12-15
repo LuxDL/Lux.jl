@@ -173,7 +173,7 @@ jobs:
 
       # Download the artifacts from the tutorials
       - name: Download Tutorial Artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           pattern: "tutorial-*"
           path: tutorial_artifacts
