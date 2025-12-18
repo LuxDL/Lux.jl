@@ -43,42 +43,15 @@ Now, we can use `Reactant.Serialization.export_to_enzymejax` to generate the nec
 lux_model_func(x, ps, st) = model(x, ps, st)
 # It's recommended to create a temporary directory for the exported files
 output_dir = mktempdir()
-println("Exported files will be in: ", output_dir)
 py_script_path = Reactant.Serialization.export_to_enzymejax(
     lux_model_func, x, ps, st; function_name="lux_model", output_dir=output_dir)
-println("Python script generated at: ", py_script_path)
-nothing # hide
+
+println("Exported files are in: ", output_dir)
+println("Generated python script `", py_script_path, "` contains:")
 ```
 
-The generated files will be in the `output_dir`. You can now run the model in Python.
+The generated Python script can be run directly. Here are its contents:
 
-```python
-# This is a sample python script. The actual generated script can be run directly.
-# Assuming you are in the output directory you can run `python lux_model.py`.
-#
-# To integrate into your own python code, you can do the following.
-# Make sure the output directory is in your python path.
-import jax
-import numpy as np
-from lux_model import run_lux_model
-import os
-import glob
-
-# Find the inputs file
-# The format is {function_name}_{id}_inputs.npz
-input_files = glob.glob(os.path.join(".", "lux_model_*_inputs.npz"))
-assert len(input_files) == 1, "Expected to find exactly one inputs file"
-
-# Load the inputs from the .npz file
-inputs = np.load(input_files[0])
-inputs = [inputs[f] for f in inputs.files]
-
-# Run the exported Lux model
-result = run_lux_model(*inputs)
-print(result)
-
-# The function can be JIT-compiled
-jitted_model = jax.jit(run_lux_model)
-result_jitted = jitted_model(*inputs)
-print(result_jitted)
+```@repl exporting_to_stablehlo
+print(read(py_script_path, String))
 ```
