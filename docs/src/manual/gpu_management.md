@@ -33,9 +33,7 @@ Automatic Backend Management is done by two simple functions: `cpu_device` and `
 
   ```@example gpu_management
   cdev = cpu_device()
-  ```
 
-  ```@example gpu_management
   x_cpu = randn(Float32, 3, 2)
   ```
 
