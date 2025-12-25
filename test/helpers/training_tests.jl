@@ -82,13 +82,19 @@ end
                 continue
             !LuxTestUtils.ENZYME_TESTING_ENABLED && ad isa AutoEnzyme && continue
 
-            ps, st = dev(Lux.setup(rng, model))
-            tstate = Training.TrainState(model, ps, st, opt)
+            function get_total_loss(model, tstate)
+                loss = 0.0f0
+                for (x, y) in dataset_
+                    loss += mse(model, tstate.parameters, tstate.states, (x, y))[1]
+                end
+                return loss
+            end
 
-            @test begin
-                initial_loss = first(
-                    mse(model, tstate.parameters, tstate.states, dataset_[1])
-                )
+            @testset "compute_gradients + apply_gradients!" begin
+                ps, st = dev(Lux.setup(rng, model))
+                tstate = Training.TrainState(model, ps, st, opt)
+
+                initial_loss = get_total_loss(model, tstate)
 
                 for epoch in 1:1000, (x, y) in dataset_
                     grads, loss, _, tstate = allow_unstable() do
@@ -97,11 +103,31 @@ end
                     tstate = Training.apply_gradients!(tstate, grads)
                 end
 
+                final_loss = get_total_loss(model, tstate)
+                @test final_loss * 100 < initial_loss
+            end
+
+            @testset "single_train_step!" begin
+                ps, st = dev(Lux.setup(rng, model))
+                tstate = Training.TrainState(model, ps, st, opt)
+
+                initial_loss = get_total_loss(model, tstate)
+
                 for epoch in 1:1000, (x, y) in dataset_
                     grads, loss, _, tstate = allow_unstable() do
                         Training.single_train_step!(ad, mse, (x, y), tstate)
                     end
                 end
+
+                final_loss = get_total_loss(model, tstate)
+                @test final_loss * 100 < initial_loss
+            end
+
+            @testset "single_train_step" begin
+                ps, st = dev(Lux.setup(rng, model))
+                tstate = Training.TrainState(model, ps, st, opt)
+
+                initial_loss = get_total_loss(model, tstate)
 
                 for epoch in 1:1000, (x, y) in dataset_
                     grads, loss, _, tstate = allow_unstable() do
@@ -109,11 +135,8 @@ end
                     end
                 end
 
-                final_loss = first(
-                    mse(model, tstate.parameters, tstate.states, dataset_[1])
-                )
-
-                final_loss * 100 < initial_loss
+                final_loss = get_total_loss(model, tstate)
+                @test final_loss * 100 < initial_loss
             end
 
             # Test the adjust API
