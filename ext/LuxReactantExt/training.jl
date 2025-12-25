@@ -79,6 +79,24 @@ function compute_gradients_internal(objective_function::F, model, data, ps, st) 
     )
 end
 
+function annotate_compile(f::F, name::String) where {F}
+    id = Profiler.profiler_activity_start(
+        "Compile $(name)", Profiler.TRACE_ME_LEVEL_CRITICAL
+    )
+    res = f()
+    Profiler.profiler_activity_end(id)
+    return res
+end
+
+function annotate_execution(f::F, name::String, step::Int) where {F}
+    id = Profiler.profiler_activity_start(
+        name, Profiler.TRACE_ME_LEVEL_CRITICAL, "step_num" => step, "_r" => 1
+    )
+    res = f()
+    Profiler.profiler_activity_end(id)
+    return res
+end
+
 function Lux.Training.compute_gradients_impl(
     backend::ReactantBackend, objective_function::F, data, ts::Training.TrainState
 ) where {F}
@@ -88,15 +106,13 @@ function Lux.Training.compute_gradients_impl(
     )
         compiled_gradient_function = ts.cache.extras.compiled_gradient_function
     else
-        gradient_profile_id = Profiler.profiler_activity_start(
-            "Compile Compute Gradients", Profiler.TRACE_ME_LEVEL_CRITICAL
-        )
-        compiled_gradient_function = with_default_precision_config(ts.parameters) do
-            @compile sync = backend.sync compute_gradients_internal(
-                objective_function, ts.model, data, ts.parameters, ts.states
-            )
+        compiled_gradient_function = annotate_compile("Compute Gradients") do
+            with_default_precision_config(ts.parameters) do
+                @compile sync = backend.sync compute_gradients_internal(
+                    objective_function, ts.model, data, ts.parameters, ts.states
+                )
+            end
         end
-        Profiler.profiler_activity_end(gradient_profile_id)
 
         if ts.cache isa TrainingBackendCache
             @set! ts.cache.extras = merge(ts.cache.extras, (; compiled_gradient_function))
@@ -109,16 +125,9 @@ function Lux.Training.compute_gradients_impl(
         @set! ts.objective_function = objective_function
     end
 
-    gradient_profile_id = Profiler.profiler_activity_start(
-        "Compute Gradients",
-        Profiler.TRACE_ME_LEVEL_CRITICAL,
-        "step_num" => ts.step,
-        "_r" => 1,
-    )
-    grads, loss, stats, st = compiled_gradient_function(
-        objective_function, ts.model, data, ts.parameters, ts.states
-    )
-    Profiler.profiler_activity_end(gradient_profile_id)
+    grads, loss, stats, st = annotate_execution("Compute Gradients", ts.step) do
+        compiled_gradient_function(objective_function, ts.model, data, ts.parameters, ts.states)
+    end
 
     @set! ts.states = st
     return grads, loss, stats, ts
@@ -139,15 +148,13 @@ for inplace in ("!", "")
         )
             update_function = ts.cache.extras.update_function
         else
-            update_profile_id = Profiler.profiler_activity_start(
-                "Compile Apply Gradients", Profiler.TRACE_ME_LEVEL_CRITICAL
-            )
-            update_function = with_default_precision_config(ts.parameters) do
-                @compile sync = ts.cache.backend.sync Optimisers.$(update_fn)(
-                    ts.optimizer_state, ts.parameters, grads
-                )
+            update_function = annotate_compile("Apply Gradients") do
+                with_default_precision_config(ts.parameters) do
+                    @compile sync = ts.cache.backend.sync Optimisers.$(update_fn)(
+                        ts.optimizer_state, ts.parameters, grads
+                    )
+                end
             end
-            Profiler.profiler_activity_end(update_profile_id)
 
             if ts.cache isa TrainingBackendCache
                 @set! ts.cache.extras = merge(ts.cache.extras, (; update_function))
@@ -157,14 +164,9 @@ for inplace in ("!", "")
             end
         end
 
-        update_profile_id = Profiler.profiler_activity_start(
-            "Apply Gradients",
-            Profiler.TRACE_ME_LEVEL_CRITICAL,
-            "step_num" => ts.step,
-            "_r" => 1,
-        )
-        opt_state, ps = update_function(ts.optimizer_state, ts.parameters, grads)
-        Profiler.profiler_activity_end(update_profile_id)
+        opt_state, ps = annotate_execution("Apply Gradients", ts.step) do
+            update_function(ts.optimizer_state, ts.parameters, grads)
+        end
 
         @set! ts.parameters = ps
         @set! ts.optimizer_state = opt_state
@@ -202,11 +204,7 @@ for inplace in ("!", "")
 
             $(ps_expr)
 
-            compile_activity_id = Profiler.profiler_activity_start(
-                "Compile Train Step", Profiler.TRACE_ME_LEVEL_CRITICAL
-            )
-
-            compiled_grad_and_step_function =
+            compiled_grad_and_step_function = annotate_compile("Train Step") do
                 with_default_precision_config(ts.parameters) do
                     @compile sync = backend.sync compute_gradients_internal_and_step!(
                         objective_function,
@@ -219,8 +217,7 @@ for inplace in ("!", "")
                         is_sharded,
                     )
                 end
-
-            Profiler.profiler_activity_end(compile_activity_id)
+            end
 
             if ts.cache isa TrainingBackendCache
                 @set! ts.cache.dparameters = dparameters
@@ -239,22 +236,18 @@ for inplace in ("!", "")
             @set! ts.objective_function = objective_function
         end
 
-        train_step_profile_id = Profiler.profiler_activity_start(
-            "Train Step", Profiler.TRACE_ME_LEVEL_CRITICAL, "step_num" => ts.step, "_r" => 1
-        )
-
-        grads, ps, loss, stats, st, opt_state = compiled_grad_and_step_function(
-            objective_function,
-            ts.model,
-            data,
-            ps,
-            ts.states,
-            ts.optimizer_state,
-            dparameters,
-            is_sharded,
-        )
-
-        Profiler.profiler_activity_end(train_step_profile_id)
+        grads, ps, loss, stats, st, opt_state = annotate_execution("Train Step", ts.step) do
+            compiled_grad_and_step_function(
+                objective_function,
+                ts.model,
+                data,
+                ps,
+                ts.states,
+                ts.optimizer_state,
+                dparameters,
+                is_sharded,
+            )
+        end
 
         @set! ts.states = st
         @set! ts.parameters = ps
