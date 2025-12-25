@@ -79,7 +79,25 @@ function compute_gradients_internal(objective_function::F, model, data, ps, st) 
     )
 end
 
-Profiler.@annotate "Compute Gradients" function Lux.Training.compute_gradients_impl(
+function annotate_compile(f::F, name::String) where {F}
+    id = Profiler.profiler_activity_start(
+        "Compile $(name)", Profiler.TRACE_ME_LEVEL_CRITICAL
+    )
+    res = f()
+    Profiler.profiler_activity_end(id)
+    return res
+end
+
+function annotate_execution(f::F, name::String, step::Int) where {F}
+    id = Profiler.profiler_activity_start(
+        name, Profiler.TRACE_ME_LEVEL_CRITICAL, "step_num" => step, "_r" => 1
+    )
+    res = f()
+    Profiler.profiler_activity_end(id)
+    return res
+end
+
+function Lux.Training.compute_gradients_impl(
     backend::ReactantBackend, objective_function::F, data, ts::Training.TrainState
 ) where {F}
     if (
@@ -88,10 +106,12 @@ Profiler.@annotate "Compute Gradients" function Lux.Training.compute_gradients_i
     )
         compiled_gradient_function = ts.cache.extras.compiled_gradient_function
     else
-        compiled_gradient_function = with_default_precision_config(ts.parameters) do
-            @compile sync = backend.sync compute_gradients_internal(
-                objective_function, ts.model, data, ts.parameters, ts.states
-            )
+        compiled_gradient_function = annotate_compile("Compute Gradients") do
+            with_default_precision_config(ts.parameters) do
+                @compile sync = backend.sync compute_gradients_internal(
+                    objective_function, ts.model, data, ts.parameters, ts.states
+                )
+            end
         end
 
         if ts.cache isa TrainingBackendCache
@@ -105,9 +125,9 @@ Profiler.@annotate "Compute Gradients" function Lux.Training.compute_gradients_i
         @set! ts.objective_function = objective_function
     end
 
-    grads, loss, stats, st = compiled_gradient_function(
-        objective_function, ts.model, data, ts.parameters, ts.states
-    )
+    grads, loss, stats, st = annotate_execution("Compute Gradients", ts.step) do
+        compiled_gradient_function(objective_function, ts.model, data, ts.parameters, ts.states)
+    end
 
     @set! ts.states = st
     return grads, loss, stats, ts
@@ -119,9 +139,7 @@ for inplace in ("!", "")
     update_fn = Symbol(:update, inplace)
 
     # Ideally users never hit this dispatch but it is still good to have as a fallback
-    @eval Profiler.@annotate "Optimisers Apply Gradients" function Lux.Training.$(
-        apply_gradients_fn
-    )(
+    @eval function Lux.Training.$(apply_gradients_fn)(
         ts::Training.TrainState{<:TrainingBackendCache{<:ReactantBackend}}, grads
     )
         if (
@@ -130,10 +148,12 @@ for inplace in ("!", "")
         )
             update_function = ts.cache.extras.update_function
         else
-            update_function = with_default_precision_config(ts.parameters) do
-                @compile sync = ts.cache.backend.sync Optimisers.$(update_fn)(
-                    ts.optimizer_state, ts.parameters, grads
-                )
+            update_function = annotate_compile("Apply Gradients") do
+                with_default_precision_config(ts.parameters) do
+                    @compile sync = ts.cache.backend.sync Optimisers.$(update_fn)(
+                        ts.optimizer_state, ts.parameters, grads
+                    )
+                end
             end
 
             if ts.cache isa TrainingBackendCache
@@ -144,7 +164,9 @@ for inplace in ("!", "")
             end
         end
 
-        opt_state, ps = update_function(ts.optimizer_state, ts.parameters, grads)
+        opt_state, ps = annotate_execution("Apply Gradients", ts.step) do
+            update_function(ts.optimizer_state, ts.parameters, grads)
+        end
 
         @set! ts.parameters = ps
         @set! ts.optimizer_state = opt_state
@@ -159,7 +181,7 @@ for inplace in ("!", "")
     end
 
     # XXX: recompile with a warning if new input types are used
-    @eval Profiler.@annotate "Train Step" function Lux.Training.$(fname)(
+    @eval function Lux.Training.$(fname)(
         backend::ReactantBackend, objective_function::F, data, ts::Training.TrainState
     ) where {F}
         if (
@@ -182,7 +204,7 @@ for inplace in ("!", "")
 
             $(ps_expr)
 
-            compiled_grad_and_step_function =
+            compiled_grad_and_step_function = annotate_compile("Train Step") do
                 with_default_precision_config(ts.parameters) do
                     @compile sync = backend.sync compute_gradients_internal_and_step!(
                         objective_function,
@@ -195,6 +217,7 @@ for inplace in ("!", "")
                         is_sharded,
                     )
                 end
+            end
 
             if ts.cache isa TrainingBackendCache
                 @set! ts.cache.dparameters = dparameters
@@ -213,16 +236,18 @@ for inplace in ("!", "")
             @set! ts.objective_function = objective_function
         end
 
-        grads, ps, loss, stats, st, opt_state = compiled_grad_and_step_function(
-            objective_function,
-            ts.model,
-            data,
-            ps,
-            ts.states,
-            ts.optimizer_state,
-            dparameters,
-            is_sharded,
-        )
+        grads, ps, loss, stats, st, opt_state = annotate_execution("Train Step", ts.step) do
+            compiled_grad_and_step_function(
+                objective_function,
+                ts.model,
+                data,
+                ps,
+                ts.states,
+                ts.optimizer_state,
+                dparameters,
+                is_sharded,
+            )
+        end
 
         @set! ts.states = st
         @set! ts.parameters = ps

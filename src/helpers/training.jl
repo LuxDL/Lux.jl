@@ -190,15 +190,11 @@ function apply_gradients(ts::TrainState, grads)
     )
         return apply_gradients_reactant(ts, grads)
     end
-    return apply_gradients_with_allocator_cache(ts.allocator_cache, ts, grads)
+    return apply_gradients_impl(ts, grads)
 end
 
 # apply_gradients -> apply_gradients_reactant (for ReactantBackend)
-#                 -> apply_gradients_with_allocator_cache -> apply_gradients_impl
-
-function apply_gradients_with_allocator_cache(::Nothing, ts::TrainState, grads)
-    return apply_gradients_impl(ts, grads)
-end
+#                 -> apply_gradients_impl
 
 function apply_gradients_impl(ts::TrainState, grads)
     optimizer_state, ps = Optimisers.update(ts.optimizer_state, ts.parameters, grads)
@@ -478,24 +474,22 @@ function single_train_step(
     backend = maybe_wrap_adtype(
         backend, get_device_type((ts.parameters, ts.states)); return_gradients, sync
     )
-    return single_train_step_impl_with_allocator_cache(
-        backend, ts.allocator_cache, obj_fn, data, ts
-    )
+    return single_train_step_impl(backend, obj_fn, data, ts)
 end
 
 # single_train_step -> single_train_step_impl_with_allocator_cache -> single_train_step_impl
 
+function single_train_step_impl_with_allocator_cache!(
+    backend, ::Nothing, obj_fn::F, data, ts::TrainState
+) where {F}
+    return single_train_step_impl!(backend, obj_fn, data, ts)
+end
+
 for inplace in ("!", "")
     step = Symbol(:single_train_step_impl, inplace)
-    step_allocator_cache = Symbol(:single_train_step_impl_with_allocator_cache, inplace)
     apply_fn = Symbol(:apply_gradients, inplace)
-    @eval begin
-        function $(step_allocator_cache)(
-            backend, ::Nothing, obj_fn::F, data, ts::TrainState
-        ) where {F}
-            return $(step)(backend, obj_fn, data, ts)
-        end
 
+    @eval begin
         function $(step)(backend, obj_fn::F, data, ts::TrainState) where {F}
             grads, loss, stats, ts = compute_gradients(backend, obj_fn, data, ts)
             ts = $(apply_fn)(ts, grads)
