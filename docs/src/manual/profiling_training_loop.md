@@ -3,7 +3,7 @@
 !!! warning "Only for Reactant"
 
     This tutorial is applicable iff you are using `Reactant.jl` (`AutoEnzyme` with
-    ReactantDevice) for training.
+    `ReactantDevice`) for training.
 
 To profile the training loop, wrap the training loop with `Reactant.with_profiler` and
 pass the path to the directory where the traces should be saved. Note that this will
@@ -11,7 +11,7 @@ have some overhead and hence should be used only for debugging purposes.
 
 A simple example is shown below:
 
-```julia
+```@example
 using Reactant, Lux, Random, MLUtils, Optimisers
 
 dev = reactant_device()
@@ -24,7 +24,7 @@ dl = DataLoader((x_data, y_data); batchsize=32, shuffle=true) |> dev;
 model = Chain(Dense(32 => 64, relu), Dense(64 => 32))
 ps, st = Lux.setup(Random.default_rng(), model) |> dev;
 
-Reactant.with_profiler("/tmp/traces/lux_training/") do
+Reactant.with_profiler(joinpath(tempdir(), "lux_training_trace")) do
     train_state = Training.TrainState(model, ps, st, Adam(0.001))
     for epoch in 1:10
         for (x, y) in dl

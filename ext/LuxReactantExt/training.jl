@@ -79,7 +79,7 @@ function compute_gradients_internal(objective_function::F, model, data, ps, st) 
     )
 end
 
-Profiler.@annotate "Compute Gradients" function Lux.Training.compute_gradients_impl(
+function Lux.Training.compute_gradients_impl(
     backend::ReactantBackend, objective_function::F, data, ts::Training.TrainState
 ) where {F}
     if (
@@ -88,11 +88,15 @@ Profiler.@annotate "Compute Gradients" function Lux.Training.compute_gradients_i
     )
         compiled_gradient_function = ts.cache.extras.compiled_gradient_function
     else
+        gradient_profile_id = Profiler.profiler_activity_start(
+            "Compile Compute Gradients", Profiler.TRACE_ME_LEVEL_CRITICAL
+        )
         compiled_gradient_function = with_default_precision_config(ts.parameters) do
             @compile sync = backend.sync compute_gradients_internal(
                 objective_function, ts.model, data, ts.parameters, ts.states
             )
         end
+        Profiler.profiler_activity_end(gradient_profile_id)
 
         if ts.cache isa TrainingBackendCache
             @set! ts.cache.extras = merge(ts.cache.extras, (; compiled_gradient_function))
@@ -105,9 +109,16 @@ Profiler.@annotate "Compute Gradients" function Lux.Training.compute_gradients_i
         @set! ts.objective_function = objective_function
     end
 
+    gradient_profile_id = Profiler.profiler_activity_start(
+        "Compute Gradients",
+        Profiler.TRACE_ME_LEVEL_CRITICAL,
+        "step_num" => ts.step,
+        "_r" => 1,
+    )
     grads, loss, stats, st = compiled_gradient_function(
         objective_function, ts.model, data, ts.parameters, ts.states
     )
+    Profiler.profiler_activity_end(gradient_profile_id)
 
     @set! ts.states = st
     return grads, loss, stats, ts
@@ -119,9 +130,7 @@ for inplace in ("!", "")
     update_fn = Symbol(:update, inplace)
 
     # Ideally users never hit this dispatch but it is still good to have as a fallback
-    @eval Profiler.@annotate "Optimisers Apply Gradients" function Lux.Training.$(
-        apply_gradients_fn
-    )(
+    @eval function Lux.Training.$(apply_gradients_fn)(
         ts::Training.TrainState{<:TrainingBackendCache{<:ReactantBackend}}, grads
     )
         if (
@@ -130,11 +139,15 @@ for inplace in ("!", "")
         )
             update_function = ts.cache.extras.update_function
         else
+            update_profile_id = Profiler.profiler_activity_start(
+                "Compile Apply Gradients", Profiler.TRACE_ME_LEVEL_CRITICAL
+            )
             update_function = with_default_precision_config(ts.parameters) do
                 @compile sync = ts.cache.backend.sync Optimisers.$(update_fn)(
                     ts.optimizer_state, ts.parameters, grads
                 )
             end
+            Profiler.profiler_activity_end(update_profile_id)
 
             if ts.cache isa TrainingBackendCache
                 @set! ts.cache.extras = merge(ts.cache.extras, (; update_function))
@@ -144,7 +157,14 @@ for inplace in ("!", "")
             end
         end
 
+        update_profile_id = Profiler.profiler_activity_start(
+            "Apply Gradients",
+            Profiler.TRACE_ME_LEVEL_CRITICAL,
+            "step_num" => ts.step,
+            "_r" => 1,
+        )
         opt_state, ps = update_function(ts.optimizer_state, ts.parameters, grads)
+        Profiler.profiler_activity_end(update_profile_id)
 
         @set! ts.parameters = ps
         @set! ts.optimizer_state = opt_state
@@ -159,7 +179,7 @@ for inplace in ("!", "")
     end
 
     # XXX: recompile with a warning if new input types are used
-    @eval Profiler.@annotate "Train Step" function Lux.Training.$(fname)(
+    @eval function Lux.Training.$(fname)(
         backend::ReactantBackend, objective_function::F, data, ts::Training.TrainState
     ) where {F}
         if (
@@ -182,6 +202,10 @@ for inplace in ("!", "")
 
             $(ps_expr)
 
+            compile_activity_id = Profiler.profiler_activity_start(
+                "Compile Train Step", Profiler.TRACE_ME_LEVEL_CRITICAL
+            )
+
             compiled_grad_and_step_function =
                 with_default_precision_config(ts.parameters) do
                     @compile sync = backend.sync compute_gradients_internal_and_step!(
@@ -195,6 +219,8 @@ for inplace in ("!", "")
                         is_sharded,
                     )
                 end
+
+            Profiler.profiler_activity_end(compile_activity_id)
 
             if ts.cache isa TrainingBackendCache
                 @set! ts.cache.dparameters = dparameters
@@ -213,6 +239,10 @@ for inplace in ("!", "")
             @set! ts.objective_function = objective_function
         end
 
+        train_step_profile_id = Profiler.profiler_activity_start(
+            "Train Step", Profiler.TRACE_ME_LEVEL_CRITICAL, "step_num" => ts.step, "_r" => 1
+        )
+
         grads, ps, loss, stats, st, opt_state = compiled_grad_and_step_function(
             objective_function,
             ts.model,
@@ -223,6 +253,8 @@ for inplace in ("!", "")
             dparameters,
             is_sharded,
         )
+
+        Profiler.profiler_activity_end(train_step_profile_id)
 
         @set! ts.states = st
         @set! ts.parameters = ps
