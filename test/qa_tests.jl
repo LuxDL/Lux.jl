@@ -9,12 +9,21 @@
         exclude=[
             ForwardDiff.jacobian,
             ForwardDiff.gradient,
+            ForwardDiff.extract_gradient_chunk!,
             Lux.AutoDiffInternalImpl.batched_jacobian,
             Lux.AutoDiffInternalImpl.jacobian_vector_product,
             Lux.AutoDiffInternalImpl.jacobian_vector_product_impl,
         ],
     )
-    Aqua.test_piracies(Lux; treat_as_own=[Lux.outputsize])
+    Aqua.test_piracies(
+        Lux;
+        treat_as_own=[
+            Lux.outputsize,
+            ForwardDiff.extract_gradient_chunk!,
+            ForwardDiff.extract_gradient!,
+            ForwardDiff.seed!,
+        ],
+    )
     Aqua.test_unbound_args(Lux; broken=true)
 end
 
