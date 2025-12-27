@@ -89,3 +89,113 @@ function Training.compute_gradients_impl(
         ts,
     )
 end
+
+# Type Piracy for ForwardDiff GPU Array Support
+# This is a workaround for ForwardDiff.jl not supporting GPU arrays post v1.0
+# See: https://github.com/JuliaDiff/ForwardDiff.jl/pull/760
+
+using GPUArraysCore: AnyGPUArray
+
+# Helper struct for broadcasting partials extraction
+struct PartialsFn{T,D<:ForwardDiff.Dual}
+    dual::D
+end
+
+PartialsFn{T}(dual::ForwardDiff.Dual) where {T} = PartialsFn{T,typeof(dual)}(dual)
+
+(f::PartialsFn{T})(i) where {T} = ForwardDiff.partials(T, f.dual, i)
+
+# Macro to define ForwardDiff overloads for array types that don't support scalar indexing
+macro define_forwarddiff_gpu_overloads(ArrayType)
+    return quote
+        # Overloaded seed! methods
+        function ForwardDiff.seed!(
+            duals::$(esc(ArrayType)){ForwardDiff.Dual{T,V,N}},
+            x,
+            seed::ForwardDiff.Partials{N,V}=zero(ForwardDiff.Partials{N,V}),
+        ) where {T,V,N}
+            idxs = collect(ForwardDiff.structural_eachindex(duals, x))
+            duals[idxs] .= ForwardDiff.Dual{T,V,N}.(view(x, idxs), Ref(seed))
+            return duals
+        end
+
+        function ForwardDiff.seed!(
+            duals::$(esc(ArrayType)){ForwardDiff.Dual{T,V,N}},
+            x,
+            seeds::NTuple{N,ForwardDiff.Partials{N,V}},
+        ) where {T,V,N}
+            idxs = collect(Iterators.take(ForwardDiff.structural_eachindex(duals, x), N))
+            duals[idxs] .=
+                ForwardDiff.Dual{
+                    T,V,N
+                }.(view(x, idxs), getindex.(Ref(seeds), 1:length(idxs)))
+            return duals
+        end
+
+        function ForwardDiff.seed!(
+            duals::$(esc(ArrayType)){ForwardDiff.Dual{T,V,N}},
+            x,
+            index,
+            seed::ForwardDiff.Partials{N,V}=zero(ForwardDiff.Partials{N,V}),
+        ) where {T,V,N}
+            idxs = collect(
+                Iterators.drop(ForwardDiff.structural_eachindex(duals, x), index - 1)
+            )
+            duals[idxs] .= ForwardDiff.Dual{T,V,N}.(view(x, idxs), Ref(seed))
+            return duals
+        end
+
+        function ForwardDiff.seed!(
+            duals::$(esc(ArrayType)){ForwardDiff.Dual{T,V,N}},
+            x,
+            index,
+            seeds::NTuple{N,ForwardDiff.Partials{N,V}},
+            chunksize=N,
+        ) where {T,V,N}
+            idxs = collect(
+                Iterators.take(
+                    Iterators.drop(ForwardDiff.structural_eachindex(duals, x), index - 1),
+                    chunksize,
+                ),
+            )
+            duals[idxs] .=
+                ForwardDiff.Dual{
+                    T,V,N
+                }.(view(x, idxs), getindex.(Ref(seeds), 1:length(idxs)))
+            return duals
+        end
+
+        # Overloaded extract_gradient! methods
+        function ForwardDiff.extract_gradient!(
+            ::Type{T}, result::$(esc(ArrayType)), dual::ForwardDiff.Dual
+        ) where {T}
+            fn = PartialsFn{T}(dual)
+            idxs = collect(
+                Iterators.take(
+                    ForwardDiff.structural_eachindex(result), ForwardDiff.npartials(dual)
+                ),
+            )
+            result[idxs] .= fn.(1:length(idxs))
+            return result
+        end
+
+        function ForwardDiff.extract_gradient_chunk!(
+            ::Type{T}, result::$(esc(ArrayType)), dual, index, chunksize
+        ) where {T}
+            fn = PartialsFn{T}(dual)
+            idxs = collect(
+                Iterators.take(
+                    Iterators.drop(ForwardDiff.structural_eachindex(result), index - 1),
+                    chunksize,
+                ),
+            )
+            result[idxs] .= fn.(1:length(idxs))
+            return result
+        end
+    end
+end
+
+@static if pkgversion(ForwardDiff) ≥ v"1.0.1"
+    # Apply overloads for GPU arrays
+    @define_forwarddiff_gpu_overloads AnyGPUArray
+end
