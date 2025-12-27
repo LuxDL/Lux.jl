@@ -30,38 +30,34 @@ end
 
 const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "All"))
 
-if BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda"
+if LuxTestUtils.test_cuda(BACKEND_GROUP)
     using LuxCUDA
 end
 
-if BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu"
+if LuxTestUtils.test_amdgpu(BACKEND_GROUP)
     using AMDGPU
 end
 
-if BACKEND_GROUP == "all" || BACKEND_GROUP == "oneapi"
+if LuxTestUtils.test_oneapi(BACKEND_GROUP)
     using oneAPI
 end
 
-if BACKEND_GROUP == "all" || BACKEND_GROUP == "metal"
+if LuxTestUtils.test_metal(BACKEND_GROUP)
     using Metal
 end
 
 cpu_testing() = BACKEND_GROUP == "all" || BACKEND_GROUP == "cpu"
 function cuda_testing()
-    return (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
-           MLDataDevices.functional(CUDADevice)
+    return LuxTestUtils.test_cuda(BACKEND_GROUP) && MLDataDevices.functional(CUDADevice)
 end
 function amdgpu_testing()
-    return (BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
-           MLDataDevices.functional(AMDGPUDevice)
+    return LuxTestUtils.test_amdgpu(BACKEND_GROUP) && MLDataDevices.functional(AMDGPUDevice)
 end
 function oneapi_testing()
-    return (BACKEND_GROUP == "all" || BACKEND_GROUP == "oneapi") &&
-           MLDataDevices.functional(oneAPIDevice)
+    return LuxTestUtils.test_oneapi(BACKEND_GROUP) && MLDataDevices.functional(oneAPIDevice)
 end
 function metal_testing()
-    return (BACKEND_GROUP == "all" || BACKEND_GROUP == "metal") &&
-           MLDataDevices.functional(MetalDevice)
+    return LuxTestUtils.test_metal(BACKEND_GROUP) && MLDataDevices.functional(MetalDevice)
 end
 
 const MODES = begin

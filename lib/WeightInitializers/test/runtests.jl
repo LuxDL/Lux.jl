@@ -1,5 +1,5 @@
 using Pkg, ReTestItems, WeightInitializers
-using InteractiveUtils, CPUSummary
+using InteractiveUtils, CPUSummary, LuxTestUtils
 
 @info sprint(versioninfo)
 
@@ -20,16 +20,7 @@ const PARSED_TEST_ARGS = parse_test_args()
 
 const BACKEND_GROUP = lowercase(get(PARSED_TEST_ARGS, "BACKEND_GROUP", "All"))
 
-const EXTRA_PKGS = PackageSpec[]
-
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
-    push!(EXTRA_PKGS, PackageSpec("CUDA"))
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
-    push!(EXTRA_PKGS, PackageSpec(; name="AMDGPU"))
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "metal") &&
-    push!(EXTRA_PKGS, PackageSpec(; name="Metal", version="1.9"))
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "oneapi") &&
-    push!(EXTRA_PKGS, PackageSpec("oneAPI"))
+const EXTRA_PKGS = LuxTestUtils.packages_to_install(BACKEND_GROUP)
 
 if !isempty(EXTRA_PKGS)
     @info "Installing Extra Packages for testing" EXTRA_PKGS = EXTRA_PKGS

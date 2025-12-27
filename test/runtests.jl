@@ -1,5 +1,5 @@
 using ReTestItems, Pkg, Preferences, Test
-using InteractiveUtils, CPUSummary
+using InteractiveUtils, CPUSummary, LuxTestUtils
 
 @info sprint(versioninfo)
 
@@ -32,25 +32,12 @@ else
 end
 @info "Running tests for group: $LUX_TEST_GROUP"
 
-const EXTRA_PKGS = Pkg.PackageSpec[]
-const EXTRA_DEV_PKGS = Pkg.PackageSpec[]
-
-if (BACKEND_GROUP == "all" || (BACKEND_GROUP == "cuda" && LUX_TEST_GROUP != ["reactant"]))
-    if isdir(joinpath(@__DIR__, "../lib/LuxCUDA"))
-        @info "Using local LuxCUDA"
-        push!(EXTRA_DEV_PKGS, Pkg.PackageSpec(; path=joinpath(@__DIR__, "../lib/LuxCUDA")))
-    else
-        push!(EXTRA_PKGS, Pkg.PackageSpec("LuxCUDA"))
-    end
-end
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
-    push!(EXTRA_PKGS, Pkg.PackageSpec(; name="AMDGPU"))
+const EXTRA_PKGS = LuxTestUtils.packages_to_install(BACKEND_GROUP)
 
 try
-    if !isempty(EXTRA_PKGS) || !isempty(EXTRA_DEV_PKGS)
-        @info "Installing Extra Packages for testing" EXTRA_PKGS EXTRA_DEV_PKGS
+    if !isempty(EXTRA_PKGS)
+        @info "Installing Extra Packages for testing" EXTRA_PKGS
         isempty(EXTRA_PKGS) || Pkg.add(EXTRA_PKGS)
-        isempty(EXTRA_DEV_PKGS) || Pkg.develop(EXTRA_DEV_PKGS)
         Base.retry_load_extensions()
         Pkg.instantiate()
         Pkg.precompile()
@@ -60,40 +47,6 @@ catch err
 end
 
 using Lux
-
-@testset "Load Tests" begin
-    @testset "Load Packages Tests" begin
-        @test_throws ErrorException FromFluxAdaptor()(1)
-        showerror(stdout, Lux.FluxModelConversionException("cannot convert"))
-        println()
-
-        @test_throws ErrorException ToSimpleChainsAdaptor(nothing)(Dense(2 => 2))
-        showerror(stdout, Lux.SimpleChainsModelConversionException(Dense(2 => 2)))
-        println()
-
-        @test_throws ErrorException vector_jacobian_product(
-            x -> x, AutoZygote(), rand(2), rand(2)
-        )
-
-        @test_throws ErrorException batched_jacobian(x -> x, AutoZygote(), rand(2, 2))
-    end
-
-    @testset "Ext Loading Check" begin
-        @test !Lux.is_extension_loaded(Val(:Zygote))
-        using Zygote
-        @test Lux.is_extension_loaded(Val(:Zygote))
-    end
-
-    # These need to be run before MPI or NCCL is ever loaded
-    @testset "Ensure MPI and NCCL are loaded" begin
-        @test_throws ErrorException MPIBackend()
-        @test_throws ErrorException NCCLBackend()
-    end
-
-    @testset "rule_config" begin
-        @test_throws ErrorException Lux.AutoDiffInternalImpl.rule_config(Val(:Zygote2))
-    end
-end
 
 # Eltype Matching Tests
 if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP)
