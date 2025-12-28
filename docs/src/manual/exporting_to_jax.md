@@ -6,7 +6,7 @@ JAX. We assume that users are familiar with
 [Reactant compilation of Lux models](@ref reactant-compilation).
 
 ```@example exporting_to_stablehlo
-using Lux, Reactant, Random
+using Lux, Reactant, Random, NPZ
 
 const dev = reactant_device()
 ```
@@ -37,95 +37,18 @@ x = randn(Random.default_rng(), Float32, 28, 28, 1, 4) |> dev
 nothing # hide
 ```
 
-Now instead of compiling the model, we will use `Reactant.@code_hlo` to generate the
-StableHLO code.
+Now instead of compiling the model, we will use the
+`Reactant.Serialization.export_to_enzymejax` function to export the model.
 
 ```@example exporting_to_stablehlo
-hlo_code = @code_hlo model(x, ps, st)
-```
-
-Now we just save this into an `mlir` file.
-
-```@example exporting_to_stablehlo
-write("exported_lux_model.mlir", string(hlo_code))
-nothing # hide
-```
-
-Now we define a python script to run the model using EnzymeJAX.
-
-```python
-from enzyme_ad.jax import hlo_call
-
-import jax
-import jax.numpy as jnp
-
-with open("exported_lux_model.mlir", "r") as file:
-    code = file.read()
-
-
-def run_lux_model(
-    x,
-    weight1,
-    bias1,
-    weight3,
-    bias3,
-    weight6_1,
-    bias6_1,
-    weight6_2,
-    bias6_2,
-    weight6_3,
-    bias6_3,
-):
-    return hlo_call(
-        x,
-        weight1,
-        bias1,
-        weight3,
-        bias3,
-        weight6_1,
-        bias6_1,
-        weight6_2,
-        bias6_2,
-        weight6_3,
-        bias6_3,
-        source=code,
-    )
-
-
-# Note that all the inputs must be transposed, i.e. if the julia function has an input of
-# shape (28, 28, 1, 4), then the input to the exported function called from python must be
-# of shape (4, 1, 28, 28). This is because multi-dimensional arrays in Julia are stored in
-# column-major order, while in JAX/Python they are stored in row-major order.
-
-# Input as defined in our exported Lux model
-x = jax.random.normal(jax.random.PRNGKey(0), (4, 1, 28, 28))
-
-# Weights and biases corresponding to `ps` and `st` in our exported Lux model
-weight1 = jax.random.normal(jax.random.PRNGKey(0), (6, 1, 5, 5))
-bias1 = jax.random.normal(jax.random.PRNGKey(0), (6,))
-weight3 = jax.random.normal(jax.random.PRNGKey(0), (16, 6, 5, 5))
-bias3 = jax.random.normal(jax.random.PRNGKey(0), (16,))
-weight6_1 = jax.random.normal(jax.random.PRNGKey(0), (256, 128))
-bias6_1 = jax.random.normal(jax.random.PRNGKey(0), (128,))
-weight6_2 = jax.random.normal(jax.random.PRNGKey(0), (128, 84))
-bias6_2 = jax.random.normal(jax.random.PRNGKey(0), (84,))
-weight6_3 = jax.random.normal(jax.random.PRNGKey(0), (84, 10))
-bias6_3 = jax.random.normal(jax.random.PRNGKey(0), (10,))
-
-# Run the exported Lux model
-print(
-    jax.jit(run_lux_model)(
-        x,
-        weight1,
-        bias1,
-        weight3,
-        bias3,
-        weight6_1,
-        bias6_1,
-        weight6_2,
-        bias6_2,
-        weight6_3,
-        bias6_3,
-    )
+python_file_path = Reactant.Serialization.export_to_enzymejax(
+    model, x, ps, st; function_name="run_lux_model"
 )
+```
+
+This will generate a python file that can be used to run the model using EnzymeJAX.
+
+```@example exporting_to_stablehlo
+println(read(open(python_file_path, "r"), String))
+nothing # hide
 ```
