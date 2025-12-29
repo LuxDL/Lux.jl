@@ -2,7 +2,6 @@ module Traits
 
 using ArrayInterface: ArrayInterface, can_setindex
 using ChainRulesCore: ChainRulesCore
-using ForwardDiff: ForwardDiff
 using NNlib: NNlib
 using Static: True, False, static
 using StaticArraysCore: StaticArray
@@ -33,7 +32,6 @@ function unwrap_array(x::AbstractArray)
 end
 
 has_dual(_) = False()
-has_dual(::Type{<:ForwardDiff.Dual}) = True()
 
 has_float16(_) = False()
 has_float16(::Type{<:Float16}) = True()

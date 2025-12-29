@@ -1,5 +1,52 @@
+module ForwardDiffExt
+
+using ForwardDiff: ForwardDiff
+using LuxLib: LuxLib, Impl, Utils, Traits
+using NNlib: NNlib
+using Static: False, True
+
+# ================================ Utils Extensions ================================
+# ofeltype_array for Dual types
+function Utils.ofeltype_array(
+    ::Type{T}, x::AbstractArray{<:ForwardDiff.Dual{Tag,T,N}}
+) where {Tag,T,N}
+    return x
+end
+function Utils.ofeltype_array(
+    ::Type{T}, x::AbstractArray{<:ForwardDiff.Dual{Tag,T2,N}}
+) where {Tag,T,T2,N}
+    return ForwardDiff.Dual{Tag,T,N}.(x)
+end
+
+# remove_tracking for Dual types
+Utils.remove_tracking(x::ForwardDiff.Dual) = ForwardDiff.value(x)
+Utils.remove_tracking(x::AbstractArray{<:ForwardDiff.Dual}) = ForwardDiff.value.(x)
+function Utils.remove_tracking(::Type{<:ForwardDiff.Dual{Tag,T}}) where {Tag,T}
+    return Utils.remove_tracking(T)
+end
+
+# eltype_mismatch for Dual types
+function Utils.eltype_mismatch(
+    ::Type{T}, ::Type{<:ForwardDiff.Dual{Tag,T,N}}
+) where {Tag,T,N}
+    return False()
+end
+function Utils.eltype_mismatch(
+    ::Type{<:ForwardDiff.Dual{Tag,T,N}}, ::Type{T}
+) where {Tag,T,N}
+    return False()
+end
+
+# within_autodiff for Dual types
+Utils.within_autodiff(::ForwardDiff.Dual) = True()
+Utils.within_autodiff(::AbstractArray{<:ForwardDiff.Dual}) = True()
+
+# ================================ Traits Extensions ================================
+Traits.has_dual(::Type{<:ForwardDiff.Dual}) = True()
+
+# Conv operations for Dual arrays
 for op in (:conv, :depthwiseconv, :∇conv_data, :∇conv_filter)
-    patched_op = op !== :depthwiseconv ? eval(op) : getfield(NNlib, op)
+    patched_op = getfield(NNlib, op)
 
     @eval function NNlib.$(op)(
         x1::AbstractArray{<:ForwardDiff.Dual{Tag,V,P},N},
@@ -58,6 +105,7 @@ for op in (:conv, :depthwiseconv, :∇conv_data, :∇conv_filter)
     end
 end
 
+# Softmax/logsoftmax dispatches
 for op in (:logsoftmax, :softmax)
     dual_op = Symbol(op, :_dual)
     @eval function NNlib.$(op)(
@@ -67,7 +115,9 @@ for op in (:logsoftmax, :softmax)
     end
 end
 
-function softmax_dual(x::AbstractArray{<:ForwardDiff.Dual{Tag,T,P}}; dims=1) where {Tag,T,P}
+function Impl.softmax_dual(
+    x::AbstractArray{<:ForwardDiff.Dual{Tag,T,P}}; dims=1
+) where {Tag,T,P}
     value_fn(x) = ForwardDiff.value(Tag, x)
     partial_fn(x, i) = ForwardDiff.partials(Tag, x, i)
 
@@ -83,7 +133,7 @@ function softmax_dual(x::AbstractArray{<:ForwardDiff.Dual{Tag,T,P}}; dims=1) whe
     return ForwardDiff.Dual{Tag,eltype(y),P}.(y, partials)
 end
 
-function logsoftmax_dual(
+function Impl.logsoftmax_dual(
     x::AbstractArray{<:ForwardDiff.Dual{Tag,T,P}}; dims=1
 ) where {Tag,T,P}
     value_fn(x) = ForwardDiff.value(Tag, x)
@@ -101,7 +151,8 @@ function logsoftmax_dual(
     return ForwardDiff.Dual{Tag,eltype(y),P}.(y, partials)
 end
 
-@eval function NNlib.meanpool(
+# Meanpool for Dual arrays
+function NNlib.meanpool(
     x::AbstractArray{<:ForwardDiff.Dual{Tag,T,P}}, pdims::NNlib.PoolDims; kwargs...
 ) where {Tag,T,P}
     value_fn(x) = ForwardDiff.value(Tag, x)
@@ -140,6 +191,7 @@ function NNlib.∇meanpool(
     return ForwardDiff.Dual{Tag,eltype(dx),P}.(dx, partials)
 end
 
+# Gather for Dual arrays
 function NNlib.gather(
     src::AbstractArray{<:ForwardDiff.Dual{Tag,T,P}}, inds::AbstractArray
 ) where {Tag,T,P}
@@ -155,6 +207,7 @@ function NNlib.gather(
     return ForwardDiff.Dual{Tag,eltype(dst_data),P}.(dst_data, partials)
 end
 
+# Scatter for Dual arrays
 function NNlib.scatter(
     op::OP, src::AbstractArray{<:ForwardDiff.Dual{Tag,T,P}}, idx::AbstractArray; kwargs...
 ) where {OP,Tag,T,P}
@@ -170,4 +223,6 @@ function NNlib.scatter(
 
     partials = ForwardDiff.Partials.(tuple.(dst_partials...))
     return ForwardDiff.Dual{Tag,eltype(dst_data),P}.(dst_data, partials)
+end
+
 end

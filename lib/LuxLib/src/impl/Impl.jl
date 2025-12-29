@@ -8,7 +8,6 @@ using Static: StaticBool, True, False, static
 
 using ChainRulesCore: ChainRulesCore, NoTangent, HasReverseMode, RuleConfig
 using EnzymeCore: EnzymeCore, EnzymeRules, Annotation
-using ForwardDiff: ForwardDiff
 
 using KernelAbstractions: KernelAbstractions, @kernel, @Const, @index
 
@@ -80,10 +79,13 @@ include("common_ops.jl")
 include("conv.jl")
 include("dense.jl")
 include("dropout.jl")
-include("forward_diff.jl")
 include("groupnorm.jl")
 include("layernorm.jl")
 include("matmul.jl")
 include("normalization.jl")
+
+# Stub functions for ForwardDiff extension
+function softmax_dual end
+function logsoftmax_dual end
 
 end
