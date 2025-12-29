@@ -243,7 +243,7 @@ processes.
 end
 
 function DistributedDataContainer(backend::AbstractLuxDistributedBackend, data)
-    if Base.get_extension(@__MODULE__, :LuxMLUtilsExt) === nothing
+    if Base.get_extension(@__MODULE__, :MLUtilsExt) === nothing
         error("`MLUtils.jl` must be installed and loaded before using \
                `DistributedDataContainer`.")
     end

@@ -49,7 +49,7 @@ end
 Adapt a Flux model `L` to Lux model. See [`FromFluxAdaptor`](@ref) for more details.
 """
 function Adapt.adapt(from::FromFluxAdaptor, L)
-    if Base.get_extension(@__MODULE__, :LuxFluxExt) === nothing
+    if Base.get_extension(@__MODULE__, :FluxExt) === nothing
         error("`FromFluxAdaptor` requires `Flux.jl` to be loaded.")
     end
     return convert_flux_model(L; from.preserve_ps_st, from.force_preserve)

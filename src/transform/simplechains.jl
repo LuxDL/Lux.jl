@@ -66,7 +66,7 @@ Adapt a Simple Chains model to Lux model. See [`ToSimpleChainsAdaptor`](@ref) fo
 details.
 """
 function Adapt.adapt(to::ToSimpleChainsAdaptor, L::AbstractLuxLayer)
-    if Base.get_extension(@__MODULE__, :LuxSimpleChainsExt) === nothing
+    if Base.get_extension(@__MODULE__, :SimpleChainsExt) === nothing
         error("`ToSimpleChainsAdaptor` requires `SimpleChains.jl` to be loaded.")
     end
     sc_layer = fix_simplechain_input_dims(make_simplechain_network(L), to.input_dims)
