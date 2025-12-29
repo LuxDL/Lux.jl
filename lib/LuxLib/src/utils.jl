@@ -4,7 +4,6 @@ using ChainRulesCore: ChainRulesCore
 using EnzymeCore: EnzymeCore, EnzymeRules, Annotation
 using FastClosures: @closure
 using Functors: Functors
-using ForwardDiff: ForwardDiff
 using KernelAbstractions: KernelAbstractions
 using LinearAlgebra: LinearAlgebra, BLAS
 using MLDataDevices: MLDataDevices, get_device_type, CPUDevice
@@ -24,17 +23,7 @@ EnzymeRules.inactive_noinl(::typeof(is_extension_loaded), ::Any...) = nothing
 
 # Simple Operations -- no rrules needed
 ofeltype_array(::Type{T}, x::AbstractArray{T}) where {T} = x
-function ofeltype_array(
-    ::Type{T}, x::AbstractArray{<:ForwardDiff.Dual{Tag,T,N}}
-) where {Tag,T,N}
-    return x
-end
 ofeltype_array(::Type{T}, x::AbstractArray) where {T} = T.(x)
-function ofeltype_array(
-    ::Type{T}, x::AbstractArray{<:ForwardDiff.Dual{Tag,T2,N}}
-) where {Tag,T,T2,N}
-    return ForwardDiff.Dual{Tag,T,N}.(x)
-end
 ofeltype_array(::Type{T}, ::Nothing) where {T} = nothing
 
 contiguous(x::AbstractArray) = x
@@ -80,9 +69,6 @@ EnzymeRules.@easy_rule(
 remove_tracking(x) = x
 remove_tracking(x::AbstractArray) = x
 remove_tracking(::Type{T}) where {T} = T
-remove_tracking(x::ForwardDiff.Dual) = ForwardDiff.value(x)
-remove_tracking(x::AbstractArray{<:ForwardDiff.Dual}) = ForwardDiff.value.(x)
-remove_tracking(::Type{<:ForwardDiff.Dual{Tag,T}}) where {Tag,T} = remove_tracking(T)
 remove_tracking(::Nothing) = nothing
 
 safe_vec(x) = x
@@ -100,12 +86,6 @@ only_derivative(y, f::F, x) where {F} = only(only(CRC.derivatives_given_output(y
 # Non-differentiable functions
 eltype_mismatch(::Type, ::Type) = True()
 eltype_mismatch(::Type{T}, ::Type{T}) where {T} = False()
-function eltype_mismatch(::Type{T}, ::Type{<:ForwardDiff.Dual{Tag,T,N}}) where {Tag,T,N}
-    return False()
-end
-function eltype_mismatch(::Type{<:ForwardDiff.Dual{Tag,T,N}}, ::Type{T}) where {Tag,T,N}
-    return False()
-end
 
 CRC.@non_differentiable eltype_mismatch(::Any...)
 
@@ -328,8 +308,6 @@ function within_autodiff(_)
         return static(EnzymeCore.within_autodiff())
     return False()
 end
-within_autodiff(::ForwardDiff.Dual) = True()
-within_autodiff(::AbstractArray{<:ForwardDiff.Dual}) = True()
 
 CRC.rrule(::typeof(within_autodiff), x) = True(), _ -> (∂∅, ∂∅)
 

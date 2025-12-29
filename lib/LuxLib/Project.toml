@@ -1,6 +1,6 @@
 name = "LuxLib"
 uuid = "82251201-b29d-42c6-8e01-566dec8acb11"
-version = "1.13.1"
+version = "1.14.0"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
 
 [deps]
@@ -10,7 +10,6 @@ ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 DispatchDoctor = "8d63f2c5-f18a-4cf2-ba9d-b3f60fc568c8"
 EnzymeCore = "f151be2c-9106-41f4-ab19-57ee4f262869"
 FastClosures = "9aa1b823-49e4-5ca5-8b0f-3971ec8bab6a"
-ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 Functors = "d9f16b24-f501-4c13-a1f2-28368ffc5196"
 KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -42,6 +41,7 @@ ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
 SLEEFPirates = "476501e8-09a2-5ece-8869-fb82de89a1fa"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 
 [sources.LuxCore]
 path = "../LuxCore"
@@ -53,7 +53,9 @@ path = "../MLDataDevices"
 AppleAccelerateExt = "AppleAccelerate"
 BLISBLASExt = "BLISBLAS"
 CUDAExt = "CUDA"
+CUDAForwardDiffExt = ["CUDA", "ForwardDiff"]
 EnzymeExt = "Enzyme"
+ForwardDiffExt = "ForwardDiff"
 LoopVectorizationExt = ["LoopVectorization", "Polyester"]
 MKLExt = "MKL"
 OctavianExt = ["Octavian", "LoopVectorization"]
