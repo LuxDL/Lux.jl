@@ -62,14 +62,14 @@ jobs:
       - uses: julia-actions/cache@v2
         with:
           cache-name: julia-cache;workflow=${{ inputs.julia_version }}-${{ inputs.os }}-${{ github.event_name }}-${{ inputs.project }}-${{ inputs.downgrade_testing }}-${{ inputs.local_dependencies }}-${{ inputs.local_test_dependencies }}-${{ inputs.test_args }}
-      # - uses: julia-actions/julia-downgrade-compat@v2
-      # FIXME: update to julia-actions/julia-downgrade-compat@v2 when it is fixed
-      - uses: avik-pal/julia-downgrade-compat@patch-1
+
+      - uses: julia-actions/julia-downgrade-compat@v2.1
         if: ${{ inputs.downgrade_testing }}
         with:
+          mode: forcedeps
           projects: ${{ inputs.project }}
           julia_version: ${{ inputs.julia_version }}
-          skip: Pkg, TOML, Statistics, LinearAlgebra, Random, Serialization, Test, LuxCore, LuxLib, LuxTestUtils, MLDataDevices, WeightInitializers
+          skip: Pkg, TOML, Statistics, LinearAlgebra, Random, Serialization, Markdown, Test, LuxCore, LuxLib, LuxTestUtils, MLDataDevices, WeightInitializers
 
       # For 1.10 we need to manually develop the packages.
       - name: "Develop Dependencies"
@@ -92,6 +92,7 @@ jobs:
       - uses: julia-actions/julia-buildpkg@v1
         with:
           project: ${{ inputs.project }}
+          precompile: true
         if: ${{ (inputs.julia_version != '1.10' && inputs.julia_version != 'lts') || inputs.local_dependencies == '' }}
 
       - name: "Develop Test Dependencies"
