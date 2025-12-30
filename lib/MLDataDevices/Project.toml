@@ -32,25 +32,25 @@ oneAPI = "8f75cd03-7ff8-4ecb-9b8f-daf728133b1b"
 OpenCL = "08131aa3-fb12-5dee-8b74-c09406e224a2"
 
 [extensions]
-MLDataDevicesAMDGPUExt = "AMDGPU"
-MLDataDevicesCUDAExt = "CUDA"
-MLDataDevicesChainRulesCoreExt = "ChainRulesCore"
-MLDataDevicesChainRulesExt = "ChainRules"
-MLDataDevicesComponentArraysExt = "ComponentArrays"
-MLDataDevicesFillArraysExt = "FillArrays"
-MLDataDevicesGPUArraysExt = "GPUArrays"
-MLDataDevicesMLUtilsExt = "MLUtils"
-MLDataDevicesMetalExt = ["GPUArrays", "Metal"]
-MLDataDevicesOneHotArraysExt = "OneHotArrays"
-MLDataDevicesReactantExt = "Reactant"
-MLDataDevicesRecursiveArrayToolsExt = "RecursiveArrayTools"
-MLDataDevicesReverseDiffExt = "ReverseDiff"
-MLDataDevicesSparseArraysExt = "SparseArrays"
-MLDataDevicesTrackerExt = "Tracker"
-MLDataDevicesZygoteExt = "Zygote"
-MLDataDevicescuDNNExt = ["CUDA", "cuDNN"]
-MLDataDevicesoneAPIExt = ["GPUArrays", "oneAPI"]
-MLDataDevicesOpenCLExt = ["GPUArrays", "OpenCL"]
+AMDGPUExt = "AMDGPU"
+CUDAExt = "CUDA"
+ChainRulesCoreExt = "ChainRulesCore"
+ChainRulesExt = "ChainRules"
+ComponentArraysExt = "ComponentArrays"
+FillArraysExt = "FillArrays"
+GPUArraysExt = "GPUArrays"
+MLUtilsExt = "MLUtils"
+MetalExt = ["GPUArrays", "Metal"]
+OneHotArraysExt = "OneHotArrays"
+ReactantExt = "Reactant"
+RecursiveArrayToolsExt = "RecursiveArrayTools"
+ReverseDiffExt = "ReverseDiff"
+SparseArraysExt = "SparseArrays"
+TrackerExt = "Tracker"
+ZygoteExt = "Zygote"
+cuDNNExt = ["CUDA", "cuDNN"]
+oneAPIExt = ["GPUArrays", "oneAPI"]
+OpenCLExt = ["GPUArrays", "OpenCL"]
 
 [compat]
 AMDGPU = "1, 2"

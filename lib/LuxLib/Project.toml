@@ -50,19 +50,19 @@ path = "../LuxCore"
 path = "../MLDataDevices"
 
 [extensions]
-LuxLibAppleAccelerateExt = "AppleAccelerate"
-LuxLibBLISBLASExt = "BLISBLAS"
-LuxLibCUDAExt = "CUDA"
-LuxLibEnzymeExt = "Enzyme"
-LuxLibLoopVectorizationExt = ["LoopVectorization", "Polyester"]
-LuxLibMKLExt = "MKL"
-LuxLibOctavianExt = ["Octavian", "LoopVectorization"]
-LuxLibReactantExt = ["Reactant", "ReactantCore"]
-LuxLibReverseDiffExt = "ReverseDiff"
-LuxLibSLEEFPiratesExt = "SLEEFPirates"
-LuxLibTrackerAMDGPUExt = ["AMDGPU", "Tracker"]
-LuxLibTrackerExt = "Tracker"
-LuxLibcuDNNExt = ["CUDA", "cuDNN"]
+AppleAccelerateExt = "AppleAccelerate"
+BLISBLASExt = "BLISBLAS"
+CUDAExt = "CUDA"
+EnzymeExt = "Enzyme"
+LoopVectorizationExt = ["LoopVectorization", "Polyester"]
+MKLExt = "MKL"
+OctavianExt = ["Octavian", "LoopVectorization"]
+ReactantExt = ["Reactant", "ReactantCore"]
+ReverseDiffExt = "ReverseDiff"
+SLEEFPiratesExt = "SLEEFPirates"
+TrackerAMDGPUExt = ["AMDGPU", "Tracker"]
+TrackerExt = "Tracker"
+cuDNNExt = ["CUDA", "cuDNN"]
 
 [compat]
 AMDGPU = "0.9.6, 1, 2"

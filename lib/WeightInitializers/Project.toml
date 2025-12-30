@@ -20,11 +20,11 @@ GPUArrays = "0c68f7d7-f131-5f86-a1c3-88cf8149b2d7"
 Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
 
 [extensions]
-WeightInitializersAMDGPUExt = "AMDGPU"
-WeightInitializersCUDAExt = "CUDA"
-WeightInitializersChainRulesCoreExt = "ChainRulesCore"
-WeightInitializersGPUArraysExt = "GPUArrays"
-WeightInitializersReactantExt = "Reactant"
+AMDGPUExt = "AMDGPU"
+CUDAExt = "CUDA"
+ChainRulesCoreExt = "ChainRulesCore"
+GPUArraysExt = "GPUArrays"
+ReactantExt = "Reactant"
 
 [compat]
 AMDGPU = "0.9.6, 1, 2"
