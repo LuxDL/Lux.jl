@@ -1,0 +1,188 @@
+        2 ```@meta
+     1131 EditURL = "../../../../examples/PolynomialFitting/main.jl"
+      506 ```
+      751 
+      258 # Fitting a Polynomial using MLP
+      252 
+      250 In this tutorial we will fit a MultiLayer Perceptron (MLP) on data generated from a
+      500 polynomial.
+        3 
+        - ## Package Imports
+        4 
+        - ````julia
+        1 using Lux, LuxAMDGPU, LuxCUDA, Optimisers, Random, Statistics, Zygote
+        - using CairoMakie, MakiePublication
+        - ````
+        - 
+        - ## Dataset
+        - 
+        - Generate 128 datapoints from the polynomial $y = x^2 - 2x$.
+        - 
+        - ````julia
+        - function generate_data(rng::AbstractRNG)
+        -     x = reshape(collect(range(-2.0f0, 2.0f0, 128)), (1, 128))
+        -     y = evalpoly.(x, ((0, -2, 1),)) .+ randn(rng, (1, 128)) .* 0.1f0
+        -     return (x, y)
+        - end
+        - ````
+        - 
+        - ````
+        - generate_data (generic function with 1 method)
+        - ````
+        - 
+        - Initialize the random number generator and fetch the dataset.
+        - 
+        - ````julia
+        - rng = MersenneTwister()
+        - Random.seed!(rng, 12345)
+        - 
+        - (x, y) = generate_data(rng)
+        - ````
+        - 
+        - ````
+        - (Float32[-2.0 -1.968504 -1.9370079 -1.9055119 -1.8740157 -1.8425196 -1.8110236 -1.7795275 -1.7480315 -1.7165354 -1.6850394 -1.6535434 -1.6220472 -1.5905511 -1.5590551 -1.527559 -1.496063 -1.464567 -1.4330709 -1.4015749 -1.3700787 -1.3385826 -1.3070866 -1.2755905 -1.2440945 -1.2125984 -1.1811024 -1.1496063 -1.1181102 -1.0866141 -1.0551181 -1.023622 -0.992126 -0.96062994 -0.92913383 -0.8976378 -0.86614174 -0.8346457 -0.8031496 -0.77165353 -0.7401575 -0.70866144 -0.6771653 -0.6456693 -0.61417323 -0.5826772 -0.5511811 -0.51968503 -0.48818898 -0.4566929 -0.42519686 -0.39370078 -0.36220473 -0.33070865 -0.2992126 -0.26771653 -0.23622048 -0.20472442 -0.17322835 -0.14173229 -0.11023622 -0.07874016 -0.047244094 -0.015748031 0.015748031 0.047244094 0.07874016 0.11023622 0.14173229 0.17322835 0.20472442 0.23622048 0.26771653 0.2992126 0.33070865 0.36220473 0.39370078 0.42519686 0.4566929 0.48818898 0.51968503 0.5511811 0.5826772 0.61417323 0.6456693 0.6771653 0.70866144 0.7401575 0.77165353 0.8031496 0.8346457 0.8661417
+        - ````
+        - 
+        - Let's visualize the dataset
+        - 
+        - ````julia
+        - with_theme(theme_web()) do
+        -     fig = Figure()
+        -     ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
+        - 
+        -     l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3)
+        -     s = scatter!(ax, x[1, :], y[1, :]; markersize=8, color=:orange,
+        -         strokecolor=:black, strokewidth=1)
+        - 
+        -     axislegend(ax, [l, s], ["True Quadratic Function", "Data Points"])
+        - 
+        -     return fig
+        - end
+        - ````
+        - 
+        - ```@raw html
+        - <img width=600 height=408 style='object-fit: contain; height: auto;' src="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAABLAAAAMwCAIAAAC/VA7OAAAABmJLR0QA/wD/AP+gvaeTAAAgAElEQVR4nOzdd1xTV/8H8G8SCBtFUAQEEZAtigvBBY5aV6sVq1XrbKtSR0WttVQ7tI4661ZaR/s4+rhbcdUNgoLIEpGlgIAgQ2aYSZ4/bp80hhVWEpLP+9U/wrkn535z5fn98uHcew5LKBQSAAAAAAAAqB62vAsAAAAAAAAA+UAgBAAAAAAAUFEIhAAAAAAAACoKgRAAAAAAAEBFIRACAAAAAACoKARCAAAAAAAAFYVACAAAAAAAoKIQCAEAAAAAAFQUAiEAAAAAAICKQiAEAAAAAABQUQiEAAAAAAAAKgqBEAAAAAAAQEUhEAIAAAAAAKgoBEIAAAAAAAAVhUAIAAAAAACgohAIAQAAAAAAVBQCIQAAAAAAgIpCIAQAAAAAAFBRCIQAAAAAAAAqCoEQAAAAAABARSEQAgAAAAAAqCgEQgAAAAAAABWFQAgAAAAAAKCiEAgBAAAAAABUFAIhAAAAAACAikIgBAAAAAAAUFEIhAAAAAAAACoKgRAAAAAAAEBFIRACAAAAAACoKARCAAAAAAAAFaUm7wLaABaLJe8SAAAAAABARQmFwtYbHDOEAAAAAAAAKgozhNJq1VwOAAAAAAAgQQb3KmKGEAAAAAAAQEUhEAIAAAAAAKgoBEIAAAAAAAAVhUAIAAAAAACgohAIAQAAAAAAVBQCIQAAAAAAgIpCIAQAAAAAAFBRCIQAAAAAAAAqCoEQAAAAAABARanJu4A2w8zMTPQ6IyNDjpUAAAAAAAC0CJZQKJR3DYqOxWJJtOCiAQAAAABAa2OSSKumD8wQSis9PV3eJQAAAAAAALQkzBA2TAa5HAAAAAAAQIIMkggWlQEAAAAAAFBRCI
+        - ```
+        - 
+        - ## Neural Network
+        - 
+        - For this problem, you should not be using a neural network. But let's still do that!
+        - 
+        - ````julia
+        - model = Chain(Dense(1 => 16, relu), Dense(16 => 1))
+        - ````
+        - 
+        - ````
+        - Chain(
+        -     layer_1 = Dense(1 => 16, relu),     # 32 parameters
+        -     layer_2 = Dense(16 => 1),           # 17 parameters
+        - )         # Total: 49 parameters,
+        -           #        plus 0 states.
+        - ````
+        - 
+        - ## Optimizer
+        - 
+        - We will use Adam from Optimisers.jl
+        - 
+        - ````julia
+        - opt = Adam(0.03f0)
+        - ````
+        - 
+        - ````
+        - Adam(0.03, (0.9, 0.999), 1.0e-8)
+        - ````
+        - 
+        - ## Loss Function
+        - 
+        - We will use the `Lux.Training` API so we need to ensure that our loss function takes 4
+        - inputs -- model, parameters, states and data. The function must return 3 values -- loss,
+        - updated_state, and any computed statistics.
+        - 
+        - ````julia
+        - function loss_function(model, ps, st, data)
+        -     y_pred, st = Lux.apply(model, data[1], ps, st)
+        -     mse_loss = mean(abs2, y_pred .- data[2])
+        -     return mse_loss, st, ()
+        - end
+        - ````
+        - 
+        - ````
+        - loss_function (generic function with 1 method)
+        - ````
+        - 
+        - ## Training
+        - 
+        - First we will create a [`Lux.Experimental.TrainState`](@ref) which is essentially a
+        - convenience wrapper over parameters, states and optimizer states.
+        - 
+        - ````julia
+        - tstate = Lux.Training.TrainState(rng, model, opt)
+        - ````
+        - 
+        - ````
+        - Lux.Experimental.TrainState{Lux.Chain{@NamedTuple{layer_1::Lux.Dense{true, typeof(NNlib.relu), typeof(WeightInitializers.glorot_uniform), typeof(WeightInitializers.zeros32)}, layer_2::Lux.Dense{true, typeof(identity), typeof(WeightInitializers.glorot_uniform), typeof(WeightInitializers.zeros32)}}, Nothing}, @NamedTuple{layer_1::@NamedTuple{weight::CUDA.CuArray{Float32, 2, CUDA.Mem.DeviceBuffer}, bias::CUDA.CuArray{Float32, 2, CUDA.Mem.DeviceBuffer}}, layer_2::@NamedTuple{weight::CUDA.CuArray{Float32, 2, CUDA.Mem.DeviceBuffer}, bias::CUDA.CuArray{Float32, 2, CUDA.Mem.DeviceBuffer}}}, @NamedTuple{layer_1::@NamedTuple{}, layer_2::@NamedTuple{}}, @NamedTuple{layer_1::@NamedTuple{weight::Optimisers.Leaf{Optimisers.Adam, Tuple{CUDA.CuArray{Float32, 2, CUDA.Mem.DeviceBuffer}, CUDA.CuArray{Float32, 2, CUDA.Mem.DeviceBuffer}, Tuple{Float32, Float32}}}, bias::Optimisers.Leaf{Optimisers.Adam, Tuple{CUDA.CuArray{Float32, 2, CUDA.Mem.DeviceBuffer}, CUDA.CuArray{Float32, 2, CUDA.Mem.DeviceBuffer}, Tuple{Float32, Float32}}
+        - ````
+        - 
+        - Now we will use Zygote for our AD requirements.
+        - 
+        - ````julia
+        - vjp_rule = Lux.Training.AutoZygote()
+        - ````
+        - 
+        - ````
+        - ADTypes.AutoZygote()
+        - ````
+        - 
+        - Finally the training loop.
+        - 
+        - ````julia
+        - function main(tstate::Lux.Experimental.TrainState, vjp, data, epochs)
+        -     data = data .|> gpu_device()
+        -     for epoch in 1:epochs
+        -         grads, loss, stats, tstate = Lux.Training.compute_gradients(
+        -             vjp, loss_function, data, tstate)
+        -         println("Epoch: $(epoch) || Loss: $(loss)")
+        -         tstate = Lux.Training.apply_gradients(tstate, grads)
+        -     end
+        -     return tstate
+        - end
+        - 
+        - dev_cpu = cpu_device()
+        - dev_gpu = gpu_device()
+        - 
+        - tstate = main(tstate, vjp_rule, (x, y), 250)
+        - y_pred = dev_cpu(Lux.apply(tstate.model, dev_gpu(x), tstate.parameters, tstate.states)[1])
+        - ````
+        - 
+        - ````
+        - 1×128 Matrix{Float32}:
+        -  7.93183  7.76661  7.60138  7.43616  7.27094  7.10571  6.94049  6.77526  6.61004  6.44482  6.27959  6.11437  5.94914  5.78392  5.61869  5.45347  5.28825  5.12302  4.9578  4.79257  4.62735  4.46213  4.29696  4.14682  4.01403  3.88123  3.74844  3.61565  3.48286  3.35007  3.21728  3.08449  2.9517  2.82191  2.70562  2.58933  2.47304  2.35675  2.24045  2.12416  2.00787  1.89158  1.77932  1.67136  1.5634  1.45544  1.34748  1.2629  1.18945  1.116  1.04255  0.969101  0.895651  0.822201  0.748752  0.675301  0.601852  0.528402  0.454952  0.381502  0.308053  0.234603  0.161153  0.0877032  0.0142532  -0.0591969  -0.132646  -0.206096  -0.279546  -0.352996  -0.426446  -0.499896  -0.570314  -0.604514  -0.638714  -0.672914  -0.707113  -0.741313  -0.775513  -0.809713  -0.843913  -0.878112  -0.912312  -0.946512  -0.980712  -0.986986  -0.984269  -0.981553  -0.978836  -0.97612  -0.973403  -0.970686  -0.96797  -0.965253  -0.962536  -0.95982  -0.957103  -0.954386  -0.95167  -0.938959  -0.914586  -0.890214  -0.865841  -0.841469  -
+        - ````
+        - 
+        - Let's plot the results
+        - 
+        - ````julia
+        - with_theme(theme_web()) do
+        -     fig = Figure()
+        -     ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
+        - 
+        -     l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3)
+        -     s1 = scatter!(ax, x[1, :], y[1, :]; markersize=8, color=:orange,
+        -         strokecolor=:black, strokewidth=1)
+        -     s2 = scatter!(ax, x[1, :], y_pred[1, :]; markersize=8,
+        -         color=:green, strokecolor=:black, strokewidth=1)
+        - 
+        -     axislegend(ax, [l, s1, s2], ["True Quadratic Function", "Actual Data", "Predictions"])
+        - 
+        -     return fig
+        - end
+        - ````
+        - 
+        - ```@raw html
+        - <img width=600 height=408 style='object-fit: contain; height: auto;' src="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAABLAAAAMwCAIAAAC/VA7OAAAABmJLR0QA/wD/AP+gvaeTAAAgAElEQVR4nOzdeVyUVdsH8N+wb4IICgIqsi9uiKJImoimaaYlrpmm9uSSaaI+bmnmimvmnva6VG5ppSUplkmigLgAkqKIgggGsqnsyzDvH7fNM8IAA8IMy+/74Y/hnDPnXPcdyVycc58jkkgkICIiIiIioqZHTdUBEBERERERkWowISQiIiIiImqimBASERERERE1UUwIiYiIiIiImigmhERERERERE0UE0IiIiIiIqImigkhERERERFRE8WEkIiIiIiIqIliQkhERERERNREMSEkIiIiIiJqopgQEhERERERNVFMCImIiIiIiJooJoRERERERERNFBNCIiIiIiKiJooJIRERERERURPFhJCIiIiIiKiJYkJIRERERETURDEhJCIiIiIiaqKYEBIRERERETVRTAiJiIiIiIiaKCaERERERERETRQTQiIiIiIioiaKCSEREREREVETxYSQiIiIiIioiWJCSERERERE1EQxISQiIiIiImqimBASERERERE1UUwIiYiIiIiImigmhERERERERE0UE0IiIiIiIqImSkPVATQAIpFI1SEQEREREVETJZFI6q5zzhASERERERE1UZwhVFSd5uVERERERERlKGGtImcIiYiIiIiImigmhERERERERE0UE0IiIiIiIqImigkhERERERFRE8WEkIiIiIiIqIliQkhERERERNREMSEkIiIiIiJqopgQEhERERERNVFMCImIiIiIiJooDVUH0GBYWlpKXycnJ6swEiIiIiIiolohkkgkqo6hvhOJRGVKeNOIiIiIiKiuCZlInWYfnCFUVFJSkqpDICIiIiIiqk2cIayaEvJyIiIiIiKiMpSQiX
+        - ```
+        - 
+        - ---
+        - 
+        - *This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
+        - 
