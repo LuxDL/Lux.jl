@@ -127,7 +127,7 @@ end
             ps, st = dev(Lux.setup(rng, model))
             x = aType(x)
 
-            if LuxTestUtils.ENZYME_TESTING_ENABLED
+            if LuxTestUtils.ENZYME_TESTING_ENABLED[]
                 test_enzyme_gradients(model, x, ps, st)
             else
                 @test_broken false
@@ -154,7 +154,7 @@ end
             st = dev(st)
             x = aType(x)
 
-            if LuxTestUtils.ENZYME_TESTING_ENABLED
+            if LuxTestUtils.ENZYME_TESTING_ENABLED[]
                 test_enzyme_gradients(model, x, ps, st)
             else
                 @test_broken false

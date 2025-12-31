@@ -138,7 +138,7 @@ end
 end
 
 @testitem "Enzyme.Forward patch: dense" tags = [:common] setup = [SharedTestSetup] skip =
-    :(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
+    :(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED[]) begin
     using LuxLib, Random, ForwardDiff, Enzyme
 
     x = rand(Float32, 2, 2)
@@ -149,7 +149,7 @@ end
 end
 
 @testitem "Enzyme rules for fused dense" tags = [:common] setup = [SharedTestSetup] skip =
-    :(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
+    :(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED[]) begin
     using LuxLib, NNlib, Zygote, Enzyme
 
     # These are mostly for testing the CUDA rules since we don't enable the CUDA tests
