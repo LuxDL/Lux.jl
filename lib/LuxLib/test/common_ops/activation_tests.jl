@@ -49,7 +49,7 @@
             @jet apply_act_fast2(f, x)
 
             @test_gradients(apply_act, f, x; atol, rtol)
-            @test_gradients(apply_act_fast, f, x; atol, rtol, skip_backends=[AutoEnzyme()])
+            @test_gradients(apply_act_fast, f, x; atol, rtol)
             @test_gradients(apply_act_fast2, f, x; atol, rtol)
 
             ∂x1 = Zygote.gradient(apply_act, f, x)[2]

@@ -416,11 +416,11 @@ end
 end
 
 @testitem "Generalized Batched MatMul" tags = [:misc] begin
-    using Reactant, Enzyme, LuxLib, NNlib, Zygote
+    using Reactant, Enzyme, LuxLib, NNlib
 
     @testset "Last 2 dims are batch dims" begin
-        x = randn(Float32, 3, 4, 5, 2)
-        y = randn(Float32, 5, 4, 5, 1)
+        x = Reactant.TestUtils.construct_test_array(Float32, 3, 4, 5, 2)
+        y = Reactant.TestUtils.construct_test_array(Float32, 5, 4, 5, 1)
 
         x_ra = Reactant.to_rarray(x)
         y_ra = Reactant.to_rarray(y)
@@ -437,16 +437,18 @@ end
         @test bmm_nnlib ≈ bmm_luxlib atol = 1.0e-3 rtol = 1.0e-3
         @test bmm_luxlib ≈ bmm_reactant atol = 1.0e-3 rtol = 1.0e-3
 
-        ∂x_zyg, ∂y_zyg = Zygote.gradient(sum ∘ bmm, x, y)
+        ∂x_fd, ∂y_fd = @jit Reactant.TestUtils.finite_difference_gradient(
+            sum ∘ bmm, Float64.(x_ra), Float64.(y_ra)
+        )
         ∂x_reactant, ∂y_reactant = @jit Enzyme.gradient(Reverse, sum ∘ bmm, x_ra, y_ra)
 
-        @test ∂x_zyg ≈ ∂x_reactant atol = 1.0e-3 rtol = 1.0e-3
-        @test ∂y_zyg ≈ ∂y_reactant atol = 1.0e-3 rtol = 1.0e-3
+        @test ∂x_fd ≈ ∂x_reactant atol = 1.0e-3 rtol = 1.0e-3
+        @test ∂y_fd ≈ ∂y_reactant atol = 1.0e-3 rtol = 1.0e-3
     end
 
     @testset "Middle dims are batch dims" begin
-        x = randn(Float32, 3, 5, 2, 4)
-        y = randn(Float32, 4, 5, 1, 5)
+        x = Reactant.TestUtils.construct_test_array(Float32, 3, 5, 2, 4)
+        y = Reactant.TestUtils.construct_test_array(Float32, 4, 5, 1, 5)
 
         x_ra = Reactant.to_rarray(x)
         y_ra = Reactant.to_rarray(y)
@@ -469,10 +471,12 @@ end
         @test bmm_nnlib ≈ bmm_luxlib atol = 1.0e-3 rtol = 1.0e-3
         @test bmm_luxlib ≈ bmm_reactant atol = 1.0e-3 rtol = 1.0e-3
 
-        ∂x_zyg, ∂y_zyg = Zygote.gradient(sum ∘ bmm, x, y)
+        ∂x_fd, ∂y_fd = @jit Reactant.TestUtils.finite_difference_gradient(
+            sum ∘ bmm, Float64.(x_ra), Float64.(y_ra)
+        )
         ∂x_reactant, ∂y_reactant = @jit Enzyme.gradient(Reverse, sum ∘ bmm, x_ra, y_ra)
 
-        @test ∂x_zyg ≈ ∂x_reactant atol = 1.0e-3 rtol = 1.0e-3
-        @test ∂y_zyg ≈ ∂y_reactant atol = 1.0e-3 rtol = 1.0e-3
+        @test ∂x_fd ≈ ∂x_reactant atol = 1.0e-3 rtol = 1.0e-3
+        @test ∂y_fd ≈ ∂y_reactant atol = 1.0e-3 rtol = 1.0e-3
     end
 end
