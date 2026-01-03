@@ -15,7 +15,7 @@ import os
 import json
 
 from functools import partial
-from typing import Any, Tuple
+from typing import Any
 from collections.abc import Callable, Sequence
 
 import flax.linen as nn
@@ -153,7 +153,7 @@ def loss_fn(p, x, y):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--batch-size", type=list, default=[1, 4, 32, 128])
-    parser.add_argument("--model-size", type=list, default=[18, 34, 50, 101, 152])
+    parser.add_argument("--model-size", type=list, default=[18, 34, 50, 101])
     args = parser.parse_args()
 
     timings = dict()

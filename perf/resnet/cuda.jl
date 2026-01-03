@@ -57,7 +57,7 @@ Comonicon.@main function main(;
             )
         end
 
-        println(timings[m])
+        display(timings[m])
     end
 
     results_path = joinpath(@__DIR__, "../results/resnet/")

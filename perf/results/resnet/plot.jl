@@ -12,8 +12,8 @@ begin
         "Framework" => String[],
         "Model Depth" => String[],
         "Batch Size" => String[],
-        "Forward Time" => Float64[],
-        "Backward Time" => Float64[],
+        "Primal Time" => Float64[],
+        "Reverse Time" => Float64[],
     )
 
     for (framework, results) in [
@@ -27,8 +27,8 @@ begin
                         "Framework" => framework,
                         "Model Depth" => depth,
                         "Batch Size" => batch_size,
-                        "Forward Time" => times["forward"],
-                        "Backward Time" =>
+                        "Primal Time" => times["forward"],
+                        "Reverse Time" =>
                             parse(Int, batch_size) == 1 ? -1.0 : times["backward"],
                     ),
                 )
@@ -37,14 +37,13 @@ begin
     end
 
     df_long = stack(
-        df, ["Forward Time", "Backward Time"]; variable_name="Mode", value_name="Time (s)"
+        df, ["Primal Time", "Reverse Time"]; variable_name="Mode", value_name="Time (s)"
     )
 
     df_long = filter(row -> row["Time (s)"] ≥ 0, df_long)
 end
 
-for (color, fname) in
-    ((:white, "resnet_runtimes_dark.svg"), (:black, "resnet_runtimes.svg"))
+for (color, fname) in ((:white, "resnet_runtimes_dark"), (:black, "resnet_runtimes"))
     fig = draw(
         data(df_long) *
         mapping(
@@ -81,7 +80,12 @@ for (color, fname) in
         facet=(; linkyaxes=:minimal),
     )
 
-    save(joinpath(@__DIR__, fname), fig)
+    if isdefined(Main, :VSCodeServer)
+        display(fig)
+    end
+
+    save(joinpath(@__DIR__, fname * ".svg"), fig)
+    save(joinpath(@__DIR__, fname * ".pdf"), fig)
 end
 
 begin
@@ -89,8 +93,8 @@ begin
         "Comparison" => String[],
         "Model Depth" => String[],
         "Batch Size" => String[],
-        "Forward Time" => Float64[],
-        "Backward Time" => Float64[],
+        "Primal Time" => Float64[],
+        "Reverse Time" => Float64[],
     )
     df_hlines = DataFrame(
         "Comparison" => String[], "Model Depth" => String[], "Hline" => Float64[]
@@ -112,10 +116,10 @@ begin
                         "Comparison" => "JAX / Reactant.jl",
                         "Model Depth" => depth,
                         "Batch Size" => batch_size,
-                        "Forward Time" =>
+                        "Primal Time" =>
                             jax_results[depth][batch_size]["forward"] /
                             reactant_results[depth][batch_size]["forward"],
-                        "Backward Time" =>
+                        "Reverse Time" =>
                             jax_results[depth][batch_size]["backward"] /
                             reactant_results[depth][batch_size]["backward"],
                     ),
@@ -140,10 +144,10 @@ begin
                         "Comparison" => "CUDA.jl / Reactant.jl",
                         "Model Depth" => depth,
                         "Batch Size" => batch_size,
-                        "Forward Time" =>
+                        "Primal Time" =>
                             cudajl_results[depth][batch_size]["forward"] /
                             reactant_results[depth][batch_size]["forward"],
-                        "Backward Time" =>
+                        "Reverse Time" =>
                             cudajl_results[depth][batch_size]["backward"] /
                             reactant_results[depth][batch_size]["backward"],
                     ),
@@ -165,16 +169,20 @@ begin
 
     df_speedups_long = stack(
         df_speedups,
-        ["Forward Time", "Backward Time"];
+        ["Primal Time", "Reverse Time"];
         variable_name="Mode",
         value_name="Time Ratio",
     )
 
-    df_speedups_long = filter(row -> row["Time Ratio"] ≥ 0, df_speedups_long)
+    df_speedups_long = filter(
+        row ->
+            row["Time Ratio"] ≥ 0 &&
+                !(row["Mode"] == "Reverse Time" && row["Batch Size"] == "1"),
+        df_speedups_long,
+    )
 end
 
-for (color, fname) in
-    ((:white, "resnet_speedups_dark.svg"), (:black, "resnet_speedups.svg"))
+for (color, fname) in ((:white, "resnet_speedups_dark"), (:black, "resnet_speedups"))
     fig = draw(
         (
             (
@@ -207,5 +215,10 @@ for (color, fname) in
         legend=(; position=:bottom, backgroundcolor=:transparent, labelcolor=color),
     )
 
-    save(joinpath(@__DIR__, fname), fig)
+    if isdefined(Main, :VSCodeServer)
+        display(fig)
+    end
+
+    save(joinpath(@__DIR__, fname * ".svg"), fig)
+    save(joinpath(@__DIR__, fname * ".pdf"), fig)
 end

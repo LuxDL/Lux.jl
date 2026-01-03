@@ -12,7 +12,7 @@ end
 Comonicon.@main function main(;
     optimize::String="all",
     batch_size::Vector{Int}=[1, 4, 32, 128],
-    model_size::Vector{Int}=[18, 34, 50, 101, 152],
+    model_size::Vector{Int}=[18, 34, 50, 101],
 )
     dev = reactant_device(; force=true)
 
@@ -33,45 +33,41 @@ Comonicon.@main function main(;
             x = rand(Float32, 224, 224, 3, b) |> dev
             y = rand(Float32, 1000, b) |> dev
 
-            model_compiled = Reactant.compile(
-                model, (x, ps, Lux.testmode(st)); sync=true, optimize=Symbol(optimize)
+            time = Reactant.Profiler.profile_with_xprof(
+                Lux.apply,
+                model,
+                x,
+                ps,
+                Lux.testmode(st);
+                nrepeat=10,
+                warmup=1,
+                compile_options=Reactant.CompileOptions(;
+                    optimization_passes=Symbol(optimize)
+                ),
             )
 
-            fwd_time = @belapsed begin
-                $(model_compiled)($(x), $(ps), $(Lux.testmode(st)))
-            end setup = begin
-                GC.gc(true)
-            end
+            fwd_time = time.profiling_result.runtime_ns / 1e9
 
             if b == 1
                 bwd_time = -1.0 # batchnorm cannot support batch size 1
             else
-                grad_compiled = Reactant.compile(
+                time = Reactant.Profiler.profile_with_xprof(
                     Enzyme.gradient,
-                    (
-                        Reverse,
-                        toy_loss_function,
-                        Const(model),
-                        ps,
-                        Const(st),
-                        Const(x),
-                        Const(y),
-                    );
-                    sync=true,
-                    optimize=Symbol(optimize),
+                    Reverse,
+                    toy_loss_function,
+                    Const(model),
+                    ps,
+                    Const(st),
+                    Const(x),
+                    Const(y);
+                    nrepeat=10,
+                    warmup=1,
+                    compile_options=Reactant.CompileOptions(;
+                        optimization_passes=Symbol(optimize)
+                    ),
                 )
 
-                bwd_time = @belapsed $(grad_compiled)(
-                    $Reverse,
-                    $(toy_loss_function),
-                    $(Const(model)),
-                    $(ps),
-                    $(Const(st)),
-                    $(Const(x)),
-                    $(Const(y)),
-                ) setup = begin
-                    GC.gc(true)
-                end
+                bwd_time = time.profiling_result.runtime_ns / 1e9
             end
 
             timings[m][b] = Dict{String,Float64}(
@@ -79,7 +75,7 @@ Comonicon.@main function main(;
             )
         end
 
-        println(timings[m])
+        display(timings[m])
     end
 
     results_path = joinpath(@__DIR__, "../results/resnet/")

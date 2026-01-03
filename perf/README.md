@@ -2,7 +2,7 @@
 
 ## ResNet
 
-Benchmarks were run on a single A100 GPU with 40GB of memory.
+Benchmarks were run on a single GeForce RTX 5090 GPU with 32GB of VRAM.
 
 <p align="center">
     <img src="results/resnet/resnet_runtimes.svg#gh-light-mode-only"/>
@@ -13,3 +13,5 @@ Benchmarks were run on a single A100 GPU with 40GB of memory.
     <img src="results/resnet/resnet_speedups.svg#gh-light-mode-only"/>
     <img src="results/resnet/resnet_speedups_dark.svg#gh-dark-mode-only"/>
 </p>
+
+## Kolmogorov-Arnold Networks
