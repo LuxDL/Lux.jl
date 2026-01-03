@@ -223,4 +223,4 @@ if __name__ == "__main__":
     os.makedirs(results_path, exist_ok=True)
 
     with open(os.path.join(results_path, "jax.json"), "w") as f:
-        json.dump(timings, f, indent=4)
+        json.dump(timings, f, indent=4, sort_keys=True)

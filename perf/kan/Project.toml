@@ -1,8 +1,10 @@
 [deps]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 Comonicon = "863f3e99-da2a-4334-8734-de3dacbe5542"
+ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
 Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
+KolmogorovArnold = "eec8b66d-f71a-4a43-b228-0fe5d6721cd3"
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
 LuxCUDA = "d0bbae9a-e099-4d5b-a835-1c6931763bda"
 OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"

@@ -1,5 +1,6 @@
 using Comonicon, BenchmarkTools, JSON3
 using Lux, LuxCUDA, Random, Zygote
+using OrderedCollections
 
 include("resnet.jl")
 
@@ -13,7 +14,7 @@ Comonicon.@main function main(;
 )
     dev = gpu_device(; force=true)
 
-    timings = Dict{Int,Dict{Int,Dict{String,Float64}}}()
+    timings = OrderedDict{Int,OrderedDict{Int,OrderedDict{String,Float64}}}
 
     for m in model_size
         println("model_size=$m")
@@ -23,7 +24,7 @@ Comonicon.@main function main(;
         println("Param count: $(Lux.parameterlength(ps))")
         println("State count: $(Lux.statelength(st))")
 
-        timings[m] = Dict{Int,Dict{String,Float64}}()
+        timings[m] = OrderedDict{Int,OrderedDict{String,Float64}}()
 
         for b in batch_size
             x = rand(Float32, 224, 224, 3, b) |> dev
@@ -52,7 +53,7 @@ Comonicon.@main function main(;
                 end
             end
 
-            timings[m][b] = Dict{String,Float64}(
+            timings[m][b] = OrderedDict{String,Float64}(
                 "forward" => fwd_time, "backward" => bwd_time
             )
         end
