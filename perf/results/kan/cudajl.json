@@ -1,0 +1,10 @@
+{
+    "kan_base_act": {
+        "forward": 0.000653249,
+        "backward": 0.002072847
+    },
+    "kan_no_base_act": {
+        "forward": 0.000556412,
+        "backward": 0.0016981
+    }
+}

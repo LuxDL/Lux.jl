@@ -13,7 +13,7 @@
 [![CI (pre-release)](<https://img.shields.io/github/actions/workflow/status/LuxDL/Lux.jl/CIPreRelease.yml?branch=main&label=CI%20(pre-release)&logo=github>)](https://github.com/LuxDL/Lux.jl/actions/workflows/CIPreRelease.yml)
 [![Build status](https://img.shields.io/buildkite/ba1f9622add5978c2d7b194563fd9327113c9c21e5734be20e/main.svg?label=gpu&branch=main&logo=buildkite)](https://buildkite.com/julialang/lux-dot-jl)
 [![codecov](https://codecov.io/gh/LuxDL/Lux.jl/branch/main/graph/badge.svg?token=IMqBM1e3hz)](https://codecov.io/gh/LuxDL/Lux.jl)
-[![Benchmarks](https://github.com/LuxDL/Lux.jl/actions/workflows/Benchmark.yml/badge.svg?branch=main)](https://lux.csail.mit.edu/benchmarks/)
+<!-- [![Benchmarks](https://github.com/LuxDL/Lux.jl/actions/workflows/Benchmark.yml/badge.svg?branch=main)](https://lux.csail.mit.edu/benchmarks/) -->
 
 [![Downloads](https://img.shields.io/badge/dynamic/json?url=http%3A%2F%2Fjuliapkgstats.com%2Fapi%2Fv1%2Fmonthly_downloads%2FLux&query=total_requests&suffix=%2Fmonth&label=Downloads)](https://juliapkgstats.com/pkg/Lux)
 [![Downloads](https://img.shields.io/badge/dynamic/json?url=http%3A%2F%2Fjuliapkgstats.com%2Fapi%2Fv1%2Ftotal_downloads%2FLux&query=total_requests&&label=Total%20Downloads)](https://juliapkgstats.com/pkg/Lux)
@@ -128,6 +128,18 @@ Pkg.add("Lux")
 [downloads-weightinitializers-url]: http://juliapkgstats.com/pkg/WeightInitializers
 [downloads-luxtestutils-url]: http://juliapkgstats.com/pkg/LuxTestUtils
 [downloads-luxcuda-url]: http://juliapkgstats.com/pkg/LuxCUDA
+
+## 🚀 Benchmarks
+
+Currently Benchmarks are scatter across a few places:
+
+  1. For comparison with other Julia packages like CUDA.jl take a look
+     at [Lux.jl/perf](./perf/README.md).
+  2. <https://enzymead.github.io/Enzyme-JAX/benchmarks/> highlights
+     performance of EnzymeJAX (backend for Reactant.jl) against JAX.
+  3. <https://enzymead.github.io/Reactant.jl/benchmarks/> highlights
+     performance of Reactant.jl against default XLA and base Julia
+     compilation.
 
 ## 🤸 Quickstart
 
