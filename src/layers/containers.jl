@@ -1,5 +1,5 @@
 """
-    SkipConnection(layers, connection; name=nothing)
+    SkipConnection(connection, layers; name=nothing)
     SkipConnection(; layers, connection, name=nothing)
 
 Create a skip connection which consists of a layer or [`Chain`](@ref) of consecutive layers
@@ -7,7 +7,7 @@ and a shortcut connection linking the block's input to the output through a user
 2-argument callable. The first argument to the callable will be propagated through the given
 `layer` while the second is the unchanged, "skipped" input.
 
-The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
+The simplest "ResNet"-type connection is just `SkipConnection(+, layer)`.
 
 ## Arguments
 
@@ -51,7 +51,7 @@ end
 
 PrettyPrinting.printable_children(l::SkipConnection) = (; l.connection, l.layers)
 
-function SkipConnection(layers, connection; name::NAME_TYPE=nothing)
+function SkipConnection(connection, layers; name::NAME_TYPE=nothing)
     return SkipConnection(; layers, connection, name)
 end
 
