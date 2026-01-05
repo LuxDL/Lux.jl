@@ -282,7 +282,7 @@ using SparseArrays
             @test typeof(cuda_device.device) <: CUDA.CuDevice
             @test cuda_device.device.handle == (idx - 1)
 
-            ps = cuda_device(ps)
+            ps = cuda_device(ps_cpu)
             @test ps.weight isa CUSPARSE.CuSparseMatrixCSC
             @test ps.bias isa CUSPARSE.CuSparseVector
             @test get_device(ps.weight).device.handle == idx - 1
