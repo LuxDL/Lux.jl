@@ -2,7 +2,6 @@ module MLDataDevicesCUDAExt
 
 using Adapt: Adapt
 using CUDA: CUDA, CuArray
-using CUDA.CUSPARSE: AbstractCuSparseMatrix, AbstractCuSparseVector, AbstractCuSparseArray
 using MLDataDevices: MLDataDevices, Internal, CUDADevice, CPUDevice
 using Random: Random
 
@@ -29,11 +28,10 @@ function Internal.get_device(x::CUDA.AnyCuArray)
     parent_x === x && return CUDADevice(CUDA.device(x))
     return MLDataDevices.get_device(parent_x)
 end
-Internal.get_device(x::AbstractCuSparseArray) = CUDADevice(CUDA.device(x.nzVal))
 Internal.get_device(::CUDA.RNG) = CUDADevice(CUDA.device())
 Internal.get_device(::CUDA.CURAND.RNG) = CUDADevice(CUDA.device())
 
-Internal.get_device_type(::Union{<:CUDA.AnyCuArray,<:AbstractCuSparseArray}) = CUDADevice
+Internal.get_device_type(::CUDA.AnyCuArray) = CUDADevice
 Internal.get_device_type(::CUDA.RNG) = CUDADevice
 Internal.get_device_type(::CUDA.CURAND.RNG) = CUDADevice
 
@@ -94,34 +92,5 @@ function Adapt.adapt_storage(to::CUDADevice{D,E}, x::AbstractArray) where {D,E}
 end
 
 Adapt.adapt_storage(::CPUDevice, rng::CUDA.RNG) = Random.default_rng()
-
-# Defining as extensions seems to case precompilation errors
-@static if isdefined(CUDA.CUSPARSE, :SparseArrays)
-    function Adapt.adapt_storage(::CPUDevice{Missing}, x::AbstractCuSparseMatrix)
-        return CUDA.CUSPARSE.SparseArrays.SparseMatrixCSC(x)
-    end
-    function Adapt.adapt_storage(::CPUDevice{Missing}, x::AbstractCuSparseVector)
-        return CUDA.CUSPARSE.SparseArrays.SparseVector(x)
-    end
-    function Adapt.adapt_storage(::CPUDevice{Nothing}, x::AbstractCuSparseMatrix)
-        return CUDA.CUSPARSE.SparseArrays.SparseMatrixCSC(x)
-    end
-    function Adapt.adapt_storage(::CPUDevice{Nothing}, x::AbstractCuSparseVector)
-        return CUDA.CUSPARSE.SparseArrays.SparseVector(x)
-    end
-    function Adapt.adapt_storage(
-        ::CPUDevice{T}, x::AbstractCuSparseMatrix
-    ) where {T<:AbstractFloat}
-        return CUDA.CUSPARSE.SparseArrays.SparseMatrixCSC{T}(x)
-    end
-    function Adapt.adapt_storage(
-        ::CPUDevice{T}, x::AbstractCuSparseVector
-    ) where {T<:AbstractFloat}
-        return CUDA.CUSPARSE.SparseArrays.SparseVector{T}(x)
-    end
-else
-    @warn "CUDA.CUSPARSE seems to have removed SparseArrays as a dependency. Please open \
-           an issue in MLDataDevices.jl repository."
-end
 
 end

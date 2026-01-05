@@ -1,7 +1,7 @@
 name = "MLDataDevices"
 uuid = "7e8f7934-dd98-4c1a-8fe8-92b47a384d40"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "1.16.0"
+version = "1.16.1"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
@@ -39,6 +39,7 @@ MLDataDevicesChainRulesExt = "ChainRules"
 MLDataDevicesComponentArraysExt = "ComponentArrays"
 MLDataDevicesFillArraysExt = "FillArrays"
 MLDataDevicesGPUArraysExt = "GPUArrays"
+MLDataDevicesGPUArraysSparseArraysExt = ["GPUArrays", "SparseArrays"]
 MLDataDevicesMLUtilsExt = "MLUtils"
 MLDataDevicesMetalExt = ["GPUArrays", "Metal"]
 MLDataDevicesOneHotArraysExt = "OneHotArrays"
@@ -61,7 +62,7 @@ ChainRulesCore = "1.25.1"
 ComponentArrays = "0.15.22"
 FillArrays = "1"
 Functors = "0.5"
-GPUArrays = "10, 11"
+GPUArrays = "11.3.2"
 MLUtils = "0.4.4"
 Metal = "1"
 OneHotArrays = "0.2.10"
