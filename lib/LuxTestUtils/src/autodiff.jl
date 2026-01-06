@@ -1,18 +1,39 @@
+# taken from implementation in Lux.jl
+struct LuxEltypeAdaptor{T} end
+
+(l::LuxEltypeAdaptor)(x) = fmap(adapt(l), x)
+function (l::LuxEltypeAdaptor)(x::AbstractArray{T}) where {T}
+    return isbitstype(T) ? adapt(l, x) : map(adapt(l), x)
+end
+
+function Adapt.adapt_storage(
+    ::LuxEltypeAdaptor{T}, x::AbstractArray{<:AbstractFloat}
+) where {T<:AbstractFloat}
+    return convert(AbstractArray{T}, x)
+end
+
+function Adapt.adapt_storage(
+    ::LuxEltypeAdaptor{T}, x::AbstractArray{<:Complex{<:AbstractFloat}}
+) where {T<:AbstractFloat}
+    return convert(AbstractArray{Complex{T}}, x)
+end
+
 struct Constant{T}
     val::T
 end
 
-# Zygote.jl on CPU
+# FiniteDiff.jl on CPU
 function ground_truth_gradient(f, args...)
     cdev = cpu_device()
+    f64 = LuxEltypeAdaptor{Float64}()
     f_cpu = try
-        cdev(f)
+        f64(cdev(f))
     catch err
         @error "Encountered error while moving $(f) to CPU. Skipping movement... This can \
                 be fixed by defining overloads using ConstructionBase.jl" err
         f
     end
-    return gradient(f_cpu, AutoZygote(), map(cdev, args)...)
+    return gradient(f_cpu, AutoFiniteDiff(), map(f64, map(cdev, args))...)
 end
 
 # Zygote.jl
@@ -31,8 +52,9 @@ function gradient(f::F, ::AutoEnzyme{Nothing}, args...) where {F}
 end
 
 function gradient(f::F, ad::AutoEnzyme{<:Enzyme.ReverseMode}, args...) where {F}
-    !ENZYME_TESTING_ENABLED &&
+    if !ENZYME_TESTING_ENABLED[]
         return ntuple(Returns(GradientComputationSkipped()), length(args))
+    end
 
     args_activity = map(args) do x
         needs_gradient(x) && return Enzyme.Duplicated(x, Enzyme.make_zero(x))
@@ -79,13 +101,13 @@ end
 """
     test_gradients(f, args...; skip_backends=[], broken_backends=[], kwargs...)
 
-Test the gradients of `f` with respect to `args` using the specified backends.
+Test the gradients of `f` with respect to `args` using the specified backends. The ground
+truth gradients are computed using FiniteDiff.jl on CPU.
 
 | Backend        | ADType              | CPU | GPU | Notes             |
 |:-------------- |:------------------- |:--- |:--- |:----------------- |
 | Zygote.jl      | `AutoZygote()`      | ✔   | ✔   |                   |
 | ForwardDiff.jl | `AutoForwardDiff()` | ✔   | ✖   | `len ≤ 32`        |
-| FiniteDiff.jl  | `AutoFiniteDiff()`  | ✔   | ✖   | `len ≤ 32`        |
 | Enzyme.jl      | `AutoEnzyme()`      | ✔   | ✖   | Only Reverse Mode |
 
 ## Arguments
@@ -156,9 +178,8 @@ function test_gradients(
     push!(backends, AutoZygote())
     if !on_gpu
         total_length ≤ 32 && push!(backends, AutoForwardDiff())
-        total_length ≤ 32 && push!(backends, AutoFiniteDiff())
         # TODO: Move Enzyme out of here once it supports GPUs
-        if enable_enzyme_reverse_mode || ENZYME_TESTING_ENABLED
+        if enable_enzyme_reverse_mode || ENZYME_TESTING_ENABLED[]
             mode = if enzyme_set_runtime_activity
                 Enzyme.set_runtime_activity(Enzyme.Reverse)
             else
