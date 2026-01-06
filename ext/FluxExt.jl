@@ -1,9 +1,11 @@
-module LuxFluxExt
+module FluxExt
 
 using ArgCheck: @argcheck
 using Flux: Flux
 
 using Lux: Lux, FluxModelConversionException, LuxOps
+
+Lux.is_extension_loaded(::Val{:Flux}) = true
 
 function Lux.convert_flux_model(l::T; preserve_ps_st::Bool=false, kwargs...) where {T}
     @warn "Transformation for type $T not implemented. Using `FluxLayer` as a fallback." maxlog =

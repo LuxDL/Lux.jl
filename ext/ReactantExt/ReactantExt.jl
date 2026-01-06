@@ -1,4 +1,4 @@
-module LuxReactantExt
+module ReactantExt
 
 using ADTypes: ADTypes, AutoEnzyme
 using Enzyme: Enzyme, Active, Const, Duplicated

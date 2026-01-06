@@ -1,4 +1,4 @@
-module LuxTrackerExt
+module TrackerExt
 
 using ADTypes: AbstractADType, AutoTracker
 using ArrayInterface: ArrayInterface

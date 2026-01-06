@@ -1,4 +1,4 @@
-module LuxZygoteExt
+module ZygoteExt
 
 using ArgCheck: @argcheck
 using ADTypes: AutoZygote

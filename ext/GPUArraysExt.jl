@@ -1,4 +1,4 @@
-module LuxGPUArraysExt
+module GPUArraysExt
 
 using GPUArrays: AllocCache, @cached
 using Lux: Training

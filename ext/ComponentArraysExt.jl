@@ -1,4 +1,4 @@
-module LuxComponentArraysExt
+module ComponentArraysExt
 
 using ComponentArrays: ComponentArrays, ComponentArray
 using Lux: Lux, DistributedUtils

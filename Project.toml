@@ -62,16 +62,16 @@ MLDataDevices = { path = "lib/MLDataDevices" }
 WeightInitializers = { path = "lib/WeightInitializers" }
 
 [extensions]
-LuxComponentArraysExt = "ComponentArrays"
-LuxEnzymeExt = "Enzyme"
-LuxFluxExt = "Flux"
-LuxGPUArraysExt = "GPUArrays"
-LuxLossFunctionsExt = "LossFunctions"
-LuxMLUtilsExt = "MLUtils"
-LuxMPIExt = "MPI"
-LuxMPINCCLExt = ["CUDA", "MPI", "NCCL"]
-LuxMooncakeExt = "Mooncake"
-LuxReactantExt = [
+ComponentArraysExt = "ComponentArrays"
+EnzymeExt = "Enzyme"
+FluxExt = "Flux"
+GPUArraysExt = "GPUArrays"
+LossFunctionsExt = "LossFunctions"
+MLUtilsExt = "MLUtils"
+MPIExt = "MPI"
+MPINCCLExt = ["CUDA", "MPI", "NCCL"]
+MooncakeExt = "Mooncake"
+ReactantExt = [
     "Enzyme",
     "Reactant",
     "Functors",
@@ -82,10 +82,10 @@ LuxReactantExt = [
     "NNlib",
     "Statistics",
 ]
-LuxReverseDiffExt = ["FunctionWrappers", "ReverseDiff"]
-LuxSimpleChainsExt = "SimpleChains"
-LuxTrackerExt = "Tracker"
-LuxZygoteExt = "Zygote"
+ReverseDiffExt = ["FunctionWrappers", "ReverseDiff"]
+SimpleChainsExt = "SimpleChains"
+TrackerExt = "Tracker"
+ZygoteExt = "Zygote"
 
 [compat]
 ADTypes = "1.15"

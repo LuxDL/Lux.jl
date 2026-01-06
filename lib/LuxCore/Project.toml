@@ -1,7 +1,7 @@
 name = "LuxCore"
 uuid = "bb33d45b-7691-41d6-9220-0943567d0623"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "1.5.0"
+version = "1.5.1"
 
 [deps]
 DispatchDoctor = "8d63f2c5-f18a-4cf2-ba9d-b3f60fc568c8"

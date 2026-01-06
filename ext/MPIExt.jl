@@ -1,4 +1,4 @@
-module LuxMPIExt
+module MPIExt
 
 using MPI: MPI
 
@@ -6,6 +6,8 @@ using Lux: Lux, MPIBackend, NCCLBackend, DistributedUtils, Utils
 using Lux.LuxPreferences: MPI_CUDA_AWARE, MPI_ROCM_AWARE
 using MLDataDevices:
     AbstractDevice, CUDADevice, AMDGPUDevice, cpu_device, set_device!, functional
+
+Lux.is_extension_loaded(::Val{:MPI}) = true
 
 function DistributedUtils.force_initialize(
     ::Type{MPIBackend};

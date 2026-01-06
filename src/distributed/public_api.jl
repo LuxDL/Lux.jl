@@ -5,7 +5,7 @@ using SciMLPublic: @public
 using ConcreteStructs: @concrete
 using Optimisers: Optimisers
 
-using ..Lux: AbstractLuxDistributedBackend, MPIBackend, NCCLBackend
+using ..Lux: AbstractLuxDistributedBackend, MPIBackend, NCCLBackend, is_extension_loaded
 using MLDataDevices: get_device
 
 const CRC = ChainRulesCore
@@ -243,7 +243,7 @@ processes.
 end
 
 function DistributedDataContainer(backend::AbstractLuxDistributedBackend, data)
-    if Base.get_extension(@__MODULE__, :LuxMLUtilsExt) === nothing
+    if !is_extension_loaded(Val(:MLUtils))
         error("`MLUtils.jl` must be installed and loaded before using \
                `DistributedDataContainer`.")
     end
