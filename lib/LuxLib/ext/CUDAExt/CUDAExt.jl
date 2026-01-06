@@ -1,4 +1,4 @@
-module LuxLibCUDAExt
+module CUDAExt
 
 using CUDA: CUDA, CUBLAS, CuMatrix, CuVector, CuPtr
 using LinearAlgebra: LinearAlgebra, Transpose, Adjoint

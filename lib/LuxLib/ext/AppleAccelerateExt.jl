@@ -1,4 +1,4 @@
-module LuxLibAppleAccelerateExt
+module AppleAccelerateExt
 
 using LuxLib: Utils
 using Static: True

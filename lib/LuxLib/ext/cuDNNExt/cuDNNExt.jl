@@ -1,4 +1,4 @@
-module LuxLibcuDNNExt
+module cuDNNExt
 
 using LuxLib: LuxLib, Optional, ∂∅, Impl
 using LuxLib.Utils: Utils, safe_reshape, safe_vec, unsafe_known, recursive_unthunk

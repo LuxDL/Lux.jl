@@ -1,4 +1,4 @@
-module LuxLibBLISBLASExt
+module BLISBLASExt
 
 using LuxLib: Utils
 using Static: True

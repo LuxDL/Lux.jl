@@ -1,4 +1,4 @@
-module LuxLibSLEEFPiratesExt
+module SLEEFPiratesExt
 
 using ChainRulesCore: ChainRulesCore
 using NNlib: NNlib

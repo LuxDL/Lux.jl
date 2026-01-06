@@ -1,4 +1,4 @@
-module LuxLibReactantExt
+module ReactantExt
 
 using Reactant: Reactant, AnyTracedRArray, AnyTracedRVector, TracedRArray, @opcall
 using ReactantCore: materialize_traced_array

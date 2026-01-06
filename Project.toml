@@ -1,7 +1,7 @@
 name = "Lux"
 uuid = "b2108857-7c20-44ae-9111-449ecde12c47"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "1.29.0"
+version = "1.29.1"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -74,6 +74,7 @@ LuxMooncakeExt = "Mooncake"
 LuxReactantExt = [
     "Enzyme",
     "Reactant",
+    "Functors",
     "ReactantCore",
     "LuxLib",
     "MLDataDevices",
@@ -108,8 +109,8 @@ GPUArrays = "11"
 GPUArraysCore = "0.2"
 LinearAlgebra = "1.10"
 LossFunctions = "0.11.1, 1"
-LuxCore = "1.4.2"
-LuxLib = "1.14"
+LuxCore = "1.5"
+LuxLib = "1.15"
 MLDataDevices = "1.15"
 MLUtils = "0.4.4"
 MPI = "0.20.19"
