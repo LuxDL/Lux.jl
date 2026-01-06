@@ -1,4 +1,4 @@
-module WeightInitializersCUDAExt
+module CUDAExt
 
 using CUDA: CUDA, CURAND, CuArray
 using WeightInitializers: DeviceAgnostic

@@ -1,4 +1,4 @@
-module WeightInitializersAMDGPUExt
+module AMDGPUExt
 
 using AMDGPU: AMDGPU, ROCArray
 using WeightInitializers: DeviceAgnostic
