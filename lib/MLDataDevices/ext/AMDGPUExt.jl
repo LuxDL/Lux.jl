@@ -1,4 +1,4 @@
-module MLDataDevicesAMDGPUExt
+module AMDGPUExt
 
 using Adapt: Adapt
 using AMDGPU: AMDGPU, ROCArray

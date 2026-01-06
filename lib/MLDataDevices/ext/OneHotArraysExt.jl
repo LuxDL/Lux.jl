@@ -1,4 +1,4 @@
-module MLDataDevicesOneHotArraysExt
+module OneHotArraysExt
 
 using Adapt: Adapt
 using MLDataDevices:

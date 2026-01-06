@@ -1,4 +1,4 @@
-module MLDataDevicesOpenCLExt
+module OpenCLExt
 
 using Adapt: Adapt
 using GPUArrays: GPUArrays

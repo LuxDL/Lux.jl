@@ -16,7 +16,7 @@ MLDataDevices = {path = "../../../lib/MLDataDevices"}
 Flux = "0.16"
 Lux = "1.21"
 LuxCUDA = "0.3.4"
-MLDataDevices = "1.12"
+MLDataDevices = "1.17"
 Pkg = "1.10"
 StableRNGs = "1"
 Test = "1.10"

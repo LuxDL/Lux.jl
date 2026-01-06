@@ -1,7 +1,7 @@
 name = "MLDataDevices"
 uuid = "7e8f7934-dd98-4c1a-8fe8-92b47a384d40"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "1.16.1"
+version = "1.17.0"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
@@ -32,26 +32,26 @@ oneAPI = "8f75cd03-7ff8-4ecb-9b8f-daf728133b1b"
 OpenCL = "08131aa3-fb12-5dee-8b74-c09406e224a2"
 
 [extensions]
-MLDataDevicesAMDGPUExt = "AMDGPU"
-MLDataDevicesCUDAExt = "CUDA"
-MLDataDevicesChainRulesCoreExt = "ChainRulesCore"
-MLDataDevicesChainRulesExt = "ChainRules"
-MLDataDevicesComponentArraysExt = "ComponentArrays"
-MLDataDevicesFillArraysExt = "FillArrays"
-MLDataDevicesGPUArraysExt = "GPUArrays"
-MLDataDevicesGPUArraysSparseArraysExt = ["GPUArrays", "SparseArrays"]
-MLDataDevicesMLUtilsExt = "MLUtils"
-MLDataDevicesMetalExt = ["GPUArrays", "Metal"]
-MLDataDevicesOneHotArraysExt = "OneHotArrays"
-MLDataDevicesReactantExt = "Reactant"
-MLDataDevicesRecursiveArrayToolsExt = "RecursiveArrayTools"
-MLDataDevicesReverseDiffExt = "ReverseDiff"
-MLDataDevicesSparseArraysExt = "SparseArrays"
-MLDataDevicesTrackerExt = "Tracker"
-MLDataDevicesZygoteExt = "Zygote"
-MLDataDevicescuDNNExt = ["CUDA", "cuDNN"]
-MLDataDevicesoneAPIExt = ["GPUArrays", "oneAPI"]
-MLDataDevicesOpenCLExt = ["GPUArrays", "OpenCL"]
+AMDGPUExt = "AMDGPU"
+CUDAExt = "CUDA"
+ChainRulesCoreExt = "ChainRulesCore"
+ChainRulesExt = "ChainRules"
+ComponentArraysExt = "ComponentArrays"
+FillArraysExt = "FillArrays"
+GPUArraysExt = "GPUArrays"
+GPUArraysSparseArraysExt = ["GPUArrays", "SparseArrays"]
+MLUtilsExt = "MLUtils"
+MetalExt = ["GPUArrays", "Metal"]
+OneHotArraysExt = "OneHotArrays"
+ReactantExt = "Reactant"
+RecursiveArrayToolsExt = "RecursiveArrayTools"
+ReverseDiffExt = "ReverseDiff"
+SparseArraysExt = "SparseArrays"
+TrackerExt = "Tracker"
+ZygoteExt = "Zygote"
+cuDNNExt = ["CUDA", "cuDNN"]
+oneAPIExt = ["GPUArrays", "oneAPI"]
+OpenCLExt = ["GPUArrays", "OpenCL"]
 
 [compat]
 AMDGPU = "1, 2"

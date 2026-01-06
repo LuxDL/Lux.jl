@@ -1,4 +1,4 @@
-module MLDataDevicesGPUArraysSparseArraysExt
+module GPUArraysSparseArraysExt
 
 using Adapt: Adapt
 using SparseArrays: SparseMatrixCSC, SparseVector

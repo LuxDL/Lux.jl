@@ -19,7 +19,7 @@ MLDataDevices = {path = "../../lib/MLDataDevices"}
 ComponentArrays = "0.15.29"
 Lux = "1.21"
 LuxCUDA = "0.3.3"
-MLDataDevices = "1.12"
+MLDataDevices = "1.17"
 MLUtils = "0.4.8"
 MPI = "0.20.23"
 NCCL = "0.1.2"

@@ -1,4 +1,4 @@
-module MLDataDevicesGPUArraysExt
+module GPUArraysExt
 
 using Adapt: Adapt
 using GPUArrays: GPUArrays

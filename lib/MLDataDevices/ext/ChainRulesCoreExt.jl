@@ -1,4 +1,4 @@
-module MLDataDevicesChainRulesCoreExt
+module ChainRulesCoreExt
 
 using Adapt: Adapt
 using ChainRulesCore: ChainRulesCore, NoTangent, ProjectTo, @non_differentiable
