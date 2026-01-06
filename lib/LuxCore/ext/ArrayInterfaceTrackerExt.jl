@@ -1,4 +1,4 @@
-module LuxCoreArrayInterfaceTrackerExt
+module ArrayInterfaceTrackerExt
 
 using ArrayInterface: ArrayInterface
 using LuxCore: LuxCore, AbstractLuxLayer

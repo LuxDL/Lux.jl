@@ -1,4 +1,4 @@
-module LuxCoreMLDataDevicesExt
+module MLDataDevicesExt
 
 using Adapt: Adapt
 using LuxCore: LuxCore, AbstractLuxLayer

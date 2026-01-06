@@ -1,4 +1,4 @@
-module LuxCoreEnzymeCoreExt
+module EnzymeCoreExt
 
 using EnzymeCore: EnzymeCore, EnzymeRules
 using LuxCore: LuxCore
