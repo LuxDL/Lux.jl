@@ -1,4 +1,4 @@
-module LuxCoreArrayInterfaceReverseDiffExt
+module ArrayInterfaceReverseDiffExt
 
 using ArrayInterface: ArrayInterface
 using LuxCore: LuxCore, AbstractLuxLayer

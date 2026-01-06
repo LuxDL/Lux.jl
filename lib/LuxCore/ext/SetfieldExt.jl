@@ -1,4 +1,4 @@
-module LuxCoreSetfieldExt
+module SetfieldExt
 
 using LuxCore: LuxCore
 using Setfield: Setfield

@@ -1,4 +1,4 @@
-module LuxCoreChainRulesCoreExt
+module ChainRulesCoreExt
 
 using ChainRulesCore: ChainRulesCore, NoTangent, @non_differentiable
 using LuxCore: LuxCore, AbstractLuxLayer

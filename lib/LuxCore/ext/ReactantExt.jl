@@ -1,4 +1,4 @@
-module LuxCoreReactantExt
+module ReactantExt
 
 using LuxCore: AbstractLuxLayer, LuxCore
 using Reactant: Reactant

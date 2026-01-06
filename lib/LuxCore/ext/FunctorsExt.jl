@@ -1,4 +1,4 @@
-module LuxCoreFunctorsExt
+module FunctorsExt
 
 using LuxCore: LuxCore
 using Functors: Functors
