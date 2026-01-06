@@ -1,4 +1,4 @@
-module LuxLibOctavianExt
+module OctavianExt
 
 using Octavian: Octavian
 using Static: True

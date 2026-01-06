@@ -1,4 +1,4 @@
-module LuxLibMKLExt
+module MKLExt
 
 using LuxLib: Utils
 using Static: True

@@ -1,6 +1,6 @@
 name = "LuxLib"
 uuid = "82251201-b29d-42c6-8e01-566dec8acb11"
-version = "1.14.0"
+version = "1.15.0"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
 
 [deps]
@@ -50,21 +50,21 @@ path = "../LuxCore"
 path = "../MLDataDevices"
 
 [extensions]
-LuxLibAppleAccelerateExt = "AppleAccelerate"
-LuxLibBLISBLASExt = "BLISBLAS"
-LuxLibCUDAExt = "CUDA"
+AppleAccelerateExt = "AppleAccelerate"
+BLISBLASExt = "BLISBLAS"
+CUDAExt = "CUDA"
 CUDAForwardDiffExt = ["CUDA", "ForwardDiff"]
-LuxLibEnzymeExt = "Enzyme"
+EnzymeExt = "Enzyme"
 ForwardDiffExt = "ForwardDiff"
-LuxLibLoopVectorizationExt = ["LoopVectorization", "Polyester"]
-LuxLibMKLExt = "MKL"
-LuxLibOctavianExt = ["Octavian", "LoopVectorization"]
-LuxLibReactantExt = ["Reactant", "ReactantCore"]
-LuxLibReverseDiffExt = "ReverseDiff"
-LuxLibSLEEFPiratesExt = "SLEEFPirates"
-LuxLibTrackerAMDGPUExt = ["AMDGPU", "Tracker"]
-LuxLibTrackerExt = "Tracker"
-LuxLibcuDNNExt = ["CUDA", "cuDNN"]
+LoopVectorizationExt = ["LoopVectorization", "Polyester"]
+MKLExt = "MKL"
+OctavianExt = ["Octavian", "LoopVectorization"]
+ReactantExt = ["Reactant", "ReactantCore"]
+ReverseDiffExt = "ReverseDiff"
+SLEEFPiratesExt = "SLEEFPirates"
+TrackerAMDGPUExt = ["AMDGPU", "Tracker"]
+TrackerExt = "Tracker"
+cuDNNExt = ["CUDA", "cuDNN"]
 
 [compat]
 AMDGPU = "0.9.6, 1, 2"

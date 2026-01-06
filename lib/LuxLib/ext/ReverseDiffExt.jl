@@ -1,4 +1,4 @@
-module LuxLibReverseDiffExt
+module ReverseDiffExt
 
 using ChainRulesCore: ChainRulesCore
 using LuxLib: LuxLib, Utils, Traits

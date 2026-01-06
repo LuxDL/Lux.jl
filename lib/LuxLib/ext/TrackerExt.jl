@@ -1,4 +1,4 @@
-module LuxLibTrackerExt
+module TrackerExt
 
 using FastClosures: @closure
 using LuxLib: LuxLib, Utils, Impl, Traits, GenericBroadcastOp

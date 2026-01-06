@@ -1,4 +1,4 @@
-module LuxLibEnzymeExt
+module EnzymeExt
 
 using LuxLib: Utils
 using Static: True

@@ -1,4 +1,4 @@
-module LuxLibLoopVectorizationExt
+module LoopVectorizationExt
 
 using LoopVectorization: LoopVectorization, @tturbo, @turbo, indices
 using Polyester: @batch
