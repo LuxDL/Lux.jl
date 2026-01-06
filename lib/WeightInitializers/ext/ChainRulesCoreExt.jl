@@ -1,4 +1,4 @@
-module WeightInitializersChainRulesCoreExt
+module ChainRulesCoreExt
 
 using ChainRulesCore: @non_differentiable
 using WeightInitializers: WeightInitializers, DeviceAgnostic

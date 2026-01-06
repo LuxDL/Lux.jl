@@ -1,8 +1,8 @@
-module MLDataDevicesZygoteExt
+module ChainRulesExt
 
 using Adapt: Adapt
 using MLDataDevices: CPUDevice, AbstractDevice, Internal
-using Zygote: OneElement
+using ChainRules: OneElement
 
 Adapt.adapt_structure(::CPUDevice, x::OneElement) = x
 Adapt.adapt_structure(to::AbstractDevice, x::OneElement) = Adapt.adapt(to, collect(x))

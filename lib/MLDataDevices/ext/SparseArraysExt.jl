@@ -1,4 +1,4 @@
-module MLDataDevicesSparseArraysExt
+module SparseArraysExt
 
 using Adapt: Adapt
 using MLDataDevices: CPUDevice, Internal

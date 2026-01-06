@@ -1,4 +1,4 @@
-module MLDataDevicesFillArraysExt
+module FillArraysExt
 
 using Adapt: Adapt
 using FillArrays: AbstractFill, OneElement, Fill, Ones, Zeros

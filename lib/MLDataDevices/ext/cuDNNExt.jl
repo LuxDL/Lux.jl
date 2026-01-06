@@ -1,4 +1,4 @@
-module MLDataDevicescuDNNExt
+module cuDNNExt
 
 using CUDA: CUDA
 using cuDNN: cuDNN

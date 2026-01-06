@@ -1,4 +1,4 @@
-module MLDataDevicesReactantExt
+module ReactantExt
 
 using Adapt: Adapt
 using MLDataDevices: MLDataDevices, Internal, ReactantDevice, CPUDevice, AbstractDevice

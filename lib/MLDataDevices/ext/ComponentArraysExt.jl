@@ -1,4 +1,4 @@
-module MLDataDevicesComponentArraysExt
+module ComponentArraysExt
 
 using ComponentArrays: ComponentArrays
 using MLDataDevices: MLDataDevices

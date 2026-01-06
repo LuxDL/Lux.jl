@@ -1,4 +1,4 @@
-module WeightInitializersGPUArraysExt
+module GPUArraysExt
 
 using GPUArrays: RNG
 using WeightInitializers: DeviceAgnostic

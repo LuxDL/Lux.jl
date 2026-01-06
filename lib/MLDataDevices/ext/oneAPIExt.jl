@@ -1,4 +1,4 @@
-module MLDataDevicesoneAPIExt
+module oneAPIExt
 
 using Adapt: Adapt
 using GPUArrays: GPUArrays

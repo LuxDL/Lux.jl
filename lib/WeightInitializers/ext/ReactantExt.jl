@@ -1,4 +1,4 @@
-module WeightInitializersReactantExt
+module ReactantExt
 
 using Random: AbstractRNG
 using Reactant: Reactant, ReactantRNG, @reactant_overlay

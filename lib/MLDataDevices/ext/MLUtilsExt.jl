@@ -1,4 +1,4 @@
-module MLDataDevicesMLUtilsExt
+module MLUtilsExt
 
 using Adapt: Adapt
 using MLDataDevices: MLDataDevices, AbstractDevice, DeviceIterator

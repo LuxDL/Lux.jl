@@ -1,4 +1,4 @@
-module MLDataDevicesTrackerExt
+module TrackerExt
 
 using Adapt: Adapt
 using MLDataDevices: Internal, AbstractDevice
