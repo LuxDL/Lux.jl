@@ -1,4 +1,4 @@
-module LuxReverseDiffExt
+module ReverseDiffExt
 
 using ADTypes: ADTypes, AbstractADType, AutoReverseDiff
 using ArrayInterface: ArrayInterface

@@ -1,4 +1,4 @@
-module LuxLossFunctionsExt
+module LossFunctionsExt
 
 using ArrayInterface: fast_scalar_indexing
 using ChainRulesCore: ChainRulesCore, NoTangent, @thunk

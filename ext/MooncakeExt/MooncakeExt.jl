@@ -1,4 +1,4 @@
-module LuxMooncakeExt
+module MooncakeExt
 
 using ADTypes: AutoMooncake
 using Mooncake: Mooncake, value_and_pullback!!, prepare_pullback_cache

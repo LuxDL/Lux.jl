@@ -1,8 +1,10 @@
-module LuxMLUtilsExt
+module MLUtilsExt
 
 using MLUtils: MLUtils
 
 using Lux: Lux, DistributedUtils
+
+Lux.is_extension_loaded(::Val{:MLUtils}) = true
 
 function DistributedUtils.construct_distributed_data_container(
     backend::Lux.AbstractLuxDistributedBackend, data

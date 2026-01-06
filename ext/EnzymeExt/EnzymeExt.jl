@@ -1,4 +1,4 @@
-module LuxEnzymeExt
+module EnzymeExt
 
 using ADTypes: ADTypes, AutoEnzyme
 using Enzyme: Enzyme, Active, Const, Duplicated

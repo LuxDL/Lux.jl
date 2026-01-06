@@ -1,12 +1,14 @@
-module LuxMPINCCLExt
+module MPINCCLExt
 
 using ArgCheck: @argcheck
 using MPI: MPI
 using NCCL: NCCL
 using Setfield: @set!
 
-using Lux: MPIBackend, NCCLBackend, DistributedUtils
+using Lux: Lux, MPIBackend, NCCLBackend, DistributedUtils
 using MLDataDevices: AbstractDevice, CUDADevice
+
+Lux.is_extension_loaded(::Val{:MPINCCL}) = true
 
 function DistributedUtils.force_initialize(
     ::Type{NCCLBackend}; cuda_devices=nothing, amdgpu_devices=missing

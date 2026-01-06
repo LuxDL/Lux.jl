@@ -1,4 +1,4 @@
-module LuxSimpleChainsExt
+module SimpleChainsExt
 
 using ArgCheck: @argcheck
 using SimpleChains: SimpleChains
@@ -19,6 +19,8 @@ using Lux:
     MaxPool,
     SamePad
 using NNlib: NNlib
+
+Lux.is_extension_loaded(::Val{:SimpleChains}) = true
 
 function Lux.fix_simplechain_input_dims(layers::Vector, input_dims)
     L = Tuple(layers)
