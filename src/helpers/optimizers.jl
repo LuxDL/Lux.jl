@@ -56,7 +56,7 @@ function Optimisers.adjust(
     return ReactantOptimiser(results)
 end
 function Optimisers.adjust(
-    chain:ReactantOptimiser{<:Optimisers.OptimiserChain}; 
+    chain::ReactantOptimiser{<:Optimisers.OptimiserChain}; 
     kw...
 )
     results = Optimisers.OptimiserChain([Optimisers.adjust(opt; kw...) for opt in chain.opt.opts]...)
