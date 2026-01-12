@@ -4,7 +4,7 @@ using ADTypes: ADTypes, AutoEnzyme
 using Enzyme: Enzyme, Active, Const, Duplicated
 using EnzymeCore: EnzymeCore, Forward, Reverse
 using Functors: fmap
-using Setfield: @set!, @set
+using Setfield: @set!
 using Static: False, True
 
 using Lux: Lux, Utils, AutoDiffInternalImpl
