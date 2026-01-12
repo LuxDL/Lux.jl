@@ -544,8 +544,14 @@ function Chain(xs...; name::NAME_TYPE=nothing)
 end
 Chain(xs::AbstractVector; kwargs...) = Chain(xs...; kwargs...)
 Chain(nt::NamedTuple; name::NAME_TYPE=nothing) = Chain(nt, name)
-Chain(; name::NAME_TYPE=nothing, kwargs...) = Chain((; kwargs...); name)
-Chain() = Chain(NoOpLayer())
+
+function Chain(; name::NAME_TYPE=nothing, kwargs...)
+    if (name===nothing) && isempty(kwargs)
+        # a valid chain that does nothing
+        return Chain(NoOpLayer())
+    end
+    return Chain((; kwargs...); name=name)
+end
 
 function wrap_functions_in_chain_call(layers::Union{AbstractVector,Tuple})
     new_layers = []
