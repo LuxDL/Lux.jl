@@ -546,7 +546,7 @@ Chain(xs::AbstractVector; kwargs...) = Chain(xs...; kwargs...)
 Chain(nt::NamedTuple; name::NAME_TYPE=nothing) = Chain(nt, name)
 
 function Chain(; name::NAME_TYPE=nothing, kwargs...)
-    if (name===nothing) && isempty(kwargs)
+    if name === nothing && isempty(kwargs)
         # a valid chain that does nothing
         return Chain(NoOpLayer())
     end
