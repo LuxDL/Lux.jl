@@ -11,7 +11,7 @@ using ADTypes:
 using Adapt: Adapt, adapt
 using ArgCheck: @argcheck
 using ArrayInterface: ArrayInterface
-using ChainRulesCore: ChainRulesCore, NoTangent, @thunk
+using ChainRulesCore: ChainRulesCore, NoTangent
 using SciMLPublic: @public
 using ConcreteStructs: @concrete
 using EnzymeCore: EnzymeRules

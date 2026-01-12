@@ -7,7 +7,7 @@ GPUArrays.
 """
 module LuxOps
 
-using ChainRulesCore: ChainRulesCore, NoTangent, ZeroTangent, @thunk, @non_differentiable
+using ChainRulesCore: ChainRulesCore, NoTangent, ZeroTangent, @thunk
 using SciMLPublic: @public
 using EnzymeCore: EnzymeCore
 using FastClosures: @closure

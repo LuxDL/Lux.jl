@@ -434,9 +434,8 @@ end
 
 module CompactMacroImpl
 
-using ChainRulesCore: @non_differentiable
 using ConcreteStructs: @concrete
-using MacroTools: MacroTools, @capture, combinedef, splitdef
+using MacroTools: MacroTools, combinedef, splitdef
 using Functors: Functors
 using Random: AbstractRNG
 using Static: static

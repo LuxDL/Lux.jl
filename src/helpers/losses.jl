@@ -6,7 +6,6 @@ module LossFunctionImpl
 
 using ArrayInterface: fast_scalar_indexing
 using ChainRulesCore: ChainRulesCore, NoTangent, @non_differentiable, @thunk
-using FastClosures: @closure
 using ForwardDiff: ForwardDiff, Dual, Partials
 using Statistics: mean
 
