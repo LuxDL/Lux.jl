@@ -204,8 +204,8 @@ end
             @test Upsample(:trilinear; size=(64, 64)) isa Any
 
             @test_throws AssertionError Upsample(:linear; scale=2)
-            @test_throws AssertionError Upsample(:nearest; scale=2, size=(64, 64))
-            @test_throws AssertionError Upsample(:nearest)
+            @test_throws ArgumentError Upsample(:nearest; scale=2, size=(64, 64))
+            @test_throws ArgumentError Upsample(:nearest)
 
             @test Upsample(2) isa Any
             @test Upsample(2, :nearest) isa Any
