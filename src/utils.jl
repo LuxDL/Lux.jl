@@ -2,7 +2,7 @@ module Utils
 
 using ADTypes: ADTypes, AutoEnzyme
 using ArrayInterface: ArrayInterface
-using ChainRulesCore: ChainRulesCore, @non_differentiable, NoTangent
+using ChainRulesCore: ChainRulesCore, @non_differentiable, @thunk, NoTangent
 using ConcreteStructs: @concrete
 using EnzymeCore: EnzymeRules
 using ForwardDiff: Dual
@@ -117,9 +117,7 @@ vec(x::AbstractArray) = Base.vec(x)
 vec(::Nothing) = nothing
 
 function CRC.rrule(::typeof(vec), x::AbstractArray)
-    return (
-        Base.vec(x), Δ -> (NoTangent(), CRC.@thunk(reshape(recursive_unthunk(Δ), size(x))))
-    )
+    return (Base.vec(x), Δ -> (NoTangent(), @thunk(reshape(recursive_unthunk(Δ), size(x)))))
 end
 
 function sample_replicate(rng::AbstractRNG)

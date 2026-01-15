@@ -7,18 +7,6 @@ using ..Lux: Lux
 
 const LuxUUID = UUID("b2108857-7c20-44ae-9111-449ecde12c47")
 
-macro load_preference_with_choices(pref, default, choices)
-    msg1 = "Invalid value for `$(pref)` preference: "
-    msg2 = ". Valid choices are: $(choices)"
-    return esc(
-        quote
-            val = load_preference($(LuxUUID), $(pref), $(default))
-            val ∉ $(choices) && error($(msg1) * string(val) * $(msg2))
-            val
-        end,
-    )
-end
-
 # Nested AD
 const AUTOMATIC_NESTED_AD_SWITCHING = load_preference(
     LuxUUID, "automatic_nested_ad_switching", true
@@ -29,9 +17,19 @@ const MPI_CUDA_AWARE = load_preference(LuxUUID, "cuda_aware_mpi", false)
 const MPI_ROCM_AWARE = load_preference(LuxUUID, "rocm_aware_mpi", false)
 
 # Eltype Auto Conversion
-const ELTYPE_MISMATCH_HANDLING = @load_preference_with_choices(
-    "eltype_mismatch_handling", "none", ("none", "warn", "convert", "error")
+const ELTYPE_MISMATCH_HANDLING = load_preference(
+    LuxUUID, "eltype_mismatch_handling", "none"
 )
+
+function __init__()
+    if ELTYPE_MISMATCH_HANDLING ∉ ("none", "warn", "convert", "error")
+        error(
+            "Invalid value for `eltype_mismatch_handling` preference: ",
+            ELTYPE_MISMATCH_HANDLING,
+            ". Valid choices are: (\"none\", \"warn\", \"convert\", \"error\")",
+        )
+    end
+end
 
 # Dispatch Doctor
 function set_dispatch_doctor_preferences!(package, mode::String)
