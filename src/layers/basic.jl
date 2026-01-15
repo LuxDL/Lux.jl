@@ -238,7 +238,7 @@ julia> y, st_new = model(x, ps, st)
 """
 struct NoOpLayer <: AbstractLuxLayer end
 
-(noop::NoOpLayer)(x, _, st::NamedTuple) = x, st
+(::NoOpLayer)(x, _, st::NamedTuple) = x, st
 
 """
     WrappedFunction(f)
@@ -265,7 +265,7 @@ be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing to do would be
     func <: Function
 end
 
-(wf::WrappedFunction)(x, ps, st::NamedTuple{}) = wf.func(x), st
+(wf::WrappedFunction)(x, _ps, st::NamedTuple{}) = wf.func(x), st
 
 Base.show(io::IO, w::WrappedFunction) = print(io, "WrappedFunction(", w.func, ")")
 
@@ -356,7 +356,7 @@ function initialparameters(rng::AbstractRNG, d::Dense)
 end
 
 parameterlength(d::Dense) = d.out_dims * d.in_dims + has_bias(d) * d.out_dims
-statelength(d::Dense) = 0
+statelength(::Dense) = 0
 
 function outputsize(d::Dense, x::AbstractArray, ::AbstractRNG)
     return (d.out_dims, size(x)[2:(end - 1)]...)
@@ -445,7 +445,7 @@ function initialparameters(rng::AbstractRNG, d::Scale)
 end
 
 parameterlength(d::Scale) = (1 + has_bias(d)) * prod(d.dims)
-statelength(d::Scale) = 0
+statelength(::Scale) = 0
 
 outputsize(d::Scale, _, ::AbstractRNG) = d.dims
 
@@ -564,7 +564,7 @@ end
 function parameterlength(b::Bilinear)
     return b.out_dims * b.in1_dims * b.in2_dims + has_bias(b) * b.out_dims
 end
-statelength(b::Bilinear) = 0
+statelength(::Bilinear) = 0
 
 outputsize(b::Bilinear, _, ::AbstractRNG) = (b.out_dims,)
 

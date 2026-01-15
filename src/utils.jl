@@ -213,7 +213,9 @@ end
 make_abstract_matrix(x::AbstractVector) = reshape(x, :, 1)
 make_abstract_matrix(x::SVector{L,T}) where {L,T} = SMatrix{L,1,T}(x)
 make_abstract_matrix(x::AbstractMatrix) = x
-make_abstract_matrix(x::AbstractArray{T,N}) where {T,N} = reshape(x, Base.size(x, 1), :)
+function make_abstract_matrix(x::AbstractArray{T,N}) where {T,N}
+    return reshape(x, Base.size(x, 1)::Int, :)
+end
 
 matrix_to_array(x::AbstractMatrix, ::AbstractVector) = vec(x)
 matrix_to_array(x::SMatrix{L,1,T}, ::AbstractVector) where {L,T} = SVector{L,T}(x)
@@ -238,7 +240,7 @@ recursive_unthunk(x) = Functors.fmap(CRC.unthunk, x; exclude=MLDataDevices.islea
 
 convert_eltype(::Type{T}, x::Number) where {T<:Number} = convert(T, x)
 
-normalize_autoenzyme_mode(mode, ad::AutoEnzyme) = ad
+normalize_autoenzyme_mode(_, ad::AutoEnzyme) = ad
 normalize_autoenzyme_mode(mode, ad::AutoEnzyme{Nothing}) = @set(ad.mode = mode)
 
 annotate_enzyme_function(::AutoEnzyme{<:Any,Nothing}, f::F) where {F} = f

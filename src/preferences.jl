@@ -2,15 +2,18 @@ module LuxPreferences
 
 using ArgCheck: @argcheck
 using Preferences: load_preference, has_preference, set_preferences!
+using UUIDs: UUID
 
 using ..Lux: Lux
+
+const LuxUUID = UUID("b2108857-7c20-44ae-9111-449ecde12c47")
 
 macro load_preference_with_choices(pref, default, choices)
     msg1 = "Invalid value for `$(pref)` preference: "
     msg2 = ". Valid choices are: $(choices)"
     return esc(
         quote
-            val = load_preference($(Lux), $(pref), $(default))
+            val = load_preference($(LuxUUID), $(pref), $(default))
             val ∉ $(choices) && error($(msg1) * string(val) * $(msg2))
             val
         end,
@@ -19,12 +22,12 @@ end
 
 # Nested AD
 const AUTOMATIC_NESTED_AD_SWITCHING = load_preference(
-    Lux, "automatic_nested_ad_switching", true
+    LuxUUID, "automatic_nested_ad_switching", true
 )
 
 # GPU-Aware MPI
-const MPI_CUDA_AWARE = load_preference(Lux, "cuda_aware_mpi", false)
-const MPI_ROCM_AWARE = load_preference(Lux, "rocm_aware_mpi", false)
+const MPI_CUDA_AWARE = load_preference(LuxUUID, "cuda_aware_mpi", false)
+const MPI_ROCM_AWARE = load_preference(LuxUUID, "rocm_aware_mpi", false)
 
 # Eltype Auto Conversion
 const ELTYPE_MISMATCH_HANDLING = @load_preference_with_choices(
@@ -33,7 +36,9 @@ const ELTYPE_MISMATCH_HANDLING = @load_preference_with_choices(
 
 # Dispatch Doctor
 function set_dispatch_doctor_preferences!(package, mode::String)
-    @argcheck mode in ("disable", "warn", "error")
+    @assert mode in ("disable", "warn", "error") "Invalid value for `mode`: $mode. Valid \
+                                                  choices are: (\"disable\", \"warn\", \
+                                                  \"error\")"
     if has_preference(package, "dispatch_doctor")
         orig_pref = load_preference(package, "dispatch_doctor")
         if orig_pref == mode
@@ -43,7 +48,7 @@ function set_dispatch_doctor_preferences!(package, mode::String)
     end
     set_preferences!(package, "instability_check" => mode; force=true)
     @info "Dispatch Doctor preference for $(package) set to $mode. Please restart Julia \
-   for this change to take effect."
+           for this change to take effect."
     return nothing
 end
 

@@ -40,3 +40,6 @@ Reactant = "0.2.170"
 SpecialFunctions = "2.4"
 Statistics = "1.10"
 julia = "1.10"
+
+[workspaces]
+projects = ["test"]

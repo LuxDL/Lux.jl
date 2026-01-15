@@ -3,6 +3,6 @@ module FluxExt
 using Flux: @layer
 using LuxCore: StatefulLuxLayer
 
-@layer StatefulLuxLayer trainable = (ps,)
+@layer :ignore StatefulLuxLayer trainable = (ps,)
 
 end
