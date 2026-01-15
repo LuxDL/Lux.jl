@@ -56,7 +56,7 @@ function DebugLayer(
     error_check::BoolType=True(),
     location::KeyPath=KeyPath(),
 )
-    @argcheck dynamic(nan_check) in (:both, :forward, :backward, :none)
+    @assert dynamic(nan_check) in (:both, :forward, :backward, :none)
     return DebugLayer(static(nan_check), static(error_check), layer, location)
 end
 

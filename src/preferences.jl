@@ -1,6 +1,5 @@
 module LuxPreferences
 
-using ArgCheck: @argcheck
 using Preferences: load_preference, has_preference, set_preferences!
 using UUIDs: UUID
 

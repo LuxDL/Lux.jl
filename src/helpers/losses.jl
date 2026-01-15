@@ -269,7 +269,7 @@ function BinaryCrossEntropyLoss(;
     label_smoothing::Union{Nothing,Real}=nothing,
     logits::Union{Bool,Val}=Val(false),
 )
-    label_smoothing !== nothing && @argcheck 0 ≤ label_smoothing ≤ 1
+    label_smoothing !== nothing && @assert 0 ≤ label_smoothing ≤ 1
     logits isa Bool && (logits = Val(logits))
     return BinaryCrossEntropyLoss(logits, label_smoothing, agg, epsilon)
 end
@@ -395,7 +395,7 @@ function CrossEntropyLoss(;
     label_smoothing::Union{Nothing,Real}=nothing,
     logits::Union{Bool,Val}=Val(false),
 )
-    label_smoothing !== nothing && @argcheck 0 ≤ label_smoothing ≤ 1
+    label_smoothing !== nothing && @assert 0 ≤ label_smoothing ≤ 1
     logits isa Bool && (logits = Val(logits))
     return CrossEntropyLoss(logits, label_smoothing, dims, agg, epsilon)
 end
@@ -730,7 +730,7 @@ true
 ```
 """
 function SiameseContrastiveLoss(; margin=true, agg=mean)
-    @argcheck margin ≥ 0
+    @assert margin ≥ 0
     return GenericLossFunction(
         Utils.Fix3(LossFunctionImpl.siamese_contrastive_loss, margin); agg
     )

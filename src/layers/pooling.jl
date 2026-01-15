@@ -107,7 +107,7 @@ function PoolingLayer(
     stride = Utils.expand(Val(length(kernel_size)), stride)
     pad = calc_padding(pad, kernel_size, dilation, stride)
     dilation = Utils.expand(Val(length(kernel_size)), dilation)
-    @argcheck allequal(length, (stride, kernel_size, dilation))
+    @assert allequal(length, (stride, kernel_size, dilation))
 
     return PoolingLayer(GenericPoolMode(kernel_size, stride, pad, dilation), op)
 end

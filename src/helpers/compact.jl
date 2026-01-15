@@ -243,11 +243,11 @@ julia> size(r([1, 2], ps, st)[1])
 ```
 """
 macro init_fn(args...)
-    @argcheck 1 ≤ length(args) ≤ 2
+    @assert 1 ≤ length(args) ≤ 2
     kind = length(args) == 1 ? :parameter : args[2]
     kind isa QuoteNode && (kind = kind.value)
     fn = args[1]
-    @argcheck kind in (:parameter, :state)
+    @assert kind in (:parameter, :state)
     return esc(:($(CompactMacroImpl.InitFn){$(Meta.quot(kind))}($(fn))))
 end
 

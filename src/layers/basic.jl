@@ -171,7 +171,7 @@ FlattenLayer(; N=nothing) = FlattenLayer(static(N))
 end
 
 @trace function (f::FlattenLayer)(x::AbstractArray{T,N}, _, st::NamedTuple) where {T,N}
-    @argcheck f.N < N
+    @assert f.N < N
     return reshape(x, :, size(x)[(f.N + 1):end]...), st
 end
 
@@ -572,8 +572,8 @@ outputsize(b::Bilinear, _, ::AbstractRNG) = (b.out_dims,)
     (x, y)::Tuple{<:AbstractVecOrMat,<:AbstractVecOrMat}, ps, st::NamedTuple
 )
     s₁, s₂, s₃ = size(ps.weight)
-    @argcheck s₂ == size(x, 1) && s₃ == size(y, 1)
-    @argcheck size(x, 2) == size(y, 2)
+    @assert s₂ == size(x, 1) && s₃ == size(y, 1)
+    @assert size(x, 2) == size(y, 2)
 
     Wy = reshape(reshape(ps.weight, (:, s₃)) * y, (s₁, s₂, :))
     Wyx = reshape(batched_matmul(Wy, reshape(x, (s₂, 1, :))), (s₁, :))
@@ -585,7 +585,7 @@ end
 @trace function (b::Bilinear)(
     (x, y)::Tuple{<:AbstractArray,<:AbstractArray}, ps, st::NamedTuple
 )
-    @argcheck size(x)[2:end] == size(y)[2:end]
+    @assert size(x)[2:end] == size(y)[2:end]
 
     s₁, s₂, s₃ = size(ps.weight)
     x′ = reshape(x, s₂, :)

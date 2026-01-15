@@ -1,6 +1,5 @@
 module WeightInitializers
 
-using ArgCheck: @argcheck
 using GPUArraysCore: @allowscalar
 using LinearAlgebra: LinearAlgebra, Diagonal, qr, diagind
 using Random: Random, AbstractRNG

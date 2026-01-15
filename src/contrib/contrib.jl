@@ -1,7 +1,6 @@
 module Experimental
 
 using ADTypes: ADTypes
-using ArgCheck: @argcheck
 using ChainRulesCore: ChainRulesCore
 using SciMLPublic: @public
 using ConcreteStructs: @concrete

@@ -2,7 +2,6 @@ module Utils
 
 using ADTypes: ADTypes, AutoEnzyme
 using ArrayInterface: ArrayInterface
-using ArgCheck: @argcheck
 using ChainRulesCore: ChainRulesCore, @non_differentiable, NoTangent
 using ConcreteStructs: @concrete
 using EnzymeCore: EnzymeRules
@@ -66,12 +65,12 @@ end
 merge(nt₁::NamedTuple, nt₂::NamedTuple) = Base.merge(nt₁, nt₂)
 function merge(p, nt::NamedTuple)
     can_named_tuple(p) && return merge(named_tuple(p), nt)
-    @argcheck length(p) == 0
+    @assert length(p) == 0
     return nt
 end
 function merge(nt::NamedTuple, p)
     can_named_tuple(p) && return merge(nt, named_tuple(p))
-    @argcheck length(p) == 0
+    @assert length(p) == 0
     return nt
 end
 function merge(x, y)
