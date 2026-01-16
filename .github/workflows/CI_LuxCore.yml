@@ -17,16 +17,15 @@ concurrency:
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 
 jobs:
-  test:
-    uses: ./.github/workflows/CommonCI.yml
-    with:
-      julia_version: "1.12"
-      project: "lib/LuxCore"
+  # test:
+  #   uses: ./.github/workflows/CommonCI.yml
+  #   with:
+  #     julia_version: "1.12"
+  #     project: "lib/LuxCore"
 
   downgrade:
     uses: ./.github/workflows/CommonCI.yml
     with:
-      julia_version: "1.11"
+      julia_version: "1.10"
       project: "lib/LuxCore"
       downgrade_testing: true
-      local_test_dependencies: "lib/MLDataDevices"

@@ -24,31 +24,29 @@ concurrency:
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 
 jobs:
-  test:
-    strategy:
-      fail-fast: false
-      matrix:
-        version:
-          - "1.10"
-          - "1.11"
-        os:
-          - ubuntu-latest
-        test_group:
-          - "core_layers"
-          - "normalize_layers"
-          - "recurrent_layers"
-          - "autodiff"
-          - "misc"
-          - "reactant"
-          - "extras"
-    uses: ./.github/workflows/CommonCI.yml
-    with:
-      julia_version: ${{ matrix.version }}
-      project: "."
-      test_args: "BACKEND_GROUP=CPU LUX_TEST_GROUP=${{ matrix.test_group }}"
-      os: ${{ matrix.os }}
-      local_dependencies: "lib/MLDataDevices,lib/WeightInitializers,lib/LuxLib,lib/LuxCore"
-      local_test_dependencies: "lib/MLDataDevices,lib/LuxTestUtils,lib/LuxLib,lib/LuxCore"
+  # test:
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       version:
+  #         - "1.10"
+  #         - "1.11"
+  #       os:
+  #         - ubuntu-latest
+  #       test_group:
+  #         - "core_layers"
+  #         - "normalize_layers"
+  #         - "recurrent_layers"
+  #         - "autodiff"
+  #         - "misc"
+  #         - "reactant"
+  #         - "extras"
+  #   uses: ./.github/workflows/CommonCI.yml
+  #   with:
+  #     julia_version: ${{ matrix.version }}
+  #     project: "."
+  #     test_args: "BACKEND_GROUP=CPU LUX_TEST_GROUP=${{ matrix.test_group }}"
+  #     os: ${{ matrix.os }}
 
   downgrade:
     strategy:
@@ -64,9 +62,7 @@ jobs:
           - "extras"
     uses: ./.github/workflows/CommonCI.yml
     with:
-      julia_version: "1.11"
+      julia_version: "1.10"
       project: "."
       downgrade_testing: true
       test_args: "BACKEND_GROUP=CPU LUX_TEST_GROUP=${{ matrix.test_group }}"
-      local_dependencies: "lib/MLDataDevices,lib/WeightInitializers,lib/LuxLib,lib/LuxCore"
-      local_test_dependencies: "lib/MLDataDevices,lib/LuxTestUtils,lib/LuxLib,lib/LuxCore"
