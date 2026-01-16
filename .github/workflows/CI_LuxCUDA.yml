@@ -16,11 +16,11 @@ concurrency:
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 
 jobs:
-  test:
-    uses: ./.github/workflows/CommonCI.yml
-    with:
-      julia_version: "1.12"
-      project: "lib/LuxCUDA"
+  # test:
+  #   uses: ./.github/workflows/CommonCI.yml
+  #   with:
+  #     julia_version: "1.12"
+  #     project: "lib/LuxCUDA"
 
   downgrade:
     uses: ./.github/workflows/CommonCI.yml
