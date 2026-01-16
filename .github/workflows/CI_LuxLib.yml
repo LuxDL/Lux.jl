@@ -54,9 +54,7 @@ jobs:
           - "misc"
     uses: ./.github/workflows/CommonCI.yml
     with:
-      julia_version: "1.11"
+      julia_version: "1.10"
       project: "lib/LuxLib"
       downgrade_testing: true
-      local_dependencies: "lib/LuxCore,lib/MLDataDevices"
-      local_test_dependencies: "lib/LuxTestUtils,lib/MLDataDevices"
       test_args: "BACKEND_GROUP=cpu LUXLIB_TEST_GROUP=${{ matrix.test_group }} LUXLIB_BLAS_BACKEND=default LUXLIB_LOAD_LOOPVEC=true"

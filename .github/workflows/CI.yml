@@ -47,8 +47,6 @@ jobs:
       project: "."
       test_args: "BACKEND_GROUP=CPU LUX_TEST_GROUP=${{ matrix.test_group }}"
       os: ${{ matrix.os }}
-      local_dependencies: "lib/MLDataDevices,lib/WeightInitializers,lib/LuxLib,lib/LuxCore"
-      local_test_dependencies: "lib/MLDataDevices,lib/LuxTestUtils,lib/LuxLib,lib/LuxCore"
 
   downgrade:
     strategy:
@@ -64,9 +62,7 @@ jobs:
           - "extras"
     uses: ./.github/workflows/CommonCI.yml
     with:
-      julia_version: "1.11"
+      julia_version: "1.10"
       project: "."
       downgrade_testing: true
       test_args: "BACKEND_GROUP=CPU LUX_TEST_GROUP=${{ matrix.test_group }}"
-      local_dependencies: "lib/MLDataDevices,lib/WeightInitializers,lib/LuxLib,lib/LuxCore"
-      local_test_dependencies: "lib/MLDataDevices,lib/LuxTestUtils,lib/LuxLib,lib/LuxCore"

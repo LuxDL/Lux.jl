@@ -45,7 +45,7 @@ jobs:
           - reactant
     uses: ./.github/workflows/CommonCI.yml
     with:
-      julia_version: "1.11"
+      julia_version: "1.10"
       project: "lib/MLDataDevices"
       downgrade_testing: true
       test_args: "BACKEND_GROUP=${{ matrix.group }}"
