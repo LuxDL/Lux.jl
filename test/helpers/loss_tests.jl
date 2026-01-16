@@ -424,8 +424,8 @@ end
 
             @jet SiameseContrastiveLoss()(ŷ, y)
 
-            @test_throws ArgumentError SiameseContrastiveLoss(; margin=-0.5)
-            @test_throws ArgumentError SiameseContrastiveLoss(; margin=-1)
+            @test_throws AssertionError SiameseContrastiveLoss(; margin=-0.5)
+            @test_throws AssertionError SiameseContrastiveLoss(; margin=-1)
         end
     end
 end

@@ -40,3 +40,6 @@ Pkg = "1.10"
 Test = "1.10"
 Zygote = "0.7"
 julia = "1.10"
+
+[workspaces]
+projects = ["test"]

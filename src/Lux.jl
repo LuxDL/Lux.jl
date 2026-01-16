@@ -9,7 +9,6 @@ using ADTypes:
     AutoTracker,
     AutoZygote
 using Adapt: Adapt, adapt
-using ArgCheck: @argcheck
 using ArrayInterface: ArrayInterface
 using ChainRulesCore: ChainRulesCore, NoTangent
 using SciMLPublic: @public

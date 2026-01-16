@@ -1,6 +1,5 @@
 module PartialFunction
 
-using ArgCheck: @argcheck
 using ConcreteStructs: @concrete
 using Random: AbstractRNG
 
@@ -36,7 +35,7 @@ function (f::Partial{<:Union{Nothing,Missing}})(args...; kwargs...)
     return f.f(f.rng, args...; f.kwargs..., kwargs...)
 end
 function (f::Partial{<:Union{Nothing,Missing}})(rng::AbstractRNG, args...; kwargs...)
-    @argcheck f.rng === nothing
+    @assert f.rng === nothing
     return f.f(rng, args...; f.kwargs..., kwargs...)
 end
 function (f::Partial{T})(args...; kwargs...) where {T<:Number}
@@ -44,7 +43,7 @@ function (f::Partial{T})(args...; kwargs...) where {T<:Number}
     return f.f(f.rng, T, args...; f.kwargs..., kwargs...)
 end
 function (f::Partial{T})(rng::AbstractRNG, args...; kwargs...) where {T<:Number}
-    @argcheck f.rng === nothing
+    @assert f.rng === nothing
     return f.f(rng, T, args...; f.kwargs..., kwargs...)
 end
 

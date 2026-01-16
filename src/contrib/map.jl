@@ -130,8 +130,8 @@ function (::LayerWalkWithPath)(
 end
 
 function perform_layer_map(recurse, kp, ps_children, st_children, layer_children)
-    @argcheck keys(ps_children) == keys(st_children)
-    @argcheck keys(layer_children) == keys(ps_children)
+    @assert keys(ps_children) == keys(st_children)
+    @assert keys(layer_children) == keys(ps_children)
 
     kps = NamedTuple{keys(ps_children)}(map(Base.Fix1(KeyPath, kp), keys(ps_children)))
 

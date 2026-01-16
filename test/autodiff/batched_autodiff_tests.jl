@@ -90,7 +90,7 @@
             fincorrect(x) = x[:, 1]
             x = dev(reshape(Float32.(1:6), 2, 3))
 
-            @test_throws ArgumentError batched_jacobian(fincorrect, AutoForwardDiff(), x)
+            @test_throws AssertionError batched_jacobian(fincorrect, AutoForwardDiff(), x)
             @test_throws AssertionError batched_jacobian(fincorrect, AutoZygote(), x)
         end
     end

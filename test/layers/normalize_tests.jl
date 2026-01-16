@@ -155,7 +155,7 @@ end
             @jet m(x, ps, Lux.testmode(st))
         end
 
-        @test_throws ArgumentError GroupNorm(5, 2)
+        @test_throws AssertionError GroupNorm(5, 2)
     end
 end
 

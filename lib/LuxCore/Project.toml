@@ -48,3 +48,6 @@ SciMLPublic = "1.0.0"
 Setfield = "1"
 Tracker = "0.2.36"
 julia = "1.10"
+
+[workspaces]
+projects = ["test"]

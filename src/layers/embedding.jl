@@ -58,30 +58,30 @@ end
 outputsize(e::Embedding, _, ::AbstractRNG) = (e.out_dims,)
 
 @trace function (e::Embedding)(x::Union{Number,AbstractVector}, ps, st::NamedTuple)
-    @argcheck Utils.eltype(x) <: Integer
+    @assert Utils.eltype(x) <: Integer
     return ps.weight[:, x], st
 end
 @trace function (e::Embedding)(x::AbstractArray, ps, st::NamedTuple)
-    @argcheck Utils.eltype(x) <: Integer
+    @assert Utils.eltype(x) <: Integer
     y, stₙ = e(Utils.vec(x), ps, st)
     return reshape(y, :, size(x)...), stₙ
 end
 @trace function (e::Embedding)(x::NTuple{N,T}, ps, st::NamedTuple) where {N,T}
-    @argcheck Utils.eltype(T) <: Integer
+    @assert Utils.eltype(T) <: Integer
     return ps.weight[:, x...], st
 end
 @trace function (e::Embedding)(
     x::NTuple{N,<:AbstractVector{T}}, ps, st::NamedTuple
 ) where {N,T}
-    @argcheck Utils.eltype(T) <: Integer
-    @argcheck allequal(size, x) DimensionMismatch("Input vectors must have the same shape")
+    @assert Utils.eltype(T) <: Integer
+    allequal(size, x) || throw(DimensionMismatch("Input vectors must have the same shape"))
     return NNlib.gather(ps.weight, x...), st
 end
 @trace function (e::Embedding)(
     x::NTuple{N,<:AbstractArray{T}}, ps, st::NamedTuple
 ) where {N,T}
-    @argcheck Utils.eltype(T) <: Integer
-    @argcheck allequal(size, x) DimensionMismatch("Input arrays must have the same shape")
+    @assert Utils.eltype(T) <: Integer
+    allequal(size, x) || throw(DimensionMismatch("Input arrays must have the same shape"))
     y, stₙ = e(vec.(x), ps, st)
     return reshape(y, :, size(first(x))...), stₙ
 end
@@ -309,7 +309,7 @@ function apply_rotary_embedding end
     seq_dim::Integer,
     kwargs...,
 ) where {T}
-    @argcheck 1 ≤ seq_dim ≤ 4 "seq_dim must be between 1 and 4"
+    @assert 1 ≤ seq_dim ≤ 4 "seq_dim must be between 1 and 4"
     return apply_rotary_embedding(
         x, 1:size(x, seq_dim), cos_cache, sin_cache; seq_dim, kwargs...
     )
@@ -322,9 +322,9 @@ end
     sin_cache::AbstractMatrix;
     seq_dim::Integer,
 ) where {T}
-    @argcheck seq_dim != 1 "seq_dim cannot be the first dimension"
-    @argcheck 1 ≤ seq_dim ≤ 4 "seq_dim must be between 1 and 4"
-    @argcheck size(cos_cache) == size(sin_cache)
+    @assert seq_dim != 1 "seq_dim cannot be the first dimension"
+    @assert 1 ≤ seq_dim ≤ 4 "seq_dim must be between 1 and 4"
+    @assert size(cos_cache) == size(sin_cache)
 
     h_d, seq_len = size(x, 1), size(x, seq_dim)
     h_d_2 = h_d ÷ 2
@@ -339,8 +339,8 @@ end
                                  got $(c_1)"))
     end
 
-    @argcheck seq_len ≤ c_2 "Sequence length ($seq_len) must be less than $(c_2)"
-    @argcheck seq_len == length(input_positions) "Sequence length ($seq_len) must be equal \
+    @assert seq_len ≤ c_2 "Sequence length ($seq_len) must be less than $(c_2)"
+    @assert seq_len == length(input_positions) "Sequence length ($seq_len) must be equal \
                                                   to length of input_positions ($seq_len)"
 
     cos_cache_reshaped, sin_cache_reshaped = standardize_cache_size(

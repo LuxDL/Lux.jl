@@ -13,3 +13,6 @@ CUDA = "5.8"
 Reexport = "1"
 cuDNN = "1.4.3"
 julia = "1.10"
+
+[workspaces]
+projects = ["test"]

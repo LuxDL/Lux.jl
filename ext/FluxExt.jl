@@ -1,6 +1,5 @@
 module FluxExt
 
-using ArgCheck: @argcheck
 using Flux: Flux
 
 using Lux: Lux, FluxModelConversionException, LuxOps
@@ -284,7 +283,7 @@ function Lux.convert_flux_model(
     l::Flux.GroupNorm; preserve_ps_st::Bool=false, force_preserve::Bool=false
 )
     if preserve_ps_st
-        @argcheck !l.track_stats
+        @assert !l.track_stats
         if l.affine
             return Lux.GroupNorm(
                 l.chs,
