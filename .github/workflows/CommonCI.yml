@@ -21,16 +21,6 @@ on:
         required: false
         type: boolean
         default: false
-      local_dependencies:
-        description: "Local Dependencies"
-        required: false
-        type: string
-        default: ""
-      local_test_dependencies:
-        description: "Local Test Dependencies"
-        required: false
-        type: string
-        default: ""
       test_args:
         description: "Test Arguments"
         required: false
@@ -61,55 +51,106 @@ jobs:
           version: ${{ inputs.julia_version }}
       - uses: julia-actions/cache@v2
         with:
-          cache-name: julia-cache;workflow=${{ inputs.julia_version }}-${{ inputs.os }}-${{ github.event_name }}-${{ inputs.project }}-${{ inputs.downgrade_testing }}-${{ inputs.local_dependencies }}-${{ inputs.local_test_dependencies }}-${{ inputs.test_args }}
+          cache-name: julia-cache;workflow=${{ inputs.julia_version }}-${{ inputs.os }}-${{ github.event_name }}-${{ inputs.project }}-${{ inputs.downgrade_testing }}-${{ inputs.test_args }}
 
       - uses: julia-actions/julia-downgrade-compat@v2.1
         if: ${{ inputs.downgrade_testing }}
         with:
           mode: forcedeps
-          projects: ${{ inputs.project }}
+          projects: ${{ inputs.project }}, ${{ inputs.project }}/test
           julia_version: ${{ inputs.julia_version }}
           skip: Pkg, TOML, Statistics, LinearAlgebra, Random, Serialization, Markdown, Test, LuxCore, LuxLib, LuxTestUtils, MLDataDevices, WeightInitializers, UUIDs
 
-      # For 1.10 we need to manually develop the packages.
+      # For 1.10 we need to manually develop the packages from [sources].
       - name: "Develop Dependencies"
         run: |
           import Pkg
-          Pkg.activate(joinpath(pwd(), get(ENV, "PROJECT", "")))
+          import TOML
+
+          project = joinpath(pwd(), get(ENV, "PROJECT", ""))
+          Pkg.activate(project)
+          Pkg.status()
+          Pkg.instantiate()
+
+          # Parse the [sources] section from the Project.toml
+          project_toml = TOML.parsefile(joinpath(project, "Project.toml"))
+          sources = get(project_toml, "sources", Dict())
+
           dev_pkgs = Pkg.PackageSpec[]
-          for pkg in filter(!isempty, split(get(ENV, "DEV_DEPS", ""), ","))
-            push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
+          for (pkg, source) in sources
+            if haskey(source, "path")
+              pkg_path = joinpath(project, source["path"])
+              push!(dev_pkgs, Pkg.PackageSpec(path=pkg_path))
+            end
           end
-          length(dev_pkgs) > 0 && Pkg.develop(dev_pkgs)
+
+          if !isempty(dev_pkgs)
+            @info "Developing dependencies: $dev_pkgs"
+            if parse(Bool, get(ENV, "DOWNGRADE_TESTING", "false"))
+              @info "Preserving dependencies"
+              Pkg.develop(dev_pkgs; preserve=Pkg.PRESERVE_DIRECT)
+            else
+              Pkg.develop(dev_pkgs)
+            end
+          end
         shell: julia --color=yes --threads=auto {0}
-        if: ${{ (inputs.julia_version == '1.10' || inputs.julia_version == 'lts') && inputs.local_dependencies != '' }}
+        if: ${{ inputs.julia_version == '1.10' || inputs.julia_version == 'lts' }}
         env:
           PROJECT: ${{ inputs.project }}
-          DEV_DEPS: ${{ inputs.local_dependencies }}
+          DOWNGRADE_TESTING: ${{ inputs.downgrade_testing }}
+          JULIA_PKG_PRECOMPILE_AUTO: 0
 
-      # For 1.11 and beyond we can use sources. For older versions we need to
-      # manually develop the packages.
+      # For 1.11 and beyond we can use sources.
       - uses: julia-actions/julia-buildpkg@v1
         with:
           project: ${{ inputs.project }}
           precompile: true
-        if: ${{ (inputs.julia_version != '1.10' && inputs.julia_version != 'lts') || inputs.local_dependencies == '' }}
+        if: ${{ inputs.julia_version != '1.10' && inputs.julia_version != 'lts' }}
 
       - name: "Develop Test Dependencies"
         run: |
           import Pkg
+          import TOML
+
           project = joinpath(pwd(), get(ENV, "PROJECT", ""))
-          Pkg.activate(joinpath(project, "test"))
-          dev_pkgs = Pkg.PackageSpec[Pkg.PackageSpec(path=project)]
-          for pkg in filter(!isempty, split(get(ENV, "TEST_DEPS", ""), ","))
-            push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
+          test_project = joinpath(project, "test")
+          Pkg.activate(test_project)
+          Pkg.status()
+          Pkg.instantiate()
+
+          # Add the main project itself
+          dev_pkgs = Pkg.PackageSpec[]
+
+          # Parse the [sources] section from the test/Project.toml
+          test_project_toml_path = joinpath(test_project, "Project.toml")
+          if isfile(test_project_toml_path)
+            test_project_toml = TOML.parsefile(test_project_toml_path)
+            sources = get(test_project_toml, "sources", Dict())
+
+            for (pkg, source) in sources
+              if haskey(source, "path")
+                pkg_path = joinpath(test_project, source["path"])
+                push!(dev_pkgs, Pkg.PackageSpec(path=pkg_path))
+              end
+            end
           end
-          length(dev_pkgs) > 0 && Pkg.develop(dev_pkgs)
+
+          if !isempty(dev_pkgs)
+            @info "Developing dependencies: $dev_pkgs"
+            if parse(Bool, get(ENV, "DOWNGRADE_TESTING", "false"))
+              @info "Preserving dependencies"
+              Pkg.develop(dev_pkgs; preserve=Pkg.PRESERVE_DIRECT)
+            else
+              Pkg.develop(dev_pkgs)
+            end
+          end
         shell: julia --color=yes --threads=auto {0}
-        if: ${{ (inputs.julia_version == '1.10' || inputs.julia_version == 'lts') && inputs.local_test_dependencies != '' }}
+        if: ${{ inputs.julia_version == '1.10' || inputs.julia_version == 'lts' }}
         env:
           PROJECT: ${{ inputs.project }}
-          TEST_DEPS: ${{ inputs.local_test_dependencies }}
+          DOWNGRADE_TESTING: ${{ inputs.downgrade_testing }}
+          JULIA_PKG_PRECOMPILE_AUTO: 0
+
       - name: "Run Tests"
         run: |
           import Pkg
@@ -118,7 +159,7 @@ jobs:
           const TEST_ARGS = filter(!isempty, split(get(ENV, "TEST_ARGS", "")))
           include(joinpath(project, "test", "runtests.jl"))
         shell: julia --color=yes --code-coverage=user --depwarn=yes --threads=auto --check-bounds=yes {0}
-        if: ${{ (inputs.julia_version == '1.10' || inputs.julia_version == 'lts') && inputs.local_test_dependencies != '' }}
+        if: ${{ inputs.julia_version == '1.10' || inputs.julia_version == 'lts' }}
         env:
           PROJECT: ${{ inputs.project }}
           TEST_ARGS: ${{ inputs.test_args }}
@@ -128,7 +169,7 @@ jobs:
           project: ${{ inputs.project }}
           test_args: ${{ inputs.test_args }}
           allow_reresolve: ${{ !(inputs.downgrade_testing) }}
-        if: ${{ (inputs.julia_version != '1.10' && inputs.julia_version != 'lts') || inputs.local_test_dependencies == '' }}
+        if: ${{ inputs.julia_version != '1.10' && inputs.julia_version != 'lts' }}
 
       - name: "Upload MLIR modules"
         uses: actions/upload-artifact@v6
