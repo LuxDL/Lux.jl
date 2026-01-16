@@ -1,18 +1,39 @@
+# taken from implementation in Lux.jl
+struct LuxEltypeAdaptor{T} end
+
+(l::LuxEltypeAdaptor)(x) = fmap(adapt(l), x)
+function (l::LuxEltypeAdaptor)(x::AbstractArray{T}) where {T}
+    return isbitstype(T) ? adapt(l, x) : map(adapt(l), x)
+end
+
+function Adapt.adapt_storage(
+    ::LuxEltypeAdaptor{T}, x::AbstractArray{<:AbstractFloat}
+) where {T<:AbstractFloat}
+    return convert(AbstractArray{T}, x)
+end
+
+function Adapt.adapt_storage(
+    ::LuxEltypeAdaptor{T}, x::AbstractArray{<:Complex{<:AbstractFloat}}
+) where {T<:AbstractFloat}
+    return convert(AbstractArray{Complex{T}}, x)
+end
+
 struct Constant{T}
     val::T
 end
 
-# Zygote.jl on CPU
-function ground_truth_gradient(f, args...)
+# FiniteDiff.jl on CPU
+function ground_truth_gradient(::Type{T}, backend, f, args...) where {T}
     cdev = cpu_device()
+    eltype_adaptor = T === Nothing ? identity : LuxEltypeAdaptor{T}()
     f_cpu = try
-        cdev(f)
+        eltype_adaptor(cdev(f))
     catch err
         @error "Encountered error while moving $(f) to CPU. Skipping movement... This can \
                 be fixed by defining overloads using ConstructionBase.jl" err
         f
     end
-    return gradient(f_cpu, AutoZygote(), map(cdev, args)...)
+    return gradient(f_cpu, backend, map(eltype_adaptor, map(cdev, args))...)
 end
 
 # Zygote.jl
@@ -31,8 +52,9 @@ function gradient(f::F, ::AutoEnzyme{Nothing}, args...) where {F}
 end
 
 function gradient(f::F, ad::AutoEnzyme{<:Enzyme.ReverseMode}, args...) where {F}
-    !ENZYME_TESTING_ENABLED &&
+    if !ENZYME_TESTING_ENABLED[]
         return ntuple(Returns(GradientComputationSkipped()), length(args))
+    end
 
     args_activity = map(args) do x
         needs_gradient(x) && return Enzyme.Duplicated(x, Enzyme.make_zero(x))
@@ -79,13 +101,13 @@ end
 """
     test_gradients(f, args...; skip_backends=[], broken_backends=[], kwargs...)
 
-Test the gradients of `f` with respect to `args` using the specified backends.
+Test the gradients of `f` with respect to `args` using the specified backends. The ground
+truth gradients are computed using FiniteDiff.jl (unless specified otherwise) on CPU.
 
 | Backend        | ADType              | CPU | GPU | Notes             |
 |:-------------- |:------------------- |:--- |:--- |:----------------- |
 | Zygote.jl      | `AutoZygote()`      | ✔   | ✔   |                   |
 | ForwardDiff.jl | `AutoForwardDiff()` | ✔   | ✖   | `len ≤ 32`        |
-| FiniteDiff.jl  | `AutoFiniteDiff()`  | ✔   | ✖   | `len ≤ 32`        |
 | Enzyme.jl      | `AutoEnzyme()`      | ✔   | ✖   | Only Reverse Mode |
 
 ## Arguments
@@ -105,6 +127,10 @@ Test the gradients of `f` with respect to `args` using the specified backends.
   - `enzyme_set_runtime_activity`: If `true`, then activate runtime activity for Enzyme.
   - `enable_enzyme_reverse_mode`: If `true`, then enable reverse mode for Enzyme.
   - `kwargs`: Additional keyword arguments to pass to `check_approx`.
+  - `ground_truth_backend`: The backend to use for computing the ground truth gradients.
+    Defaults to `AutoFiniteDiff()`.
+  - `ground_truth_eltype`: The eltype to use for computing the ground truth gradients.
+    Defaults to `Float64`.
 
 ## Example
 
@@ -125,6 +151,8 @@ function test_gradients(
     soft_fail::Union{Bool,Vector}=false,
     enzyme_set_runtime_activity::Bool=false,
     enable_enzyme_reverse_mode::Bool=false,
+    ground_truth_backend=AutoFiniteDiff(),
+    ground_truth_eltype::Union{Nothing,Type}=Float64,
     # Internal kwargs start
     source::LineNumberNode=LineNumberNode(0, nothing),
     test_expr::Expr=:(check_approx(∂args, ∂args_gt; kwargs...)),
@@ -156,9 +184,8 @@ function test_gradients(
     push!(backends, AutoZygote())
     if !on_gpu
         total_length ≤ 32 && push!(backends, AutoForwardDiff())
-        total_length ≤ 32 && push!(backends, AutoFiniteDiff())
         # TODO: Move Enzyme out of here once it supports GPUs
-        if enable_enzyme_reverse_mode || ENZYME_TESTING_ENABLED
+        if enable_enzyme_reverse_mode || ENZYME_TESTING_ENABLED[]
             mode = if enzyme_set_runtime_activity
                 Enzyme.set_runtime_activity(Enzyme.Reverse)
             else
@@ -177,9 +204,11 @@ function test_gradients(
     end
 
     # Test the gradients
-    ∂args_gt = ground_truth_gradient(f, args...)  # Should be Zygote in most cases
-
-    @assert (backends[1] ∉ broken_backends) && (backends[1] ∉ skip_backends) "first backend cannot be broken or skipped"
+    ∂args_gt = ground_truth_gradient(ground_truth_eltype, ground_truth_backend, f, args...)
+    backends = [
+        backend for backend in backends if
+        typeof(backend).name.name != typeof(ground_truth_backend).name.name
+    ]
 
     return @testset "gradtest($(f))" begin
         @testset "$(nameof(typeof(backend)))()" for backend in backends
@@ -187,8 +216,10 @@ function test_gradients(
 
             result = if check_ad_backend_in(backend, skip_backends)
                 Broken(:skipped, local_test_expr)
-            elseif (soft_fail isa Bool && soft_fail) ||
+            elseif (
+                (soft_fail isa Bool && soft_fail) ||
                 (soft_fail isa Vector && check_ad_backend_in(backend, soft_fail))
+            )
                 try
                     ∂args = allow_unstable() do
                         return gradient(f, backend, args...)
@@ -254,7 +285,7 @@ end
 
 removed_backend(::AutoTracker) = true
 removed_backend(::AutoReverseDiff) = true
-removed_backend(x) = false
+removed_backend(_) = false
 
 """
     @test_gradients(f, args...; kwargs...)

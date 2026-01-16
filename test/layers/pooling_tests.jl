@@ -56,7 +56,7 @@
             @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             @testset "SamePad windowsize $k" for k in ((1,), (2,), (3,), (4, 5), (6, 7, 8))
-                x = aType(ones(Float32, (k .+ 3)..., 1, 1))
+                x = aType(randn(Float32, (k .+ 3)..., 1, 1))
 
                 layer = getfield(Lux, ltype)(k; pad=Lux.SamePad())
                 display(layer)
@@ -66,10 +66,7 @@
                     cld.(size(x)[1:(end - 2)], k)
                 @jet layer(x, ps, st)
 
-                soft_fail = ltype == :MaxPool ? [AutoFiniteDiff()] : []
-                @test_gradients(
-                    sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3, soft_fail
-                )
+                @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
             end
         end
     end

@@ -79,5 +79,5 @@ julia = "1.10"
 oneAPI = "1.5, 2"
 OpenCL = "0.10.5"
 
-[workspaces]
+[workspace]
 projects = ["test"]
