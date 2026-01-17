@@ -52,12 +52,14 @@
             @test_gradients(apply_act_fast, f, x; atol, rtol)
             @test_gradients(apply_act_fast2, f, x; atol, rtol)
 
-            ∂x1 = Zygote.gradient(apply_act, f, x)[2]
-            ∂x2 = Zygote.gradient(apply_act_fast, f, x)[2]
-            ∂x3 = Zygote.gradient(apply_act_fast2, f, x)[2]
+            if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
+                ∂x1 = Zygote.gradient(apply_act, f, x)[2]
+                ∂x2 = Zygote.gradient(apply_act_fast, f, x)[2]
+                ∂x3 = Zygote.gradient(apply_act_fast2, f, x)[2]
 
-            @test ∂x1 ≈ ∂x2 atol = atol rtol = rtol
-            @test ∂x1 ≈ ∂x3 atol = atol rtol = rtol
+                @test ∂x1 ≈ ∂x2 atol = atol rtol = rtol
+                @test ∂x1 ≈ ∂x3 atol = atol rtol = rtol
+            end
         end
     end
 end

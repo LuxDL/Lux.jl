@@ -39,16 +39,18 @@ function run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu
     y_zyg = fused_dense_bias_activation(activation, w, x, bias)
     @test y_simple ≈ y_zyg atol = atol rtol = rtol
 
-    _, ∂w_true, ∂x_true, ∂b_true = Zygote.gradient(
-        sum ∘ dense_simple, activation, w, x, bias
-    )
-    _, ∂w_zyg, ∂x_zyg, ∂b_zyg = Zygote.gradient(
-        sum ∘ fused_dense_bias_activation, activation, w, x, bias
-    )
-    @test ∂w_true ≈ ∂w_zyg atol = atol rtol = rtol
-    @test ∂x_true ≈ ∂x_zyg atol = atol rtol = rtol
-    if bias !== nothing
-        @test ∂b_true ≈ ∂b_zyg atol = atol rtol = rtol
+    if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
+        _, ∂w_true, ∂x_true, ∂b_true = Zygote.gradient(
+            sum ∘ dense_simple, activation, w, x, bias
+        )
+        _, ∂w_zyg, ∂x_zyg, ∂b_zyg = Zygote.gradient(
+            sum ∘ fused_dense_bias_activation, activation, w, x, bias
+        )
+        @test ∂w_true ≈ ∂w_zyg atol = atol rtol = rtol
+        @test ∂x_true ≈ ∂x_zyg atol = atol rtol = rtol
+        if bias !== nothing
+            @test ∂b_true ≈ ∂b_zyg atol = atol rtol = rtol
+        end
     end
 end
 
@@ -201,35 +203,39 @@ end
                 b_enz,
             )
 
-            _, pb_f = Zygote.pullback(fused_dense_bias_activation, act, weight, x, b)
-            _, dweight_zyg, dx_zyg, db_zyg = pb_f(dy)
+            if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
+                _, pb_f = Zygote.pullback(fused_dense_bias_activation, act, weight, x, b)
+                _, dweight_zyg, dx_zyg, db_zyg = pb_f(dy)
 
-            @test dweight ≈ dweight_zyg atol = 1.0e-3 rtol = 1.0e-3
-            @test dx ≈ dx_zyg atol = 1.0e-3 rtol = 1.0e-3
-            if hasbias
-                @test db ≈ db_zyg atol = 1.0e-3 rtol = 1.0e-3
+                @test dweight ≈ dweight_zyg atol = 1.0e-3 rtol = 1.0e-3
+                @test dx ≈ dx_zyg atol = 1.0e-3 rtol = 1.0e-3
+                if hasbias
+                    @test db ≈ db_zyg atol = 1.0e-3 rtol = 1.0e-3
+                end
             end
 
             (act === identity && hasbias) || continue
 
-            dweight .= 0
-            dx .= 0
-            db .= 0
-            Enzyme.autodiff(
-                Reverse,
-                matmuladd!,
-                Duplicated(y, copy(dy)),
-                Duplicated(weight, dweight),
-                Duplicated(x, dx),
-                b_enz,
-            )
+            if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
+                dweight .= 0
+                dx .= 0
+                db .= 0
+                Enzyme.autodiff(
+                    Reverse,
+                    matmuladd!,
+                    Duplicated(y, copy(dy)),
+                    Duplicated(weight, dweight),
+                    Duplicated(x, dx),
+                    b_enz,
+                )
 
-            _, pb_f = Zygote.pullback(LuxLib.Impl.matmuladd, weight, x, b)
-            dweight_zyg, dx_zyg, db_zyg = pb_f(dy)
+                _, pb_f = Zygote.pullback(LuxLib.Impl.matmuladd, weight, x, b)
+                dweight_zyg, dx_zyg, db_zyg = pb_f(dy)
 
-            @test dweight ≈ dweight_zyg atol = 1.0e-3 rtol = 1.0e-3
-            @test dx ≈ dx_zyg atol = 1.0e-3 rtol = 1.0e-3
-            @test db ≈ db_zyg atol = 1.0e-3 rtol = 1.0e-3
+                @test dweight ≈ dweight_zyg atol = 1.0e-3 rtol = 1.0e-3
+                @test dx ≈ dx_zyg atol = 1.0e-3 rtol = 1.0e-3
+                @test db ≈ db_zyg atol = 1.0e-3 rtol = 1.0e-3
+            end
         end
     end
 end

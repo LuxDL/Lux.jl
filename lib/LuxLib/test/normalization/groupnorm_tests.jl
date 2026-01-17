@@ -60,16 +60,18 @@ function run_groupnorm_testing(T, sz, groups, affine, act, aType, mode, ongpu)
     @test y ≈ y_simple atol = atol rtol = rtol
 
     # Check the rrules
-    ∂x, ∂scale, ∂bias = Zygote.gradient(sum ∘ _f, x, scale, bias)
-    ∂x_simple, ∂scale_simple, ∂bias_simple = Zygote.gradient(sum ∘ _f2, x, scale, bias)
-    if length(sz) == 5 && !ongpu
-        @test_softfail check_approx(∂x, ∂x_simple; atol, rtol)
-    else
-        @test ∂x ≈ ∂x_simple atol = atol rtol = rtol
-    end
-    if affine
-        @test ∂scale ≈ ∂scale_simple atol = atol rtol = rtol
-        @test ∂bias ≈ ∂bias_simple atol = atol rtol = rtol
+    if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
+        ∂x, ∂scale, ∂bias = Zygote.gradient(sum ∘ _f, x, scale, bias)
+        ∂x_simple, ∂scale_simple, ∂bias_simple = Zygote.gradient(sum ∘ _f2, x, scale, bias)
+        if length(sz) == 5 && !ongpu
+            @test_softfail check_approx(∂x, ∂x_simple; atol, rtol)
+        else
+            @test ∂x ≈ ∂x_simple atol = atol rtol = rtol
+        end
+        if affine
+            @test ∂scale ≈ ∂scale_simple atol = atol rtol = rtol
+            @test ∂bias ≈ ∂bias_simple atol = atol rtol = rtol
+        end
     end
 
     @test @inferred(groupnorm(x, scale, bias, groups, act, epsilon)) isa Any

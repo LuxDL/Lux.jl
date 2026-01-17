@@ -73,7 +73,7 @@ function run_batchnorm_testing(gen_f, T, sz, training, affine, track_stats, act,
     end
 
     # Check the rrules
-    if is_training(training)
+    if is_training(training) && LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
         _f =
             (args...) ->
                 sum(first(batchnorm(args..., rm, rv, training, act, T(0.9), epsilon)))

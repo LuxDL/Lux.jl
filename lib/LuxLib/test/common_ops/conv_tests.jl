@@ -1,5 +1,5 @@
 @testsetup module ConvSetup
-using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib
+using LuxLib, LuxTestUtils, Random, Test, NNlib
 
 expand(_, i::Tuple) = i
 expand(N, i::Integer) = ntuple(_ -> i, N)
