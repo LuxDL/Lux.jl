@@ -1,5 +1,5 @@
 @testsetup module InstanceNormSetup
-using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib
+using LuxLib, LuxTestUtils, Random, Test, NNlib
 
 is_training(::Val{training}) where {training} = training
 

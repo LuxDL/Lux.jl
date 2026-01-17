@@ -1,4 +1,5 @@
-@testitem "Efficient JVPs" tags = [:misc] setup = [SharedTestSetup] begin
+@testitem "Efficient JVPs" tags = [:misc] setup = [SharedTestSetup] skip =
+    :(using LuxTestUtils; !LuxTestUtils.ZYGOTE_TESTING_ENABLED[]) begin
     using ForwardDiff, Zygote, ComponentArrays
     using LuxTestUtils: check_approx
 
