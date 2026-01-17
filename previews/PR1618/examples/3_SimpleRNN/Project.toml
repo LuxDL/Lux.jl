@@ -1,0 +1,17 @@
+[deps]
+ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
+JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
+MLUtils = "f1d291b0-491e-4a28-83b9-f70985020b54"
+Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
+
+[compat]
+ADTypes = "1.10"
+JLD2 = "0.5, 0.6"
+Lux = "1"
+MLUtils = "0.4"
+Optimisers = "0.4.6"
+Reactant = "0.2.170"
