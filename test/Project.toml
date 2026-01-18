@@ -11,6 +11,7 @@ Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 Functors = "d9f16b24-f501-4c13-a1f2-28368ffc5196"
+GPUCompiler = "61eb1bfa-7361-4325-ad38-22787b887f55"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
@@ -48,6 +49,8 @@ LuxCore = {path = "../lib/LuxCore"}
 LuxLib = {path = "../lib/LuxLib"}
 LuxTestUtils = {path = "../lib/LuxTestUtils"}
 MLDataDevices = {path = "../lib/MLDataDevices"}
+Reactant = {rev = "gpu_compiler", url = "https://github.com/glou-nes/Reactant.jl"}
+GPUCompiler = {rev = "cini", url = "https://github.com/JuliaGPU/GPUCompiler.jl"}
 
 [compat]
 ADTypes = "1.10"
@@ -91,3 +94,4 @@ Statistics = "1.10"
 Test = "1.10"
 Tracker = "0.2.37"
 Zygote = "0.7"
+

@@ -154,7 +154,7 @@ end
         @test maximum(abs, diag(similarities) .- 1) ≤ 1.0e-5
 
         @testset "gradient" begin
-            (∂x_fd, ∂ps_fd) = ∇sumabs2_reactant_fd(model, x, ps, st)
+            (∂x_fd, ∂ps_fd) = ∇sumabs2_reactant_fd(model, x_ra, ps_ra, st_ra)
             (∂x_ra, ∂ps_ra) = ∇sumabs2_reactant(model, x_ra, ps_ra, st_ra)
             @test ∂x_ra ≈ ∂x_fd atol = 1.0e-2 rtol = 1.0e-2
             @test check_approx(∂ps_ra, ∂ps_fd; atol=1.0e-2, rtol=1.0e-2)
@@ -286,7 +286,7 @@ end
             @test Array(y_ra) ≈ y atol = 1.0e-2 rtol = 1.0e-2
 
             @testset "gradient" begin
-                (∂x_fd, ∂ps_fd) = ∇sumabs2_reactant_fd(model, x, ps, st)
+                (∂x_fd, ∂ps_fd) = ∇sumabs2_reactant_fd(model, x_ra, ps_ra, st_ra)
                 (∂x_ra, ∂ps_ra) = ∇sumabs2_reactant(model, x_ra, ps_ra, st_ra)
                 @test ∂x_ra ≈ ∂x_fd atol = 1.0e-2 rtol = 1.0e-2
                 @test check_approx(∂ps_ra, ∂ps_fd; atol=1.0e-2, rtol=1.0e-2)
