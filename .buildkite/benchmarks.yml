@@ -12,7 +12,7 @@ steps:
               - "8"
         plugins:
           - JuliaCI/julia#v1:
-              version: "1.10"
+              version: "1.12"
         command: |
           julia --project=benchmarks -e 'println("--- :julia: Instantiating project")
               using Pkg
@@ -38,7 +38,7 @@ steps:
       - label: "CUDA: Run Benchmarks"
         plugins:
           - JuliaCI/julia#v1:
-              version: "1.11"
+              version: "1.12"
         command: |
           julia --project=benchmarks -e 'println("--- :julia: Instantiating project")
               using Pkg;
@@ -70,7 +70,7 @@ steps:
       - label: "Combine benchmarks"
         plugins:
           - JuliaCI/julia#v1:
-              version: "1.10"
+              version: "1.12"
         command: |
           buildkite-agent artifact download "benchmarks/results/*" .
 

@@ -104,14 +104,14 @@ end
         @test Array(α_ra) ≈ α atol = 1.0e-2 rtol = 1.0e-2
 
         @testset "gradient" begin
-            (∂q, ∂k, ∂v), ∂ps = ∇sumabs2_zygote(mha, (q, k, v), ps, st)
-            (∂q_ra, ∂k_ra, ∂v_ra), ∂ps_ra = @jit ∇sumabs2_enzyme(
+            (∂q_fd, ∂k_fd, ∂v_fd), ∂ps_fd = ∇sumabs2_reactant_fd(mha, (q, k, v), ps, st)
+            (∂q_ra, ∂k_ra, ∂v_ra), ∂ps_ra = ∇sumabs2_reactant(
                 mha, (q_ra, k_ra, v_ra), ps_ra, st_ra
             )
-            @test ∂q_ra ≈ ∂q atol = 1.0e-2 rtol = 1.0e-2
-            @test ∂k_ra ≈ ∂k atol = 1.0e-2 rtol = 1.0e-2
-            @test ∂v_ra ≈ ∂v atol = 1.0e-2 rtol = 1.0e-2
-            @test check_approx(∂ps_ra, ∂ps; atol=1.0e-2, rtol=1.0e-2)
+            @test ∂q_ra ≈ ∂q_fd atol = 1.0e-2 rtol = 1.0e-2
+            @test ∂k_ra ≈ ∂k_fd atol = 1.0e-2 rtol = 1.0e-2
+            @test ∂v_ra ≈ ∂v_fd atol = 1.0e-2 rtol = 1.0e-2
+            @test check_approx(∂ps_ra, ∂ps_fd; atol=1.0e-2, rtol=1.0e-2)
         end
     end
 end

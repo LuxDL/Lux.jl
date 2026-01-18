@@ -7,7 +7,7 @@ steps:
         parallelism: 4
         plugins:
           - JuliaCI/julia#v1:
-              version: "1.11"
+              version: "1.12"
         command: julia --code-coverage=user --color=yes --project=docs --threads=auto docs/tutorials.jl
         env:
           TUTORIAL_BACKEND_GROUP: "CUDA"
