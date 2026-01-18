@@ -104,7 +104,9 @@ end
         @test Array(α_ra) ≈ α atol = 1.0e-2 rtol = 1.0e-2
 
         @testset "gradient" begin
-            (∂q_fd, ∂k_fd, ∂v_fd), ∂ps_fd = ∇sumabs2_reactant_fd(mha, (q, k, v), ps, st)
+            (∂q_fd, ∂k_fd, ∂v_fd), ∂ps_fd = ∇sumabs2_reactant_fd(
+                mha, (q_ra, k_ra, v_ra), ps_ra, st_ra
+            )
             (∂q_ra, ∂k_ra, ∂v_ra), ∂ps_ra = ∇sumabs2_reactant(
                 mha, (q_ra, k_ra, v_ra), ps_ra, st_ra
             )

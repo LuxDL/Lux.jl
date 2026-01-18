@@ -74,7 +74,7 @@ end
 
 @testsetup module SharedReactantLayersTestSetup
 
-using Lux, Reactant, Enzyme, Zygote
+using Lux, Reactant, Enzyme
 
 sumabs2(x::AbstractArray) = sum(abs2, x)
 sumabs2(x::Tuple) = sumabs2(first(x))
