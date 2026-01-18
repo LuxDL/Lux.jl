@@ -68,11 +68,13 @@ end
                     (y, carry), _ = Lux.apply(rnncell, x, ps, st)
                     @test carry == _carry
 
-                    l, back = Zygote.pullback(
-                        p -> sum(abs2, 0 .- rnncell(x, p, st)[1][1]), ps
-                    )
-                    gs = back(one(l))[1]
-                    @test !isnothing(gs.hidden_state)
+                    if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
+                        l, back = Zygote.pullback(
+                            p -> sum(abs2, 0 .- rnncell(x, p, st)[1][1]), ps
+                        )
+                        gs = back(one(l))[1]
+                        @test !isnothing(gs.hidden_state)
+                    end
                 end
             end
         end
@@ -120,15 +122,18 @@ end
                 ps = _ps
                 (y, carry), _ = Lux.apply(lstm, x, ps, st)
                 @test carry == _carry
-                l, back = Zygote.pullback(
-                    p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1][1])), ps
-                )
-                gs = back(one(l))[1]
 
-                @test !hasproperty(gs, :bias_ih)
-                @test !hasproperty(gs, :bias_hh)
-                @test !hasproperty(gs, :hidden_state)
-                @test !hasproperty(gs, :memory)
+                if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
+                    l, back = Zygote.pullback(
+                        p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1][1])), ps
+                    )
+                    gs = back(one(l))[1]
+
+                    @test !hasproperty(gs, :bias_ih)
+                    @test !hasproperty(gs, :bias_hh)
+                    @test !hasproperty(gs, :hidden_state)
+                    @test !hasproperty(gs, :memory)
+                end
 
                 lstm = LSTMCell(
                     3 => 5; use_bias=false, train_state=true, train_memory=false
@@ -137,14 +142,17 @@ end
                 ps = merge(_ps, (hidden_state=ps.hidden_state,))
                 (y, carry), _ = Lux.apply(lstm, x, ps, st)
                 @test carry == _carry
-                l, back = Zygote.pullback(
-                    p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1][1])), ps
-                )
-                gs = back(one(l))[1]
-                @test !hasproperty(gs, :bias_ih)
-                @test !hasproperty(gs, :bias_hh)
-                @test !isnothing(gs.hidden_state)
-                @test !hasproperty(gs, :memory)
+
+                if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
+                    l, back = Zygote.pullback(
+                        p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1][1])), ps
+                    )
+                    gs = back(one(l))[1]
+                    @test !hasproperty(gs, :bias_ih)
+                    @test !hasproperty(gs, :bias_hh)
+                    @test !isnothing(gs.hidden_state)
+                    @test !hasproperty(gs, :memory)
+                end
 
                 lstm = LSTMCell(
                     3 => 5; use_bias=false, train_state=false, train_memory=true
@@ -153,41 +161,50 @@ end
                 ps = merge(_ps, (memory=ps.memory,))
                 (y, carry), _ = Lux.apply(lstm, x, ps, st)
                 @test carry == _carry
-                l, back = Zygote.pullback(
-                    p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1][1])), ps
-                )
-                gs = back(one(l))[1]
-                @test !hasproperty(gs, :bias_ih)
-                @test !hasproperty(gs, :bias_hh)
-                @test !hasproperty(gs, :hidden_state)
-                @test !isnothing(gs.memory)
+
+                if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
+                    l, back = Zygote.pullback(
+                        p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1][1])), ps
+                    )
+                    gs = back(one(l))[1]
+                    @test !hasproperty(gs, :bias_ih)
+                    @test !hasproperty(gs, :bias_hh)
+                    @test !hasproperty(gs, :hidden_state)
+                    @test !isnothing(gs.memory)
+                end
 
                 lstm = LSTMCell(3 => 5; use_bias=false, train_state=true, train_memory=true)
                 ps, st = dev(Lux.setup(rng, lstm))
                 ps = merge(_ps, (hidden_state=ps.hidden_state, memory=ps.memory))
                 (y, carry), _ = Lux.apply(lstm, x, ps, st)
                 @test carry == _carry
-                l, back = Zygote.pullback(
-                    p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1][1])), ps
-                )
-                gs = back(one(l))[1]
-                @test !hasproperty(gs, :bias_ih)
-                @test !hasproperty(gs, :bias_hh)
-                @test !isnothing(gs.hidden_state)
-                @test !isnothing(gs.memory)
+
+                if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
+                    l, back = Zygote.pullback(
+                        p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1][1])), ps
+                    )
+                    gs = back(one(l))[1]
+                    @test !hasproperty(gs, :bias_ih)
+                    @test !hasproperty(gs, :bias_hh)
+                    @test !isnothing(gs.hidden_state)
+                    @test !isnothing(gs.memory)
+                end
 
                 lstm = LSTMCell(3 => 5; use_bias=true, train_state=true, train_memory=true)
                 ps, st = dev(Lux.setup(rng, lstm))
                 ps = merge(_ps, (; ps.bias_ih, ps.bias_hh, ps.hidden_state, ps.memory))
                 (y, carry), _ = Lux.apply(lstm, x, ps, st)
-                l, back = Zygote.pullback(
-                    p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1][1])), ps
-                )
-                gs = back(one(l))[1]
-                @test !isnothing(gs.bias_ih)
-                @test !isnothing(gs.bias_hh)
-                @test !isnothing(gs.hidden_state)
-                @test !isnothing(gs.memory)
+
+                if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
+                    l, back = Zygote.pullback(
+                        p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1][1])), ps
+                    )
+                    gs = back(one(l))[1]
+                    @test !isnothing(gs.bias_ih)
+                    @test !isnothing(gs.bias_hh)
+                    @test !isnothing(gs.hidden_state)
+                    @test !isnothing(gs.memory)
+                end
             end
         end
     end
@@ -231,30 +248,45 @@ end
                 ps = _ps
                 (y, carry), _ = Lux.apply(gru, x, ps, st)
                 @test check_approx(carry, _carry)
-                l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(gru(x, p, st)[1][1])), ps)
-                gs = back(one(l))[1]
 
-                @test !hasproperty(gs, :bias_ih)
-                @test !hasproperty(gs, :bias_hh)
-                @test !hasproperty(gs, :hidden_state)
+                if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
+                    l, back = Zygote.pullback(
+                        p -> sum(abs2, 0 .- sum(gru(x, p, st)[1][1])), ps
+                    )
+                    gs = back(one(l))[1]
+
+                    @test !hasproperty(gs, :bias_ih)
+                    @test !hasproperty(gs, :bias_hh)
+                    @test !hasproperty(gs, :hidden_state)
+                end
 
                 gru = GRUCell(3 => 5; use_bias=false, train_state=true)
                 ps, st = dev(Lux.setup(rng, gru))
                 ps = merge(_ps, (hidden_state=ps.hidden_state,))
                 (y, carry), _ = Lux.apply(gru, x, ps, st)
                 @test check_approx(carry, _carry)
-                l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(gru(x, p, st)[1][1])), ps)
-                gs = back(one(l))[1]
-                @test !isnothing(gs.hidden_state)
+
+                if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
+                    l, back = Zygote.pullback(
+                        p -> sum(abs2, 0 .- sum(gru(x, p, st)[1][1])), ps
+                    )
+                    gs = back(one(l))[1]
+                    @test !isnothing(gs.hidden_state)
+                end
 
                 gru = GRUCell(3 => 5; use_bias=true, train_state=true)
                 ps, st = dev(Lux.setup(rng, gru))
                 ps = merge(_ps, (; ps.bias_ih, ps.bias_hh, ps.hidden_state))
                 (y, carry), _ = Lux.apply(gru, x, ps, st)
                 @test check_approx(carry, _carry)
-                l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(gru(x, p, st)[1][1])), ps)
-                gs = back(one(l))[1]
-                @test !isnothing(gs.hidden_state)
+
+                if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
+                    l, back = Zygote.pullback(
+                        p -> sum(abs2, 0 .- sum(gru(x, p, st)[1][1])), ps
+                    )
+                    gs = back(one(l))[1]
+                    @test !isnothing(gs.hidden_state)
+                end
             end
         end
     end

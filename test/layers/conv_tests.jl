@@ -236,7 +236,16 @@ end
                 end
                 @test size(y)[3:4] == size(x)[3:4]
 
-                @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+                @test_gradients(
+                    sumabs2first,
+                    layer,
+                    x,
+                    ps,
+                    st;
+                    atol=1.0f-3,
+                    rtol=1.0f-3,
+                    ground_truth_eltype=Nothing
+                )
             end
 
             sizes = (nothing, (8, 8, 8), (8, 4, 4))
