@@ -80,10 +80,6 @@ sumabs2(x::AbstractArray) = sum(abs2, x)
 sumabs2(x::Tuple) = sumabs2(first(x))
 sumabs2(model, x, ps, st) = sumabs2(model(x, ps, st))
 
-function ∇sumabs2_zygote(model, x, ps, st)
-    return Zygote.gradient((x, ps) -> sumabs2(model, x, ps, st), x, ps)
-end
-
 function ∇sumabs2_enzyme(model, x, ps, st)
     dx = Enzyme.make_zero(x)
     dps = Enzyme.make_zero(ps)
@@ -99,6 +95,16 @@ function ∇sumabs2_enzyme(model, x, ps, st)
     return dx, dps
 end
 
-export ∇sumabs2_zygote, ∇sumabs2_enzyme
+function ∇sumabs2_reactant_fd(model, x, ps, st)
+    return @jit Reactant.TestUtils.finite_difference_gradient(
+        sumabs2, model, f64(x), f64(ps), f64(st)
+    )
+end
+
+function ∇sumabs2_reactant(model, x, ps, st)
+    return @jit ∇sumabs2_enzyme(model, x, ps, st)
+end
+
+export ∇sumabs2_reactant, ∇sumabs2_reactant_fd
 
 end

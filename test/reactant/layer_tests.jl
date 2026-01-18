@@ -46,12 +46,12 @@
                 end
 
                 @testset "gradient" begin
-                    ∂x, ∂ps = ∇sumabs2_zygote(model, x, ps, st)
+                    ∂x_fd, ∂ps_fd = ∇sumabs2_reactant_fd(model, x, ps, st)
                     @testset for mincut in (true, false), checkpointing in (false,)
                         model_ = Recurrence(cell(4 => 4); ordering, mincut, checkpointing)
-                        ∂x_ra, ∂ps_ra = @jit ∇sumabs2_enzyme(model_, x_ra, ps_ra, st_ra)
-                        @test ∂x_ra ≈ ∂x atol = 1.0e-2 rtol = 1.0e-2
-                        @test check_approx(∂ps_ra, ∂ps; atol=1.0e-2, rtol=1.0e-2)
+                        ∂x_ra, ∂ps_ra = ∇sumabs2_reactant(model_, x_ra, ps_ra, st_ra)
+                        @test ∂x_ra ≈ ∂x_fd atol = 1.0e-2 rtol = 1.0e-2
+                        @test check_approx(∂ps_ra, ∂ps_fd; atol=1.0e-2, rtol=1.0e-2)
                     end
                 end
 
@@ -152,10 +152,10 @@ end
             end
 
             @testset "gradient" begin
-                ∂x, ∂ps = ∇sumabs2_zygote(model, x, ps, st)
-                ∂x_ra, ∂ps_ra = @jit ∇sumabs2_enzyme(model, x_ra, ps_ra, st_ra)
-                @test ∂x_ra ≈ ∂x atol = 1.0e-2 rtol = 1.0e-2
-                @test check_approx(∂ps_ra, ∂ps; atol=1.0e-2, rtol=1.0e-2)
+                (∂x_fd, ∂ps_fd) = ∇sumabs2_reactant_fd(model, x, ps, st)
+                (∂x_ra, ∂ps_ra) = ∇sumabs2_reactant(model, x_ra, ps_ra, st_ra)
+                @test ∂x_ra ≈ ∂x_fd atol = 1.0e-2 rtol = 1.0e-2
+                @test check_approx(∂ps_ra, ∂ps_fd; atol=1.0e-2, rtol=1.0e-2)
             end
 
             y2, st3 = model(x, ps, Lux.testmode(st2))
