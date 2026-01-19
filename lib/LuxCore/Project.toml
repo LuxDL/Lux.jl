@@ -1,7 +1,7 @@
 name = "LuxCore"
 uuid = "bb33d45b-7691-41d6-9220-0943567d0623"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "1.5.2"
+version = "1.5.3"
 
 [deps]
 DispatchDoctor = "8d63f2c5-f18a-4cf2-ba9d-b3f60fc568c8"
@@ -33,7 +33,7 @@ ReactantExt = "Reactant"
 SetfieldExt = "Setfield"
 
 [compat]
-Adapt = "4.1"
+Adapt = "4.4"
 ArrayInterface = "7.9"
 ChainRulesCore = "1.25.1"
 DispatchDoctor = "0.4.10"
@@ -42,7 +42,7 @@ Flux = "0.16.3"
 Functors = "0.5"
 MLDataDevices = "1.17"
 Random = "1.10"
-Reactant = "0.2.170"
+Reactant = "0.2.200"
 ReverseDiff = "1.15"
 SciMLPublic = "1.0.0"
 Setfield = "1"

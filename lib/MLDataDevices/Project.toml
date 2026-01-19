@@ -1,7 +1,7 @@
 name = "MLDataDevices"
 uuid = "7e8f7934-dd98-4c1a-8fe8-92b47a384d40"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "1.17.1"
+version = "1.17.2"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
@@ -54,7 +54,7 @@ OpenCLExt = ["GPUArrays", "OpenCL"]
 
 [compat]
 AMDGPU = "1, 2"
-Adapt = "4.1"
+Adapt = "4.4"
 CUDA = "5.8"
 ChainRules = "1.51"
 ChainRulesCore = "1.25.1"
@@ -67,7 +67,7 @@ Metal = "1"
 OneHotArrays = "0.2.10"
 Preferences = "1.4.3"
 Random = "1.10"
-Reactant = "0.2.170"
+Reactant = "0.2.200"
 RecursiveArrayTools = "3.8"
 ReverseDiff = "1.15"
 SciMLPublic = "1.0.0"
