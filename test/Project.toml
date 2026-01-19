@@ -48,7 +48,7 @@ LuxCore = {path = "../lib/LuxCore"}
 LuxLib = {path = "../lib/LuxLib"}
 LuxTestUtils = {path = "../lib/LuxTestUtils"}
 MLDataDevices = {path = "../lib/MLDataDevices"}
-Reactant = {rev = "gpu_compiler", url = "https://github.com/glou-nes/Reactant.jl"}
+Reactant = {rev = "ap/fd_fixes", url = "https://github.com/EnzymeAD/Reactant.jl"}
 
 [compat]
 ADTypes = "1.10"
@@ -92,4 +92,3 @@ Statistics = "1.10"
 Test = "1.10"
 Tracker = "0.2.37"
 Zygote = "0.7"
-
