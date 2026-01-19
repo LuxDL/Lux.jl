@@ -26,7 +26,7 @@ MLDataDevices = {path = "../MLDataDevices"}
 
 [compat]
 ADTypes = "1.10"
-Adapt = "4.1"
+Adapt = "4.4"
 ArrayInterface = "7.17.1"
 ChainRulesCore = "1.25.1"
 ComponentArrays = "0.15.22"
