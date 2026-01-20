@@ -48,7 +48,6 @@ LuxCore = {path = "../lib/LuxCore"}
 LuxLib = {path = "../lib/LuxLib"}
 LuxTestUtils = {path = "../lib/LuxTestUtils"}
 MLDataDevices = {path = "../lib/MLDataDevices"}
-Reactant = {rev = "ap/fd_fixes", url = "https://github.com/EnzymeAD/Reactant.jl"}
 
 [compat]
 ADTypes = "1.10"
@@ -81,7 +80,7 @@ Preferences = "1.4.3"
 PythonCall = "0.9"
 Random = "1.10"
 ReTestItems = "1.24.0"
-Reactant = "0.2.200"
+Reactant = "0.2.201"
 Reexport = "1.2.2"
 ReverseDiff = "1.15.3"
 Setfield = "1.1.1"
