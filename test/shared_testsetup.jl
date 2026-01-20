@@ -101,9 +101,10 @@ function ∇sumabs2_enzyme(model, x, ps, st)
 end
 
 function ∇sumabs2_reactant_fd(model, x, ps, st)
-    return @jit Reactant.TestUtils.finite_difference_gradient(
+    _, ∂x_fd, ∂ps_fd, _ = @jit Reactant.TestUtils.finite_difference_gradient(
         sumabs2, model, f64(x), f64(ps), f64(st)
     )
+    return ∂x_fd, ∂ps_fd
 end
 
 function ∇sumabs2_reactant(model, x, ps, st)
