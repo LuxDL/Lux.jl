@@ -48,7 +48,6 @@ LuxCore = {path = "../lib/LuxCore"}
 LuxLib = {path = "../lib/LuxLib"}
 LuxTestUtils = {path = "../lib/LuxTestUtils"}
 MLDataDevices = {path = "../lib/MLDataDevices"}
-Reactant = {rev = "ap/fd_fixes", url = "https://github.com/EnzymeAD/Reactant.jl"}
 
 [compat]
 ADTypes = "1.10"
