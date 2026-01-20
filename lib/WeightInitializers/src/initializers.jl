@@ -158,7 +158,7 @@ deep linear neural networks", ICLR 2014, https://arxiv.org/abs/1312.6120
 function orthogonal(
     rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=T(1.0)
 ) where {T<:Number}
-    @argcheck length(dims) > 1 "Creating vectors (length(dims) == 1) is not allowed"
+    @assert length(dims) > 1 "Creating vectors (length(dims) == 1) is not allowed"
 
     rows, cols = length(dims) == 2 ? dims : (prod(dims[1:(end - 1)]), dims[end])
     rows < cols && return permutedims(orthogonal(rng, T, cols, rows; gain=T(gain)))

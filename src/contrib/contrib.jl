@@ -1,11 +1,9 @@
 module Experimental
 
 using ADTypes: ADTypes
-using ArgCheck: @argcheck
 using ChainRulesCore: ChainRulesCore
 using SciMLPublic: @public
 using ConcreteStructs: @concrete
-using FastClosures: @closure
 using Functors: Functors, KeyPath, fmap_with_path, fmapstructure_with_path, functor
 using Markdown: @doc_str
 using Optimisers: Optimisers

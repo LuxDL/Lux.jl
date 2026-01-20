@@ -33,7 +33,8 @@
                 T(2),
                 dims;
                 atol=1.0f-3,
-                rtol=1.0f-3
+                rtol=1.0f-3,
+                ground_truth_eltype=Nothing
             )
 
             y, mask_, rng_ = dropout(rng, x, T(0.5), Val(false), T(2), dims)
@@ -86,7 +87,8 @@ end
                 T(2),
                 :;
                 atol=1.0f-3,
-                rtol=1.0f-3
+                rtol=1.0f-3,
+                ground_truth_eltype=Nothing
             )
 
             @jet sum(first(dropout(rng, x, mask, T(0.5), Val(true), Val(true), T(2), :)))
@@ -117,7 +119,8 @@ end
                 T(2),
                 :;
                 atol=1.0f-3,
-                rtol=1.0f-3
+                rtol=1.0f-3,
+                ground_truth_eltype=Nothing
             )
 
             @jet sum(first(dropout(rng, x, mask, T(0.5), Val(true), Val(false), T(2), :)))
@@ -170,7 +173,8 @@ end
                 T(0.5),
                 Val(true);
                 atol=1.0f-3,
-                rtol=1.0f-3
+                rtol=1.0f-3,
+                ground_truth_eltype=Nothing
             )
 
             @jet sum(first(alpha_dropout(rng, x, T(0.5), Val(true))))

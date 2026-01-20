@@ -14,9 +14,9 @@ function printable_children(m::AbstractLuxWrapperLayer{field}) where {field}
 end
 
 show_leaflike(x) = Functors.isleaf(x)  # mostly follow Functors, except for:
-show_leaflike(x::AbstractLuxLayer) = false
+show_leaflike(::AbstractLuxLayer) = false
 
-isa_printable_leaf(x) = false
+isa_printable_leaf(_) = false
 
 function underscorise(n::Integer)
     return join(reverse(join.(reverse.(Iterators.partition(digits(n), 3)))), '_')
@@ -27,11 +27,13 @@ function parse_name(name::String)
     # Match names ending in `_` and digits, e.g. `layer_1`
     m = match(r"^(.*)_(\d+)$", name)
     if m !== nothing
+        @assert m.captures[2] isa AbstractString "Invalid name: $name"
         return m.captures[1], true, parse(Int, m.captures[2])
     end
     # Match names ending in digits, e.g. `layer1`
     m = match(r"^(.*?)(\d+)$", name)
     if m !== nothing
+        @assert m.captures[2] isa AbstractString "Invalid name: $name"
         return m.captures[1], false, parse(Int, m.captures[2])
     end
     return name, false, nothing

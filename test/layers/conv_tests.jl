@@ -203,7 +203,7 @@ end
             @test Upsample(:trilinear; scale=2) isa Any
             @test Upsample(:trilinear; size=(64, 64)) isa Any
 
-            @test_throws ArgumentError Upsample(:linear; scale=2)
+            @test_throws AssertionError Upsample(:linear; scale=2)
             @test_throws ArgumentError Upsample(:nearest; scale=2, size=(64, 64))
             @test_throws ArgumentError Upsample(:nearest)
 
@@ -215,7 +215,7 @@ end
             # NNlib is checking algorithmic correctness. So we should just verify correct
             # function call
             modes = (:nearest, :bilinear, :trilinear)
-            sizes = (nothing, (64, 64), (64, 32))
+            sizes = (nothing, (8, 8), (8, 4))
             scales = (nothing, 2, (2, 1))
 
             @testset for umode in modes, xsize in sizes, scale in scales
@@ -224,7 +224,7 @@ end
                 layer = Upsample(umode; size=xsize, scale=scale)
                 display(layer)
                 ps, st = dev(Lux.setup(rng, layer))
-                x = aType(rand(32, 32, 3, 4))
+                x = aType(rand(4, 4, 3, 2))
 
                 @jet layer(x, ps, st)
 
@@ -239,7 +239,7 @@ end
                 @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
             end
 
-            sizes = (nothing, (64, 64, 64), (64, 32, 128))
+            sizes = (nothing, (8, 8, 8), (8, 4, 4))
             scales = (nothing, 2, (2, 1, 1), (2, 2, 1))
 
             @testset for umode in modes, xsize in sizes, scale in scales
@@ -248,7 +248,7 @@ end
                 layer = Upsample(umode; size=xsize, scale=scale)
                 display(layer)
                 ps, st = dev(Lux.setup(rng, layer))
-                x = aType(rand(32, 32, 32, 3, 4))
+                x = aType(rand(4, 4, 4, 2, 3))
 
                 @jet layer(x, ps, st)
 

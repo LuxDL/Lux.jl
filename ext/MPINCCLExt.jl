@@ -1,6 +1,5 @@
 module MPINCCLExt
 
-using ArgCheck: @argcheck
 using MPI: MPI
 using NCCL: NCCL
 using Setfield: @set!
@@ -13,7 +12,7 @@ Lux.is_extension_loaded(::Val{:MPINCCL}) = true
 function DistributedUtils.force_initialize(
     ::Type{NCCLBackend}; cuda_devices=nothing, amdgpu_devices=missing
 )
-    @argcheck amdgpu_devices === missing "`AMDGPU` is not supported by `NCCL`."
+    @assert amdgpu_devices === missing "`AMDGPU` is not supported by `NCCL`."
     DistributedUtils.force_initialize(
         MPIBackend; cuda_devices, force_cuda=true, caller="NCCLBackend", amdgpu_devices
     )

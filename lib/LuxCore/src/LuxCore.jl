@@ -346,7 +346,7 @@ function should return `T1 == T2`.
 By default this function returns `true` for `AbstractLuxLayer`. For container layers, this
 function returns `true` if all the layers in the container preserve the state type.
 """
-preserves_state_type(l::AbstractLuxLayer) = true
+preserves_state_type(::AbstractLuxLayer) = true
 function preserves_state_type(l::AbstractLuxWrapperLayer{layer}) where {layer}
     return preserves_state_type(getfield(l, layer))
 end

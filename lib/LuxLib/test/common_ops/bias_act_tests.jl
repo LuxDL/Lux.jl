@@ -79,14 +79,16 @@
                 soft_fail=fp16 ? [AutoFiniteDiff()] : []
             )
 
-            ∂x1, ∂b1 = Zygote.gradient(__Fix1(bias_act_loss1, act), x, b)
-            ∂x2, ∂b2 = Zygote.gradient(__Fix1(bias_act_loss2, act), x, b)
-            ∂x3, ∂b3 = Zygote.gradient(__Fix1(bias_act_loss3, act), x, b)
+            if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
+                ∂x1, ∂b1 = Zygote.gradient(__Fix1(bias_act_loss1, act), x, b)
+                ∂x2, ∂b2 = Zygote.gradient(__Fix1(bias_act_loss2, act), x, b)
+                ∂x3, ∂b3 = Zygote.gradient(__Fix1(bias_act_loss3, act), x, b)
 
-            @test ∂x1 ≈ ∂x2 atol = atol rtol = rtol
-            @test ∂x1 ≈ ∂x3 atol = atol rtol = rtol
-            @test ∂b1 ≈ ∂b2 atol = atol rtol = rtol
-            @test ∂b1 ≈ ∂b3 atol = atol rtol = rtol
+                @test ∂x1 ≈ ∂x2 atol = atol rtol = rtol
+                @test ∂x1 ≈ ∂x3 atol = atol rtol = rtol
+                @test ∂b1 ≈ ∂b2 atol = atol rtol = rtol
+                @test ∂b1 ≈ ∂b3 atol = atol rtol = rtol
+            end
         end
     end
 end

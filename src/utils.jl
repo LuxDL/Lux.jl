@@ -2,8 +2,7 @@ module Utils
 
 using ADTypes: ADTypes, AutoEnzyme
 using ArrayInterface: ArrayInterface
-using ArgCheck: @argcheck
-using ChainRulesCore: ChainRulesCore, @non_differentiable, NoTangent
+using ChainRulesCore: ChainRulesCore, @non_differentiable, @thunk, NoTangent
 using ConcreteStructs: @concrete
 using EnzymeCore: EnzymeRules
 using ForwardDiff: Dual
@@ -66,12 +65,12 @@ end
 merge(nt₁::NamedTuple, nt₂::NamedTuple) = Base.merge(nt₁, nt₂)
 function merge(p, nt::NamedTuple)
     can_named_tuple(p) && return merge(named_tuple(p), nt)
-    @argcheck length(p) == 0
+    @assert length(p) == 0
     return nt
 end
 function merge(nt::NamedTuple, p)
     can_named_tuple(p) && return merge(nt, named_tuple(p))
-    @argcheck length(p) == 0
+    @assert length(p) == 0
     return nt
 end
 function merge(x, y)
@@ -118,9 +117,7 @@ vec(x::AbstractArray) = Base.vec(x)
 vec(::Nothing) = nothing
 
 function CRC.rrule(::typeof(vec), x::AbstractArray)
-    return (
-        Base.vec(x), Δ -> (NoTangent(), CRC.@thunk(reshape(recursive_unthunk(Δ), size(x))))
-    )
+    return (Base.vec(x), Δ -> (NoTangent(), @thunk(reshape(recursive_unthunk(Δ), size(x)))))
 end
 
 function sample_replicate(rng::AbstractRNG)
@@ -213,7 +210,9 @@ end
 make_abstract_matrix(x::AbstractVector) = reshape(x, :, 1)
 make_abstract_matrix(x::SVector{L,T}) where {L,T} = SMatrix{L,1,T}(x)
 make_abstract_matrix(x::AbstractMatrix) = x
-make_abstract_matrix(x::AbstractArray{T,N}) where {T,N} = reshape(x, Base.size(x, 1), :)
+function make_abstract_matrix(x::AbstractArray{T,N}) where {T,N}
+    return reshape(x, Base.size(x, 1)::Int, :)
+end
 
 matrix_to_array(x::AbstractMatrix, ::AbstractVector) = vec(x)
 matrix_to_array(x::SMatrix{L,1,T}, ::AbstractVector) where {L,T} = SVector{L,T}(x)
@@ -238,7 +237,7 @@ recursive_unthunk(x) = Functors.fmap(CRC.unthunk, x; exclude=MLDataDevices.islea
 
 convert_eltype(::Type{T}, x::Number) where {T<:Number} = convert(T, x)
 
-normalize_autoenzyme_mode(mode, ad::AutoEnzyme) = ad
+normalize_autoenzyme_mode(_, ad::AutoEnzyme) = ad
 normalize_autoenzyme_mode(mode, ad::AutoEnzyme{Nothing}) = @set(ad.mode = mode)
 
 annotate_enzyme_function(::AutoEnzyme{<:Any,Nothing}, f::F) where {F} = f

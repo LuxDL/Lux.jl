@@ -430,7 +430,7 @@
                 end
 
                 # This should not work
-                @test_throws ArgumentError @macroexpand(
+                @test_throws AssertionError @macroexpand(
                     @init_fn(rng -> randn(rng, 3, 2), param)
                 )
             end

@@ -1,6 +1,5 @@
 module SimpleChainsExt
 
-using ArgCheck: @argcheck
 using SimpleChains: SimpleChains
 using Random: AbstractRNG
 
@@ -99,7 +98,7 @@ function NNlib.logsoftmax!(
     x::Union{SimpleChains.StrideArray{T2,2},SimpleChains.PtrArray{T2,2}};
     dims=1,
 ) where {T1,T2}
-    @argcheck dims == 1
+    @assert dims == 1
     m = similar(y, SimpleChains.static_size(y, 2))
     SimpleChains.logsoftmax!(y, m, x)
     return y

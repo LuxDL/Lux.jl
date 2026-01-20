@@ -205,7 +205,7 @@ function batched_matmul!(
     x::AbstractArray{xT,3},
     y::AbstractArray{yT,3},
 ) where {zT,xT,yT}
-    batched_mul!(z, x, y)
+    NNlib.batched_mul!(z, x, y)
     return nothing
 end
 

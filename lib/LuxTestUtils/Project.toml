@@ -5,6 +5,7 @@ authors = ["Avik Pal <avikpal@mit.edu>"]
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
+Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
@@ -25,6 +26,7 @@ MLDataDevices = {path = "../MLDataDevices"}
 
 [compat]
 ADTypes = "1.10"
+Adapt = "4.4"
 ArrayInterface = "7.17.1"
 ChainRulesCore = "1.25.1"
 ComponentArrays = "0.15.22"
@@ -33,10 +35,13 @@ Enzyme = "0.13.81"
 FiniteDiff = "2.23.1"
 ForwardDiff = "0.10.36, 1"
 Functors = "0.5"
-JET = "0.9.6, 0.10"
+JET = "0.9.6, 0.10, 0.11"
 MLDataDevices = "1.17"
 Optimisers = "0.3.4, 0.4"
 Pkg = "1.10"
 Test = "1.10"
 Zygote = "0.7"
 julia = "1.10"
+
+[workspace]
+projects = ["test"]

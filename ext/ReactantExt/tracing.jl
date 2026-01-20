@@ -3,12 +3,14 @@ function Reactant.traced_type_inner(
     seen,
     @nospecialize(mode::Reactant.TraceMode),
     @nospecialize(track_numbers::Type),
-    @nospecialize(sharding),
+    @nospecialize(ndevices),
     @nospecialize(runtime)
 ) where {ST,M,psT,stT}
-    args = (Val(mode), track_numbers, sharding, runtime)
     return StatefulLuxLayer{
-        ST,M,Reactant.traced_type(psT, args...),Reactant.traced_type(stT, args...)
+        ST,
+        M,
+        Reactant.traced_type_inner(psT, seen, mode, track_numbers, ndevices, runtime),
+        Reactant.traced_type_inner(stT, seen, mode, track_numbers, ndevices, runtime),
     }
 end
 

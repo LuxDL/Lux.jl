@@ -44,7 +44,7 @@
         @test_throws AssertionError Lux.Experimental.share_parameters(
             ps, non_disjoint_sharing
         )
-        @test_throws ArgumentError Lux.Experimental.share_parameters(
+        @test_throws AssertionError Lux.Experimental.share_parameters(
             ps, sharing, (ps_new_1,)
         )
 

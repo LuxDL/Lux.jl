@@ -1,5 +1,5 @@
 @testsetup module LayerNormSetup
-using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, Statistics
+using LuxLib, LuxTestUtils, Random, Test, NNlib, Statistics
 using LuxTestUtils: check_approx
 
 function setup_layernorm(gen_f, aType, T, x_size, affine_shape, expand_dims::Bool=true)

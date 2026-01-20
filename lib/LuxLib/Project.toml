@@ -1,6 +1,6 @@
 name = "LuxLib"
 uuid = "82251201-b29d-42c6-8e01-566dec8acb11"
-version = "1.15.0"
+version = "1.15.2"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
 
 [deps]
@@ -24,6 +24,7 @@ SciMLPublic = "431bcebd-1456-4ced-9d72-93c2757fff0b"
 Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
 StaticArraysCore = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 
 [weakdeps]
 AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
@@ -31,6 +32,7 @@ AppleAccelerate = "13e28ba4-7ad8-5781-acae-3021b1ed3924"
 BLISBLAS = "6f275bd8-fec0-4d39-945b-7e95a765fa1e"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 LoopVectorization = "bdcacae8-1622-11e9-2a5c-532679323890"
 MKL = "33e6dc65-8f57-5167-99aa-e5a354878fb2"
 Octavian = "6fd5a793-0b7e-452c-907f-f8bfe9c57db4"
@@ -41,13 +43,10 @@ ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
 SLEEFPirates = "476501e8-09a2-5ece-8869-fb82de89a1fa"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
-ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 
-[sources.LuxCore]
-path = "../LuxCore"
-
-[sources.MLDataDevices]
-path = "../MLDataDevices"
+[sources]
+LuxCore = {path = "../LuxCore"}
+MLDataDevices = {path = "../MLDataDevices"}
 
 [extensions]
 AppleAccelerateExt = "AppleAccelerate"
@@ -85,7 +84,7 @@ LinearAlgebra = "1.10"
 LoopVectorization = "0.12.171"
 LuxCore = "1.5"
 MKL = "0.7, 0.8, 0.9"
-MLDataDevices = "1.17"
+MLDataDevices = "1.17.1"
 Markdown = "1.10"
 NNlib = "0.9.27"
 Octavian = "0.3.28"
@@ -102,5 +101,9 @@ Static = "0.8.4, 1"
 StaticArraysCore = "1.4.3"
 Statistics = "1.10"
 Tracker = "0.2.36"
+UUIDs = "1.10"
 cuDNN = "1.3"
 julia = "1.10"
+
+[workspace]
+projects = ["test"]

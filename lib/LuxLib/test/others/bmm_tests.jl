@@ -387,7 +387,8 @@ end
     end
 end
 
-@testitem "BMM Tracker AoS" tags = [:misc] setup = [SharedTestSetup, BatchedMMSetup] begin
+@testitem "BMM Tracker AoS" tags = [:misc] setup = [SharedTestSetup, BatchedMMSetup] skip =
+    :(using LuxTestUtils; !LuxTestUtils.ZYGOTE_TESTING_ENABLED[]) begin
     using Tracker, Zygote, NNlib
 
     rng = StableRNG(1234)

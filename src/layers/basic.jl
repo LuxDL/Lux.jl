@@ -171,7 +171,7 @@ FlattenLayer(; N=nothing) = FlattenLayer(static(N))
 end
 
 @trace function (f::FlattenLayer)(x::AbstractArray{T,N}, _, st::NamedTuple) where {T,N}
-    @argcheck f.N < N
+    @assert f.N < N
     return reshape(x, :, size(x)[(f.N + 1):end]...), st
 end
 
@@ -238,7 +238,7 @@ julia> y, st_new = model(x, ps, st)
 """
 struct NoOpLayer <: AbstractLuxLayer end
 
-(noop::NoOpLayer)(x, _, st::NamedTuple) = x, st
+(::NoOpLayer)(x, _, st::NamedTuple) = x, st
 
 """
     WrappedFunction(f)
@@ -265,7 +265,7 @@ be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing to do would be
     func <: Function
 end
 
-(wf::WrappedFunction)(x, ps, st::NamedTuple{}) = wf.func(x), st
+(wf::WrappedFunction)(x, _ps, st::NamedTuple{}) = wf.func(x), st
 
 Base.show(io::IO, w::WrappedFunction) = print(io, "WrappedFunction(", w.func, ")")
 
@@ -356,7 +356,7 @@ function initialparameters(rng::AbstractRNG, d::Dense)
 end
 
 parameterlength(d::Dense) = d.out_dims * d.in_dims + has_bias(d) * d.out_dims
-statelength(d::Dense) = 0
+statelength(::Dense) = 0
 
 function outputsize(d::Dense, x::AbstractArray, ::AbstractRNG)
     return (d.out_dims, size(x)[2:(end - 1)]...)
@@ -445,7 +445,7 @@ function initialparameters(rng::AbstractRNG, d::Scale)
 end
 
 parameterlength(d::Scale) = (1 + has_bias(d)) * prod(d.dims)
-statelength(d::Scale) = 0
+statelength(::Scale) = 0
 
 outputsize(d::Scale, _, ::AbstractRNG) = d.dims
 
@@ -564,7 +564,7 @@ end
 function parameterlength(b::Bilinear)
     return b.out_dims * b.in1_dims * b.in2_dims + has_bias(b) * b.out_dims
 end
-statelength(b::Bilinear) = 0
+statelength(::Bilinear) = 0
 
 outputsize(b::Bilinear, _, ::AbstractRNG) = (b.out_dims,)
 
@@ -572,8 +572,8 @@ outputsize(b::Bilinear, _, ::AbstractRNG) = (b.out_dims,)
     (x, y)::Tuple{<:AbstractVecOrMat,<:AbstractVecOrMat}, ps, st::NamedTuple
 )
     s₁, s₂, s₃ = size(ps.weight)
-    @argcheck s₂ == size(x, 1) && s₃ == size(y, 1)
-    @argcheck size(x, 2) == size(y, 2)
+    @assert s₂ == size(x, 1) && s₃ == size(y, 1)
+    @assert size(x, 2) == size(y, 2)
 
     Wy = reshape(reshape(ps.weight, (:, s₃)) * y, (s₁, s₂, :))
     Wyx = reshape(batched_matmul(Wy, reshape(x, (s₂, 1, :))), (s₁, :))
@@ -585,7 +585,7 @@ end
 @trace function (b::Bilinear)(
     (x, y)::Tuple{<:AbstractArray,<:AbstractArray}, ps, st::NamedTuple
 )
-    @argcheck size(x)[2:end] == size(y)[2:end]
+    @assert size(x)[2:end] == size(y)[2:end]
 
     s₁, s₂, s₃ = size(ps.weight)
     x′ = reshape(x, s₂, :)

@@ -137,7 +137,7 @@ statelength(l::BatchNorm) = ifelse(has_track_stats(l), l.chs * 2, 0) + 1
 @trace function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
     CRC.ignore_derivatives() do
         if st.training isa Val{true}
-            @argcheck size(x, ndims(x)) != 1 "Batch size for BatchNorm cannot be 1 during training"
+            @assert size(x, ndims(x)) != 1 "Batch size for BatchNorm cannot be 1 during training"
         end
     end
 
@@ -264,7 +264,7 @@ function GroupNorm(
     affine::BoolType=True(),
     epsilon=1.0f-5,
 )
-    @argcheck chs % groups == 0 "The number of groups ($(groups)) must divide the number of channels ($chs)"
+    @assert chs % groups == 0 "The number of groups ($(groups)) must divide the number of channels ($chs)"
     return GroupNorm(
         activation, epsilon, chs, init_bias, init_scale, groups, static(affine)
     )

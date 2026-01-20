@@ -29,7 +29,7 @@ function LuxCore.initialparameters(rng::AbstractRNG, l::Dense)
     return (w=randn(rng, l.out, l.in), b=randn(rng, l.out))
 end
 
-(::Dense)(x, ps, st) = x, st  # Dummy Forward Pass
+(::Dense)(x, _, st) = x, st  # Dummy Forward Pass
 
 struct DenseWrapper{L} <: AbstractLuxWrapperLayer{:layer}
     layer::L
