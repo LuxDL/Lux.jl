@@ -133,6 +133,20 @@ end
                 Dense(3 => 2),
             )
 
+            model_decomposed = Chain(
+                Dense(2 => 3, tanh),
+                BatchNorm(
+                    3,
+                    act;
+                    track_stats,
+                    affine,
+                    init_bias=rand32,
+                    init_scale=rand32,
+                    use_decomposed_implementation=true,
+                ),
+                Dense(3 => 2),
+            )
+
             x = rand(Float32, 2, 4)
             ps, st = Lux.setup(Random.default_rng(), model)
 
@@ -152,7 +166,9 @@ end
             end
 
             @testset "gradient" begin
-                (∂x_fd, ∂ps_fd) = ∇sumabs2_reactant_fd(model, x_ra, ps_ra, st_ra)
+                # batching for native batchnorm ops is currently busted upstream
+                # See https://github.com/EnzymeAD/Enzyme-JAX/issues/1947
+                (∂x_fd, ∂ps_fd) = ∇sumabs2_reactant_fd(model_decomposed, x_ra, ps_ra, st_ra)
                 (∂x_ra, ∂ps_ra) = ∇sumabs2_reactant(model, x_ra, ps_ra, st_ra)
                 @test ∂x_ra ≈ ∂x_fd atol = 1.0e-2 rtol = 1.0e-2
                 @test check_approx(∂ps_ra, ∂ps_fd; atol=1.0e-2, rtol=1.0e-2)
