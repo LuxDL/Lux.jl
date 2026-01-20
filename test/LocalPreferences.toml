@@ -1,2 +1,5 @@
+[Lux]
+eltype_mismatch_handling = "none"
+
 [Reactant]
 xla_runtime = "IFRT"

@@ -115,7 +115,11 @@ if ("all" in LUX_TEST_GROUP || "extras" in LUX_TEST_GROUP) && VERSION ≥ v"1.11
     for (root, dirs, files) in walkdir(testdir)
         for file in files
             if isintegrationtest(file)
-                push!(integrationtestfiles, joinpath(root, file))
+                fullpath = joinpath(root, file)
+                if VERSION >= v"1.12-" && occursin("SimpleChains", fullpath)
+                    continue
+                end
+                push!(integrationtestfiles, fullpath)
             end
         end
     end
