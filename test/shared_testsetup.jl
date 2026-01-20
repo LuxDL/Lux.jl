@@ -102,7 +102,7 @@ end
 
 function ∇sumabs2_reactant_fd(model, x, ps, st)
     _, ∂x_fd, ∂ps_fd, _ = @jit Reactant.TestUtils.finite_difference_gradient(
-        sumabs2, model, f64(x), f64(ps), f64(st)
+        sumabs2, Const(model), f64(x), f64(ps), Const(f64(st))
     )
     return ∂x_fd, ∂ps_fd
 end
