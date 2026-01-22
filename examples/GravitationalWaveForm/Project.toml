@@ -19,3 +19,6 @@ Optimization = "4, 5"
 OptimizationOptimJL = "0.4"
 OrdinaryDiffEqLowOrderRK = "1"
 SciMLSensitivity = "7.57"
+
+[sources]
+Lux = {path = "../../"}

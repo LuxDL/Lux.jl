@@ -25,3 +25,6 @@ Reactant = "0.2.170"
 SafeTensors = "1.2"
 Scratch = "1.3"
 Statistics = "1.10"
+
+[sources]
+Lux = {path = "../../"}

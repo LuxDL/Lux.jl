@@ -22,3 +22,6 @@ Random = "1"
 Reactant = "0.2.170"
 SimpleChains = "0.4.6"
 Zygote = "0.7"
+
+[sources]
+Lux = {path = "../../"}
