@@ -33,7 +33,7 @@ slice and normalises the input accordingly.
 ## Internal Keyword Arguments
 
   - `use_decomposed_implementation`: Several backends like CUDA, Reactant dispatch
-    to a specialized vendored implementaion for batchnorm. Setting this to true,
+    to a specialized vendored implementation for batchnorm. Setting this to true,
     makes Lux emit a variant of batchnorm that is computed without using any
     specialized kernels. This is meant to be used for correctness testing and benchmarking
     purposes.
