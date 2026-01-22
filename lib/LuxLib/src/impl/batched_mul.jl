@@ -117,17 +117,17 @@ function assert_batched_matmul_checks(
     lhs_batching_dims::Dims{M}=ntuple(Base.Fix2(+, 2), Val(N - 2)),
     rhs_batching_dims::Dims{M}=ntuple(Base.Fix2(+, 2), Val(N - 2)),
 ) where {xT,yT,N,M}
-    @assert N ≥ 3 "N must be at least 3"
-    @assert M == N - 2 "M = $M must be equal to N - 2 = $N - 2"
-    @assert 1 ≤ lhs_contracting_dim ≤ N "lhs_contracting_dim must be between 1 and $N"
-    @assert 1 ≤ rhs_contracting_dim ≤ N "rhs_contracting_dim must be between 1 and $N"
+    N < 3 && throw(lazy"N must be at least 3")
+    M != N - 2 && throw(lazy"M = $M must be equal to N - 2 = $N - 2")
+    1 ≤ lhs_contracting_dim ≤ N || throw(lazy"lhs_contracting_dim must be between 1 and $N")
+    1 ≤ rhs_contracting_dim ≤ N || throw(lazy"rhs_contracting_dim must be between 1 and $N")
     for (lhs_batching_dim, rhs_batching_dim) in zip(lhs_batching_dims, rhs_batching_dims)
-        @assert 1 ≤ lhs_batching_dim ≤ N "lhs_batching_dim must be between 1 and $N"
-        @assert 1 ≤ rhs_batching_dim ≤ N "rhs_batching_dim must be between 1 and $N"
-        @assert lhs_batching_dim ≠ lhs_contracting_dim "lhs_batching_dim must be different \
-                                                        from lhs_contracting_dim"
-        @assert rhs_batching_dim ≠ rhs_contracting_dim "rhs_batching_dim must be different \
-                                                        from rhs_contracting_dim"
+        1 ≤ lhs_batching_dim ≤ N || throw(lazy"lhs_batching_dim must be between 1 and $N")
+        1 ≤ rhs_batching_dim ≤ N || throw(lazy"rhs_batching_dim must be between 1 and $N")
+        lhs_batching_dim != lhs_contracting_dim ||
+            throw(lazy"lhs_batching_dim must be different from lhs_contracting_dim")
+        rhs_batching_dim != rhs_contracting_dim ||
+            throw(lazy"rhs_batching_dim must be different from rhs_contracting_dim")
         if !(
             size(x, lhs_batching_dim) == size(y, rhs_batching_dim) ||
             size(x, lhs_batching_dim) == 1 ||
@@ -135,7 +135,7 @@ function assert_batched_matmul_checks(
         )
             throw(
                 DimensionMismatch(
-                    "Batching dimensions mismatch: size(x, $lhs_batching_dim) = $(size(x, lhs_batching_dim)), size(y, $rhs_batching_dim) = $(size(y, rhs_batching_dim))",
+                    lazy"Batching dimensions mismatch: size(x, $lhs_batching_dim) = $(size(x, lhs_batching_dim)), size(y, $rhs_batching_dim) = $(size(y, rhs_batching_dim))",
                 ),
             )
         end

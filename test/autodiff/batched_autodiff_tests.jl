@@ -34,7 +34,7 @@
                         1:(size(J2, 1) * size(J2, 3)),
                     )'
 
-                @test J1 ≈ J2_mat atol = 1.0e-3 rtol = 1.0e-3
+                @test Array(J1) ≈ Array(J2_mat) atol = 1.0e-3 rtol = 1.0e-3
 
                 ps = dev(ComponentArray(cpu_device()(ps)))
 
@@ -44,7 +44,7 @@
                     batched_jacobian(smodel, backend, X)
                 end
 
-                @test J2 ≈ J3 atol = 1.0e-3 rtol = 1.0e-3
+                @test Array(J2) ≈ Array(J3) atol = 1.0e-3 rtol = 1.0e-3
             end
         end
 
