@@ -1,7 +1,7 @@
 module ReactantExt
 
 using ADTypes: ADTypes, AutoEnzyme
-using Enzyme: Enzyme, Active, Const, Duplicated
+using Enzyme: Enzyme, Const, Duplicated
 using EnzymeCore: EnzymeCore
 using LinearAlgebra: LinearAlgebra
 using Functors: Functors
@@ -10,7 +10,7 @@ using Random: Random
 using Optimisers: Optimisers
 using Reactant:
     Reactant, Profiler, AnyTracedRArray, TracedRArray, TracedRNumber, PrecisionConfig
-using Reactant: @compile, @code_hlo, @jit, @opcall
+using Reactant: @compile, @opcall
 using ReactantCore: ReactantCore, @trace
 using Setfield: @set!
 using Static: True, False
@@ -20,7 +20,7 @@ using Lux.Training: TrainingBackendCache, ReactantBackend
 using Lux: get_time_dimension, time_dimension_size, init_recurrent_state
 using LuxCore: LuxCore, AbstractLuxLayer
 using LuxLib: LuxLib
-using MLDataDevices: MLDataDevices, ReactantDevice, reactant_device, get_device
+using MLDataDevices: MLDataDevices, ReactantDevice, get_device
 
 Lux.is_extension_loaded(::Val{:Reactant}) = true
 
@@ -58,7 +58,5 @@ include("layers.jl")
 include("tracing.jl")
 include("saved_model.jl")
 include("batched_jacobian.jl")
-
-include("precompile_workloads.jl")
 
 end

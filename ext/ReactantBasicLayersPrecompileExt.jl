@@ -1,17 +1,17 @@
+module ReactantBasicLayersPrecompileExt
+
+using ADTypes: AutoEnzyme
+using Reactant: Reactant, @compile
+using Lux: Lux
+using LuxCore: LuxCore
+using MLDataDevices: reactant_device
+using Optimisers: Optimisers
+using Random: Random
 using PrecompileTools: @setup_workload, @compile_workload
-
-module PrecompileWorkloads
-
-function sumabs2attnloss(model, ps, st, data)
-    (y, _), stₙ = model(data, ps, st)
-    return sum(abs2, y), stₙ, NamedTuple()
-end
 
 function sumabs2loss(model, ps, st, data)
     y, stₙ = model(data, ps, st)
     return sum(abs2, y), stₙ, NamedTuple()
-end
-
 end
 
 if Reactant.Reactant_jll.is_available()
@@ -23,32 +23,6 @@ if Reactant.Reactant_jll.is_available()
             @static if Reactant.precompilation_supported()
                 dev = reactant_device(; force=true)
 
-                # attention model
-                mha = Lux.MultiHeadAttention(4; nheads=2)
-                ps_mha, st_mha = Lux.setup(Random.default_rng(), mha) |> dev
-
-                q = ones(Float32, (4, 3, 2)) |> dev
-                k = ones(Float32, (4, 3, 2)) |> dev
-                v = ones(Float32, (4, 3, 2)) |> dev
-
-                try
-                    @compile mha((q, k, v), ps_mha, LuxCore.testmode(st_mha))
-
-                    Lux.Training.single_train_step(
-                        AutoEnzyme(),
-                        PrecompileWorkloads.sumabs2attnloss,
-                        (q, k, v),
-                        Lux.Training.TrainState(
-                            mha, ps_mha, st_mha, Optimisers.Adam(0.001f0)
-                        ),
-                    )
-                catch err
-                    if !(err isa Reactant.ReactantPrecompilationException)
-                        rethrow(err)
-                    end
-                end
-
-                # convolution + dense model
                 conv_model = Lux.Chain(
                     Lux.Conv((3, 3), 3 => 32),
                     Lux.Conv((3, 3), 32 => 64),
@@ -66,7 +40,7 @@ if Reactant.Reactant_jll.is_available()
 
                     Lux.Training.single_train_step(
                         AutoEnzyme(),
-                        PrecompileWorkloads.sumabs2loss,
+                        sumabs2loss,
                         x,
                         Lux.Training.TrainState(
                             conv_model,
@@ -85,4 +59,6 @@ if Reactant.Reactant_jll.is_available()
 
         Reactant.set_default_backend(orig_backend)
     end
+end
+
 end
