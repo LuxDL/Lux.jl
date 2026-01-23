@@ -177,7 +177,7 @@ function (rnn::RNNDecoder)((decoder_input, carry, target_len, target), ps, st)
     if target === nothing
         ### This will be optimized out by Reactant
         target = similar(
-            decoder_input, size(decoder_input, 1), target_len, size(decoder_input, 3)
+            decoder_input, size(decoder_input, 1), target_len, size(decoder_input, 2)
         )
         fill!(target, 0)
     else
