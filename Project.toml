@@ -72,28 +72,28 @@ MPIExt = "MPI"
 MPINCCLExt = ["CUDA", "MPI", "NCCL"]
 MooncakeExt = "Mooncake"
 ReactantExt = ["Enzyme", "Reactant"]
-ReactantAttentionPrecompileExt = [
-    "Enzyme",
-    "Reactant",
-    "Functors",
-    "ReactantCore",
-    "LuxLib",
-    "MLDataDevices",
-    "Optimisers",
-    "NNlib",
-    "Statistics",
-]
-ReactantBasicLayersPrecompileExt = [
-    "Enzyme",
-    "Reactant",
-    "Functors",
-    "ReactantCore",
-    "LuxLib",
-    "MLDataDevices",
-    "Optimisers",
-    "NNlib",
-    "Statistics",
-]
+# ReactantAttentionPrecompileExt = [
+#     "Enzyme",
+#     "Reactant",
+#     "Functors",
+#     "ReactantCore",
+#     "LuxLib",
+#     "MLDataDevices",
+#     "Optimisers",
+#     "NNlib",
+#     "Statistics",
+# ]
+# ReactantBasicLayersPrecompileExt = [
+#     "Enzyme",
+#     "Reactant",
+#     "Functors",
+#     "ReactantCore",
+#     "LuxLib",
+#     "MLDataDevices",
+#     "Optimisers",
+#     "NNlib",
+#     "Statistics",
+# ]
 ReverseDiffExt = ["FunctionWrappers", "ReverseDiff"]
 SimpleChainsExt = "SimpleChains"
 TrackerExt = "Tracker"
