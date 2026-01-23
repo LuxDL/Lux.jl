@@ -785,7 +785,7 @@ parameterlength(l::RMSNorm) = has_affine(l) ? prod(l.normalized_shape) : 0
     # Don't use `match_eltype` here, since often times the eltypes are intentionally
     # different.
     ϵ = T(rms.epsilon)
-    mean_sq = mean(abs2, x; dims=1:length(rms.normalized_shape))
+    mean_sq = mean(abs2, x; dims=Tuple(1:length(rms.normalized_shape)))
 
     if has_affine(rms)
         norm_x = @. (x * LuxOps.rsqrt(mean_sq + ϵ)) * ps.scale
