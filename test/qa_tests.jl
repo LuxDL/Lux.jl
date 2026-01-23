@@ -35,6 +35,7 @@ end
     using Tracker: Tracker
     using Zygote: Zygote
     using Enzyme: Enzyme
+    using Reactant: Reactant
     using ExplicitImports
 
     # Skip our own packages
@@ -47,7 +48,7 @@ end
     @test check_no_self_qualified_accesses(Lux) === nothing
     @test check_all_explicit_imports_via_owners(Lux) === nothing
     @test check_all_qualified_accesses_via_owners(
-        Lux; ignore=(:static_size, :_pullback, :AContext, :PtrArray)
+        Lux; ignore=(:static_size, :_pullback, :AContext, :PtrArray, :Reactant_jll)
     ) === nothing
     @test_broken check_all_explicit_imports_are_public(Lux) === nothing  # mostly upstream problems
     @test_broken check_all_qualified_accesses_are_public(Lux) === nothing  # mostly upstream problems
