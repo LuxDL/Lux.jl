@@ -1,6 +1,7 @@
 @doc doc"""
     BatchNorm(chs::Integer, activation=identity; init_bias=zeros32, init_scale=ones32,
-              affine=True(), track_stats=True(), epsilon=1f-5, momentum=0.1f0)
+              affine=True(), track_stats=True(), epsilon=1f-5, momentum=0.1f0,
+              use_decomposed_implementation=False())
 
 [Batch Normalization](https://arxiv.org/abs/1502.03167) layer.
 
@@ -28,6 +29,14 @@ slice and normalises the input accordingly.
       + `init_scale`: Controls how the `scale` is initialized
 
 # Extended Help
+
+## Internal Keyword Arguments
+
+  - `use_decomposed_implementation`: Several backends like CUDA, Reactant dispatch
+    to a specialized vendored implementation for batchnorm. Setting this to true,
+    makes Lux emit a variant of batchnorm that is computed without using any
+    specialized kernels. This is meant to be used for correctness testing and benchmarking
+    purposes.
 
 ## Inputs
 
@@ -91,6 +100,7 @@ See also [`BatchNorm`](@ref), [`InstanceNorm`](@ref), [`LayerNorm`](@ref),
     init_scale
     affine <: StaticBool
     track_stats <: StaticBool
+    use_decomposed_implementation <: StaticBool
 end
 
 function BatchNorm(
@@ -102,6 +112,7 @@ function BatchNorm(
     track_stats::BoolType=True(),
     epsilon=1.0f-5,
     momentum=0.1f0,
+    use_decomposed_implementation::BoolType=False(),
 )
     return BatchNorm(
         activation,
@@ -112,6 +123,7 @@ function BatchNorm(
         init_scale,
         static(affine),
         static(track_stats),
+        static(use_decomposed_implementation),
     )
 end
 
@@ -143,17 +155,37 @@ statelength(l::BatchNorm) = ifelse(has_track_stats(l), l.chs * 2, 0) + 1
 
     x′ = match_eltype(BN, ps, st, x)
     σ = NNlib.fast_act(BN.activation, x′)
-    y, stats = batchnorm(
-        x′,
-        safe_getproperty(ps, Val(:scale)),
-        safe_getproperty(ps, Val(:bias)),
-        safe_getproperty(st, Val(:running_mean)),
-        safe_getproperty(st, Val(:running_var)),
-        st.training,
-        σ,
-        convert(unwrapped_eltype(x′), BN.momentum),
-        convert(unwrapped_eltype(x′), BN.epsilon),
-    )
+
+    if BN.use_decomposed_implementation isa True
+        y, xm, xv = LuxLib.Impl.normalization(
+            x′,
+            LuxLib.Utils.remove_tracking(safe_getproperty(st, Val(:running_mean))),
+            LuxLib.Utils.remove_tracking(safe_getproperty(st, Val(:running_var))),
+            safe_getproperty(ps, Val(:scale)),
+            safe_getproperty(ps, Val(:bias)),
+            LuxLib.Impl.batchnorm_reduce_dims(x′),
+            static(st.training),
+            convert(unwrapped_eltype(x′), BN.momentum),
+            convert(unwrapped_eltype(x′), BN.epsilon),
+            σ,
+        )
+        stats = (;
+            running_mean=LuxLib.Utils.remove_tracking(xm),
+            running_var=LuxLib.Utils.remove_tracking(xv),
+        )
+    else
+        y, stats = batchnorm(
+            x′,
+            safe_getproperty(ps, Val(:scale)),
+            safe_getproperty(ps, Val(:bias)),
+            safe_getproperty(st, Val(:running_mean)),
+            safe_getproperty(st, Val(:running_var)),
+            st.training,
+            σ,
+            convert(unwrapped_eltype(x′), BN.momentum),
+            convert(unwrapped_eltype(x′), BN.epsilon),
+        )
+    end
     return y, update_batchnorm_state(BN, st, stats)
 end
 

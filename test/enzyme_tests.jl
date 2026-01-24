@@ -114,7 +114,8 @@ end
 
 @testitem "Enzyme Integration" setup = [EnzymeTestSetup, SharedTestSetup] tags = [
     :autodiff, :enzyme
-] timeout = 3600 begin
+] timeout = 3600 skip = :(using LuxTestUtils;
+!LuxTestUtils.ENZYME_TESTING_ENABLED[] || (v"1.12-" ≤ VERSION < v"1.13-")) begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -126,18 +127,14 @@ end
 
             ps, st = dev(Lux.setup(rng, model))
             x = aType(x)
-
-            if LuxTestUtils.ENZYME_TESTING_ENABLED[]
-                test_enzyme_gradients(model, x, ps, st)
-            else
-                @test_broken false
-            end
+            test_enzyme_gradients(model, x, ps, st)
         end
     end
 end
 
 @testitem "Enzyme Integration ComponentArray" setup = [EnzymeTestSetup, SharedTestSetup] timeout =
-    3600 tags = [:autodiff, :enzyme] begin
+    3600 tags = [:autodiff, :enzyme] skip = :(using LuxTestUtils;
+!LuxTestUtils.ENZYME_TESTING_ENABLED[] || (v"1.12-" ≤ VERSION < v"1.13-")) begin
     using ComponentArrays
 
     rng = StableRNG(12345)
@@ -153,12 +150,7 @@ end
             ps = ComponentArray(ps)
             st = dev(st)
             x = aType(x)
-
-            if LuxTestUtils.ENZYME_TESTING_ENABLED[]
-                test_enzyme_gradients(model, x, ps, st)
-            else
-                @test_broken false
-            end
+            test_enzyme_gradients(model, x, ps, st)
         end
     end
 end

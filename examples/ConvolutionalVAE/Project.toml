@@ -27,3 +27,6 @@ Optimisers = "0.4.6"
 Printf = "1.10"
 Random = "1.10"
 Reactant = "0.2.170"
+
+[sources]
+Lux = {path = "../../"}

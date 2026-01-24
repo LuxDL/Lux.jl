@@ -23,3 +23,6 @@ OrdinaryDiffEqTsit5 = "1.1"
 Printf = "1.10"
 Random = "1.10"
 SciMLSensitivity = "7.67.0"
+
+[sources]
+Lux = {path = "../../"}

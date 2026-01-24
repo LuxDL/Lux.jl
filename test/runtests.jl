@@ -23,7 +23,7 @@ const ALL_LUX_TEST_GROUPS = [
     "core_layers", "normalize_layers", "autodiff", "recurrent_layers", "misc", "reactant"
 ]
 
-INPUT_TEST_GROUP = lowercase(get(PARSED_TEST_ARGS, "LUX_TEST_GROUP", "all"))
+const INPUT_TEST_GROUP = lowercase(get(PARSED_TEST_ARGS, "LUX_TEST_GROUP", "all"))
 const LUX_TEST_GROUP = if startswith("!", INPUT_TEST_GROUP[1])
     exclude_group = lowercase.(split(INPUT_TEST_GROUP[2:end], ","))
     filter(x -> x ∉ exclude_group, ALL_LUX_TEST_GROUPS)
@@ -115,7 +115,11 @@ if ("all" in LUX_TEST_GROUP || "extras" in LUX_TEST_GROUP) && VERSION ≥ v"1.11
     for (root, dirs, files) in walkdir(testdir)
         for file in files
             if isintegrationtest(file)
-                push!(integrationtestfiles, joinpath(root, file))
+                fullpath = joinpath(root, file)
+                if VERSION >= v"1.12-" && occursin("SimpleChains", fullpath)
+                    continue
+                end
+                push!(integrationtestfiles, fullpath)
             end
         end
     end

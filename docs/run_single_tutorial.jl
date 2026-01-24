@@ -18,7 +18,7 @@ const DRAFT_MODE = parse(Bool, get(ENV, "LUX_DOCS_DRAFT_BUILD", "false"))
 
 io = open(pkg_log_path, "w")
 warn_old_version = try
-    should_run && Pkg.develop(; path=joinpath(@__DIR__, ".."), io)
+    should_run && Pkg.instantiate(; io)
     false
 catch err
     err isa Pkg.Resolve.ResolverError || rethrow()

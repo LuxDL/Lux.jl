@@ -13,3 +13,6 @@ ForwardDiff = "0.10, 1"
 Lux = "1"
 Optimisers = "0.4.6"
 Zygote = "0.7"
+
+[sources]
+Lux = {path = "../../"}

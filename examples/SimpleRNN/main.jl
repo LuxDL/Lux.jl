@@ -115,9 +115,10 @@ end
 # as such we recommend this way of defining custom layers
 
 function SpiralClassifierCompact(in_dims, hidden_dims, out_dims)
-    lstm_cell = LSTMCell(in_dims => hidden_dims)
-    classifier = Dense(hidden_dims => out_dims, sigmoid)
-    return @compact(; lstm_cell, classifier) do x::AbstractArray{T,3} where {T}
+    return @compact(;
+        lstm_cell=LSTMCell(in_dims => hidden_dims),
+        classifier=Dense(hidden_dims => out_dims, sigmoid)
+    ) do x::AbstractArray{T,3} where {T}
         x_init, x_rest = Iterators.peel(LuxOps.eachslice(x, Val(2)))
         y, carry = lstm_cell(x_init)
         for x in x_rest

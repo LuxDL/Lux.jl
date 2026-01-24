@@ -46,3 +46,6 @@ Reactant = "0.2.175"
 StableRNGs = "1.0.2"
 Statistics = "1.10"
 TensorBoardLogger = "0.1"
+
+[sources]
+Lux = {path = "../../"}

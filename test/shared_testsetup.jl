@@ -20,10 +20,15 @@ using DispatchDoctor: allow_unstable
     LinearAlgebra,
     ForwardDiff
 using MLDataDevices: default_device_rng, CPUDevice, CUDADevice, AMDGPUDevice
-using LuxTestUtils: check_approx
+using LuxTestUtils: LuxTestUtils, check_approx
 using Static: True
 
 using Octavian, LoopVectorization
+
+# TODO: enable once Enzyme starts working on 1.12
+if v"1.12-" ≤ VERSION < v"1.13"
+    LuxTestUtils.ENZYME_TESTING_ENABLED[] = false
+end
 
 LuxTestUtils.jet_target_modules!(["Lux", "LuxCore", "LuxLib"])
 LinearAlgebra.BLAS.set_num_threads(Threads.nthreads())
@@ -74,15 +79,11 @@ end
 
 @testsetup module SharedReactantLayersTestSetup
 
-using Lux, Reactant, Enzyme, Zygote
+using Lux, Reactant, Enzyme
 
 sumabs2(x::AbstractArray) = sum(abs2, x)
 sumabs2(x::Tuple) = sumabs2(first(x))
 sumabs2(model, x, ps, st) = sumabs2(model(x, ps, st))
-
-function ∇sumabs2_zygote(model, x, ps, st)
-    return Zygote.gradient((x, ps) -> sumabs2(model, x, ps, st), x, ps)
-end
 
 function ∇sumabs2_enzyme(model, x, ps, st)
     dx = Enzyme.make_zero(x)
@@ -99,6 +100,17 @@ function ∇sumabs2_enzyme(model, x, ps, st)
     return dx, dps
 end
 
-export ∇sumabs2_zygote, ∇sumabs2_enzyme
+function ∇sumabs2_reactant_fd(model, x, ps, st)
+    _, ∂x_fd, ∂ps_fd, _ = @jit Reactant.TestUtils.finite_difference_gradient(
+        sumabs2, Const(model), f64(x), f64(ps), Const(f64(st))
+    )
+    return ∂x_fd, ∂ps_fd
+end
+
+function ∇sumabs2_reactant(model, x, ps, st)
+    return @jit ∇sumabs2_enzyme(model, x, ps, st)
+end
+
+export ∇sumabs2_reactant, ∇sumabs2_reactant_fd
 
 end
