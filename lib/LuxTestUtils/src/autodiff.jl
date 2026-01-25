@@ -181,10 +181,11 @@ function test_gradients(
 
     # Choose the backends to test
     backends = []
-    push!(backends, AutoZygote())
+    if ZYGOTE_TESTING_ENABLED[]
+        push!(backends, AutoZygote())
+    end
     if !on_gpu
         total_length ≤ 32 && push!(backends, AutoForwardDiff())
-        # TODO: Move Enzyme out of here once it supports GPUs
         if enable_enzyme_reverse_mode || ENZYME_TESTING_ENABLED[]
             mode = if enzyme_set_runtime_activity
                 Enzyme.set_runtime_activity(Enzyme.Reverse)
@@ -209,6 +210,11 @@ function test_gradients(
         backend for backend in backends if
         typeof(backend).name.name != typeof(ground_truth_backend).name.name
     ]
+
+    if isempty(backends)
+        @warn "No backends to test. Skipping test..."
+        return nothing
+    end
 
     return @testset "gradtest($(f))" begin
         @testset "$(nameof(typeof(backend)))()" for backend in backends

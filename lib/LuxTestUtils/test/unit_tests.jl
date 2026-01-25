@@ -15,17 +15,27 @@ end
     @test_gradients(f, 1.0, x, nothing)
 
     @test errors() do
-        test_gradients(f, 1.0, x, nothing; broken_backends=[AutoZygote()])
+        test_gradients(f, 1.0, x, nothing; broken_backends=[AutoForwardDiff()])
     end
     @test errors() do
-        @test_gradients(f, 1.0, x, nothing; broken_backends=[AutoZygote()])
+        @test_gradients(f, 1.0, x, nothing; broken_backends=[AutoForwardDiff()])
     end
 
     @test_throws ArgumentError test_gradients(
-        f, 1.0, x, nothing; skip_backends=[AutoZygote()], broken_backends=[AutoZygote()]
+        f,
+        1.0,
+        x,
+        nothing;
+        skip_backends=[AutoForwardDiff()],
+        broken_backends=[AutoForwardDiff()],
     )
     @test_throws ArgumentError @test_gradients(
-        f, 1.0, x, nothing; skip_backends=[AutoZygote()], broken_backends=[AutoZygote()]
+        f,
+        1.0,
+        x,
+        nothing;
+        skip_backends=[AutoForwardDiff()],
+        broken_backends=[AutoForwardDiff()]
     )
 
     test_gradients(f, 1.0, x, nothing; soft_fail=true)
