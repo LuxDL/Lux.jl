@@ -198,28 +198,25 @@ end
     end
 end
 
-@testitem "Dense StaticArrays" setup = [SharedTestSetup] tags = [:core_layers] begin
+@testitem "Dense StaticArrays" setup = [SharedTestSetup] tags = [:core_layers] skip =
+    :(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED[]) begin
     using StaticArrays, Enzyme, ForwardDiff, ComponentArrays
 
-    if LuxTestUtils.ENZYME_TESTING_ENABLED[]
-        N = 8
-        d = Lux.Dense(N => N)
-        ps = (; weight=randn(SMatrix{N,N,Float64}), bias=randn(SVector{N,Float64}))
-        x = randn(SVector{N,Float64})
+    N = 8
+    d = Lux.Dense(N => N)
+    ps = (; weight=randn(SMatrix{N,N,Float64}), bias=randn(SVector{N,Float64}))
+    x = randn(SVector{N,Float64})
 
-        broken = pkgversion(Enzyme) == v"0.13.18"
+    @test begin
+        grad1 = ForwardDiff.gradient(ComponentArray(ps)) do ps
+            sumabs2first(d, x, ps, (;))
+        end
 
-        @test begin
-            grad1 = ForwardDiff.gradient(ComponentArray(ps)) do ps
-                sumabs2first(d, x, ps, (;))
-            end
+        grad2 = Enzyme.gradient(
+            Enzyme.Reverse, sumabs2first, Const(d), Const(x), ps, Const((;))
+        )[3]
 
-            grad2 = Enzyme.gradient(
-                Enzyme.Reverse, sumabs2first, Const(d), Const(x), ps, Const((;))
-            )[3]
-
-            maximum(abs, grad1 .- ComponentArray(grad2)) < 1.0e-6
-        end broken = broken
+        maximum(abs, grad1 .- ComponentArray(grad2)) < 1.0e-6
     end
 end
 

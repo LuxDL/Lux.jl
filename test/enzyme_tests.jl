@@ -115,7 +115,7 @@ end
 @testitem "Enzyme Integration" setup = [EnzymeTestSetup, SharedTestSetup] tags = [
     :autodiff, :enzyme
 ] timeout = 3600 skip = :(using LuxTestUtils;
-!LuxTestUtils.ENZYME_TESTING_ENABLED[] || (v"1.12-" ≤ VERSION < v"1.13-")) begin
+!LuxTestUtils.ENZYME_TESTING_ENABLED[]) begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -134,7 +134,7 @@ end
 
 @testitem "Enzyme Integration ComponentArray" setup = [EnzymeTestSetup, SharedTestSetup] timeout =
     3600 tags = [:autodiff, :enzyme] skip = :(using LuxTestUtils;
-!LuxTestUtils.ENZYME_TESTING_ENABLED[] || (v"1.12-" ≤ VERSION < v"1.13-")) begin
+!LuxTestUtils.ENZYME_TESTING_ENABLED[]) begin
     using ComponentArrays
 
     rng = StableRNG(12345)
