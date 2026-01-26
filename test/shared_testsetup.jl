@@ -25,11 +25,6 @@ using Static: True
 
 using Octavian, LoopVectorization
 
-# TODO: enable once Enzyme starts working on 1.12
-if v"1.12-" ≤ VERSION < v"1.13"
-    LuxTestUtils.ENZYME_TESTING_ENABLED[] = false
-end
-
 LuxTestUtils.jet_target_modules!(["Lux", "LuxCore", "LuxLib"])
 LinearAlgebra.BLAS.set_num_threads(Threads.nthreads())
 
