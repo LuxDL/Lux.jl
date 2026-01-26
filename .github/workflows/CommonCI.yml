@@ -63,7 +63,7 @@ jobs:
         with:
           cache-name: julia-cache;workflow=${{ inputs.julia_version }}-${{ inputs.os }}-${{ github.event_name }}-${{ inputs.project }}-${{ inputs.downgrade_testing }}-${{ inputs.local_dependencies }}-${{ inputs.local_test_dependencies }}-${{ inputs.test_args }}
 
-      - uses: julia-actions/julia-downgrade-compat@v2.1
+      - uses: julia-actions/julia-downgrade-compat@v2.2
         if: ${{ inputs.downgrade_testing }}
         with:
           mode: forcedeps
