@@ -3,7 +3,7 @@
 !!! note "Reactant"
 
     Reactant.jl natively supports nested AD (with orders greater than 2nd order). For more
-    robust nested AD, use Lux with Reactant.jl.
+    robust nested AD, use [Lux with Reactant.jl](@ref nested_ad_reactant).
 
 In this manual, we will explore how to use automatic differentiation (AD) inside your layers
 or loss functions and have Lux automatically switch the AD backend with a faster one when
