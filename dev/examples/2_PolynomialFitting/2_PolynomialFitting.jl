@@ -25,7 +25,7 @@ begin
         x -> evalpoly(x, (0, -2, 1));
         linewidth=3,
         color=:blue,
-        label="Data Points",
+        label="True Quadratic Function",
     )
     s = scatter!(
         ax,
@@ -36,7 +36,7 @@ begin
         color=:orange,
         strokecolor=:black,
         strokewidth=2,
-        label="True Quadratic Function",
+        label="Actual Data",
     )
 
     axislegend(ax)
