@@ -48,7 +48,7 @@ begin
         color=:orange,
         strokecolor=:black,
         strokewidth=2,
-        label="Data Points",
+        label="Actual Data",
     )
 
     axislegend(ax)
