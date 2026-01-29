@@ -380,8 +380,12 @@ function maybe_wrap_adtype(ad::AutoReactant, ::Type{T}; kwargs...) where {T}
     throw(ArgumentError("`AutoReactant` only supports ReactantDevice but got `$(T)`"))
 end
 function maybe_wrap_adtype(ad::AbstractADType, ::Type{ReactantDevice}; kwargs...)
-throw(ArgumentError("Computing gradients for models with Reactant is supported only with \
-                        Enzyme.jl (`AutoEnzyme` or `AutoReactant`)."))
+    throw(
+        ArgumentError(
+            "Computing gradients for models with Reactant is supported only with \
+                Enzyme.jl (`AutoEnzyme` or `AutoReactant`)."
+        ),
+    )
 end
 
 function generate_wrappers(::F, m, ps, st, data, ::False, ::StaticBool) where {F}
