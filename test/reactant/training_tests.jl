@@ -47,24 +47,22 @@
             end
 
             @testset for opt in (
-                Descent(0.01f0),
-                Momentum(0.01f0),
-                Adam(0.01f0),
-                AdamW(0.01f0),
-                OptimiserChain(AccumGrad(5), Adam(0.01f0)),
-            )
+                    Descent(0.01f0),
+                    Momentum(0.01f0),
+                    Adam(0.01f0),
+                    AdamW(0.01f0),
+                    OptimiserChain(AccumGrad(5), Adam(0.01f0)),
+                ),
+                ad in (AutoEnzyme(), AutoReactant())
+
                 ps, st = xdev(Lux.setup(StableRNG(1234), model))
                 train_state = Training.TrainState(model, ps, st, opt)
 
                 for epoch in 1:100, (xᵢ, yᵢ) in dataloader
                     grads, loss, stats, train_state = if version === :iip
-                        Training.single_train_step!(
-                            AutoEnzyme(), MSELoss(), (xᵢ, yᵢ), train_state
-                        )
+                        Training.single_train_step!(ad, MSELoss(), (xᵢ, yᵢ), train_state)
                     elseif version === :oop
-                        Training.single_train_step(
-                            AutoEnzyme(), MSELoss(), (xᵢ, yᵢ), train_state
-                        )
+                        Training.single_train_step(ad, MSELoss(), (xᵢ, yᵢ), train_state)
                     else
                         error("Invalid version: $(version)")
                     end
@@ -125,6 +123,11 @@ end
         AutoEnzyme(), MSELoss(), (x, x), train_state; return_gradients=Val(false)
     )
     @test loss isa Number
+
+    _, loss, stats, ts = Training.single_train_step(
+        AutoReactant(), MSELoss(), (x, x), train_state; return_gradients=Val(false)
+    )
+    @test loss isa Number
 end
 
 @testitem "Reactant Distributed: Training API" tags = [:reactant] setup = [SharedTestSetup] begin
@@ -152,19 +155,21 @@ end
         x = rand(Float32, 4, 128) |> batch_device
         y = rand(Float32, 4, 128) |> batch_device
 
-        train_state = Training.TrainState(model, ps, st, Adam(0.001f0))
+        @testset for ad in (AutoEnzyme(), AutoReactant())
+            train_state = Training.TrainState(model, ps, st, Adam(0.001f0))
 
-        _, loss, _, train_state = Training.single_train_step(
-            AutoEnzyme(), MSELoss(), (x, y), train_state
-        )
-        @test loss isa Reactant.ConcreteRNumber
-        @test length(Reactant.XLA.devices(Reactant.XLA.sharding(loss.data))) == 8
+            _, loss, _, train_state = Training.single_train_step(
+                ad, MSELoss(), (x, y), train_state
+            )
+            @test loss isa Reactant.ConcreteRNumber
+            @test length(Reactant.XLA.devices(Reactant.XLA.sharding(loss.data))) == 8
 
-        _, loss, _, train_state = Training.single_train_step(
-            AutoEnzyme(), MSELoss(), (x, y), train_state
-        )
-        @test loss isa Reactant.ConcreteRNumber
-        @test length(Reactant.XLA.devices(Reactant.XLA.sharding(loss.data))) == 8
+            _, loss, _, train_state = Training.single_train_step(
+                ad, MSELoss(), (x, y), train_state
+            )
+            @test loss isa Reactant.ConcreteRNumber
+            @test length(Reactant.XLA.devices(Reactant.XLA.sharding(loss.data))) == 8
+        end
     end
 end
 

@@ -52,6 +52,19 @@ function with_default_precision_config(f::F, ps) where {F}
     )
 end
 
+function get_compile_options(backend::ReactantBackend)
+    (; compile_options, sync) = backend
+    @assert compile_options isa Union{Nothing,Reactant.CompileOptions}
+    if compile_options === nothing
+        sync === missing && return Reactant.CompileOptions()
+        return Reactant.CompileOptions(; sync)
+    end
+    if sync !== missing
+        @set! compile_options.sync = sync
+    end
+    return compile_options
+end
+
 include("patches.jl")
 include("training.jl")
 include("layers.jl")

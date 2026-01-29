@@ -50,7 +50,7 @@ LuxTestUtils = {path = "../lib/LuxTestUtils"}
 MLDataDevices = {path = "../lib/MLDataDevices"}
 
 [compat]
-ADTypes = "1.10"
+ADTypes = "1.19"
 Adapt = "4"
 Aqua = "0.8.4"
 CPUSummary = "0.2.6"

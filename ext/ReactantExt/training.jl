@@ -108,7 +108,7 @@ function Lux.Training.compute_gradients_impl(
     else
         compiled_gradient_function = annotate_compile("Compute Gradients") do
             with_default_precision_config(ts.parameters) do
-                @compile sync = backend.sync compute_gradients_internal(
+                @compile compile_options = get_compile_options(backend) compute_gradients_internal(
                     objective_function, ts.model, data, ts.parameters, ts.states
                 )
             end
@@ -150,18 +150,15 @@ for inplace in ("!", "")
         else
             update_function = annotate_compile("Apply Gradients") do
                 with_default_precision_config(ts.parameters) do
-                    @compile sync = ts.cache.backend.sync Optimisers.$(update_fn)(
+                    @compile compile_options = get_compile_options(ts.cache.backend) Optimisers.$(
+                        update_fn
+                    )(
                         ts.optimizer_state, ts.parameters, grads
                     )
                 end
             end
 
-            if ts.cache isa TrainingBackendCache
-                @set! ts.cache.extras = merge(ts.cache.extras, (; update_function))
-            else
-                cache = TrainingBackendCache(backend, False(), nothing, (; update_function))
-                @set! ts.cache = cache
-            end
+            @set! ts.cache.extras = merge(ts.cache.extras, (; update_function))
         end
 
         opt_state, ps = annotate_execution("Apply Gradients", ts.step) do
@@ -206,7 +203,7 @@ for inplace in ("!", "")
 
             compiled_grad_and_step_function = annotate_compile("Train Step") do
                 with_default_precision_config(ts.parameters) do
-                    @compile sync = backend.sync compute_gradients_internal_and_step!(
+                    @compile compile_options = get_compile_options(backend) compute_gradients_internal_and_step!(
                         objective_function,
                         ts.model,
                         data,
