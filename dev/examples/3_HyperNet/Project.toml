@@ -9,6 +9,9 @@ Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
 
+[sources]
+Lux = {path = "../.."}
+
 [compat]
 ComponentArrays = "0.15.22"
 Lux = "1"
@@ -17,6 +20,3 @@ MLUtils = "0.4"
 OneHotArrays = "0.2.5"
 Optimisers = "0.4.6"
 Reactant = "0.2.170"
-
-[sources]
-Lux = {path = "../../"}

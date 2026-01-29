@@ -11,6 +11,9 @@ Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SciMLSensitivity = "1ed8b502-d754-442c-8d5d-10ac956f44a1"
 
+[sources]
+Lux = {path = "../.."}
+
 [compat]
 CairoMakie = "0.12.10, 0.13, 0.14, 0.15"
 ComponentArrays = "0.15.22"
@@ -23,6 +26,3 @@ OrdinaryDiffEqTsit5 = "1.1"
 Printf = "1.10"
 Random = "1.10"
 SciMLSensitivity = "7.67.0"
-
-[sources]
-Lux = {path = "../../"}
