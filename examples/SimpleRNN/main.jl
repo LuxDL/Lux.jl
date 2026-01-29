@@ -165,7 +165,7 @@ function main(model_type)
     else
         model
     end
-    ad = dev isa ReactantDevice ? AutoEnzyme() : AutoZygote()
+    ad = dev isa ReactantDevice ? AutoReactant() : AutoZygote()
 
     for epoch in 1:25
         ## Train the model
