@@ -128,8 +128,8 @@ boilerplate. Simply follow the following steps:
    device. Note that you might want to use [`DeviceIterator`](@ref) to move the data
    loader to the device with an iterator.
 3. Construct a `TrainState` using [`Training.TrainState`](@ref).
-4. And most importantly use `AutoEnzyme` while calling [`Training.single_train_step!`](@ref)
-   or [`Training.single_train_step`](@ref).
+4. And most importantly use `AutoEnzyme`/`AutoReactant` while calling
+   [`Training.single_train_step!`](@ref) or [`Training.single_train_step`](@ref).
 
 ```@example compile_lux_model
 model = Chain(
@@ -152,7 +152,8 @@ function train_model(model, ps, st, dataloader)
     for iteration in 1:1000
         for (i, (xᵢ, yᵢ)) in enumerate(dataloader)
             _, loss, _, train_state = Training.single_train_step!(
-                AutoEnzyme(), MSELoss(), (xᵢ, yᵢ), train_state)
+                AutoEnzyme(), MSELoss(), (xᵢ, yᵢ), train_state
+            )
             if (iteration % 100 == 0 || iteration == 1) && i == 1
                 @printf("Iter: [%4d/%4d]\tLoss: %.8f\n", iteration, 1000, loss)
             end
