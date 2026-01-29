@@ -190,17 +190,18 @@ end
 end
 
 @testitem "Reactant Annotation Gradients" tags = [:reactant] setup = [SharedTestSetup] begin
-    using Random, Lux, Reactant, Enzyme, Optimisers, Statistics, ADTypes
+    using Random, Lux, Reactant, Enzyme, Optimisers, Statistics, ADTypes, StableRNGs
 
     dev = reactant_device(; force=true)
-
-    x, y = dev((randn(Float32, 3, 2), randn(Float32, 1, 2)))
+    rng = StableRNG(1234)
+    x, y = dev((randn(rng, Float32, 3, 2), randn(rng, Float32, 1, 2)))
 
     f_with_colon(x) = x .- mean(x; dims=:)
     f_with_range(x) = x .- mean(x; dims=1:2)  #1:2 instead of Colon() 
 
     model = Chain(f_with_colon, Dense(3 => 1))
-    ps, st = dev(Lux.setup(Random.default_rng(), model))
+    ps, st = dev(Lux.setup(rng, model))
+
     train_state = Training.TrainState(model, ps, st, Adam())
     grads1 = Training.compute_gradients(AutoReactant(), MSELoss(), (x, y), train_state)[1]
 
