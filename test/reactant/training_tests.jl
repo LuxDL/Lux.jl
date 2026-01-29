@@ -188,3 +188,30 @@ end
 
     @test_throws ArgumentError Training.TrainState(model_compiled, ps, st, Adam())
 end
+
+@testitem "Reactant Annotation Gradients" tags = [:reactant] setup = [SharedTestSetup] begin
+    using Random, Lux, Reactant, Enzyme, Optimisers, Statistics, ADTypes
+
+    dev = reactant_device(; force=true)
+
+    x, y = dev((randn(Float32, 3, 2), randn(Float32, 1, 2)))
+
+    f_with_colon(x) = x .- mean(x; dims=:)
+    f_with_range(x) = x .- mean(x; dims=1:2)  #1:2 instead of Colon() 
+
+    model = Chain(f_with_colon, Dense(3 => 1))
+    ps, st = dev(Lux.setup(Random.default_rng(), model))
+    train_state = Training.TrainState(model, ps, st, Adam())
+    grads1 = Training.compute_gradients(AutoReactant(), MSELoss(), (x, y), train_state)[1]
+
+    model2 = Chain(f_with_range, Dense(3 => 1))
+    train_state2 = Training.TrainState(model2, ps, st, Adam())
+    grads2 = Training.compute_gradients(AutoReactant(), MSELoss(), (x, y), train_state2)[1]
+
+    @test grads1.layer_1 isa NamedTuple{}
+    @test grads2.layer_1 isa NamedTuple{}
+    @test grads1.layer_2.weight ≈ grads2.layer_2.weight
+    @test grads1.layer_2.bias ≈ grads2.layer_2.bias
+    @test !all(iszero, Array(grads1.layer_2.weight))
+    @test !all(iszero, Array(grads1.layer_2.bias))
+end

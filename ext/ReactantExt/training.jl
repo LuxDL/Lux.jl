@@ -64,6 +64,7 @@ function compute_gradients_internal!(
     _, (loss, stₙ, stats) = Enzyme.autodiff(
         Enzyme.set_abi(Enzyme.ReverseWithPrimal, Reactant.ReactantABI),
         Const(objective_function_wrapper),
+        Duplicated,
         Const(objective_function),
         Const(model),
         Duplicated(ps, dps),
