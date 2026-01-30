@@ -201,7 +201,7 @@ for op in (:get_device, :get_device_type)
                     @warn $(some_not_assigned_msg)
                     x = x[is_assigned_idxs]
                 end
-                return mapreduce(MLDataDevices.$(op), combine_devices, x)
+                return mapfoldl(MLDataDevices.$(op), combine_devices, x)
             end
             if hasmethod(parent, Tuple{typeof(x)})
                 parent_x = parent(x)
