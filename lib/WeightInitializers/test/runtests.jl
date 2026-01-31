@@ -1,24 +1,10 @@
-using Pkg, ReTestItems, WeightInitializers
-using InteractiveUtils, CPUSummary, LuxTestUtils
+using Pkg, WeightInitializers, Test, ParallelTestRunner, LuxTestUtils
 
-@info sprint(versioninfo)
+parsed_args = parse_args(@isdefined(TEST_ARGS) ? TEST_ARGS : ARGS; custom=["BACKEND_GROUP"])
 
-function parse_test_args()
-    test_args_from_env = @isdefined(TEST_ARGS) ? TEST_ARGS : ARGS
-    test_args = Dict{String,String}()
-    for arg in test_args_from_env
-        if contains(arg, "=")
-            key, value = split(arg, "="; limit=2)
-            test_args[key] = value
-        end
-    end
-    @info "Parsed test args" test_args
-    return test_args
-end
-
-const PARSED_TEST_ARGS = parse_test_args()
-
-const BACKEND_GROUP = lowercase(get(PARSED_TEST_ARGS, "BACKEND_GROUP", "All"))
+const BACKEND_GROUP = lowercase(
+    something(get(parsed_args.custom, "BACKEND_GROUP", nothing), "all")
+)
 
 const EXTRA_PKGS = LuxTestUtils.packages_to_install(BACKEND_GROUP)
 
@@ -29,22 +15,17 @@ if !isempty(EXTRA_PKGS)
     Pkg.instantiate()
 end
 
-const RETESTITEMS_NWORKERS = parse(
-    Int, get(ENV, "RETESTITEMS_NWORKERS", string(min(Int(CPUSummary.num_cores()), 4)))
-)
-const RETESTITEMS_NWORKER_THREADS = parse(
-    Int,
-    get(
-        ENV,
-        "RETESTITEMS_NWORKER_THREADS",
-        string(max(Int(CPUSummary.sys_threads()) ÷ RETESTITEMS_NWORKERS, 1)),
-    ),
+testsuite = find_tests(@__DIR__)
+delete!(testsuite, "common")
+
+total_jobs = min(
+    something(parsed_args.jobs, ParallelTestRunner.default_njobs()), length(keys(testsuite))
 )
 
-withenv("BACKEND_GROUP" => BACKEND_GROUP) do
-    ReTestItems.runtests(
-        WeightInitializers;
-        nworkers=RETESTITEMS_NWORKERS,
-        nworker_threads=RETESTITEMS_NWORKER_THREADS,
-    )
+withenv(
+    "XLA_REACTANT_GPU_MEM_FRACTION" => 1 / (total_jobs + 0.1),
+    "XLA_REACTANT_GPU_PREALLOCATE" => false,
+    "BACKEND_GROUP" => BACKEND_GROUP,
+) do
+    runtests(WeightInitializers, parsed_args; testsuite)
 end

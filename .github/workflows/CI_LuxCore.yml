@@ -7,7 +7,8 @@ on:
       - ".github/workflows/CommonCI.yml"
       - "lib/LuxCore/**"
       - ".github/workflows/CI_LuxCore.yml"
-      - "lib/MLDataDevices/**"
+      - "lib/MLDataDevices/src/**"
+      - "lib/MLDataDevices/ext/**"
   push:
     branches:
       - main

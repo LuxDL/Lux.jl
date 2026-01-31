@@ -21,7 +21,7 @@ jobs:
     with:
       julia_version: "1.12"
       project: "lib/WeightInitializers"
-      test_args: "BACKEND_GROUP=cpu"
+      test_args: "--BACKEND_GROUP=cpu"
 
   downgrade:
     uses: ./.github/workflows/CommonCI.yml
@@ -29,4 +29,4 @@ jobs:
       julia_version: "1.11"
       project: "lib/WeightInitializers"
       downgrade_testing: true
-      test_args: "BACKEND_GROUP=cpu"
+      test_args: "--BACKEND_GROUP=cpu"

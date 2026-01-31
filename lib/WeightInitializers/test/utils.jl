@@ -1,4 +1,6 @@
-@testitem "Utils.nfan" begin
+using WeightInitializers, Test
+
+@testset "Utils.nfan" begin
     using WeightInitializers: Utils
 
     @test Utils.nfan() == (1, 1) # Fallback

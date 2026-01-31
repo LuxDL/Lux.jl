@@ -10,11 +10,16 @@ on:
       - "test/**"
       - "Project.toml"
       - ".github/workflows/CI.yml"
-      - "lib/LuxTestUtils/**"
-      - "lib/LuxCore/**"
-      - "lib/MLDataDevices/**"
-      - "lib/WeightInitializers/**"
-      - "lib/LuxLib/**"
+      - "lib/LuxTestUtils/src/**"
+      - "lib/LuxTestUtils/ext/**"
+      - "lib/LuxCore/src/**"
+      - "lib/LuxCore/ext/**"
+      - "lib/MLDataDevices/src/**"
+      - "lib/MLDataDevices/ext/**"
+      - "lib/WeightInitializers/src/**"
+      - "lib/WeightInitializers/ext/**"
+      - "lib/LuxLib/src/**"
+      - "lib/LuxLib/ext/**"
   push:
     branches:
       - main

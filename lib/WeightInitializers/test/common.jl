@@ -1,10 +1,8 @@
-@testsetup module SharedTestSetup
-
 using GPUArrays, GPUArraysCore, Random, StableRNGs, LuxTestUtils
 
 GPUArraysCore.allowscalar(false)
 
-const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "All"))
+const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "all"))
 
 RNGS_ARRTYPES = []
 if BACKEND_GROUP == "all" || BACKEND_GROUP == "cpu"
@@ -65,8 +63,4 @@ if LuxTestUtils.test_oneapi(BACKEND_GROUP)
     else
         @assert BACKEND_GROUP == "all" "Expected oneAPI.functional() to be true"
     end
-end
-
-export StableRNG, RNGS_ARRTYPES, BACKEND_GROUP, GPUArrays
-
 end

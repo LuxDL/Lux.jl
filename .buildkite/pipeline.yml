@@ -15,7 +15,16 @@ steps:
                 - "test/"
                 - "Project.toml"
                 - ".buildkite/testing.yml"
-                - "lib/"
+                - "lib/LuxTestUtils/src/"
+                - "lib/LuxTestUtils/ext/"
+                - "lib/LuxCore/src/"
+                - "lib/LuxCore/ext/"
+                - "lib/MLDataDevices/src/"
+                - "lib/MLDataDevices/ext/"
+                - "lib/WeightInitializers/src/"
+                - "lib/WeightInitializers/ext/"
+                - "lib/LuxLib/src/"
+                - "lib/LuxLib/ext/"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing.yml"
                 agents:
@@ -52,9 +61,12 @@ steps:
               path:
                 - "lib/LuxLib/"
                 - ".buildkite/testing_luxlib.yml"
-                - "lib/LuxTestUtils/"
-                - "lib/LuxCore/"
-                - "lib/MLDataDevices/"
+                - "lib/LuxTestUtils/src/"
+                - "lib/LuxTestUtils/ext/"
+                - "lib/LuxCore/src/"
+                - "lib/LuxCore/ext/"
+                - "lib/MLDataDevices/src/"
+                - "lib/MLDataDevices/ext/"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing_luxlib.yml"
                 agents:
