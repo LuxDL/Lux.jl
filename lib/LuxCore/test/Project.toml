@@ -6,9 +6,14 @@ Functors = "d9f16b24-f501-4c13-a1f2-28368ffc5196"
 LuxCore = "bb33d45b-7691-41d6-9220-0943567d0623"
 MLDataDevices = "7e8f7934-dd98-4c1a-8fe8-92b47a384d40"
 Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2"
+ParallelTestRunner = "d3525ed8-44d0-4b2c-a655-542cee43accc"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Setfield = "efcf1570-3423-57d1-acb7-fd33fddbac46"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources]
+LuxCore = {path = ".."}
+MLDataDevices = {path = "../../MLDataDevices"}
 
 [compat]
 Aqua = "0.8.7"
@@ -17,10 +22,7 @@ ExplicitImports = "1.9.0"
 Functors = "0.5"
 MLDataDevices = "1.17"
 Optimisers = "0.3.4, 0.4"
+ParallelTestRunner = "2.1"
 Random = "1.10"
 Setfield = "1.1"
 Test = "1.10"
-
-[sources]
-LuxCore = {path = ".."}
-MLDataDevices = {path = "../../MLDataDevices"}
