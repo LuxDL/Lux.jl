@@ -32,7 +32,7 @@ jobs:
     with:
       julia_version: "1.12"
       project: "lib/MLDataDevices"
-      test_args: "BACKEND_GROUP=${{ matrix.group }}"
+      test_args: "--BACKEND_GROUP=${{ matrix.group }}"
       os: ${{ matrix.os }}
 
   downgrade:
@@ -48,4 +48,4 @@ jobs:
       julia_version: "1.11"
       project: "lib/MLDataDevices"
       downgrade_testing: true
-      test_args: "BACKEND_GROUP=${{ matrix.group }}"
+      test_args: "--BACKEND_GROUP=${{ matrix.group }}"

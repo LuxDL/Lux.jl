@@ -1,3 +1,8 @@
+try # ordering causes issues
+    using OpenCL, pocl_jll
+catch
+end
+
 using MLDataDevices, MLUtils, Test, LuxTestUtils
 
 const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "none"))
@@ -21,10 +26,6 @@ end
 
 if LuxTestUtils.test_oneapi(BACKEND_GROUP)
     using oneAPI
-end
-
-if LuxTestUtils.test_opencl(BACKEND_GROUP)
-    using OpenCL, pocl_jll
 end
 
 DEVICES = [
