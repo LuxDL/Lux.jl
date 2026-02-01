@@ -28,6 +28,11 @@ jobs:
           - cpu
           - opencl
           - reactant
+        exclude:
+          - os: windows-latest
+            group: opencl
+          - os: macos-latest
+            group: opencl
     uses: ./.github/workflows/CommonCI.yml
     with:
       julia_version: "1.12"
