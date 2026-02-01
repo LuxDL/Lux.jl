@@ -1,4 +1,5 @@
 [deps]
+AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
@@ -13,7 +14,9 @@ LuxCUDA = "d0bbae9a-e099-4d5b-a835-1c6931763bda"
 LuxTestUtils = "ac9de150-d08f-4546-94fb-7472b5760531"
 MLDataDevices = "7e8f7934-dd98-4c1a-8fe8-92b47a384d40"
 MLUtils = "f1d291b0-491e-4a28-83b9-f70985020b54"
+Metal = "dde4c033-4e86-420c-a63e-0dd931031962"
 OneHotArrays = "0b1bfda6-eb8a-41d2-88d8-f5af5cad476f"
+OpenCL = "08131aa3-fb12-5dee-8b74-c09406e224a2"
 ParallelTestRunner = "d3525ed8-44d0-4b2c-a655-542cee43accc"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -25,6 +28,8 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
+oneAPI = "8f75cd03-7ff8-4ecb-9b8f-daf728133b1b"
+pocl_jll = "627d6b7a-bbe6-5189-83e7-98cc0a5aeadd"
 
 [sources]
 LuxTestUtils = {path = "../../LuxTestUtils"}
