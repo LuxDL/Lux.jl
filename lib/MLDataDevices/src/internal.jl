@@ -289,8 +289,9 @@ end
 function to_rarray_internal end
 
 # Utility function to facilitate data transfer
-# For AbstractFloat and Complex{<:AbstractFloat} arrays, we provide specialized methods to avoid
-# ambiguity with the general fallback and to enable efficient type conversion when needed.
+# For AbstractFloat and Complex{<:AbstractFloat} arrays, we provide specialized methods to
+# avoid ambiguity with the general fallback and to enable efficient type conversion when
+# needed.
 function array_adapt(
     f::F, ::Type{aType}, ::Type{Missing}, x::AbstractArray{<:AbstractFloat}
 ) where {F,aType}
@@ -356,5 +357,15 @@ function array_adapt(::F, ::Type{aType}, ::Type{E}, x::AbstractArray{T}) where {
     )
     return aType(x)
 end
+
+return_without_conversion(::Type{Nothing}, ::AbstractArray) = true
+return_without_conversion(::Type{Missing}, ::AbstractArray) = true
+return_without_conversion(::Type{T}, ::AbstractArray{T}) where {T<:AbstractFloat} = true
+function return_without_conversion(
+    ::Type{T}, ::AbstractArray{Complex{T}}
+) where {T<:AbstractFloat}
+    return true
+end
+return_without_conversion(::Type{T}, ::AbstractArray) where {T} = false
 
 end

@@ -14,9 +14,13 @@ Internal.get_device_type(rng::GPUArrays.RNG) = Internal.get_device_type(rng.stat
 for (T1, T2) in
     ((AbstractGPUSparseMatrixCSC, SparseMatrixCSC), (AbstractGPUSparseVector, SparseVector))
     @eval begin
-        Adapt.adapt_storage(::CPUDevice{Missing}, x::$(T1)) = $(T2)(x)
-        Adapt.adapt_storage(::CPUDevice{Nothing}, x::$(T1)) = $(T2)(x)
-        Adapt.adapt_storage(::CPUDevice{T}, x::$(T1)) where {T<:AbstractFloat} = $(T2){T}(x)
+        function Adapt.adapt_storage(::CPUDevice{T}, x::$(T1)) where {T}
+            if T <: AbstractFloat
+                eltype(x) <: Complex && return $(T2){Complex{T}}(x)
+                return $(T2){T}(x)
+            end
+            return $(T2)(x)
+        end
     end
 end
 
