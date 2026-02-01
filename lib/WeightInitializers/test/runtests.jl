@@ -6,15 +6,6 @@ const BACKEND_GROUP = lowercase(
     something(get(parsed_args.custom, "BACKEND_GROUP", nothing), "all")
 )
 
-const EXTRA_PKGS = LuxTestUtils.packages_to_install(BACKEND_GROUP)
-
-if !isempty(EXTRA_PKGS)
-    @info "Installing Extra Packages for testing" EXTRA_PKGS = EXTRA_PKGS
-    Pkg.add(EXTRA_PKGS)
-    Base.retry_load_extensions()
-    Pkg.instantiate()
-end
-
 testsuite = find_tests(@__DIR__)
 delete!(testsuite, "common")
 

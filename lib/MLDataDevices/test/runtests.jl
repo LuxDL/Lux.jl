@@ -53,9 +53,6 @@ withenv(
     "XLA_REACTANT_GPU_PREALLOCATE" => false,
     "BACKEND_GROUP" => BACKEND_GROUP,
 ) do
-    @testset "MLDataDevices" begin
-        runtests(MLDataDevices, parsed_args; testsuite)
-
-        runtests(MLDataDevices, parsed_args; testsuite=additional_testsuite)
-    end
+    runtests(MLDataDevices, parsed_args; testsuite)
+    runtests(MLDataDevices, parsed_args; testsuite=additional_testsuite)
 end
