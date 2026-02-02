@@ -7,7 +7,7 @@ steps:
               version: "{{matrix.julia}}"
           - JuliaCI/julia-test#v1:
               project: "lib/LuxLib"
-              test_args: "BACKEND_GROUP=CUDA LUXLIB_TEST_GROUP={{matrix.group}}"
+              test_args: "--BACKEND_GROUP=CUDA {{matrix.group}}"
           - JuliaCI/julia-coverage#v1:
               codecov: true
               dirs:
@@ -28,9 +28,9 @@ steps:
             julia:
               - "1.12"
             group:
-              - "common"
+              - "common_ops"
               - "normalization"
-              - "misc"
+              - "others"
 
   # - group: ":julia: (LuxLib) AMD GPU"
   #   steps:
@@ -40,7 +40,7 @@ steps:
   #             version: "{{matrix.julia}}"
   #         - JuliaCI/julia-test#v1:
   #             project: "lib/LuxLib"
-  #             test_args: "BACKEND_GROUP=AMDGPU"
+  #             test_args: "--BACKEND_GROUP=AMDGPU"
   #         - JuliaCI/julia-coverage#v1:
   #             codecov: true
   #             dirs:

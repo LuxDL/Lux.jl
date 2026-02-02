@@ -1,5 +1,7 @@
-@testsetup module DenseSetup
+include("../shared_testsetup.jl")
+
 using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, StableRNGs
+using StaticArrays, JLArrays, BenchmarkTools, Statistics, ForwardDiff, Enzyme, Mooncake
 
 anonact = x -> x^3
 
@@ -55,48 +57,25 @@ function run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu
 end
 
 const ALL_TEST_CONFIGS = Iterators.product(
-    # ((Float32, Float32), (Float32, Float64), (Float64, Float64)),
     ((Float32, Float32), (Float64, Float64)),
     (4, 32),
     (4, 32),
     (true, false),
-    # (identity, tanh, tanh_fast, sigmoid, sigmoid_fast, relu, gelu, anonact),
     (identity, tanh, sigmoid_fast, relu),
 )
 
-const TEST_BLOCKS = collect(
-    Iterators.partition(ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 2))
-)
-
-export ALL_TEST_CONFIGS, TEST_BLOCKS, run_dense_testing
-
-end
-
-@testitem "Fused Dense: Group 1" tags = [:common] setup = [SharedTestSetup, DenseSetup] begin
+@testset "Fused Dense" begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for (
             (Tx, Tw), M, N, hasbias, activation
-        ) in TEST_BLOCKS[1]
+        ) in ALL_TEST_CONFIGS
             !fp64 && (Tx == Float64 || Tw == Float64) && continue
             run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
         end
     end
 end
 
-@testitem "Fused Dense: Group 2" tags = [:common] setup = [SharedTestSetup, DenseSetup] begin
-    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for (
-            (Tx, Tw), M, N, hasbias, activation
-        ) in TEST_BLOCKS[2]
-            !fp64 && (Tx == Float64 || Tw == Float64) && continue
-            run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
-        end
-    end
-end
-
-@testitem "Fused Dense: StaticArrays" tags = [:common] begin
-    using StaticArrays, NNlib
-
+@testset "Fused Dense: StaticArrays" begin
     x = @SArray rand(2, 4)
     weight = @SArray rand(3, 2)
     bias = @SArray rand(3)
@@ -104,9 +83,7 @@ end
     @test @inferred(fused_dense_bias_activation(relu, weight, x, bias)) isa SArray
 end
 
-@testitem "Fused Dense: CPU No Scalar Indexing" tags = [:common] begin
-    using JLArrays, NNlib
-
+@testset "Fused Dense: CPU No Scalar Indexing" begin
     x = JLArray(rand(Float32, 2, 4))
     weight = JLArray(rand(Float32, 3, 2))
     bias = JLArray(rand(Float32, 3))
@@ -115,9 +92,7 @@ end
     @test LuxLib.internal_operation_mode(x) isa LuxLib.GenericBroadcastOp
 end
 
-@testitem "`LuxLib.Impl.matmul(add)` allocations" tags = [:common] setup = [SharedTestSetup] begin
-    using BenchmarkTools, Statistics
-
+@testset "`LuxLib.Impl.matmul(add)` allocations" begin
     if BACKEND_GROUP == "all" || BACKEND_GROUP == "cpu"
         @testset "size $N" for N in (1, 4, 32, 256, 1024)
             x = rand(Float32, N, N)
@@ -139,112 +114,115 @@ end
     end
 end
 
-@testitem "Enzyme.Forward patch: dense" tags = [:common] setup = [SharedTestSetup] skip =
-    :(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED[]) begin
-    using LuxLib, Random, ForwardDiff, Enzyme
+@testset "Enzyme.Forward patch: dense" begin
+    if LuxTestUtils.ENZYME_TESTING_ENABLED[]
+        x = rand(Float32, 2, 2)
 
-    x = rand(Float32, 2, 2)
+        f(x) = sum(abs2, LuxLib.Impl.matmul(x, x))
 
-    f(x) = sum(abs2, LuxLib.Impl.matmul(x, x))
-
-    @test only(Enzyme.gradient(Forward, f, x)) ≈ ForwardDiff.gradient(f, x)
+        @test only(Enzyme.gradient(Forward, f, x)) ≈ ForwardDiff.gradient(f, x)
+    end
 end
 
-@testitem "Enzyme rules for fused dense" tags = [:common] setup = [SharedTestSetup] skip =
-    :(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED[]) begin
-    using LuxLib, NNlib, Zygote, Enzyme
+@testset "Enzyme rules for fused dense" begin
+    if LuxTestUtils.ENZYME_TESTING_ENABLED[]
+        # These are mostly for testing the CUDA rules since we don't enable the CUDA tests
+        # in LuxTestUtils currently
+        function fused_dense!(y, act, weight, x, b)
+            op = LuxLib.internal_operation_mode((y, weight, x, b))
+            LuxLib.Impl.fused_dense!(y, op, act, weight, x, b)
+            return nothing
+        end
 
-    # These are mostly for testing the CUDA rules since we don't enable the CUDA tests
-    # in LuxTestUtils currently
-    function fused_dense!(y, act, weight, x, b)
-        op = LuxLib.internal_operation_mode((y, weight, x, b))
-        LuxLib.Impl.fused_dense!(y, op, act, weight, x, b)
-        return nothing
-    end
+        function matmuladd!(C, A, B, bias)
+            op = LuxLib.internal_operation_mode((C, A, B, bias))
+            LuxLib.Impl.matmuladd!(C, op, A, B, bias)
+            return nothing
+        end
 
-    function matmuladd!(C, A, B, bias)
-        op = LuxLib.internal_operation_mode((C, A, B, bias))
-        LuxLib.Impl.matmuladd!(C, op, A, B, bias)
-        return nothing
-    end
+        rng = StableRNG(1234)
 
-    rng = StableRNG(1234)
+        ALL_ACTS = [
+            identity,
+            tanh,
+            tanh_fast,
+            sigmoid,
+            sigmoid_fast,
+            relu,
+            gelu,
+            x -> x^3,
+            x -> gelu(x),
+        ]
 
-    ALL_ACTS = [
-        identity, tanh, tanh_fast, sigmoid, sigmoid_fast, relu, gelu, x -> x^3, x -> gelu(x)
-    ]
+        @testset "$mode" for (mode, aType, ongpu) in MODES
+            # XXX: Enzyme 0.13 has a regression with cuda support
+            mode ∈ ("cpu",) || continue
 
-    @testset "$mode" for (mode, aType, ongpu) in MODES
-        # XXX: Enzyme 0.13 has a regression with cuda support
-        # mode ∈ ("cpu", "cuda") || continue
-        mode ∈ ("cpu",) || continue
+            y = aType(zeros(Float32, 2, 2))
+            weight = aType(randn(rng, Float32, 2, 2))
+            x = aType(randn(rng, Float32, 2, 2))
+            @testset for (act, hasbias) in Iterators.product(ALL_ACTS, (true, false))
+                b = hasbias ? aType(randn(rng, Float32, 2)) : nothing
 
-        y = aType(zeros(Float32, 2, 2))
-        weight = aType(randn(rng, Float32, 2, 2))
-        x = aType(randn(rng, Float32, 2, 2))
-        @testset for (act, hasbias) in Iterators.product(ALL_ACTS, (true, false))
-            b = hasbias ? aType(randn(rng, Float32, 2)) : nothing
+                dy = aType(randn(rng, Float32, 2, 2))
 
-            dy = aType(randn(rng, Float32, 2, 2))
+                dweight = aType(zeros(Float32, 2, 2))
+                dx = aType(zeros(Float32, 2, 2))
+                db = hasbias ? aType(zeros(Float32, 2)) : nothing
 
-            dweight = aType(zeros(Float32, 2, 2))
-            dx = aType(zeros(Float32, 2, 2))
-            db = hasbias ? aType(zeros(Float32, 2)) : nothing
+                b_enz = hasbias ? Duplicated(b, db) : Const(b)
 
-            b_enz = hasbias ? Duplicated(b, db) : Const(b)
-
-            Enzyme.autodiff(
-                Reverse,
-                fused_dense!,
-                Duplicated(y, copy(dy)),
-                Const(act),
-                Duplicated(weight, dweight),
-                Duplicated(x, dx),
-                b_enz,
-            )
-
-            if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
-                _, pb_f = Zygote.pullback(fused_dense_bias_activation, act, weight, x, b)
-                _, dweight_zyg, dx_zyg, db_zyg = pb_f(dy)
-
-                @test dweight ≈ dweight_zyg atol = 1.0e-3 rtol = 1.0e-3
-                @test dx ≈ dx_zyg atol = 1.0e-3 rtol = 1.0e-3
-                if hasbias
-                    @test db ≈ db_zyg atol = 1.0e-3 rtol = 1.0e-3
-                end
-            end
-
-            (act === identity && hasbias) || continue
-
-            if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
-                dweight .= 0
-                dx .= 0
-                db .= 0
                 Enzyme.autodiff(
                     Reverse,
-                    matmuladd!,
+                    fused_dense!,
                     Duplicated(y, copy(dy)),
+                    Const(act),
                     Duplicated(weight, dweight),
                     Duplicated(x, dx),
                     b_enz,
                 )
 
-                _, pb_f = Zygote.pullback(LuxLib.Impl.matmuladd, weight, x, b)
-                dweight_zyg, dx_zyg, db_zyg = pb_f(dy)
+                if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
+                    _, pb_f = Zygote.pullback(
+                        fused_dense_bias_activation, act, weight, x, b
+                    )
+                    _, dweight_zyg, dx_zyg, db_zyg = pb_f(dy)
 
-                @test dweight ≈ dweight_zyg atol = 1.0e-3 rtol = 1.0e-3
-                @test dx ≈ dx_zyg atol = 1.0e-3 rtol = 1.0e-3
-                @test db ≈ db_zyg atol = 1.0e-3 rtol = 1.0e-3
+                    @test dweight ≈ dweight_zyg atol = 1.0e-3 rtol = 1.0e-3
+                    @test dx ≈ dx_zyg atol = 1.0e-3 rtol = 1.0e-3
+                    if hasbias
+                        @test db ≈ db_zyg atol = 1.0e-3 rtol = 1.0e-3
+                    end
+                end
+
+                (act === identity && hasbias) || continue
+
+                if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
+                    dweight .= 0
+                    dx .= 0
+                    db .= 0
+                    Enzyme.autodiff(
+                        Reverse,
+                        matmuladd!,
+                        Duplicated(y, copy(dy)),
+                        Duplicated(weight, dweight),
+                        Duplicated(x, dx),
+                        b_enz,
+                    )
+
+                    _, pb_f = Zygote.pullback(LuxLib.Impl.matmuladd, weight, x, b)
+                    dweight_zyg, dx_zyg, db_zyg = pb_f(dy)
+
+                    @test dweight ≈ dweight_zyg atol = 1.0e-3 rtol = 1.0e-3
+                    @test dx ≈ dx_zyg atol = 1.0e-3 rtol = 1.0e-3
+                    @test db ≈ db_zyg atol = 1.0e-3 rtol = 1.0e-3
+                end
             end
         end
     end
 end
 
-@testitem "Mooncake Support: https://github.com/chalk-lab/Mooncake.jl/issues/622" tags = [
-    :dense
-] setup = [SharedTestSetup] begin
-    using Mooncake, LuxLib, NNlib, Zygote, Random
-
+@testset "Mooncake Support: https://github.com/chalk-lab/Mooncake.jl/issues/622" begin
     @testset for wT in (Float32, Float64),
         xT in (Float32, Float64),
         has_bias in (true, false)

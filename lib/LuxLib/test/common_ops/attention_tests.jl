@@ -1,6 +1,8 @@
-@testitem "Scaled Dot Product Attention" tags = [:misc] setup = [SharedTestSetup] begin
-    using LuxLib, Reactant, NNlib, Random, MLDataDevices, Enzyme, Statistics
+include("../shared_testsetup.jl")
 
+using LuxLib, Reactant, NNlib, Random, MLDataDevices, Enzyme, Statistics, Test, Zygote
+
+@testset "Scaled Dot Product Attention" begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "Different Batch Sizes" begin
             n, lenq, lenkv = 15, 3, 4

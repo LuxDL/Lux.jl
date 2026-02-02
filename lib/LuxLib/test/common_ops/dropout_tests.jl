@@ -1,4 +1,8 @@
-@testitem "Dropout" tags = [:misc] setup = [SharedTestSetup] begin
+include("../shared_testsetup.jl")
+
+using LuxLib, LuxTestUtils, Test, Statistics
+
+@testset "Dropout" begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
@@ -47,9 +51,7 @@
     end
 end
 
-@testitem "Dropout with Preset Mask" tags = [:misc] setup = [SharedTestSetup] begin
-    using Statistics
-
+@testset "Dropout with Preset Mask" begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
@@ -142,9 +144,7 @@ end
     end
 end
 
-@testitem "Alpha Dropout" tags = [:misc] setup = [SharedTestSetup] begin
-    using Statistics
-
+@testset "Alpha Dropout" begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
