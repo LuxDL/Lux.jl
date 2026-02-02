@@ -1,4 +1,5 @@
-@testsetup module InstanceNormSetup
+include("../shared_testsetup.jl")
+
 using LuxLib, LuxTestUtils, Random, Test, NNlib
 
 is_training(::Val{training}) where {training} = training
@@ -80,38 +81,15 @@ end
 
 const ALL_TEST_CONFIGS = Iterators.product(
     [Float32, Float64],
-    # ((4, 4, 6, 2), (3, 4, 2), (4, 4, 4, 3, 2)),
     ((4, 4, 6, 2),),
     (Val(true), Val(false)),
     (identity, sigmoid_fast, anonact),
 )
 
-const TEST_BLOCKS = collect(
-    Iterators.partition(ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 2))
-)
-
-export setup_instancenorm, ALL_TEST_CONFIGS, TEST_BLOCKS, run_instancenorm_testing
-
-end
-
-@testitem "Instance Norm: Group 1" tags = [:normalization] setup = [
-    SharedTestSetup, InstanceNormSetup
-] begin
+@testset "Instance Norm" begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in
-                                                           TEST_BLOCKS[1]
-            !fp64 && T == Float64 && continue
-            run_instancenorm_testing(generate_fixed_array, T, sz, training, act, aType)
-        end
-    end
-end
-
-@testitem "Instance Norm: Group 2" tags = [:normalization] setup = [
-    SharedTestSetup, InstanceNormSetup
-] begin
-    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in
-                                                           TEST_BLOCKS[2]
+                                                           ALL_TEST_CONFIGS
             !fp64 && T == Float64 && continue
             run_instancenorm_testing(generate_fixed_array, T, sz, training, act, aType)
         end

@@ -1,4 +1,5 @@
-@testsetup module BatchNormSetup
+include("../shared_testsetup.jl")
+
 using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, Static
 
 function setup_batchnorm(gen_f, aType, T, sz; affine::Bool=true, track_stats::Bool)
@@ -124,30 +125,17 @@ end
 
 const ALL_TEST_CONFIGS = Iterators.product(
     [Float32, Float64],
-    # ((4, 4, 6, 2), (8, 2), (4, 4, 4, 3, 2)),
     ((4, 4, 6, 2), (8, 2)),
     (Val(true), Val(false)),
-    # (true, false),
-    # (true, false),
     [(true, true), (false, false)],
     (identity, sigmoid_fast, anonact),
 )
 
-const TEST_BLOCKS = collect(
-    Iterators.partition(ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 2))
-)
-
-export setup_batchnorm, ALL_TEST_CONFIGS, TEST_BLOCKS, run_batchnorm_testing
-
-end
-
-@testitem "Batch Norm: Group 1" tags = [:normalization] setup = [
-    SharedTestSetup, BatchNormSetup
-] begin
+@testset "Batch Norm" begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (
             T, sz, training, (affine, track_stats), act
-        ) in TEST_BLOCKS[1]
+        ) in ALL_TEST_CONFIGS
             !fp64 && T == Float64 && continue
             run_batchnorm_testing(
                 generate_fixed_array, T, sz, training, affine, track_stats, act, aType
@@ -156,22 +144,7 @@ end
     end
 end
 
-@testitem "Batch Norm: Group 2" tags = [:normalization] setup = [
-    SharedTestSetup, BatchNormSetup
-] begin
-    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $T, size $sz, $act $affine $track_stats" for (
-            T, sz, training, (affine, track_stats), act
-        ) in TEST_BLOCKS[2]
-            !fp64 && T == Float64 && continue
-            run_batchnorm_testing(
-                generate_fixed_array, T, sz, training, affine, track_stats, act, aType
-            )
-        end
-    end
-end
-
-@testitem "Batch Norm: Mixed Precision" tags = [:normalization] setup = [SharedTestSetup] begin
+@testset "Batch Norm: Mixed Precision" begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         x = aType(rand(Float64, 4, 4, 6, 2))
         scale = aType(rand(Float32, 6))
