@@ -76,24 +76,11 @@ for (T1, T2) in ((Float64, Float32), (ComplexF64, ComplexF32))
     end
 end
 
-oneapi_array_adapt(::Type{T}, x) where {T} = Internal.array_adapt(oneArray, oneArray, T, x)
-
-function Adapt.adapt_storage(::oneAPIDevice{Missing}, x::AbstractArray)
-    MLDataDevices.get_device_type(x) <: oneAPIDevice && return x
-    return oneapi_array_adapt(Missing, x)
-end
-
-function Adapt.adapt_storage(::oneAPIDevice{Nothing}, x::AbstractArray)
-    MLDataDevices.get_device_type(x) <: oneAPIDevice && return x
-    return oneapi_array_adapt(Nothing, x)
-end
-
-function Adapt.adapt_storage(::oneAPIDevice{T}, x::AbstractArray) where {T<:AbstractFloat}
-    MLDataDevices.get_device_type(x) <: oneAPIDevice && eltype(x) == T && return x
-    if T === Float64 && !SUPPORTS_FP64[oneAPI.device()]
-        throw(ArgumentError("FP64 is not supported on this device"))
+function Adapt.adapt_storage(::oneAPIDevice{T}, x::AbstractArray) where {T}
+    if MLDataDevices.get_device_type(x) <: oneAPIDevice
+        Internal.return_without_conversion(T, x) && return x
     end
-    return oneapi_array_adapt(T, x)
+    return Internal.array_adapt(oneArray, oneArray, T, x)
 end
 
 end

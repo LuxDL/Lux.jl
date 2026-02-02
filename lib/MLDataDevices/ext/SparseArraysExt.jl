@@ -7,12 +7,12 @@ using SparseArrays: AbstractSparseArray, nonzeros
 Internal.get_device(x::AbstractSparseArray) = Internal.get_device(nonzeros(x))
 Internal.get_device_type(x::AbstractSparseArray) = Internal.get_device_type(nonzeros(x))
 
-Adapt.adapt_storage(::CPUDevice{Missing}, x::AbstractSparseArray) = x
-Adapt.adapt_storage(::CPUDevice{Nothing}, x::AbstractSparseArray) = x
-function Adapt.adapt_storage(
-    ::CPUDevice{T}, x::AbstractSparseArray
-) where {T<:AbstractFloat}
-    return convert(AbstractSparseArray{T}, x)
+function Adapt.adapt_storage(::CPUDevice{T}, x::AbstractSparseArray) where {T}
+    if T <: AbstractFloat
+        eltype(x) <: Complex && return convert(AbstractSparseArray{Complex{T}}, x)
+        return convert(AbstractSparseArray{T}, x)
+    end
+    return x
 end
 
 end

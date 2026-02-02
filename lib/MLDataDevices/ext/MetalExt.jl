@@ -2,7 +2,8 @@ module MetalExt
 
 using Adapt: Adapt
 using GPUArrays: GPUArrays
-using MLDataDevices: MLDataDevices, Internal, MetalDevice, reset_gpu_device!
+using MLDataDevices:
+    MLDataDevices, Internal, MetalDevice, reset_gpu_device!, get_device_type
 using Metal: Metal, MtlArray
 
 __init__() = reset_gpu_device!()
@@ -29,21 +30,12 @@ function Internal.unsafe_free_internal!(::Type{MetalDevice}, x::AbstractArray)
 end
 
 # Device Transfer
-metal_array_adapt(::Type{T}, x) where {T} = Internal.array_adapt(Metal.mtl, MtlArray, T, x)
-
-function Adapt.adapt_storage(::MetalDevice{Missing}, x::AbstractArray)
-    MLDataDevices.get_device_type(x) <: MetalDevice && return x
-    return metal_array_adapt(Missing, x)
-end
-
-function Adapt.adapt_storage(::MetalDevice{Nothing}, x::AbstractArray)
-    MLDataDevices.get_device_type(x) <: MetalDevice && return x
-    return metal_array_adapt(Nothing, x)
-end
-
-function Adapt.adapt_storage(::MetalDevice{T}, x::AbstractArray) where {T<:AbstractFloat}
-    MLDataDevices.get_device_type(x) <: MetalDevice && eltype(x) == T && return x
-    return metal_array_adapt(T, x)
+function Adapt.adapt_storage(::MetalDevice{T}, x::AbstractArray) where {T}
+    # Metal is single-device, so we only need to check the device type
+    if get_device_type(x) <: MetalDevice
+        Internal.return_without_conversion(T, x) && return x
+    end
+    return Internal.array_adapt(Metal.mtl, MtlArray, T, x)
 end
 
 end

@@ -528,19 +528,13 @@ for op in (:get_device, :get_device_type)
 end
 
 # Adapt Interface
-function Adapt.adapt_storage(dev::CPUDevice{Missing}, x::AbstractArray)
-    get_device_type(x) <: CPUDevice && return x
-    return Array(x)
-end
+function Adapt.adapt_storage(::CPUDevice{T}, x::AbstractArray) where {T}
+    if get_device_type(x) <: CPUDevice
+        Internal.return_without_conversion(T, x) && return x
+    end
 
-function Adapt.adapt_storage(dev::CPUDevice{Nothing}, x::AbstractArray)
-    get_device_type(x) <: CPUDevice && return x
-    return Array(x)  # Preserve eltype
-end
-
-function Adapt.adapt_storage(dev::CPUDevice{T}, x::AbstractArray) where {T<:AbstractFloat}
-    get_device_type(x) <: CPUDevice && eltype(x) == T && return x
     x_cpu = Array(x)
+    Internal.return_without_conversion(T, x_cpu) && return x_cpu
 
     # Only convert floating-point and complex floating-point types
     ET = eltype(x_cpu)

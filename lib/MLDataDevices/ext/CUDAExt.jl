@@ -56,37 +56,24 @@ function Internal.unsafe_free_internal!(::Type{CUDADevice}, x::AbstractArray)
 end
 
 # Device Transfer
-cuda_array_adapt(::Type{T}, x) where {T} = Internal.array_adapt(CUDA.cu, CuArray, T, x)
-
-function Adapt.adapt_storage(::CUDADevice{D,Missing}, x::AbstractArray) where {D}
-    MLDataDevices.get_device_type(x) <: CUDADevice && return x
-    return cuda_array_adapt(Missing, x)
-end
-
-function Adapt.adapt_storage(::CUDADevice{D,Nothing}, x::AbstractArray) where {D}
-    MLDataDevices.get_device_type(x) <: CUDADevice && return x
-    return cuda_array_adapt(Nothing, x)
-end
-
-function Adapt.adapt_storage(::CUDADevice{D,T}, x::AbstractArray) where {D,T<:AbstractFloat}
-    MLDataDevices.get_device_type(x) <: CUDADevice && eltype(x) == T && return x
-    return cuda_array_adapt(T, x)
+function cuda_array_adapt(::CUDADevice{D,E}, x) where {D,E}
+    return Internal.array_adapt(CUDA.cu, CuArray, E, x)
 end
 
 function Adapt.adapt_storage(to::CUDADevice{D,E}, x::AbstractArray) where {D,E}
     old_dev = CUDA.device()  # remember the current device
     dev = MLDataDevices.get_device(x)
     if !(dev isa CUDADevice)
-        CUDA.device!(to.device)
+        to.device !== nothing && CUDA.device!(to.device)
         x_new = cuda_array_adapt(to, x)
-        CUDA.device!(old_dev)
+        to.device !== nothing && CUDA.device!(old_dev)
         return x_new
-    elseif dev.device == to.device
+    elseif dev.device === nothing || to.device === nothing || dev.device == to.device
         return x
     else
-        CUDA.device!(to.device)
+        to.device !== nothing && CUDA.device!(to.device)
         x_new = copy(x)
-        CUDA.device!(old_dev)
+        to.device !== nothing && CUDA.device!(old_dev)
         return x_new
     end
 end

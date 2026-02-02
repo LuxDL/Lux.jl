@@ -1,7 +1,18 @@
 using OpenCL, pocl_jll
-
 using MLDataDevices, Random, Test
 using ArrayInterface: parameterless_type
+
+include("common.jl")
+
+@test_in_separate_process "CPU Fallback" begin
+    using MLDataDevices, Test
+
+    @test !MLDataDevices.functional(OpenCLDevice)
+    @test cpu_device() isa CPUDevice
+    @test gpu_device() isa CPUDevice
+    @test_throws MLDataDevices.Internal.DeviceSelectionException gpu_device(; force=true)
+    @test_throws Exception default_device_rng(OpenCLDevice())
+end
 
 if !MLDataDevices.functional(OpenCLDevice)
     @warn "OpenCL.jl is not functional. Skipping OpenCL tests."

@@ -7,7 +7,7 @@ steps:
               version: "{{matrix.julia}}"
           - JuliaCI/julia-test#v1:
               project: "lib/WeightInitializers"
-              test_args: "BACKEND_GROUP=CUDA"
+              test_args: "--BACKEND_GROUP=CUDA"
           - JuliaCI/julia-coverage#v1:
               codecov: true
               dirs:
@@ -31,7 +31,7 @@ steps:
   #             version: "{{matrix.julia}}"
   #         - JuliaCI/julia-test#v1:
   #             project: "lib/WeightInitializers"
-  #             test_args: "BACKEND_GROUP=AMDGPU"
+  #             test_args: "--BACKEND_GROUP=AMDGPU"
   #         - JuliaCI/julia-coverage#v1:
   #             codecov: true
   #             dirs:
@@ -56,7 +56,7 @@ steps:
               version: "{{matrix.julia}}"
           - JuliaCI/julia-test#v1:
               project: "lib/WeightInitializers"
-              test_args: "BACKEND_GROUP=Metal"
+              test_args: "--BACKEND_GROUP=Metal"
           - JuliaCI/julia-coverage#v1:
               codecov: true
               dirs:
@@ -82,7 +82,7 @@ steps:
               version: "{{matrix.julia}}"
           - JuliaCI/julia-test#v1:
               project: "lib/WeightInitializers"
-              test_args: "BACKEND_GROUP=oneAPI"
+              test_args: "--BACKEND_GROUP=oneAPI"
           - JuliaCI/julia-coverage#v1:
               codecov: true
               dirs:

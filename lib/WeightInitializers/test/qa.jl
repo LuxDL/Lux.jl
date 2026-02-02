@@ -1,11 +1,15 @@
-@testitem "Aqua: Quality Assurance" begin
+using WeightInitializers, Test
+
+include("common.jl")
+
+@testset "Aqua: Quality Assurance" begin
     using Aqua
 
     Aqua.test_all(WeightInitializers; ambiguities=false)
     Aqua.test_ambiguities(WeightInitializers; recursive=false)
 end
 
-@testitem "Explicit Imports: Quality Assurance" setup = [SharedTestSetup] begin
+@testset "Explicit Imports: Quality Assurance" begin
     using ExplicitImports
 
     @test check_no_implicit_imports(WeightInitializers) === nothing
@@ -24,7 +28,7 @@ end
     end
 end
 
-@testitem "doctests: Quality Assurance" begin
+@testset "doctests: Quality Assurance" begin
     using Documenter
 
     doctestexpr = :(using Random, WeightInitializers)
