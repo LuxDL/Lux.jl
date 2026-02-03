@@ -396,4 +396,8 @@ function maybe_reshape(x::AbstractArray{T,N}, dims::Dims{N}) where {T,N}
 end
 maybe_reshape(x::AbstractArray{T}, dims::Dims) where {T} = reshape(x, dims)
 
+force_3arg_mul!_dispatch(::AbstractMatrix, ::AbstractMatrix, ::AbstractMatrix) = false
+
+CRC.@non_differentiable force_3arg_mul!_dispatch(::Any...)
+
 end

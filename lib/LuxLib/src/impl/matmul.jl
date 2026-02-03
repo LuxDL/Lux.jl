@@ -109,6 +109,10 @@ function matmuladd!(
 end
 
 function matmul!(C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
+    if Utils.force_3arg_mul!_dispatch(C, A, B)
+        mul!(C, A, B)
+        return nothing
+    end
     matmul!(C, internal_operation_mode((C, A, B)), A, B)
     return nothing
 end
