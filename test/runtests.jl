@@ -140,8 +140,8 @@ end
 if (isempty(parsed_args.positionals) || "others" ∈ parsed_args.positionals)
     @testset "DispatchDoctor Preferences" begin
         @testset "set_dispatch_doctor_preferences!" begin
-            @test_throws ArgumentError Lux.set_dispatch_doctor_preferences!("invalid")
-            @test_throws ArgumentError Lux.set_dispatch_doctor_preferences!(;
+            @test_throws AssertionError Lux.set_dispatch_doctor_preferences!("invalid")
+            @test_throws AssertionError Lux.set_dispatch_doctor_preferences!(;
                 luxcore="invalid"
             )
 

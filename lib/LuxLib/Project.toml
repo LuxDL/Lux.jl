@@ -1,6 +1,6 @@
 name = "LuxLib"
 uuid = "82251201-b29d-42c6-8e01-566dec8acb11"
-version = "1.15.3"
+version = "1.15.4"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
 
 [deps]
@@ -68,7 +68,7 @@ TrackerExt = "Tracker"
 cuDNNExt = ["CUDA", "cuDNN"]
 
 [compat]
-AMDGPU = "0.9.6, 1, 2"
+AMDGPU = "2.2"
 AppleAccelerate = "0.4, 0.5"
 ArrayInterface = "7.17.1"
 BLISBLAS = "0.1, 0.2"
