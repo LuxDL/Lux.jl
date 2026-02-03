@@ -1,7 +1,4 @@
-include("../shared_testsetup.jl")
-
-using Aqua, ChainRulesCore, ForwardDiff, Test
-using ExplicitImports, Documenter
+using Aqua, ChainRulesCore, ForwardDiff, Test, ExplicitImports
 using Lux, LuxCore, LuxLib, MLDataDevices
 using ComponentArrays, ReverseDiff, Tracker, Zygote, Enzyme, Reactant
 
@@ -47,16 +44,4 @@ end
     ) === nothing
     @test_broken check_all_explicit_imports_are_public(Lux) === nothing  # mostly upstream problems
     @test_broken check_all_qualified_accesses_are_public(Lux) === nothing  # mostly upstream problems
-end
-
-# Some of the tests are flaky on prereleases
-@testset "doctests: Quality Assurance" begin
-    @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
-        ongpu && continue
-
-        doctestexpr = :(using Adapt, Lux, Random, Optimisers, Zygote, NNlib)
-
-        DocMeta.setdocmeta!(Lux, :DocTestSetup, doctestexpr; recursive=true)
-        doctest(Lux; manual=false)
-    end
 end

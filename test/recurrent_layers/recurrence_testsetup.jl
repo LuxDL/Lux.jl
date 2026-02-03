@@ -1,8 +1,4 @@
-using LuxTestUtils: check_approx
-
-include("../shared_testsetup.jl")
-
-# Helper functions from RecurrenceTestSetup
+# Helper function for recurrence layer tests
 function test_recurrence_layer(
     mode, aType, dev, ongpu, ordering, _cell, use_bias, train_state
 )
@@ -103,59 +99,5 @@ function test_recurrence_layer(
             skip_backends=[AutoEnzyme()],
             soft_fail=[AutoFiniteDiff()]
         )
-    end
-end
-
-const RECURRENCE_ALL_TEST_CONFIGS = Iterators.product(
-    (BatchLastIndex(), TimeLastIndex()),
-    (RNNCell, LSTMCell, GRUCell),
-    (true, false),
-    (true, false),
-)
-
-const RECURRENCE_TEST_BLOCKS = collect(
-    Iterators.partition(
-        RECURRENCE_ALL_TEST_CONFIGS, ceil(Int, length(RECURRENCE_ALL_TEST_CONFIGS) / 2)
-    ),
-)
-
-@testset "Recurrence: Group 1" begin
-    @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
-        @testset for (ordering, cell, use_bias, train_state) in RECURRENCE_TEST_BLOCKS[1]
-            test_recurrence_layer(
-                mode, aType, dev, ongpu, ordering, cell, use_bias, train_state
-            )
-        end
-    end
-end
-
-@testset "Recurrence: Group 2" begin
-    @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
-        @testset for (ordering, cell, use_bias, train_state) in RECURRENCE_TEST_BLOCKS[2]
-            test_recurrence_layer(
-                mode, aType, dev, ongpu, ordering, cell, use_bias, train_state
-            )
-        end
-    end
-end
-
-@testset "Recurrence Ordering Check #302" begin
-    rng = StableRNG(12345)
-    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        encoder = Recurrence(
-            RNNCell(
-                1 => 1,
-                identity;
-                init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...),
-                init_state=(rng, args...; kwargs...) -> zeros(args...; kwargs...),
-                init_bias=(rng, args...; kwargs...) -> zeros(args...; kwargs...),
-            );
-            return_sequence=true,
-        )
-        ps, st = dev(Lux.setup(rng, encoder))
-        m2 = aType(reshape([0.5, 0.0, 0.7, 0.8], 1, :, 1))
-        res, _ = encoder(m2, ps, st)
-
-        @test Array(vec(reduce(vcat, res))) ≈ [0.5, 0.5, 1.2, 2.0]
     end
 end
