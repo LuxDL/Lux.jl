@@ -128,6 +128,7 @@ jobs:
           project: ${{ inputs.project }}
           test_args: ${{ inputs.test_args }}
           allow_reresolve: ${{ !(inputs.downgrade_testing) }}
+          force_latest_compatible_version: ${{ inputs.downgrade_testing && 'false' || 'auto' }}
         if: ${{ (inputs.julia_version != '1.10' && inputs.julia_version != 'lts') || inputs.local_test_dependencies == '' }}
 
       - name: "Upload MLIR modules"
