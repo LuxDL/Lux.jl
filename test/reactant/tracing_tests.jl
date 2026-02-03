@@ -1,6 +1,7 @@
-@testitem "Tracing" tags = [:reactant] begin
-    using Reactant, Lux, Random
+using Reactant, Lux, Random, Test
+using MLDataDevices: get_device_type, ReactantDevice
 
+@testset "Tracing" begin
     model = Chain(Dense(2 => 3, relu), BatchNorm(3), Dense(3 => 2))
     ps, st = Lux.setup(Random.default_rng(), model)
 

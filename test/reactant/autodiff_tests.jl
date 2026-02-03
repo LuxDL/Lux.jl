@@ -1,15 +1,12 @@
-@testitem "AutoDiff APIs: JVP and VJP" tags = [:reactant] setup = [SharedTestSetup] begin
-    using Reactant, Lux, Enzyme, Zygote, Random, ForwardDiff
-    using LuxTestUtils: check_approx
+include("../shared_testsetup.jl")
 
+using Reactant, Lux, Enzyme, Zygote, Random, ForwardDiff
+using LuxTestUtils: check_approx
+
+@testset "AutoDiff APIs: JVP and VJP" begin
     rng = Random.default_rng()
 
     @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
-        if mode == "amdgpu"
-            @warn "Skipping AMDGPU tests for Reactant"
-            continue
-        end
-
         if ongpu
             Reactant.set_default_backend("gpu")
         else
@@ -56,9 +53,7 @@
     end
 end
 
-@testitem "AutoDiff APIs: Batched Jacobian" tags = [:reactant] setup = [SharedTestSetup] begin
-    using Reactant, Lux, Zygote, Random, Enzyme
-
+@testset "AutoDiff APIs: Batched Jacobian" begin
     rng = Random.default_rng()
 
     models = (
@@ -73,11 +68,6 @@ end
     Xs = (randn(rng, Float32, 3, 3, 2, 4), randn(rng, Float32, 2, 4))
 
     @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
-        if mode == "amdgpu"
-            @warn "Skipping AMDGPU tests for Reactant"
-            continue
-        end
-
         if ongpu
             Reactant.set_default_backend("gpu")
         else

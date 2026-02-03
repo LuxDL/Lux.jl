@@ -1,55 +1,42 @@
-using ReTestItems, Pkg, Preferences, Test
-using InteractiveUtils, CPUSummary, LuxTestUtils
+using Pkg, Lux, Test, ParallelTestRunner, LuxTestUtils, Preferences
 
-@info sprint(versioninfo)
+parsed_args = parse_args(@isdefined(TEST_ARGS) ? TEST_ARGS : ARGS; custom=["BACKEND_GROUP"])
 
-function parse_test_args()
-    test_args_from_env = @isdefined(TEST_ARGS) ? TEST_ARGS : ARGS
-    test_args = Dict{String,String}()
-    for arg in test_args_from_env
-        if contains(arg, "=")
-            key, value = split(arg, "="; limit=2)
-            test_args[key] = value
-        end
+const BACKEND_GROUP = lowercase(
+    something(get(parsed_args.custom, "BACKEND_GROUP", nothing), "all")
+)
+
+# Find all tests
+testsuite = find_tests(@__DIR__)
+
+filter_tests!(testsuite, parsed_args)
+
+# Remove shared setup files that shouldn't be run directly
+delete!(testsuite, "shared_testsetup")
+delete!(testsuite, "setup_modes")
+delete!(testsuite, "eltype_matching")
+delete!(testsuite, "reactant_testsetup")
+for k in keys(testsuite)
+    if startswith(k, "distributed") || startswith(k, "downstream")
+        delete!(testsuite, k)
     end
-    @info "Parsed test args" test_args
-    return test_args
 end
 
-const PARSED_TEST_ARGS = parse_test_args()
+total_jobs = min(
+    something(parsed_args.jobs, ParallelTestRunner.default_njobs()), length(keys(testsuite))
+)
 
-const BACKEND_GROUP = lowercase(get(PARSED_TEST_ARGS, "BACKEND_GROUP", "all"))
-const ALL_LUX_TEST_GROUPS = [
-    "core_layers", "normalize_layers", "autodiff", "recurrent_layers", "misc", "reactant"
-]
-
-const INPUT_TEST_GROUP = lowercase(get(PARSED_TEST_ARGS, "LUX_TEST_GROUP", "all"))
-const LUX_TEST_GROUP = if startswith("!", INPUT_TEST_GROUP[1])
-    exclude_group = lowercase.(split(INPUT_TEST_GROUP[2:end], ","))
-    filter(x -> x ∉ exclude_group, ALL_LUX_TEST_GROUPS)
-else
-    [INPUT_TEST_GROUP]
+withenv(
+    "XLA_REACTANT_GPU_MEM_FRACTION" => 1 / (total_jobs + 0.1),
+    "XLA_REACTANT_GPU_PREALLOCATE" => false,
+    "JULIA_CUDA_HARD_MEMORY_LIMIT" => "$(100 / (total_jobs + 0.1))%",
+    "BACKEND_GROUP" => BACKEND_GROUP,
+) do
+    runtests(Lux, parsed_args; testsuite)
 end
-@info "Running tests for group: $LUX_TEST_GROUP"
-
-const EXTRA_PKGS = LuxTestUtils.packages_to_install(BACKEND_GROUP)
-
-try
-    if !isempty(EXTRA_PKGS)
-        @info "Installing Extra Packages for testing" EXTRA_PKGS
-        isempty(EXTRA_PKGS) || Pkg.add(EXTRA_PKGS)
-        Base.retry_load_extensions()
-        Pkg.instantiate()
-        Pkg.precompile()
-    end
-catch err
-    @error "Error occurred while installing extra packages" err
-end
-
-using Lux
 
 # Eltype Matching Tests
-if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP)
+if isempty(parsed_args.positionals) || "others" ∈ parsed_args.positionals
     @testset "eltype_mismath_handling: $option" for option in
                                                     ("none", "warn", "convert", "error")
         set_preferences!(Lux, "eltype_mismatch_handling" => option; force=true)
@@ -68,47 +55,12 @@ if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP)
     set_preferences!(Lux, "eltype_mismatch_handling" => "none"; force=true)
 end
 
-const RETESTITEMS_NWORKERS = parse(
-    Int,
-    get(
-        ENV,
-        "RETESTITEMS_NWORKERS",
-        string(min(Int(CPUSummary.num_cores()), Sys.isapple() ? 2 : 4)),
-    ),
-)
-
-const RETESTITEMS_NWORKER_THREADS = parse(
-    Int,
-    get(
-        ENV,
-        "RETESTITEMS_NWORKER_THREADS",
-        string(max(Int(CPUSummary.sys_threads()) ÷ RETESTITEMS_NWORKERS, 1)),
-    ),
-)
-
-@testset "Lux.jl Tests" begin
-    @testset "[$(tag)] [$(i)/$(length(LUX_TEST_GROUP))]" for (i, tag) in
-                                                             enumerate(LUX_TEST_GROUP)
-        nworkers = (tag == "reactant") ? 1 : RETESTITEMS_NWORKERS
-        tag == "extras" && continue
-
-        withenv(
-            "BACKEND_GROUP" => BACKEND_GROUP, "LUX_CURRENT_TEST_GROUP" => string(tag)
-        ) do
-            ReTestItems.runtests(
-                Lux;
-                tags=(tag == "all" ? nothing : [Symbol(tag)]),
-                testitem_timeout=2400,
-                nworkers,
-                nworker_threads=RETESTITEMS_NWORKER_THREADS,
-            )
-        end
-    end
-end
-
 # Various Downstream Integration Tests
 # We only run these on 1.11+ due to nicer handling of [sources]
-if ("all" in LUX_TEST_GROUP || "extras" in LUX_TEST_GROUP) && VERSION ≥ v"1.11-"
+if (
+    (isempty(parsed_args.positionals) || "others" ∈ parsed_args.positionals) &&
+    VERSION ≥ v"1.11-"
+)
     testdir = @__DIR__
     isintegrationtest(f) = endswith(f, "_integrationtest.jl")
     integrationtestfiles = String[]
@@ -157,7 +109,8 @@ if ("all" in LUX_TEST_GROUP || "extras" in LUX_TEST_GROUP) && VERSION ≥ v"1.11
 end
 
 # Distributed Tests
-if ("all" in LUX_TEST_GROUP || "extras" in LUX_TEST_GROUP) && VERSION ≥ v"1.11-"
+if (isempty(parsed_args.positionals) || "others" ∈ parsed_args.positionals) &&
+    VERSION ≥ v"1.11-"
     @testset "Distributed Tests" begin
         distributed_proj = joinpath(@__DIR__, "distributed")
         try
@@ -184,7 +137,7 @@ if ("all" in LUX_TEST_GROUP || "extras" in LUX_TEST_GROUP) && VERSION ≥ v"1.11
 end
 
 # Set preferences tests
-if ("all" in LUX_TEST_GROUP || "others" in LUX_TEST_GROUP)
+if (isempty(parsed_args.positionals) || "others" ∈ parsed_args.positionals)
     @testset "DispatchDoctor Preferences" begin
         @testset "set_dispatch_doctor_preferences!" begin
             @test_throws ArgumentError Lux.set_dispatch_doctor_preferences!("invalid")

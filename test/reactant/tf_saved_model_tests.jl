@@ -1,6 +1,8 @@
-@testitem "Tensorflow Saved Model Export" tags = [:reactant] setup = [SharedTestSetup] begin
-    using Lux, Reactant, PythonCall, Random
+include("../shared_testsetup.jl")
 
+using Lux, Reactant, PythonCall, Random, Test
+
+@testset "Tensorflow Saved Model Export" begin
     dev = reactant_device()
 
     model = Chain(

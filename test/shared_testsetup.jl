@@ -1,13 +1,7 @@
-@testsetup module SharedTestSetup
-
-include("setup_modes.jl")
-
-import Reexport: @reexport
-
 using Lux, Functors
 using Setfield: @set
 using DispatchDoctor: allow_unstable
-@reexport using ComponentArrays,
+using ComponentArrays,
     LuxCore,
     LuxLib,
     LuxTestUtils,
@@ -24,6 +18,8 @@ using LuxTestUtils: LuxTestUtils, check_approx
 using Static: True
 
 using Octavian, LoopVectorization
+
+include("setup_modes.jl")
 
 LuxTestUtils.jet_target_modules!(["Lux", "LuxCore", "LuxLib"])
 LinearAlgebra.BLAS.set_num_threads(Threads.nthreads())
@@ -56,56 +52,3 @@ end
 
 sumabs2first(layer, x, ps, st) = sum(abs2, first(layer(x, ps, st)))
 sumsumfirst(layer, x, ps, st) = sum(sum, first(layer(x, ps, st)))
-
-export BACKEND_GROUP,
-    MODES,
-    cpu_testing,
-    cuda_testing,
-    amdgpu_testing,
-    get_default_rng,
-    StableRNG,
-    maybe_rewrite_to_crosscor,
-    check_approx,
-    allow_unstable,
-    sumabs2first,
-    sumsumfirst
-
-end
-
-@testsetup module SharedReactantLayersTestSetup
-
-using Lux, Reactant, Enzyme
-
-sumabs2(x::AbstractArray) = sum(abs2, x)
-sumabs2(x::Tuple) = sumabs2(first(x))
-sumabs2(model, x, ps, st) = sumabs2(model(x, ps, st))
-
-function ∇sumabs2_enzyme(model, x, ps, st)
-    dx = Enzyme.make_zero(x)
-    dps = Enzyme.make_zero(ps)
-    Enzyme.autodiff(
-        Enzyme.Reverse,
-        sumabs2,
-        Active,
-        Const(model),
-        Duplicated(x, dx),
-        Duplicated(ps, dps),
-        Const(st),
-    )
-    return dx, dps
-end
-
-function ∇sumabs2_reactant_fd(model, x, ps, st)
-    _, ∂x_fd, ∂ps_fd, _ = @jit Reactant.TestUtils.finite_difference_gradient(
-        sumabs2, Const(model), f64(x), f64(ps), Const(f64(st))
-    )
-    return ∂x_fd, ∂ps_fd
-end
-
-function ∇sumabs2_reactant(model, x, ps, st)
-    return @jit ∇sumabs2_enzyme(model, x, ps, st)
-end
-
-export ∇sumabs2_reactant, ∇sumabs2_reactant_fd
-
-end
