@@ -1,14 +1,11 @@
-@testitem "Compiled Loss Functions: Helpers" tags = [:reactant] setup = [SharedTestSetup] begin
-    using Reactant, Lux, OneHotArrays
+include("../shared_testsetup.jl")
 
+using Reactant, Lux, OneHotArrays
+
+@testset "Compiled Loss Functions: Helpers" begin
     rng = StableRNG(123)
 
     @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
-        if mode == "amdgpu"
-            @warn "Skipping AMDGPU tests for Reactant"
-            continue
-        end
-
         if ongpu
             Reactant.set_default_backend("gpu")
         else
@@ -27,19 +24,10 @@
     end
 end
 
-@testitem "Compiled Loss Functions: Regression Loss" tags = [:reactant] setup = [
-    SharedTestSetup
-] begin
-    using Reactant, Lux, OneHotArrays
-
+@testset "Compiled Loss Functions: Regression Loss" begin
     rng = StableRNG(123)
 
     @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
-        if mode == "amdgpu"
-            @warn "Skipping AMDGPU tests for Reactant"
-            continue
-        end
-
         if ongpu
             Reactant.set_default_backend("gpu")
         else
@@ -47,19 +35,19 @@ end
         end
 
         y = [1.0, 1.0, 0.0, 0.0]
-        ŷ = [0.9, 0.1, 0.1, 0.9]
+        ŷ = [0.9, 0.1, 0.1, 0.9]
 
         y_ra = Reactant.to_rarray(y)
-        ŷ_ra = Reactant.to_rarray(ŷ)
+        ŷ_ra = Reactant.to_rarray(ŷ)
 
         @testset for loss in ("MSE", "MAE", "Huber")
             loss_mean = eval(Symbol(loss * "Loss"))()
             loss_sum = eval(Symbol(loss * "Loss"))(; agg=sum)
             loss_sum2 = eval(Symbol(loss * "Loss"))(; agg=(args...) -> sum(args...))
 
-            @test loss_mean(ŷ, y) ≈ @jit(loss_mean(ŷ_ra, y_ra))
-            @test loss_sum(ŷ, y) ≈ @jit(loss_sum(ŷ_ra, y_ra))
-            @test loss_sum2(ŷ, y) ≈ @jit(loss_sum2(ŷ_ra, y_ra))
+            @test loss_mean(ŷ, y) ≈ @jit(loss_mean(ŷ_ra, y_ra))
+            @test loss_sum(ŷ, y) ≈ @jit(loss_sum(ŷ_ra, y_ra))
+            @test loss_sum2(ŷ, y) ≈ @jit(loss_sum2(ŷ_ra, y_ra))
         end
 
         @testset "MSLE" begin
@@ -75,19 +63,10 @@ end
     end
 end
 
-@testitem "Compiled Loss Functions: Classification Loss" tags = [:reactant] setup = [
-    SharedTestSetup
-] begin
-    using Reactant, Lux, OneHotArrays
-
+@testset "Compiled Loss Functions: Classification Loss" begin
     rng = StableRNG(123)
 
     @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
-        if mode == "amdgpu"
-            @warn "Skipping AMDGPU tests for Reactant"
-            continue
-        end
-
         if ongpu
             Reactant.set_default_backend("gpu")
         else
@@ -108,12 +87,12 @@ end
             @test celoss_ls(ŷ, y) ≈ @jit(celoss_ls(ŷ_ra, y_ra))
 
             celoss_lp = CrossEntropyLoss(; logits=Val(true))
-            logit_celoss_lp = (ŷ, y) -> celoss_lp(log.(ŷ), y)
-            @test logit_celoss_lp(ŷ, y) ≈ @jit(logit_celoss_lp(ŷ_ra, y_ra))
+            logit_celoss_lp = (ŷ, y) -> celoss_lp(log.(ŷ), y)
+            @test logit_celoss_lp(ŷ, y) ≈ @jit(logit_celoss_lp(ŷ_ra, y_ra))
 
             celoss_lp_ls = CrossEntropyLoss(; logits=Val(true), label_smoothing=0.1)
-            logit_celoss_lp_ls = (ŷ, y) -> celoss_lp_ls(log.(ŷ), y)
-            @test logit_celoss_lp_ls(ŷ, y) ≈ @jit(logit_celoss_lp_ls(ŷ_ra, y_ra))
+            logit_celoss_lp_ls = (ŷ, y) -> celoss_lp_ls(log.(ŷ), y)
+            @test logit_celoss_lp_ls(ŷ, y) ≈ @jit(logit_celoss_lp_ls(ŷ_ra, y_ra))
         end
 
         @testset "Binary CrossEntropyLoss" begin
@@ -125,12 +104,12 @@ end
 
             # XXX: reenable once https://github.com/EnzymeAD/Enzyme-JAX/pull/1401 lands
             # bceloss_lp = BinaryCrossEntropyLoss(; logits=Val(true))
-            # logit_bceloss_lp = (ŷ, y) -> bceloss_lp(log.(ŷ), y)
-            # @test logit_bceloss_lp(ŷ, y) ≈ @jit(logit_bceloss_lp(ŷ_ra, y_ra))
+            # logit_bceloss_lp = (ŷ, y) -> bceloss_lp(log.(ŷ), y)
+            # @test logit_bceloss_lp(ŷ, y) ≈ @jit(logit_bceloss_lp(ŷ_ra, y_ra))
 
             # bceloss_lp_ls = BinaryCrossEntropyLoss(; logits=Val(true), label_smoothing=0.1)
-            # logit_bceloss_lp_ls = (ŷ, y) -> bceloss_lp_ls(log.(ŷ), y)
-            # @test logit_bceloss_lp_ls(ŷ, y) ≈ @jit(logit_bceloss_lp_ls(ŷ_ra, y_ra))
+            # logit_bceloss_lp_ls = (ŷ, y) -> bceloss_lp_ls(log.(ŷ), y)
+            # @test logit_bceloss_lp_ls(ŷ, y) ≈ @jit(logit_bceloss_lp_ls(ŷ_ra, y_ra))
         end
 
         @testset "BinaryFocalLoss" begin
@@ -167,19 +146,10 @@ end
     end
 end
 
-@testitem "Compiled Loss Functions: Other Losses" tags = [:reactant] setup = [
-    SharedTestSetup
-] begin
-    using Reactant, Lux, OneHotArrays
-
+@testset "Compiled Loss Functions: Other Losses" begin
     rng = StableRNG(123)
 
     @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
-        if mode == "amdgpu"
-            @warn "Skipping AMDGPU tests for Reactant"
-            continue
-        end
-
         if ongpu
             Reactant.set_default_backend("gpu")
         else

@@ -1,12 +1,10 @@
-@testitem "Reactant: Training API" tags = [:reactant] setup = [SharedTestSetup] begin
-    using Reactant, Optimisers
+include("../shared_testsetup.jl")
 
+using Reactant, Optimisers
+using Lux, Random, Test, Statistics, ADTypes, StableRNGs, Enzyme
+
+@testset "Reactant: Training API" begin
     @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
-        if mode == "amdgpu"
-            @warn "Skipping AMDGPU tests for Reactant"
-            continue
-        end
-
         if ongpu
             Reactant.set_default_backend("gpu")
         else
@@ -30,8 +28,8 @@
 
             inference_loss_fn =
                 (xᵢ, yᵢ, mode, ps, st) -> begin
-                    ŷᵢ, _ = model(xᵢ, ps, Lux.testmode(st))
-                    return MSELoss()(ŷᵢ, yᵢ)
+                    ŷᵢ, _ = model(xᵢ, ps, Lux.testmode(st))
+                    return MSELoss()(ŷᵢ, yᵢ)
                 end
             inference_loss_fn_compiled = @compile inference_loss_fn(
                 x_ra, y_ra, model, ps, st
@@ -80,11 +78,7 @@
     end
 end
 
-@testitem "Reactant Optimisers Patch: AccumGrad" tags = [:reactant] setup = [
-    SharedTestSetup
-] begin
-    using Lux, Random, Reactant, Optimisers
-
+@testset "Reactant Optimisers Patch: AccumGrad" begin
     dev = reactant_device(; force=true)
 
     model = Chain(
@@ -103,9 +97,7 @@ end
     @test length(findall("stablehlo.if", hlo)) == (2 + 1 + 2) * 2
 end
 
-@testitem "Reactant Optimisers Patch: ClipNorm" tags = [:reactant] setup = [SharedTestSetup] begin
-    using Lux, Random, Reactant, Optimisers
-
+@testset "Reactant Optimisers Patch: ClipNorm" begin
     dev = reactant_device(; force=true)
 
     model = Chain(
@@ -130,9 +122,7 @@ end
     @test loss isa Number
 end
 
-@testitem "Reactant Distributed: Training API" tags = [:reactant] setup = [SharedTestSetup] begin
-    using Lux, Random, Reactant, Optimisers
-
+@testset "Reactant Distributed: Training API" begin
     ndevices = length(Reactant.devices())
 
     if ndevices ≥ 8 && Reactant.XLA.runtime() isa Val{:IFRT}
@@ -173,11 +163,7 @@ end
     end
 end
 
-@testitem "Reactant.Compiler.Thunk in TrainState" tags = [:reactant] setup = [
-    SharedTestSetup
-] begin
-    using Lux, Random, Reactant, Optimisers
-
+@testset "Reactant.Compiler.Thunk in TrainState" begin
     rdev = reactant_device(; force=true)
 
     model = Dense(10, 10)
@@ -189,9 +175,7 @@ end
     @test_throws ArgumentError Training.TrainState(model_compiled, ps, st, Adam())
 end
 
-@testitem "Reactant Annotation Gradients" tags = [:reactant] setup = [SharedTestSetup] begin
-    using Random, Lux, Reactant, Enzyme, Optimisers, Statistics, ADTypes, StableRNGs
-
+@testset "Reactant Annotation Gradients" begin
     dev = reactant_device(; force=true)
     rng = StableRNG(1234)
     x, y = dev((randn(rng, Float32, 3, 2), randn(rng, Float32, 1, 2)))

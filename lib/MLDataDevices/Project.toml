@@ -1,7 +1,7 @@
 name = "MLDataDevices"
 uuid = "7e8f7934-dd98-4c1a-8fe8-92b47a384d40"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "1.17.4"
+version = "1.17.5"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
@@ -53,7 +53,7 @@ oneAPIExt = ["GPUArrays", "oneAPI"]
 OpenCLExt = ["GPUArrays", "OpenCL"]
 
 [compat]
-AMDGPU = "1, 2"
+AMDGPU = "2.2"
 Adapt = "4.4"
 CUDA = "5.8"
 ChainRules = "1.51"

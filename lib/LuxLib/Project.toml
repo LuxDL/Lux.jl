@@ -1,6 +1,6 @@
 name = "LuxLib"
 uuid = "82251201-b29d-42c6-8e01-566dec8acb11"
-version = "1.15.3"
+version = "1.15.4"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
 
 [deps]
@@ -68,7 +68,7 @@ TrackerExt = "Tracker"
 cuDNNExt = ["CUDA", "cuDNN"]
 
 [compat]
-AMDGPU = "0.9.6, 1, 2"
+AMDGPU = "2.2"
 AppleAccelerate = "0.4, 0.5"
 ArrayInterface = "7.17.1"
 BLISBLAS = "0.1, 0.2"
@@ -88,7 +88,7 @@ LuxCore = "1.5"
 MKL = "0.7, 0.8, 0.9"
 MLDataDevices = "1.17.1"
 Markdown = "1.10"
-NNlib = "0.9.27"
+NNlib = "0.9.33"
 Octavian = "0.3.28"
 OneHotArrays = "0.2.5"
 Polyester = "0.7.18"
