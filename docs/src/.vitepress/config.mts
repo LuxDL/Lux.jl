@@ -2,9 +2,10 @@ import { defineConfig } from "vitepress";
 import { tabsMarkdownPlugin } from "vitepress-plugin-tabs";
 import footnote from "markdown-it-footnote";
 import { transformerMetaWordHighlight } from "@shikijs/transformers";
-import { mathjaxPlugin } from './mathjax-plugin'
+import { mathjaxPlugin } from "./mathjax-plugin";
+import path from "path";
 
-const mathjax = mathjaxPlugin()
+const mathjax = mathjaxPlugin();
 
 const baseTemp = {
   base: 'REPLACE_ME_DOCUMENTER_VITEPRESS', // TODO: replace this in makedocs!
@@ -19,9 +20,10 @@ export default defineConfig({
   outDir: 'REPLACE_ME_DOCUMENTER_VITEPRESS', // This is required for MarkdownVitepress to work correctly...
 
   markdown: {
-    math: true,
     config(md) {
-      md.use(tabsMarkdownPlugin), mathjax.markdownConfig(md), md.use(footnote);
+      md.use(tabsMarkdownPlugin);
+      mathjax.markdownConfig(md);
+      md.use(footnote);
     },
     theme: {
       light: "github-light",
@@ -31,6 +33,17 @@ export default defineConfig({
   },
 
   vite: {
+    plugins: [mathjax.vitePlugin],
+    define: {
+      __DEPLOY_ABSPATH__: JSON.stringify(
+        "REPLACE_ME_DOCUMENTER_VITEPRESS_DEPLOY_ABSPATH",
+      ),
+    },
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "../components"),
+      },
+    },
     build: {
       assetsInlineLimit: 0, // so we can tell whether we have created inlined images or not, we don't let vite inline them
     },
@@ -48,9 +61,6 @@ export default defineConfig({
         "@nolebase/ui",
       ],
     },
-    plugins: [
-      mathjax.vitePlugin,
-    ],
   },
 
   head: [
@@ -267,7 +277,7 @@ export default defineConfig({
               {
                 text: "ResNet20 on CIFAR-10",
                 link: "/tutorials/intermediate/11_CIFAR10_resnet20",
-              }
+              },
             ],
           },
           {
@@ -289,7 +299,7 @@ export default defineConfig({
               {
                 text: "Text Generation with Qwen-3",
                 link: "/tutorials/advanced/4_Qwen3",
-              }
+              },
             ],
           },
           {
@@ -361,7 +371,7 @@ export default defineConfig({
               {
                 text: "Profiling Lux Training Loops",
                 link: "/manual/profiling_training_loop",
-              }
+              },
             ],
           },
           {
@@ -391,7 +401,7 @@ export default defineConfig({
               {
                 text: "Maintaining both Lux and Flux Interfaces",
                 link: "/manual/flux_lux_interop",
-              }
+              },
             ],
           },
           {
