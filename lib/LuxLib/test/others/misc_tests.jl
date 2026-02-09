@@ -1,12 +1,18 @@
-@testitem "internal_operation_mode: Wrapped Arrays" tags = [:misc] setup = [SharedTestSetup] begin
+using Test, LuxLib
+using LuxLib.Impl: matmuladd
+using StaticArrays, JLArrays
+
+include("../shared_testsetup.jl")
+
+@testset "internal_operation_mode" begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         x = aType(rand(Float32, 4, 3))
         retval = ongpu ? LuxLib.GPUBroadcastOp : LuxLib.LoopedArrayOp
         @test LuxLib.internal_operation_mode(x) isa retval
     end
+end
 
-    using StaticArrays, JLArrays
-
+@testset "StaticArrays" begin
     x = JLArray(rand(Float32, 4, 3))
     @test LuxLib.internal_operation_mode(x) isa LuxLib.GenericBroadcastOp
 
@@ -17,10 +23,7 @@
     @test LuxLib.internal_operation_mode(x) isa LuxLib.GenericBroadcastOp
 end
 
-@testitem "Matmul: StaticArrays" tags = [:misc] setup = [SharedTestSetup] begin
-    using LuxLib.Impl: matmuladd
-    using StaticArrays
-
+@testset "Matmul: StaticArrays" begin
     A = rand(2, 2)
     bias = rand(2)
 

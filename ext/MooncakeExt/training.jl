@@ -3,13 +3,7 @@ function Lux.Training.compute_gradients_impl(
 ) where {F}
     config = get_config(ad)
     pullback_cache = prepare_pullback_cache(
-        objective_function,
-        ts.model,
-        ts.parameters,
-        ts.states,
-        data;
-        debug_mode=config.debug_mode,
-        silence_debug_messages=config.silence_debug_messages,
+        objective_function, ts.model, ts.parameters, ts.states, data; config
     )
     # evaluate once to get the correct types
     loss, stₙ, stats = objective_function(ts.model, ts.parameters, ts.states, data)

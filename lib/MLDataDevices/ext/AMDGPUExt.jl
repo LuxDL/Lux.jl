@@ -82,37 +82,24 @@ function amdgpu_array_adapt(::Type{T}, x) where {T}
     return Internal.array_adapt(AMDGPU.roc, ROCArray, T, x)
 end
 
-function Adapt.adapt_storage(::AMDGPUDevice{D,Missing}, x::AbstractArray) where {D}
-    MLDataDevices.get_device_type(x) <: AMDGPUDevice && return x
-    return amdgpu_array_adapt(Missing, x)
-end
-
-function Adapt.adapt_storage(::AMDGPUDevice{D,Nothing}, x::AbstractArray) where {D}
-    MLDataDevices.get_device_type(x) <: AMDGPUDevice && return x
-    return amdgpu_array_adapt(Nothing, x)
-end
-
-function Adapt.adapt_storage(
-    ::AMDGPUDevice{D,T}, x::AbstractArray{ET}
-) where {D,T<:AbstractFloat,ET<:Number}
-    MLDataDevices.get_device_type(x) <: AMDGPUDevice && ET == T && return x
-    return amdgpu_array_adapt(T, x)
-end
-
 function Adapt.adapt_storage(to::AMDGPUDevice{D,E}, x::AbstractArray) where {D,E}
     old_dev = AMDGPU.device()  # remember the current device
     dev = MLDataDevices.get_device(x)
     if !(dev isa AMDGPUDevice)
-        AMDGPU.device!(to.device)
+        to.device !== nothing && AMDGPU.device!(to.device)
         x_new = amdgpu_array_adapt(to, x)
-        AMDGPU.device!(old_dev)
+        to.device !== nothing && AMDGPU.device!(old_dev)
         return x_new
-    elseif AMDGPU.device_id(dev.device) == AMDGPU.device_id(to.device)
+    elseif (
+        dev.device === nothing ||
+        to.device === nothing ||
+        AMDGPU.device_id(dev.device) == AMDGPU.device_id(to.device)
+    )
         return x
     else
-        AMDGPU.device!(to.device)
+        to.device !== nothing && AMDGPU.device!(to.device)
         x_new = copy(x)
-        AMDGPU.device!(old_dev)
+        to.device !== nothing && AMDGPU.device!(old_dev)
         return x_new
     end
 end

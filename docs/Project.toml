@@ -33,7 +33,7 @@ WeightInitializers = "d49dbf32-c5c2-4618-8acc-27bb2598ef2d"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [sources]
-Lux = {path = "../"}
+Lux = {path = ".."}
 LuxCore = {path = "../lib/LuxCore"}
 LuxLib = {path = "../lib/LuxLib"}
 LuxTestUtils = {path = "../lib/LuxTestUtils"}
@@ -68,7 +68,7 @@ NPZ = "0.4.3"
 Optimisers = "0.4.6"
 Printf = "1.10"
 Random = "1.10"
-Reactant = "0.2.173"
+Reactant = "0.2.203"
 StableRNGs = "1"
 StaticArrays = "1"
 WeightInitializers = "1.3"

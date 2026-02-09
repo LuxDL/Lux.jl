@@ -1,15 +1,20 @@
-@testitem "Bias Activation" tags = [:misc] setup = [SharedTestSetup] begin
+include("../shared_testsetup.jl")
+
+using LuxLib, Test, StableRNGs, NNlib, LuxTestUtils, Zygote
+using ReverseDiff, Tracker
+
+bias_act_loss1(act, x, b) = sum(abs2, act.(x .+ LuxLib.Impl.reshape_bias(x, b)))
+bias_act_loss2(act, x, b) = sum(abs2, bias_activation(act, x, b))
+bias_act_loss3(act, x, b) = sum(abs2, bias_activation!!(act, copy(x), b))
+
+struct __Fix1{F,A}
+    f::F
+    act::A
+end
+(f::__Fix1)(x, b) = f.f(f.act, x, b)
+
+@testset "Bias Activation" begin
     rng = StableRNG(1234)
-
-    bias_act_loss1(act, x, b) = sum(abs2, act.(x .+ LuxLib.Impl.reshape_bias(x, b)))
-    bias_act_loss2(act, x, b) = sum(abs2, bias_activation(act, x, b))
-    bias_act_loss3(act, x, b) = sum(abs2, bias_activation!!(act, copy(x), b))
-
-    struct __Fix1{F,A}
-        f::F
-        act::A
-    end
-    (f::__Fix1)(x, b) = f.f(f.act, x, b)
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "$act, $T, $sz" for act in [
@@ -79,21 +84,21 @@
                 soft_fail=fp16 ? [AutoFiniteDiff()] : []
             )
 
-            ∂x1, ∂b1 = Zygote.gradient(__Fix1(bias_act_loss1, act), x, b)
-            ∂x2, ∂b2 = Zygote.gradient(__Fix1(bias_act_loss2, act), x, b)
-            ∂x3, ∂b3 = Zygote.gradient(__Fix1(bias_act_loss3, act), x, b)
+            if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
+                ∂x1, ∂b1 = Zygote.gradient(__Fix1(bias_act_loss1, act), x, b)
+                ∂x2, ∂b2 = Zygote.gradient(__Fix1(bias_act_loss2, act), x, b)
+                ∂x3, ∂b3 = Zygote.gradient(__Fix1(bias_act_loss3, act), x, b)
 
-            @test ∂x1 ≈ ∂x2 atol = atol rtol = rtol
-            @test ∂x1 ≈ ∂x3 atol = atol rtol = rtol
-            @test ∂b1 ≈ ∂b2 atol = atol rtol = rtol
-            @test ∂b1 ≈ ∂b3 atol = atol rtol = rtol
+                @test ∂x1 ≈ ∂x2 atol = atol rtol = rtol
+                @test ∂x1 ≈ ∂x3 atol = atol rtol = rtol
+                @test ∂b1 ≈ ∂b2 atol = atol rtol = rtol
+                @test ∂b1 ≈ ∂b3 atol = atol rtol = rtol
+            end
         end
     end
 end
 
-@testitem "Bias Activation (ReverseDiff)" tags = [:misc] setup = [SharedTestSetup] begin
-    using ReverseDiff, Tracker
-
+@testset "Bias Activation (ReverseDiff)" begin
     x = rand(Float32, 3, 4)
     b = rand(Float32, 3)
     act = tanh
@@ -111,7 +116,7 @@ end
     @test z isa Tracker.TrackedArray
 end
 
-@testitem "Bias Activation: Zero-sized Arrays" tags = [:misc] setup = [SharedTestSetup] begin
+@testset "Bias Activation: Zero-sized Arrays" begin
     @testset "$mode" for (mode, aType, ongpu) in MODES
         x = aType(rand(Float32, 4, 3, 2, 0))
         b = aType(rand(Float32, 2))

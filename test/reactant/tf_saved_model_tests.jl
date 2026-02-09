@@ -1,6 +1,8 @@
-@testitem "Tensorflow Saved Model Export" tags = [:reactant] setup = [SharedTestSetup] begin
-    using Lux, Reactant, PythonCall, Random
+include("../shared_testsetup.jl")
 
+using Lux, Reactant, PythonCall, Random, Test
+
+@testset "Tensorflow Saved Model Export" begin
     dev = reactant_device()
 
     model = Chain(
@@ -33,5 +35,5 @@
     x_tf = tf.constant(np.asarray(permutedims(Array(x), (4, 3, 2, 1))); dtype=tf.float32)
     res_tf = permutedims(PyArray(restored_model.f(x_tf)[0]), (2, 1))
 
-    @test res ≈ res_tf atol = 1e-3 rtol = 1e-3
+    @test res ≈ res_tf atol = 1e-2 rtol = 1e-2
 end

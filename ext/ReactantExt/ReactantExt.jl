@@ -1,7 +1,7 @@
 module ReactantExt
 
 using ADTypes: ADTypes, AutoEnzyme
-using Enzyme: Enzyme, Active, Const, Duplicated
+using Enzyme: Enzyme, Const, Duplicated
 using EnzymeCore: EnzymeCore
 using LinearAlgebra: LinearAlgebra
 using Functors: Functors
@@ -10,7 +10,7 @@ using Random: Random
 using Optimisers: Optimisers
 using Reactant:
     Reactant, Profiler, AnyTracedRArray, TracedRArray, TracedRNumber, PrecisionConfig
-using Reactant: @compile, @code_hlo, @jit, @opcall
+using Reactant: @compile, @opcall
 using ReactantCore: ReactantCore, @trace
 using Setfield: @set!
 using Static: True, False
@@ -20,7 +20,7 @@ using Lux.Training: TrainingBackendCache, ReactantBackend
 using Lux: get_time_dimension, time_dimension_size, init_recurrent_state
 using LuxCore: LuxCore, AbstractLuxLayer
 using LuxLib: LuxLib
-using MLDataDevices: MLDataDevices, ReactantDevice, reactant_device, get_device
+using MLDataDevices: MLDataDevices, ReactantDevice, get_device
 
 Lux.is_extension_loaded(::Val{:Reactant}) = true
 
@@ -52,13 +52,24 @@ function with_default_precision_config(f::F, ps) where {F}
     )
 end
 
+function get_compile_options(backend::ReactantBackend)
+    (; compile_options, sync) = backend
+    @assert compile_options isa Union{Nothing,Reactant.CompileOptions}
+    if compile_options === nothing
+        sync === missing && return Reactant.CompileOptions()
+        return Reactant.CompileOptions(; sync)
+    end
+    if sync !== missing
+        @set! compile_options.sync = sync
+    end
+    return compile_options
+end
+
 include("patches.jl")
 include("training.jl")
 include("layers.jl")
 include("tracing.jl")
 include("saved_model.jl")
 include("batched_jacobian.jl")
-
-include("precompile_workloads.jl")
 
 end

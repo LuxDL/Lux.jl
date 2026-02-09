@@ -1,4 +1,5 @@
-@testsetup module GroupNormSetup
+include("../shared_testsetup.jl")
+
 using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, Static, StableRNGs
 using LuxTestUtils: check_approx
 
@@ -60,16 +61,18 @@ function run_groupnorm_testing(T, sz, groups, affine, act, aType, mode, ongpu)
     @test y ≈ y_simple atol = atol rtol = rtol
 
     # Check the rrules
-    ∂x, ∂scale, ∂bias = Zygote.gradient(sum ∘ _f, x, scale, bias)
-    ∂x_simple, ∂scale_simple, ∂bias_simple = Zygote.gradient(sum ∘ _f2, x, scale, bias)
-    if length(sz) == 5 && !ongpu
-        @test_softfail check_approx(∂x, ∂x_simple; atol, rtol)
-    else
-        @test ∂x ≈ ∂x_simple atol = atol rtol = rtol
-    end
-    if affine
-        @test ∂scale ≈ ∂scale_simple atol = atol rtol = rtol
-        @test ∂bias ≈ ∂bias_simple atol = atol rtol = rtol
+    if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
+        ∂x, ∂scale, ∂bias = Zygote.gradient(sum ∘ _f, x, scale, bias)
+        ∂x_simple, ∂scale_simple, ∂bias_simple = Zygote.gradient(sum ∘ _f2, x, scale, bias)
+        if length(sz) == 5 && !ongpu
+            @test_softfail check_approx(∂x, ∂x_simple; atol, rtol)
+        else
+            @test ∂x ≈ ∂x_simple atol = atol rtol = rtol
+        end
+        if affine
+            @test ∂scale ≈ ∂scale_simple atol = atol rtol = rtol
+            @test ∂bias ≈ ∂bias_simple atol = atol rtol = rtol
+        end
     end
 
     @test @inferred(groupnorm(x, scale, bias, groups, act, epsilon)) isa Any
@@ -94,48 +97,17 @@ end
 
 const ALL_TEST_CONFIGS = Iterators.product(
     [Float32, Float64],
-    (
-        (6, 2),
-        # (4, 6, 2),
-        # (8, 8, 8, 6, 2),
-        # (3, 16, 16, 12, 2),
-        (4, 4, 6, 2),
-        (2, 2, 6, 2),
-        # (3, 3, 12, 4),
-    ),
+    ((6, 2), (4, 4, 6, 2), (2, 2, 6, 2)),
     (2, 3),
     (true, false),
     (identity, sigmoid_fast, anonact),
 )
 
-const TEST_BLOCKS = collect(
-    Iterators.partition(ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 2))
-)
-
-export setup_groupnorm, ALL_TEST_CONFIGS, TEST_BLOCKS, run_groupnorm_testing
-
-end
-
-@testitem "Group Norm: Group 1" tags = [:normalization] setup = [
-    SharedTestSetup, GroupNormSetup
-] begin
+@testset "Group Norm" begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $groups, $affine, $act" for (
             T, sz, groups, affine, act
-        ) in TEST_BLOCKS[1]
-            !fp64 && T == Float64 && continue
-            run_groupnorm_testing(T, sz, groups, affine, act, aType, mode, ongpu)
-        end
-    end
-end
-
-@testitem "Group Norm: Group 2" tags = [:normalization] setup = [
-    SharedTestSetup, GroupNormSetup
-] begin
-    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $T, size $sz, $groups, $affine, $act" for (
-            T, sz, groups, affine, act
-        ) in TEST_BLOCKS[2]
+        ) in ALL_TEST_CONFIGS
             !fp64 && T == Float64 && continue
             run_groupnorm_testing(T, sz, groups, affine, act, aType, mode, ongpu)
         end

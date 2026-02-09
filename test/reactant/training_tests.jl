@@ -1,12 +1,10 @@
-@testitem "Reactant: Training API" tags = [:reactant] setup = [SharedTestSetup] begin
-    using Reactant, Optimisers
+include("../shared_testsetup.jl")
 
+using Reactant, Optimisers
+using Lux, Random, Test, Statistics, ADTypes, StableRNGs, Enzyme
+
+@testset "Reactant: Training API" begin
     @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
-        if mode == "amdgpu"
-            @warn "Skipping AMDGPU tests for Reactant"
-            continue
-        end
-
         if ongpu
             Reactant.set_default_backend("gpu")
         else
@@ -30,8 +28,8 @@
 
             inference_loss_fn =
                 (xᵢ, yᵢ, mode, ps, st) -> begin
-                    ŷᵢ, _ = model(xᵢ, ps, Lux.testmode(st))
-                    return MSELoss()(ŷᵢ, yᵢ)
+                    ŷᵢ, _ = model(xᵢ, ps, Lux.testmode(st))
+                    return MSELoss()(ŷᵢ, yᵢ)
                 end
             inference_loss_fn_compiled = @compile inference_loss_fn(
                 x_ra, y_ra, model, ps, st
@@ -47,24 +45,22 @@
             end
 
             @testset for opt in (
-                Descent(0.01f0),
-                Momentum(0.01f0),
-                Adam(0.01f0),
-                AdamW(0.01f0),
-                OptimiserChain(AccumGrad(5), Adam(0.01f0)),
-            )
+                    Descent(0.01f0),
+                    Momentum(0.01f0),
+                    Adam(0.01f0),
+                    AdamW(0.01f0),
+                    OptimiserChain(AccumGrad(5), Adam(0.01f0)),
+                ),
+                ad in (AutoEnzyme(), AutoReactant())
+
                 ps, st = xdev(Lux.setup(StableRNG(1234), model))
                 train_state = Training.TrainState(model, ps, st, opt)
 
                 for epoch in 1:100, (xᵢ, yᵢ) in dataloader
                     grads, loss, stats, train_state = if version === :iip
-                        Training.single_train_step!(
-                            AutoEnzyme(), MSELoss(), (xᵢ, yᵢ), train_state
-                        )
+                        Training.single_train_step!(ad, MSELoss(), (xᵢ, yᵢ), train_state)
                     elseif version === :oop
-                        Training.single_train_step(
-                            AutoEnzyme(), MSELoss(), (xᵢ, yᵢ), train_state
-                        )
+                        Training.single_train_step(ad, MSELoss(), (xᵢ, yᵢ), train_state)
                     else
                         error("Invalid version: $(version)")
                     end
@@ -82,11 +78,7 @@
     end
 end
 
-@testitem "Reactant Optimisers Patch: AccumGrad" tags = [:reactant] setup = [
-    SharedTestSetup
-] begin
-    using Lux, Random, Reactant, Optimisers
-
+@testset "Reactant Optimisers Patch: AccumGrad" begin
     dev = reactant_device(; force=true)
 
     model = Chain(
@@ -105,9 +97,7 @@ end
     @test length(findall("stablehlo.if", hlo)) == (2 + 1 + 2) * 2
 end
 
-@testitem "Reactant Optimisers Patch: ClipNorm" tags = [:reactant] setup = [SharedTestSetup] begin
-    using Lux, Random, Reactant, Optimisers
-
+@testset "Reactant Optimisers Patch: ClipNorm" begin
     dev = reactant_device(; force=true)
 
     model = Chain(
@@ -125,11 +115,14 @@ end
         AutoEnzyme(), MSELoss(), (x, x), train_state; return_gradients=Val(false)
     )
     @test loss isa Number
+
+    _, loss, stats, ts = Training.single_train_step(
+        AutoReactant(), MSELoss(), (x, x), train_state; return_gradients=Val(false)
+    )
+    @test loss isa Number
 end
 
-@testitem "Reactant Distributed: Training API" tags = [:reactant] setup = [SharedTestSetup] begin
-    using Lux, Random, Reactant, Optimisers
-
+@testset "Reactant Distributed: Training API" begin
     ndevices = length(Reactant.devices())
 
     if ndevices ≥ 8 && Reactant.XLA.runtime() isa Val{:IFRT}
@@ -152,27 +145,25 @@ end
         x = rand(Float32, 4, 128) |> batch_device
         y = rand(Float32, 4, 128) |> batch_device
 
-        train_state = Training.TrainState(model, ps, st, Adam(0.001f0))
+        @testset for ad in (AutoEnzyme(), AutoReactant())
+            train_state = Training.TrainState(model, ps, st, Adam(0.001f0))
 
-        _, loss, _, train_state = Training.single_train_step(
-            AutoEnzyme(), MSELoss(), (x, y), train_state
-        )
-        @test loss isa Reactant.ConcreteRNumber
-        @test length(Reactant.XLA.devices(Reactant.XLA.sharding(loss.data))) == 8
+            _, loss, _, train_state = Training.single_train_step(
+                ad, MSELoss(), (x, y), train_state
+            )
+            @test loss isa Reactant.ConcreteRNumber
+            @test length(Reactant.XLA.devices(Reactant.XLA.sharding(loss.data))) == 8
 
-        _, loss, _, train_state = Training.single_train_step(
-            AutoEnzyme(), MSELoss(), (x, y), train_state
-        )
-        @test loss isa Reactant.ConcreteRNumber
-        @test length(Reactant.XLA.devices(Reactant.XLA.sharding(loss.data))) == 8
+            _, loss, _, train_state = Training.single_train_step(
+                ad, MSELoss(), (x, y), train_state
+            )
+            @test loss isa Reactant.ConcreteRNumber
+            @test length(Reactant.XLA.devices(Reactant.XLA.sharding(loss.data))) == 8
+        end
     end
 end
 
-@testitem "Reactant.Compiler.Thunk in TrainState" tags = [:reactant] setup = [
-    SharedTestSetup
-] begin
-    using Lux, Random, Reactant, Optimisers
-
+@testset "Reactant.Compiler.Thunk in TrainState" begin
     rdev = reactant_device(; force=true)
 
     model = Dense(10, 10)
@@ -182,4 +173,30 @@ end
     model_compiled = @compile model(x, ps, st)
 
     @test_throws ArgumentError Training.TrainState(model_compiled, ps, st, Adam())
+end
+
+@testset "Reactant Annotation Gradients" begin
+    dev = reactant_device(; force=true)
+    rng = StableRNG(1234)
+    x, y = dev((randn(rng, Float32, 3, 2), randn(rng, Float32, 1, 2)))
+
+    f_with_colon(x) = x .- mean(x; dims=:)
+    f_with_range(x) = x .- mean(x; dims=1:2)  #1:2 instead of Colon() 
+
+    model = Chain(f_with_colon, Dense(3 => 1))
+    ps, st = dev(Lux.setup(rng, model))
+
+    train_state = Training.TrainState(model, ps, st, Adam())
+    grads1 = Training.compute_gradients(AutoReactant(), MSELoss(), (x, y), train_state)[1]
+
+    model2 = Chain(f_with_range, Dense(3 => 1))
+    train_state2 = Training.TrainState(model2, ps, st, Adam())
+    grads2 = Training.compute_gradients(AutoReactant(), MSELoss(), (x, y), train_state2)[1]
+
+    @test grads1.layer_1 isa NamedTuple{}
+    @test grads2.layer_1 isa NamedTuple{}
+    @test grads1.layer_2.weight ≈ grads2.layer_2.weight
+    @test grads1.layer_2.bias ≈ grads2.layer_2.bias
+    @test !all(iszero, Array(grads1.layer_2.weight))
+    @test !all(iszero, Array(grads1.layer_2.bias))
 end

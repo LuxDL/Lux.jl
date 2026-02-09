@@ -1,9 +1,10 @@
 module LuxTestUtils
 
+using Adapt: Adapt, adapt
 using ArrayInterface: ArrayInterface
 using ComponentArrays: ComponentArray, getdata, getaxes
 using DispatchDoctor: allow_unstable
-using Functors: Functors
+using Functors: Functors, fmap
 using MLDataDevices: cpu_device, gpu_device, get_device, get_device_type, AbstractGPUDevice
 using Optimisers: Optimisers
 using Pkg: PackageSpec
@@ -34,25 +35,41 @@ using Mooncake
 const CRC = ChainRulesCore
 const FD = FiniteDiff
 
+const JET_TESTING_ENABLED = Ref{Bool}(false)
+const ENZYME_TESTING_ENABLED = Ref{Bool}(false)
+const ZYGOTE_TESTING_ENABLED = Ref{Bool}(false)
+
 # Check if JET will work
 try
     using JET: JET, JETTestFailure, get_reports, report_call, report_opt
-    # XXX: In 1.11, JET leads to stack overflows
-    global JET_TESTING_ENABLED = v"1.10-" ≤ VERSION < v"1.11-"
+    JET_TESTING_ENABLED[] = true
 catch err
     @error "`JET.jl` did not successfully precompile on $(VERSION). All `@jet` tests will \
             be skipped." maxlog = 1 err = err
-    global JET_TESTING_ENABLED = false
+    JET_TESTING_ENABLED[] = false
 end
 
-# Check if Enzyme will work
-try
-    using Enzyme: Enzyme
-    __ftest(x) = x
-    Enzyme.autodiff(Enzyme.Reverse, __ftest, Enzyme.Active, Enzyme.Active(2.0))
-    global ENZYME_TESTING_ENABLED = Sys.islinux()
-catch err
-    global ENZYME_TESTING_ENABLED = false
+# Check if Enzyme will work (only on non-prerelease versions)
+@static if isempty(VERSION.prerelease)
+    try
+        using Enzyme: Enzyme
+        Enzyme.gradient(Enzyme.Reverse, Base.Fix1(sum, abs2), ones(Float32, 10))
+        ENZYME_TESTING_ENABLED[] = Sys.islinux()
+    catch err
+        @error "`Enzyme.jl` did not successfully differentiate a simple function or \
+                failed to load on $(VERSION). All Enzyme tests will be \
+                skipped." maxlog = 1 err = err
+        ENZYME_TESTING_ENABLED[] = false
+    end
+end
+
+function __init__()
+    ZYGOTE_TESTING_ENABLED[] = VERSION < v"1.12-"
+
+    if JET_TESTING_ENABLED[]
+        # JET doesn't work nicely on 1.11
+        JET_TESTING_ENABLED[] = VERSION < v"1.11-" || VERSION ≥ v"1.12-"
+    end
 end
 
 include("package_install.jl")

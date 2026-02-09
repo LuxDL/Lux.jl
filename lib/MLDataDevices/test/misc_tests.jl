@@ -56,16 +56,18 @@ end
 
     gdev = gpu_device()
     if !(gdev isa MetalDevice)  # On intel devices causes problems
-        x = randn(10)
-        ∂dev, ∂x = Zygote.gradient(sum ∘ Adapt.adapt, gdev, x)
-        @test ∂dev === nothing
-        @test ∂x ≈ ones(10)
+        if VERSION < v"1.12-"
+            x = randn(10)
+            ∂dev, ∂x = Zygote.gradient(sum ∘ Adapt.adapt, gdev, x)
+            @test ∂dev === nothing
+            @test ∂x ≈ ones(10)
 
-        x = gdev(randn(10))
-        ∂dev, ∂x = Zygote.gradient(sum ∘ Adapt.adapt, cpu_device(), x)
-        @test ∂dev === nothing
-        @test ∂x ≈ gdev(ones(10))
-        @test get_device(∂x) isa parameterless_type(typeof(gdev))
+            x = gdev(randn(10))
+            ∂dev, ∂x = Zygote.gradient(sum ∘ Adapt.adapt, cpu_device(), x)
+            @test ∂dev === nothing
+            @test ∂x ≈ gdev(ones(10))
+            @test get_device(∂x) isa parameterless_type(typeof(gdev))
+        end
     end
 end
 
@@ -75,7 +77,10 @@ end
 
     @test cdev(sprand(10, 10, 0.9)) isa SparseMatrixCSC
     @test cdev(1:10) isa AbstractRange
-    @test cdev(Zygote.OneElement(2.0f0, (2, 3), (1:3, 1:4))) isa Zygote.OneElement
+
+    if VERSION < v"1.12-"
+        @test cdev(Zygote.OneElement(2.0f0, (2, 3), (1:3, 1:4))) isa Zygote.OneElement
+    end
 end
 
 @testset "RecursiveArrayTools" begin
@@ -132,7 +137,7 @@ end
         "Deleted the local preference for `gpu_backend`. Restart Julia to use the new backend.",
     ) gpu_backend!()
 
-    for backend in (
+    @testset for backend in (
         :CUDA,
         :AMDGPU,
         :oneAPI,
@@ -230,31 +235,37 @@ end
 end
 
 @testset "Zygote.gradient(wrapped arrays)" begin
-    using Zygote
+    if VERSION < v"1.12-"
+        using Zygote
 
-    x = rand(4, 4)
-    cdev = cpu_device()
+        x = rand(4, 4)
+        cdev = cpu_device()
 
-    @test get_device(only(Zygote.gradient(x -> sum(abs2, cdev(x)), x'))) isa CPUDevice
+        @test get_device(only(Zygote.gradient(x -> sum(abs2, cdev(x)), x'))) isa CPUDevice
 
-    gdev = gpu_device()
+        gdev = gpu_device()
 
-    @test get_device(only(Zygote.gradient(x -> sum(abs2, gdev(x)), x'))) isa CPUDevice
+        @test get_device(only(Zygote.gradient(x -> sum(abs2, gdev(x)), x'))) isa CPUDevice
+    end
 end
 
 @testset "Zygote and ChainRules OneElement #1016" begin
-    using Zygote
+    if VERSION < v"1.12-"
+        using Zygote
 
-    cdev = cpu_device()
-    gdev = gpu_device()
+        cdev = cpu_device()
+        gdev = gpu_device()
 
-    g = only(Zygote.gradient(x -> cdev(2 .* gdev(x))[1], Float32[1, 2, 3]))
-    @test g isa Vector{Float32}
+        g = only(Zygote.gradient(x -> cdev(2 .* gdev(x))[1], Float32[1, 2, 3]))
+        @test g isa Vector{Float32}
 
-    g = only(
-        Zygote.gradient(x -> cdev(gdev(x) * gdev(x))[1, 2], Float32[1 2 3; 4 5 6; 7 8 9])
-    )
-    @test g isa Matrix{Float32}
+        g = only(
+            Zygote.gradient(
+                x -> cdev(gdev(x) * gdev(x))[1, 2], Float32[1 2 3; 4 5 6; 7 8 9]
+            ),
+        )
+        @test g isa Matrix{Float32}
+    end
 end
 
 @testset "OneHotArrays" begin

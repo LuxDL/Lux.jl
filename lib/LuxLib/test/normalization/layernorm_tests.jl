@@ -1,5 +1,6 @@
-@testsetup module LayerNormSetup
-using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, Statistics
+include("../shared_testsetup.jl")
+
+using LuxLib, LuxTestUtils, Random, Test, NNlib, Statistics
 using LuxTestUtils: check_approx
 
 function setup_layernorm(gen_f, aType, T, x_size, affine_shape, expand_dims::Bool=true)
@@ -77,29 +78,17 @@ anonact = x -> x^3
 const ALL_TEST_CONFIGS = Any[]
 
 for T in (Float32, Float64),
-    # x_shape in ((3, 3, 2, 1), (2, 2, 2, 1), (2, 3, 2, 2)),
     x_shape in ((3, 3, 2, 1), (2, 2, 2, 1)),
-    # affine_shape in (nothing, x_shape[1:3], (1, 1, 1), (1, 1, x_shape[3])),
     affine_shape in (nothing, (1, 1, x_shape[3])),
     act in (identity, sigmoid_fast, anonact)
 
     push!(ALL_TEST_CONFIGS, (T, x_shape, affine_shape, act))
 end
 
-const TEST_BLOCKS = collect(
-    Iterators.partition(ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 2))
-)
-
-export ALL_TEST_CONFIGS, TEST_BLOCKS, run_layernorm_testing
-
-end
-
-@testitem "Layer Norm: Group 1" tags = [:normalization] setup = [
-    SharedTestSetup, LayerNormSetup
-] begin
+@testset "Layer Norm" begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $x_shape, $act" for (T, x_shape, affine_shape, act) in
-                                                      TEST_BLOCKS[1]
+                                                      ALL_TEST_CONFIGS
             !fp64 && T == Float64 && continue
             run_layernorm_testing(
                 generate_fixed_array, aType, T, x_shape, affine_shape, act, ongpu, mode
@@ -108,21 +97,7 @@ end
     end
 end
 
-@testitem "Layer Norm: Group 2" tags = [:normalization] setup = [
-    SharedTestSetup, LayerNormSetup
-] begin
-    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $T, size $x_shape, $act" for (T, x_shape, affine_shape, act) in
-                                                      TEST_BLOCKS[2]
-            !fp64 && T == Float64 && continue
-            run_layernorm_testing(
-                generate_fixed_array, aType, T, x_shape, affine_shape, act, ongpu, mode
-            )
-        end
-    end
-end
-
-@testitem "Layer Norm: Error Checks" tags = [:normalization] setup = [SharedTestSetup] begin
+@testset "Layer Norm: Error Checks" begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         !fp64 && continue
 

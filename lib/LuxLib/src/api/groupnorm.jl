@@ -40,10 +40,14 @@ end
 function assert_valid_groupnorm_arguments(
     x::AbstractArray{T,N}, scale, bias, groups
 ) where {T,N}
-    @assert length(scale) == length(bias) == size(x, N - 1) "Length of `scale` and `bias` must \
-                                                         be equal to the number of \
-                                                         channels ((N - 1) dim of the \
-                                                         input array)."
+    if length(scale) !== length(bias) || length(bias) !== size(x, N - 1)
+        throw(
+            ArgumentError(
+                "Length of `scale` and `bias` must be equal to the number of channels \
+                 ((N - 1) dim of the input array)."
+            ),
+        )
+    end
     assert_valid_groupnorm_arguments(x, nothing, nothing, groups)
     return nothing
 end
@@ -51,8 +55,14 @@ end
 function assert_valid_groupnorm_arguments(
     x::AbstractArray{T,N}, ::Nothing, ::Nothing, groups::Int
 ) where {T,N}
-    @assert size(x, N - 1) % groups == 0 "Number of channels $(size(x, N - 1)) must be \
-                                        divisible by the number of groups $groups."
+    if size(x, N - 1) % groups != 0
+        throw(
+            ArgumentError(
+                "Number of channels $(size(x, N - 1)) must be divisible by the number of \
+                 groups $groups."
+            ),
+        )
+    end
     return nothing
 end
 

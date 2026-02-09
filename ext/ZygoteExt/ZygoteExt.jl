@@ -1,6 +1,5 @@
 module ZygoteExt
 
-using ArgCheck: @argcheck
 using ADTypes: AutoZygote
 using ChainRulesCore: ChainRulesCore
 using ForwardDiff: ForwardDiff

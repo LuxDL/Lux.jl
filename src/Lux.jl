@@ -5,13 +5,13 @@ using ADTypes:
     AutoEnzyme,
     AutoForwardDiff,
     AutoMooncake,
+    AutoReactant,
     AutoReverseDiff,
     AutoTracker,
     AutoZygote
 using Adapt: Adapt, adapt
-using ArgCheck: @argcheck
 using ArrayInterface: ArrayInterface
-using ChainRulesCore: ChainRulesCore, NoTangent, @thunk
+using ChainRulesCore: ChainRulesCore, NoTangent
 using SciMLPublic: @public
 using ConcreteStructs: @concrete
 using EnzymeCore: EnzymeRules
@@ -159,7 +159,13 @@ export Training
 export jacobian_vector_product, vector_jacobian_product
 export batched_jacobian
 export AutoEnzyme,
-    AutoForwardDiff, AutoMooncake, AutoReverseDiff, AutoTracker, AutoZygote, AutoForwardDiff
+    AutoForwardDiff,
+    AutoMooncake,
+    AutoReactant,
+    AutoReverseDiff,
+    AutoTracker,
+    AutoZygote,
+    AutoForwardDiff
 
 export BinaryCrossEntropyLoss,
     BinaryFocalLoss,

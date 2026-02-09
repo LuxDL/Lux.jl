@@ -148,8 +148,8 @@ function MultiHeadAttention(
     is_causal::Union{Bool,Nothing}=nothing,
 )
     dims = parse_mha_dims(dims)
-    @argcheck dims.qk % nheads == 0
-    @argcheck dims.v % nheads == 0
+    @assert dims.qk % nheads == 0
+    @assert dims.v % nheads == 0
 
     return MultiHeadAttention(
         nheads,

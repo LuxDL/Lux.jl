@@ -116,7 +116,7 @@ end
     f::F, x::AbstractMatrix{T}, ::Type{Tag}, ck::ForwardDiff.Chunk{CK}
 ) where {F,T,Tag,CK}
     N, B = size(x)
-    @argcheck CK ≤ N
+    @assert CK ≤ N
 
     nchunks, remainder = divrem(N, CK)
 
@@ -208,7 +208,7 @@ end
 
     x_duals = vcat(x_part_prev, x_part_duals, x_part_next)
     y_duals_ = f(x_duals)
-    @argcheck ndims(y_duals_) > 1 && size(y_duals_, ndims(y_duals_)) == B
+    @assert ndims(y_duals_) > 1 && size(y_duals_, ndims(y_duals_)) == B
     y_duals = reshape(y_duals_, :, B)
 
     partials_wrap(y, i) = ForwardDiff.partials(Tag, y, i)

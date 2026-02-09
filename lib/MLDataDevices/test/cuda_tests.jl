@@ -1,7 +1,11 @@
 using MLDataDevices, Random, Functors, Test
 using ArrayInterface: parameterless_type
 
-@testset "CPU Fallback" begin
+include("common.jl")
+
+@test_in_separate_process "CPU Fallback" begin
+    using MLDataDevices, Test
+
     @test !MLDataDevices.functional(CUDADevice)
     @test cpu_device() isa CPUDevice
     @test gpu_device() isa CPUDevice

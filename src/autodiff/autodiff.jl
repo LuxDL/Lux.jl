@@ -1,7 +1,6 @@
 module AutoDiffInternalImpl
 
 using ArrayInterface: ArrayInterface
-using ArgCheck: @argcheck
 using ADTypes: AbstractADType, AutoForwardDiff
 using ChainRulesCore: ChainRulesCore, HasReverseMode, NoTangent, RuleConfig, ZeroTangent
 using FastClosures: @closure

@@ -7,9 +7,12 @@ on:
       - ".github/workflows/CommonCI.yml"
       - "lib/LuxLib/**"
       - ".github/workflows/CI_LuxLib.yml"
-      - "lib/LuxTestUtils/**"
-      - "lib/LuxCore/**"
-      - "lib/MLDataDevices/**"
+      - "lib/LuxTestUtils/src/**"
+      - "lib/LuxTestUtils/ext/**"
+      - "lib/LuxCore/src/**"
+      - "lib/LuxCore/ext/**"
+      - "lib/MLDataDevices/src/**"
+      - "lib/MLDataDevices/ext/**"
   push:
     branches:
       - main
@@ -24,34 +27,34 @@ jobs:
       fail-fast: false
       matrix:
         test_group:
-          - "common"
+          - "common_ops"
           - "normalization"
-          - "misc"
+          - "others"
         blas_backend:
           - "default"
         loopvec:
           - "true"
         include:
-          - test_group: "common"
+          - test_group: "common_ops"
             blas_backend: "default"
             loopvec: "false"
-          - test_group: "misc"
+          - test_group: "others"
             blas_backend: "default"
             loopvec: "false"
     uses: ./.github/workflows/CommonCI.yml
     with:
-      julia_version: "1.11"
+      julia_version: "1.12"
       project: "lib/LuxLib"
-      test_args: "BACKEND_GROUP=cpu LUXLIB_TEST_GROUP=${{ matrix.test_group }} LUXLIB_BLAS_BACKEND=${{ matrix.blas_backend }} LUXLIB_LOAD_LOOPVEC=${{ matrix.loopvec }}"
+      test_args: "--BACKEND_GROUP=cpu --BLAS_BACKEND=${{ matrix.blas_backend }} --LOOP_VECTORIZATION=${{ matrix.loopvec }} ${{ matrix.test_group }}"
 
   downgrade:
     strategy:
       fail-fast: false
       matrix:
         test_group:
-          - "common"
+          - "common_ops"
           - "normalization"
-          - "misc"
+          - "others"
     uses: ./.github/workflows/CommonCI.yml
     with:
       julia_version: "1.11"
@@ -59,4 +62,4 @@ jobs:
       downgrade_testing: true
       local_dependencies: "lib/LuxCore,lib/MLDataDevices"
       local_test_dependencies: "lib/LuxTestUtils,lib/MLDataDevices"
-      test_args: "BACKEND_GROUP=cpu LUXLIB_TEST_GROUP=${{ matrix.test_group }} LUXLIB_BLAS_BACKEND=default LUXLIB_LOAD_LOOPVEC=true"
+      test_args: "--BACKEND_GROUP=cpu --BLAS_BACKEND=default --LOOP_VECTORIZATION=true ${{ matrix.test_group }}"

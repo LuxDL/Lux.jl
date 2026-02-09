@@ -215,13 +215,11 @@ function Conv(
     dilation = Utils.expand(Val(length(k)), dilation)
     pad = calc_padding(pad, k, dilation, stride)
 
-    @argcheck ch[1] % groups == 0 DimensionMismatch(
-        "Input channel dimension must be divisible by groups."
-    )
-    @argcheck ch[2] % groups == 0 DimensionMismatch(
-        "Output channel dimension must be divisible by groups."
-    )
-    @argcheck allequal(length, (stride, dilation, k))
+    ch[1] % groups == 0 ||
+        throw(DimensionMismatch("Input channel dimension must be divisible by groups."))
+    ch[2] % groups == 0 ||
+        throw(DimensionMismatch("Output channel dimension must be divisible by groups."))
+    @assert allequal(length, (stride, dilation, k))
 
     return Conv(
         activation,
@@ -380,13 +378,11 @@ function ConvTranspose(
     end
     outpad = Utils.expand(Val(length(k)), outpad)
 
-    @argcheck ch[2] % groups == 0 DimensionMismatch(
-        "Input channel dimension must be divisible by groups."
-    )
-    @argcheck ch[1] % groups == 0 DimensionMismatch(
-        "Output channel dimension must be divisible by groups."
-    )
-    @argcheck allequal(length, (stride, dilation, k))
+    ch[2] % groups == 0 ||
+        throw(DimensionMismatch("Input channel dimension must be divisible by groups."))
+    ch[1] % groups == 0 ||
+        throw(DimensionMismatch("Output channel dimension must be divisible by groups."))
+    @assert allequal(length, (stride, dilation, k))
 
     return ConvTranspose(
         activation,
@@ -518,7 +514,7 @@ function Upsample(
     size=nothing,
     align_corners::Bool=false,
 )
-    @argcheck dynamic(mode) in (:nearest, :bilinear, :trilinear)
+    @assert dynamic(mode) in (:nearest, :bilinear, :trilinear)
 
     if !xor(isnothing(scale), isnothing(size))
         throw(ArgumentError("Either scale or size should be specified (but not both)."))

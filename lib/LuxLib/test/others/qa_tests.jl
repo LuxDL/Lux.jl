@@ -1,7 +1,7 @@
-@testitem "Aqua: Quality Assurance" tags = [:misc] begin
-    using Aqua, ChainRulesCore, EnzymeCore, NNlib
-    using EnzymeCore: EnzymeRules
+using Aqua, ChainRulesCore, EnzymeCore, NNlib, ExplicitImports, LuxLib
+using EnzymeCore: EnzymeRules
 
+@testset "Aqua: Quality Assurance" begin
     Aqua.test_all(
         LuxLib; ambiguities=false, piracies=false, stale_deps=Sys.ARCH === :x86_64
     )
@@ -23,9 +23,7 @@
     )
 end
 
-@testitem "Explicit Imports" tags = [:misc] setup = [SharedTestSetup] begin
-    using ExplicitImports
-
+@testset "Explicit Imports" begin
     @test check_no_implicit_imports(LuxLib) === nothing
     @test check_no_stale_explicit_imports(
         LuxLib;

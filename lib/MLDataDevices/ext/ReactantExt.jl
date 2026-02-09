@@ -15,7 +15,7 @@ function Reactant.traced_type_inner(
     seen,
     @nospecialize(mode::Reactant.TraceMode),
     @nospecialize(track_numbers::Type),
-    @nospecialize(sharding),
+    @nospecialize(ndevices),
     @nospecialize(runtime)
 )
     return T
@@ -103,20 +103,14 @@ Internal.unsafe_free_internal!(::Type{ReactantDevice}, x::AbstractArray) = nothi
 
 # Device Transfer
 Profiler.@annotate "Device Transfer (Reactant)" function Adapt.adapt_storage(
-    dev::ReactantDevice{C,D,S,Missing}, x::AbstractArray
-) where {C,D,S}
-    return ConcreteRArray(x; device_to_kwargs(dev, x)...)  # Preserves eltype
-end
-
-Profiler.@annotate "Device Transfer (Reactant)" function Adapt.adapt_storage(
-    dev::ReactantDevice{C,D,S,Nothing}, x::AbstractArray
-) where {C,D,S}
-    return ConcreteRArray(x; device_to_kwargs(dev, x)...)  # Preserves eltype
-end
-
-Profiler.@annotate "Device Transfer (Reactant)" function Adapt.adapt_storage(
     dev::ReactantDevice{C,D,S,T}, x::AbstractArray{ET}
-) where {C,D,S,T<:AbstractFloat,ET}
+) where {C,D,S,T,ET}
+    if T === Nothing || T === Missing
+        return ConcreteRArray(x; device_to_kwargs(dev, x)...)  # Preserves eltype
+    end
+
+    @assert T <: AbstractFloat
+
     # Convert eltype first, then move to device
     if ET <: AbstractFloat
         x_converted = convert(AbstractArray{T}, x)

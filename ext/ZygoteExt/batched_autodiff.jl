@@ -3,7 +3,7 @@ function Lux.AutoDiffInternalImpl.batched_jacobian_impl(f::F, ::AutoZygote, x) w
     # construct the Jacobian
     y, pb_f = Zygote.pullback(f, x)
 
-    @argcheck y isa AbstractArray MethodError
+    @assert y isa AbstractArray "Expected output to be an AbstractArray, got $(typeof(y))"
     if ndims(y) ≤ 1 || size(y, ndims(y)) != size(x, ndims(x))
         throw(AssertionError("`batched_jacobian` only supports batched outputs \
                               (ndims(y) > 1) && size(y, ndims(y)) == size(x, ndims(x))."))

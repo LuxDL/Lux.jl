@@ -1,4 +1,8 @@
-@testitem "Dropout" tags = [:misc] setup = [SharedTestSetup] begin
+include("../shared_testsetup.jl")
+
+using LuxLib, LuxTestUtils, Test, Statistics
+
+@testset "Dropout" begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
@@ -33,7 +37,8 @@
                 T(2),
                 dims;
                 atol=1.0f-3,
-                rtol=1.0f-3
+                rtol=1.0f-3,
+                ground_truth_eltype=Nothing
             )
 
             y, mask_, rng_ = dropout(rng, x, T(0.5), Val(false), T(2), dims)
@@ -46,9 +51,7 @@
     end
 end
 
-@testitem "Dropout with Preset Mask" tags = [:misc] setup = [SharedTestSetup] begin
-    using Statistics
-
+@testset "Dropout with Preset Mask" begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
@@ -86,7 +89,8 @@ end
                 T(2),
                 :;
                 atol=1.0f-3,
-                rtol=1.0f-3
+                rtol=1.0f-3,
+                ground_truth_eltype=Nothing
             )
 
             @jet sum(first(dropout(rng, x, mask, T(0.5), Val(true), Val(true), T(2), :)))
@@ -117,7 +121,8 @@ end
                 T(2),
                 :;
                 atol=1.0f-3,
-                rtol=1.0f-3
+                rtol=1.0f-3,
+                ground_truth_eltype=Nothing
             )
 
             @jet sum(first(dropout(rng, x, mask, T(0.5), Val(true), Val(false), T(2), :)))
@@ -139,9 +144,7 @@ end
     end
 end
 
-@testitem "Alpha Dropout" tags = [:misc] setup = [SharedTestSetup] begin
-    using Statistics
-
+@testset "Alpha Dropout" begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
@@ -170,7 +173,8 @@ end
                 T(0.5),
                 Val(true);
                 atol=1.0f-3,
-                rtol=1.0f-3
+                rtol=1.0f-3,
+                ground_truth_eltype=Nothing
             )
 
             @jet sum(first(alpha_dropout(rng, x, T(0.5), Val(true))))

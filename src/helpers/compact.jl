@@ -243,11 +243,11 @@ julia> size(r([1, 2], ps, st)[1])
 ```
 """
 macro init_fn(args...)
-    @argcheck 1 ≤ length(args) ≤ 2
+    @assert 1 ≤ length(args) ≤ 2
     kind = length(args) == 1 ? :parameter : args[2]
     kind isa QuoteNode && (kind = kind.value)
     fn = args[1]
-    @argcheck kind in (:parameter, :state)
+    @assert kind in (:parameter, :state)
     return esc(:($(CompactMacroImpl.InitFn){$(Meta.quot(kind))}($(fn))))
 end
 
@@ -434,9 +434,8 @@ end
 
 module CompactMacroImpl
 
-using ChainRulesCore: @non_differentiable
 using ConcreteStructs: @concrete
-using MacroTools: MacroTools, @capture, combinedef, splitdef
+using MacroTools: MacroTools, combinedef, splitdef
 using Functors: Functors
 using Random: AbstractRNG
 using Static: static
@@ -500,9 +499,9 @@ function compact_macro_impl(__source__, __module__, _exs...)
     input = try
         fex_args = fex.args[1]
         isa(fex_args, Symbol) ? string(fex_args) : join(fex_args.args, ", ")
-    catch e
+    catch _
         @warn "Function stringifying does not yet handle all cases. Falling back to empty \
-       string for input arguments"
+               string for input arguments"
     end
 
     # Remove compact specific macros
@@ -531,7 +530,7 @@ function compact_macro_impl(__source__, __module__, _exs...)
 end
 
 function supportself(fex::Expr, vars, splatted_kwargs, __source__)
-    @gensym self ps st curried_f res
+    @gensym self ps st res
     # To avoid having to manipulate fex's arguments and body explicitly, we split the input
     # function body and add the required arguments to the function definition.
     sdef = splitdef(fex)
@@ -577,8 +576,8 @@ function supportself(fex::Expr, vars, splatted_kwargs, __source__)
         end
         if has_return_macro && MacroTools.@capture(x, return val_)
             throw(LuxCompactModelParsingException("Encountered a return statement \
-                                           after the last @return statement. \
-                                           This is not supported."))
+                                                   after the last @return statement. \
+                                                   This is not supported."))
         end
         return x
     end
@@ -586,7 +585,7 @@ function supportself(fex::Expr, vars, splatted_kwargs, __source__)
     if !has_return_macro
         @gensym fname
         @warn "No @return macro found in the function body. This will lead to the \
-       generation of inefficient code."
+               generation of inefficient code."
         modified_body = quote
             $fname = () -> $(sdef[:body])
             $res = $(fname)()
@@ -657,7 +656,7 @@ function ValueStorage(; kwargs...)
     return ValueStorage(NamedTuple(ps_init_fns), NamedTuple(st_init_fns))
 end
 
-function (v::ValueStorage)(x, ps, st)
+function (::ValueStorage)(_, _, _)
     throw(ArgumentError("`ValueStorage` isn't meant to be used as a layer!!!"))
 end
 
@@ -707,7 +706,7 @@ try_make_lux_layer(x) = x
 
 maybe_make_stateful(layer::AbstractLuxLayer, ps, st) = StatefulLuxLayer(layer, ps, st)
 maybe_make_stateful(::Nothing, ::Nothing, st) = st
-maybe_make_stateful(::Nothing, ps, st) = ps
+maybe_make_stateful(::Nothing, ps, _) = ps
 function maybe_make_stateful(model::Union{AbstractVector,Tuple}, ps, st)
     return map(i -> maybe_make_stateful(model[i], ps[i], st[i]), eachindex(model))
 end
