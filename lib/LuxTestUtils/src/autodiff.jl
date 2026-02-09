@@ -199,9 +199,9 @@ function test_gradients(
 
     # Choose the backends to test
     backends = []
+    push!(backends, AutoMooncake())
     if ZYGOTE_TESTING_ENABLED[]
         push!(backends, AutoZygote())
-    push!(backends, AutoMooncake())
     end
     if !on_gpu
         total_length ≤ 32 && push!(backends, AutoForwardDiff())
