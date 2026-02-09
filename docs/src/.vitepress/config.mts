@@ -1,8 +1,10 @@
 import { defineConfig } from "vitepress";
 import { tabsMarkdownPlugin } from "vitepress-plugin-tabs";
-import mathjax3 from "markdown-it-mathjax3";
 import footnote from "markdown-it-footnote";
 import { transformerMetaWordHighlight } from "@shikijs/transformers";
+import { mathjaxPlugin } from './mathjax-plugin'
+
+const mathjax = mathjaxPlugin()
 
 const baseTemp = {
   base: 'REPLACE_ME_DOCUMENTER_VITEPRESS', // TODO: replace this in makedocs!
@@ -19,7 +21,7 @@ export default defineConfig({
   markdown: {
     math: true,
     config(md) {
-      md.use(tabsMarkdownPlugin), md.use(mathjax3), md.use(footnote);
+      md.use(tabsMarkdownPlugin), mathjax.markdownConfig(md), md.use(footnote);
     },
     theme: {
       light: "github-light",
@@ -46,6 +48,9 @@ export default defineConfig({
         "@nolebase/ui",
       ],
     },
+    plugins: [
+      mathjax.vitePlugin,
+    ],
   },
 
   head: [

@@ -18,6 +18,8 @@ import { enhanceAppWithTabs } from "vitepress-plugin-tabs/client";
 import "@nolebase/vitepress-plugin-enhanced-readabilities/client/style.css";
 import "./style.css";
 
+import 'virtual:mathjax-styles.css';
+
 export const Theme: ThemeConfig = {
   extends: DefaultTheme,
   Layout() {
