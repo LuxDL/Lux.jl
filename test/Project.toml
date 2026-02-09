@@ -52,11 +52,12 @@ LuxTestUtils = {path = "../lib/LuxTestUtils"}
 MLDataDevices = {path = "../lib/MLDataDevices"}
 
 [compat]
-AMDGPU = "2.2"
 ADTypes = "1.19"
+AMDGPU = "2.2"
 Adapt = "4"
 Aqua = "0.8.4"
 CPUSummary = "0.2.6"
+CUDA = "5.9.6"
 ChainRulesCore = "1.25.1"
 ComponentArrays = "0.15.22"
 DispatchDoctor = "0.4.12"
