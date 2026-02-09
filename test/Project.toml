@@ -52,8 +52,8 @@ LuxTestUtils = {path = "../lib/LuxTestUtils"}
 MLDataDevices = {path = "../lib/MLDataDevices"}
 
 [compat]
-AMDGPU = "2.2"
 ADTypes = "1.19"
+AMDGPU = "2.2"
 Adapt = "4"
 Aqua = "0.8.4"
 CPUSummary = "0.2.6"
@@ -92,3 +92,4 @@ Statistics = "1.10"
 Test = "1.10"
 Tracker = "0.2.37"
 Zygote = "0.7"
+cuDNN = "1.4.6"
