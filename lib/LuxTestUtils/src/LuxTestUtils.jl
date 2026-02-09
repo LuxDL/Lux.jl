@@ -24,11 +24,12 @@ using Test:
 
 # Autodiff
 using ADTypes:
-    AutoEnzyme, AutoFiniteDiff, AutoTracker, AutoForwardDiff, AutoReverseDiff, AutoZygote
+    AutoEnzyme, AutoFiniteDiff, AutoTracker, AutoForwardDiff, AutoReverseDiff, AutoZygote, AutoMooncake
 using ChainRulesCore: ChainRulesCore
 using FiniteDiff: FiniteDiff
 using ForwardDiff: ForwardDiff
 using Zygote: Zygote
+using Mooncake
 
 const CRC = ChainRulesCore
 const FD = FiniteDiff
@@ -61,7 +62,7 @@ include("jet.jl")
 
 include("utils.jl")
 
-export AutoEnzyme, AutoFiniteDiff, AutoTracker, AutoForwardDiff, AutoReverseDiff, AutoZygote
+export AutoEnzyme, AutoFiniteDiff, AutoTracker, AutoForwardDiff, AutoReverseDiff, AutoZygote, AutoMooncake
 export test_gradients, @test_gradients
 export Constant
 export @jet, jet_target_modules!
