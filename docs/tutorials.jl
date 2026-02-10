@@ -117,7 +117,7 @@ asyncmap(TUTORIALS_BUILDING; ntasks=NTASKS) do (i, (d, (input_path, should_run))
         "JULIA_DEBUG" => "Literate",
     ) do
         run(
-            `$(Base.julia_cmd()) --startup=no --code-coverage=user --threads=$(Threads.nthreads()) --project=$(tutorial_proj) "$(file)" "$(name)" "$(output_directory)" "$(path)" "$(should_run)"`,
+            `$(Base.julia_cmd()) --startup=no --code-coverage=user --threads=$(Threads.nthreads()) "$(file)" "$(name)" "$(output_directory)" "$(path)" "$(should_run)" "$(tutorial_proj)"`,
         )
     end
 
