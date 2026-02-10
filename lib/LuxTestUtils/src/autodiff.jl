@@ -74,17 +74,18 @@ function gradient(::F, ::AutoEnzyme{<:Enzyme.ForwardMode}, args...) where {F}
     return error("AutoEnzyme{ForwardMode} is not supported yet.")
 end
 
-function gradient(f::F, ad::AutoMooncake, args...) where {F}
+function gradient(f::F, ::AutoMooncake, args...) where {F}
     return gradient(f, mooncake_gradient_function, args...)
 end
 
 """
-    mooncake_gradient_function(f, x, ad::AutoMooncake)
+    mooncake_gradient_function(f, x)
 
 Compute gradient using Mooncake.jl's value_and_gradient!! function.
 Returns only the gradient for args x.
 """
 function mooncake_gradient_function(f, x)
+    # always enable friendly_tangents for ease of testing.
     cache = Mooncake.prepare_gradient_cache(f, x; config=Mooncake.Config(; friendly_tangents=true))
     y, tangents = Mooncake.value_and_gradient!!(cache, f, x)
     tangent_func, tangent_args = tangents
