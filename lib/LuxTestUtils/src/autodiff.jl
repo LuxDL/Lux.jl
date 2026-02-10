@@ -74,6 +74,26 @@ function gradient(::F, ::AutoEnzyme{<:Enzyme.ForwardMode}, args...) where {F}
     return error("AutoEnzyme{ForwardMode} is not supported yet.")
 end
 
+function gradient(f::F, ::AutoMooncake, args...) where {F}
+    return gradient(f, mooncake_gradient_function, args...)
+end
+
+"""
+    mooncake_gradient_function(f, x)
+
+Compute gradient using Mooncake.jl's value_and_gradient!! function.
+Returns only the gradient for args x.
+"""
+function mooncake_gradient_function(f, x)
+    # always enable friendly_tangents for ease of testing.
+    cache = Mooncake.prepare_gradient_cache(
+        f, x; config=Mooncake.Config(; friendly_tangents=true)
+    )
+    y, tangents = Mooncake.value_and_gradient!!(cache, f, x)
+    tangent_func, tangent_args = tangents
+    return tangent_args
+end
+
 # ForwardDiff.jl
 function gradient(f::F, ::AutoForwardDiff, args...) where {F}
     return gradient(f, ForwardDiff.gradient, args...)
@@ -104,9 +124,10 @@ end
 Test the gradients of `f` with respect to `args` using the specified backends. The ground
 truth gradients are computed using FiniteDiff.jl (unless specified otherwise) on CPU.
 
-| Backend        | ADType              | CPU | GPU | Notes             |
-|:-------------- |:------------------- |:--- |:--- |:----------------- |
+| Backend        | ADType              | CPU  | GPU | Notes             |
+|:-------------- |:------------------- |:---  |:--- |:----------------- |
 | Zygote.jl      | `AutoZygote()`      | ✔   | ✔   |                   |
+| Mooncake.jl    | `AutoMooncake()`    | ✔   | ✖   |                   |
 | ForwardDiff.jl | `AutoForwardDiff()` | ✔   | ✖   | `len ≤ 32`        |
 | Enzyme.jl      | `AutoEnzyme()`      | ✔   | ✖   | Only Reverse Mode |
 
@@ -185,6 +206,7 @@ function test_gradients(
         push!(backends, AutoZygote())
     end
     if !on_gpu
+        push!(backends, AutoMooncake())
         total_length ≤ 32 && push!(backends, AutoForwardDiff())
         if enable_enzyme_reverse_mode || ENZYME_TESTING_ENABLED[]
             mode = if enzyme_set_runtime_activity
@@ -306,7 +328,7 @@ macro test_gradients(exprs...)
         args = [exs...]
         kwargs = []
     else
-        args = [exs[1:(kwarg_idx - 1)]...]
+        args = [exs[1:(kwarg_idx-1)]...]
         kwargs = [exs[kwarg_idx:end]...]
     end
     push!(kwargs, Expr(:kw, :source, QuoteNode(__source__)))
