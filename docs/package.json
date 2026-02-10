@@ -5,6 +5,7 @@
     "@types/node": "^22.13.4",
     "markdown-it": "^14.1.0",
     "vitepress": "^1.6.4",
+    "vitepress-plugin-llms": "^1.11.0",
     "vitepress-plugin-tabs": "^0.6.0"
   },
   "scripts": {

@@ -8,8 +8,7 @@ name = ARGS[1]
 output_directory = ARGS[2]
 path = ARGS[3]
 should_run = parse(Bool, ARGS[4])
-
-project_path = dirname(Pkg.project().path)
+project_path = ARGS[5]
 
 pkg_log_path = joinpath(storage_dir, "$(name)_pkg.log")
 push!(LOAD_PATH, "@literate")  # Should have the Literate and InteractiveUtils packages
@@ -28,6 +27,7 @@ catch err
     true
 end
 if should_run
+    Pkg.activate(project_path)
     Pkg.instantiate(; io)
     Pkg.precompile(; io)
 end
@@ -63,7 +63,13 @@ Literate.notebook(
     path, assets_dir; name, execute=false, preprocess=preprocess_and_replace_includes
 )
 
-rel_path_to_assets = joinpath("..", "..", "public", "examples", name)
+docs_src_dir = joinpath(@__DIR__, "src")
+# VitePress serves public/ at the site root, so we compute the relative path from
+# output_directory to docs/src/ (the site root) and then into examples/{name}
+# (without the public/ prefix since VitePress makes public/ transparent).
+rel_path_to_assets = joinpath(
+    relpath(docs_src_dir, output_directory), "public", "examples", name
+)
 
 function preprocess(path, str)
     str = preprocess_and_replace_includes(str)
@@ -115,21 +121,30 @@ function preprocess(path, str)
     end
 
     # TODO: make vitepress compatible
-    # script_download = """
-    # # [![download julia script](https://img.shields.io/badge/download-$(name).jl-9558B2?logo=julia)]($(joinpath(rel_path_to_assets, "$(name).jl")))"""
-    # project_toml_download = if has_project_toml
-    #     """
-    #     # [![download project toml](https://img.shields.io/badge/download-Project.toml-9C4221?logo=toml)]($(joinpath(rel_path_to_assets, "Project.toml")))"""
-    # else
-    #     ""
+    # badges = String[]
+    # push!(
+    #     badges,
+    #     "[<img src=\"https://img.shields.io/badge/download-$(name).jl-9558B2?logo=julia\" alt=\"download julia script\">]($(joinpath(rel_path_to_assets, "$(name).jl")))",
+    # )
+    # if has_project_toml
+    #     push!(
+    #         badges,
+    #         "[<img src=\"https://img.shields.io/badge/download-Project.toml-9C4221?logo=toml\" alt=\"download project toml\">]($(joinpath(rel_path_to_assets, "Project.toml")))",
+    #     )
     # end
-    # notebook_download = """
-    # # [![download notebook](https://img.shields.io/badge/download-$(name).ipynb-FFB13B)]($(joinpath(rel_path_to_assets, "$(name).ipynb")))"""
+    # push!(
+    #     badges,
+    #     "[<img src=\"https://img.shields.io/badge/download-$(name).ipynb-FFB13B\" alt=\"download notebook\">]($(joinpath(rel_path_to_assets, "$(name).ipynb")))",
+    # )
+
+    # header = "# | " * join(fill(" ", length(badges)), " | ") * " |"
+    # separator = "# | " * join(fill(":---:", length(badges)), " | ") * " |"
+    # content_row = "# | " * join(badges, " | ") * " |"
 
     # str = """
-    # $(script_download)
-    # $(project_toml_download)
-    # $(notebook_download)
+    # $(header)
+    # $(separator)
+    # $(content_row)
     # \n\n""" * str
 
     return str

@@ -4,6 +4,8 @@ import footnote from "markdown-it-footnote";
 import { transformerMetaWordHighlight } from "@shikijs/transformers";
 import { mathjaxPlugin } from "./mathjax-plugin";
 import path from "path";
+import { copyOrDownloadAsMarkdownButtons } from 'vitepress-plugin-llms';
+import llmstxt from 'vitepress-plugin-llms';
 
 const mathjax = mathjaxPlugin();
 
@@ -24,6 +26,7 @@ export default defineConfig({
       md.use(tabsMarkdownPlugin);
       mathjax.markdownConfig(md);
       md.use(footnote);
+      md.use(copyOrDownloadAsMarkdownButtons);
     },
     theme: {
       light: "github-light",
@@ -33,7 +36,7 @@ export default defineConfig({
   },
 
   vite: {
-    plugins: [mathjax.vitePlugin],
+    plugins: [mathjax.vitePlugin, llmstxt()],
     define: {
       __DEPLOY_ABSPATH__: JSON.stringify(
         "REPLACE_ME_DOCUMENTER_VITEPRESS_DEPLOY_ABSPATH",

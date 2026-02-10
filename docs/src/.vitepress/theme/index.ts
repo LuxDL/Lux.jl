@@ -8,6 +8,8 @@ import {
   NolebaseEnhancedReadabilitiesScreenMenu,
 } from "@nolebase/vitepress-plugin-enhanced-readabilities/client";
 
+import CopyOrDownloadAsMarkdownButtons from "vitepress-plugin-llms/vitepress-components/CopyOrDownloadAsMarkdownButtons.vue";
+
 import AsideTrustees from "../../components/AsideTrustees.vue";
 import VersionPicker from "../../components/VersionPicker.vue";
 import StarUs from "../../components/StarUs.vue";
@@ -18,7 +20,7 @@ import { enhanceAppWithTabs } from "vitepress-plugin-tabs/client";
 import "@nolebase/vitepress-plugin-enhanced-readabilities/client/style.css";
 import "./style.css";
 
-import 'virtual:mathjax-styles.css';
+import "virtual:mathjax-styles.css";
 
 export const Theme: ThemeConfig = {
   extends: DefaultTheme,
@@ -39,6 +41,10 @@ export const Theme: ThemeConfig = {
     app.component("VersionPicker", VersionPicker);
     app.component("AuthorBadge", AuthorBadge);
     app.component("Authors", Authors);
+    app.component(
+      "CopyOrDownloadAsMarkdownButtons",
+      CopyOrDownloadAsMarkdownButtons,
+    );
   },
 };
 export default Theme;
