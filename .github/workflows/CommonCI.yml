@@ -63,7 +63,7 @@ jobs:
         with:
           cache-name: julia-cache;workflow=${{ inputs.julia_version }}-${{ inputs.os }}-${{ github.event_name }}-${{ inputs.project }}-${{ inputs.downgrade_testing }}-${{ inputs.local_dependencies }}-${{ inputs.local_test_dependencies }}-${{ inputs.test_args }}
 
-      - uses: julia-actions/julia-downgrade-compat@v2.1
+      - uses: julia-actions/julia-downgrade-compat@v2.2
         if: ${{ inputs.downgrade_testing }}
         with:
           mode: forcedeps
@@ -128,6 +128,7 @@ jobs:
           project: ${{ inputs.project }}
           test_args: ${{ inputs.test_args }}
           allow_reresolve: ${{ !(inputs.downgrade_testing) }}
+          force_latest_compatible_version: ${{ inputs.downgrade_testing && 'false' || 'auto' }}
         if: ${{ (inputs.julia_version != '1.10' && inputs.julia_version != 'lts') || inputs.local_test_dependencies == '' }}
 
       - name: "Upload MLIR modules"
