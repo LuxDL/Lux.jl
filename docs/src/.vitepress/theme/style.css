@@ -12,9 +12,10 @@
 
 :root {
   /* Typography */
-  --vp-font-family-base: "Barlow", "Inter var experimental", "Inter var",
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
-    Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  --vp-font-family-base:
+    "Barlow", "Inter var experimental", "Inter var", -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell,
+    "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
 
   /* Code Snippet font */
   --vp-font-family-mono: JuliaMono-Regular, monospace;
@@ -212,4 +213,50 @@ mjx-container > svg {
 }
 .jldocstring.custom-block summary a {
   pointer-events: none;
+}
+
+.mjx-scroll-wrapper {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  text-align: center;
+}
+
+mjx-container {
+  display: inline-block;
+  padding: 0.5rem 0;
+  margin: auto 2px -2px;
+  overflow: visible !important; /* Override MathJax's overflow */
+  text-align: left;
+}
+
+mjx-container > svg {
+  display: inline-block;
+  height: auto;
+}
+
+mjx-container > svg[data-labels="true"] {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* @mdit/plugin-mathjax theming refs */
+
+mjx-container svg path {
+  fill: currentColor !important;
+  stroke: currentColor !important;
+}
+
+.MathJax_ref {
+  color: var(--vp-c-brand-1);
+}
+
+.MathJax_ref:hover {
+  color: var(--vp-c-brand-2);
+  cursor: pointer;
 }

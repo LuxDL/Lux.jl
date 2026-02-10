@@ -86,19 +86,19 @@ const intermediate = [
   },
   {
     href: "intermediate/9_CIFAR10_conv_mixer",
-    src: "https://datasets.activeloop.ai/wp-content/uploads/2022/09/CIFAR-10-dataset-Activeloop-Platform-visualization-image-1.webp",
+    src: "../cifar10.png",
     caption: "Conv-Mixer on CIFAR-10",
     desc: "Train Conv-Mixer on CIFAR-10 to 90% accuracy."
   },
   {
     href: "intermediate/10_CIFAR10_simple_cnn",
-    src: "https://datasets.activeloop.ai/wp-content/uploads/2022/09/CIFAR-10-dataset-Activeloop-Platform-visualization-image-1.webp",
+    src: "../cifar10.png",
     caption: "Simple Convolutional Neural Network on CIFAR-10",
     desc: "Train a CNN on CIFAR-10 to 95% accuracy."
   },
   {
     href: "intermediate/11_CIFAR10_resnet20",
-    src: "https://datasets.activeloop.ai/wp-content/uploads/2022/09/CIFAR-10-dataset-Activeloop-Platform-visualization-image-1.webp",
+    src: "../cifar10.png",
     caption: "ResNet20 on CIFAR-10",
     desc: "Train a ResNet20 on CIFAR-10 to 90% accuracy."
   }
@@ -125,7 +125,7 @@ const advanced = [
   },
   {
     href: "advanced/3_ImageNet",
-    src: "https://datasets.activeloop.ai/wp-content/uploads/2022/09/ImageNet-dataset-main-image.webp",
+    src: "../imagenet.png",
     caption: "ImageNet Classification",
     desc: "Train Large Image Classifiers using Lux (on Distributed GPUs)."
   },
