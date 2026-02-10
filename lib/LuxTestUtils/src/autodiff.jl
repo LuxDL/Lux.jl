@@ -86,7 +86,9 @@ Returns only the gradient for args x.
 """
 function mooncake_gradient_function(f, x)
     # always enable friendly_tangents for ease of testing.
-    cache = Mooncake.prepare_gradient_cache(f, x; config=Mooncake.Config(; friendly_tangents=true))
+    cache = Mooncake.prepare_gradient_cache(
+        f, x; config=Mooncake.Config(; friendly_tangents=true)
+    )
     y, tangents = Mooncake.value_and_gradient!!(cache, f, x)
     tangent_func, tangent_args = tangents
     return tangent_args
@@ -125,7 +127,7 @@ truth gradients are computed using FiniteDiff.jl (unless specified otherwise) on
 | Backend        | ADType              | CPU  | GPU | Notes             |
 |:-------------- |:------------------- |:---  |:--- |:----------------- |
 | Zygote.jl      | `AutoZygote()`      | ✔   | ✔   |                   |
-| Mooncake.jl    | `AutoMooncake()`    | ✔   | ✔   |                   |
+| Mooncake.jl    | `AutoMooncake()`    | ✔   | ✖   |                   |
 | ForwardDiff.jl | `AutoForwardDiff()` | ✔   | ✖   | `len ≤ 32`        |
 | Enzyme.jl      | `AutoEnzyme()`      | ✔   | ✖   | Only Reverse Mode |
 
@@ -200,11 +202,11 @@ function test_gradients(
 
     # Choose the backends to test
     backends = []
-    push!(backends, AutoMooncake())
     if ZYGOTE_TESTING_ENABLED[]
         push!(backends, AutoZygote())
     end
     if !on_gpu
+        push!(backends, AutoMooncake())
         total_length ≤ 32 && push!(backends, AutoForwardDiff())
         if enable_enzyme_reverse_mode || ENZYME_TESTING_ENABLED[]
             mode = if enzyme_set_runtime_activity
