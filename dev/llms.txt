@@ -1,0 +1,120 @@
+# LuxDL Docs
+
+> Elegant & Performant Deep Learning in JuliaLang
+
+Model with the elegance of Julia, and the performance of XLA.
+
+## Table of Contents
+
+### Getting Started
+
+- [Introduction {#getting-started}](/dev/introduction.md)
+- [Why we wrote Lux? {#Why-we-wrote-Lux?}](/dev/introduction/overview.md)
+- [Resources to Get Started {#Resources-to-Get-Started}](/dev/introduction/resources.md)
+- [Updating to Lux v1 {#updating-to-v1}](/dev/introduction/updating_to_v1.md)
+- [Citation {#Citation}](/dev/introduction/citation.md)
+
+### Tutorials
+
+- [Tutorials](/dev/tutorials.md)
+
+#### Beginner
+
+- [Julia & Lux for the Uninitiated {#Julia-and-Lux-for-the-Uninitiated}](/dev/tutorials/beginner/1_Basics.md)
+- [Fitting a Polynomial using MLP {#Fitting-a-Polynomial-using-MLP}](/dev/tutorials/beginner/2_PolynomialFitting.md)
+- [Training a Simple LSTM {#Training-a-Simple-LSTM}](/dev/tutorials/beginner/3_SimpleRNN.md)
+- [MNIST Classification with SimpleChains {#MNIST-Classification-with-SimpleChains}](/dev/tutorials/beginner/4_SimpleChains.md)
+- [Fitting with Optimization.jl {#Optimization-Lux-Tutorial}](/dev/tutorials/beginner/5_OptimizationIntegration.md)
+
+#### Intermediate
+
+- [MNIST Classification using Neural ODEs {#MNIST-Classification-using-Neural-ODEs}](/dev/tutorials/intermediate/1_NeuralODE.md)
+- [Training a HyperNetwork on MNIST and FashionMNIST {#Training-a-HyperNetwork-on-MNIST-and-FashionMNIST}](/dev/tutorials/intermediate/3_HyperNet.md)
+- [Training a PINN on 2D PDE {#Training-a-PINN-on-2D-PDE}](/dev/tutorials/intermediate/4_PINN2DPDE.md)
+- [Convolutional VAE for MNIST {#Convolutional-VAE-Tutorial}](/dev/tutorials/intermediate/5_ConvolutionalVAE.md)
+- [Graph Convolutional Networks on Cora {#GCN-Tutorial-Cora}](/dev/tutorials/intermediate/6_GCN_Cora.md)
+- [Normalizing Flows for Density Estimation {#Normalizing-Flows-for-Density-Estimation}](/dev/tutorials/intermediate/7_RealNVP.md)
+- [Building a LSTM Encoder-Decoder model using Lux.jl {#Building-a-LSTM-Encoder-Decoder-model-using-Lux.jl}](/dev/tutorials/intermediate/8_LSTMEncoderDecoder.md)
+- [ConvMixer on CIFAR-10 {#ConvMixer-on-CIFAR-10}](/dev/tutorials/intermediate/9_CIFAR10_conv_mixer.md)
+- [Convolutional Neural Network on CIFAR-10 {#Convolutional-Neural-Network-on-CIFAR-10}](/dev/tutorials/intermediate/10_CIFAR10_simple_cnn.md)
+- [ResNet20 on CIFAR-10 {#ResNet20-on-CIFAR-10}](/dev/tutorials/intermediate/11_CIFAR10_resnet20.md)
+
+#### Advanced
+
+- [Training a Neural ODE to Model Gravitational Waveforms {#Training-a-Neural-ODE-to-Model-Gravitational-Waveforms}](/dev/tutorials/advanced/1_GravitationalWaveForm.md)
+- [Denoising Diffusion Implicit Model (DDIM) {#Denoising-Diffusion-Implicit-Model-DDIM}](/dev/tutorials/advanced/2_DDIM.md)
+- [ImageNet Classification using Distributed Data Parallel Training {#ImageNet-Classification-using-Distributed-Data-Parallel-Training}](/dev/tutorials/advanced/3_ImageNet.md)
+- [Qwen3 Implementation from Scratch {#Qwen3-Implementation-from-Scratch}](/dev/tutorials/advanced/4_Qwen3.md)
+
+### Manual
+
+#### Basics
+
+- [Lux Interface {#lux-interface}](/dev/manual/interface.md)
+- [Freezing Model Parameters {#freezing-model-parameters}](/dev/manual/freezing_model_parameters.md)
+- [GPU Management {#GPU-Management}](/dev/manual/gpu_management.md)
+- [Initializing Weights {#Initializing-Weights}](/dev/manual/weight_initializers.md)
+- [Visualizing Lux Models using Model Explorer {#Visualizing-Lux-Models-using-Model-Explorer}](/dev/manual/visualize_lux_models.md)
+
+#### Reactant Compilation
+
+- [Compiling Lux Models using `Reactant.jl` {#reactant-compilation}](/dev/manual/compiling_lux_models.md)
+- [Exporting Lux Models to Jax (via EnzymeJAX & Reactant) {#exporting\_to\_stablehlo}](/dev/manual/exporting_to_jax.md)
+- [Profiling Lux Training Loops {#profiling-training-loop-reactant}](/dev/manual/profiling_training_loop.md)
+
+#### Automatic Differentiation
+
+- [Automatic Differentiation {#autodiff-lux}](/dev/manual/autodiff.md)
+- [Nested Automatic Differentiation {#nested\_autodiff}](/dev/manual/nested_autodiff.md)
+
+#### Debugging / Performance Enhancement Tools
+
+- [Debugging Lux Models {#debug-lux-layers}](/dev/manual/debugging.md)
+- [Performance Pitfalls & How to Catch Them {#Performance-Pitfalls-and-How-to-Catch-Them}](/dev/manual/performance_pitfalls.md)
+
+#### Migration Guides
+
+- [Migrating from Flux to Lux {#migrate-from-flux}](/dev/manual/migrate_from_flux.md)
+- [Supporting Both Flux and Lux {#flux-lux-interop}](/dev/manual/flux_lux_interop.md)
+
+#### Advanced Usage
+
+- [Dispatching on Custom Input Types {#Dispatching-on-Custom-Input-Types}](/dev/manual/dispatch_custom_input.md)
+- [Preferences for Lux.jl {#Preferences-for-Lux.jl}](/dev/manual/preferences.md)
+- [Distributed Data Parallel Training {#Distributed-Data-Parallel-Training}](/dev/manual/distributed_utils.md)
+
+### API Reference
+
+#### Lux
+
+- [Built-In Layers {#Built-In-Layers}](/dev/api/Lux/layers.md)
+- [Automatic Differentiation Helpers {#autodiff-lux-helpers}](/dev/api/Lux/autodiff.md)
+- [Utilities {#Utilities}](/dev/api/Lux/utilities.md)
+- [Experimental Features {#Experimental-Features}](/dev/api/Lux/contrib.md)
+- [Interoperability between Lux and other packages {#Interoperability-between-Lux-and-other-packages}](/dev/api/Lux/interop.md)
+- [Distributed Utils {#Distributed-Utils}](/dev/api/Lux/distributed_utils.md)
+- [Serialization {#Serialization}](/dev/api/Lux/serialization.md)
+
+#### Accelerator Support
+
+- [MLDataDevices {#MLDataDevices-API}](/dev/api/Accelerator_Support/MLDataDevices.md)
+
+#### NN Primitives
+
+- [LuxLib {#LuxLib-API}](/dev/api/NN_Primitives/LuxLib.md)
+- [NNlib {#NNlib-API}](/dev/api/NN_Primitives/NNlib.md)
+- [Activation Functions {#NNlib-ActivationFunctions-API}](/dev/api/NN_Primitives/ActivationFunctions.md)
+
+#### Building Blocks
+
+- [LuxCore {#LuxCore}](/dev/api/Building_Blocks/LuxCore.md)
+- [WeightInitializers {#WeightInitializers-API}](/dev/api/Building_Blocks/WeightInitializers.md)
+
+#### Testing Functionality
+
+- [LuxTestUtils {#LuxTestUtils}](/dev/api/Testing_Functionality/LuxTestUtils.md)
+
+### Other
+
+- [Bayesian Neural Network {#Bayesian-Neural-Network}](/dev/tutorials/intermediate/2_BayesianNN.md)
+- [References {#References}](/dev/references.md)
