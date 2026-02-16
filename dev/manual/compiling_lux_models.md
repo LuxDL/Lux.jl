@@ -74,7 +74,7 @@ model_compiled = @compile model(x_ra, ps_ra, Lux.testmode(st_ra))
 ```
 
 ```ansi
-Reactant compiled function Chain{@NamedTuple{layer_1::Dense{typeof(gelu_tanh), Int64, Int64, Nothing, Nothing, Static.True}, layer_2::Dense{typeof(gelu_tanh), Int64, Int64, Nothing, Nothing, Static.True}, layer_3::Dense{typeof(identity), Int64, Int64, Nothing, Nothing, Static.True}}, Nothing}((layer_1 = Dense(2 => 32, gelu_tanh), layer_2 = Dense(32 => 32, gelu_tanh), layer_3 = Dense(32 => 2)), nothing) (with tag ##Chain{@NamedTuple{layer_1::Dense{typeof(gelu_tanh), Int64, Int64, Nothing, Nothing, Static.True}, layer_2::Dense{typeof(gelu_tanh), Int64, Int64, Nothing, Nothing, Static.True}, layer_3::Dense{typeof(identity), Int64, Int64, Nothing, Nothing, Static.True}}, Nothing}((layer_1 = Dense(2 => 32, gelu_tanh), layer_2 = Dense(32 => 32, gelu_tanh), layer_3 = Dense(32 => 2)), nothing)_reactant#953683)
+Reactant compiled function Chain{@NamedTuple{layer_1::Dense{typeof(gelu_tanh), Int64, Int64, Nothing, Nothing, Static.True}, layer_2::Dense{typeof(gelu_tanh), Int64, Int64, Nothing, Nothing, Static.True}, layer_3::Dense{typeof(identity), Int64, Int64, Nothing, Nothing, Static.True}}, Nothing}((layer_1 = Dense(2 => 32, gelu_tanh), layer_2 = Dense(32 => 32, gelu_tanh), layer_3 = Dense(32 => 2)), nothing) (with tag ##Chain{@NamedTuple{layer_1::Dense{typeof(gelu_tanh), Int64, Int64, Nothing, Nothing, Static.True}, layer_2::Dense{typeof(gelu_tanh), Int64, Int64, Nothing, Nothing, Static.True}, layer_3::Dense{typeof(identity), Int64, Int64, Nothing, Nothing, Static.True}}, Nothing}((layer_1 = Dense(2 => 32, gelu_tanh), layer_2 = Dense(32 => 32, gelu_tanh), layer_3 = Dense(32 => 2)), nothing)_reactant#960807)
 ```
 
 Now we can test the difference between the results:

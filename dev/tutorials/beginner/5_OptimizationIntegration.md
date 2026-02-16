@@ -161,36 +161,36 @@ trained_model = train_model(dataloader)
 ```
 
 ```
-Iteration:     1, Loss: 5.364500e-02
-Iteration:    25, Loss: 6.911485e-03
-Iteration:    50, Loss: 1.294323e-02
-Iteration:    75, Loss: 9.457691e-02
-Iteration:   100, Loss: 1.930106e-01
-Iteration:   100, Loss: 5.630948e-03
-Iteration:     1, Loss: 2.098152e+00
-Iteration:    25, Loss: 2.965889e-02
-Iteration:     1, Loss: 2.891696e-02
-Iteration:    25, Loss: 5.751739e-02
-Iteration:    50, Loss: 3.072591e-02
-Iteration:    75, Loss: 2.784288e-02
-Iteration:   100, Loss: 2.713424e-02
-Iteration:   125, Loss: 2.646501e-02
-Iteration:   150, Loss: 2.576540e-02
-Iteration:   175, Loss: 2.501404e-02
-Iteration:   200, Loss: 2.420383e-02
-Iteration:   225, Loss: 2.333942e-02
-Iteration:   250, Loss: 2.243567e-02
-Iteration:   275, Loss: 2.150541e-02
-Iteration:   300, Loss: 2.053205e-02
-Iteration:   325, Loss: 1.946899e-02
-Iteration:   350, Loss: 1.830372e-02
-Iteration:   375, Loss: 1.707271e-02
-Iteration:   400, Loss: 1.580746e-02
-Iteration:   425, Loss: 1.451191e-02
-Iteration:   450, Loss: 2.590669e-02
-Iteration:   475, Loss: 1.516872e-02
-Iteration:   500, Loss: 1.404240e-02
-Iteration:   500, Loss: 1.403812e-02
+Iteration:     1, Loss: 1.135684e-01
+Iteration:    25, Loss: 6.273309e-02
+Iteration:    50, Loss: 3.308186e-02
+Iteration:    75, Loss: 6.881486e-02
+Iteration:   100, Loss: 1.979303e-01
+Iteration:   100, Loss: 2.614744e-02
+Iteration:     1, Loss: 9.293616e-01
+Iteration:    25, Loss: 3.081822e-02
+Iteration:     1, Loss: 2.947503e-02
+Iteration:    25, Loss: 4.385407e-02
+Iteration:    50, Loss: 2.771415e-02
+Iteration:    75, Loss: 2.579104e-02
+Iteration:   100, Loss: 2.479982e-02
+Iteration:   125, Loss: 2.412255e-02
+Iteration:   150, Loss: 2.339332e-02
+Iteration:   175, Loss: 2.245229e-02
+Iteration:   200, Loss: 2.111763e-02
+Iteration:   225, Loss: 1.947035e-02
+Iteration:   250, Loss: 1.784926e-02
+Iteration:   275, Loss: 1.734743e-02
+Iteration:   300, Loss: 1.607360e-02
+Iteration:   325, Loss: 1.542270e-02
+Iteration:   350, Loss: 1.442281e-02
+Iteration:   375, Loss: 1.182027e-02
+Iteration:   400, Loss: 1.230192e-02
+Iteration:   425, Loss: 1.658314e-02
+Iteration:   450, Loss: 1.035635e-02
+Iteration:   475, Loss: 1.505536e-02
+Iteration:   500, Loss: 1.169702e-02
+Iteration:   500, Loss: 9.250627e-03
 
 ```
 
@@ -235,8 +235,8 @@ end
 ```
 
 ```
-Julia Version 1.12.4
-Commit 01a2eadb047 (2026-01-06 16:56 UTC)
+Julia Version 1.12.5
+Commit 5fe89b8ddc1 (2026-02-09 16:05 UTC)
 Build Info:
   Official https://julialang.org release
 Platform Info:

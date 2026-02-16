@@ -48,7 +48,7 @@ python_file_path = Reactant.Serialization.export_to_enzymejax(
 ```
 
 ```ansi
-"/tmp/jl_25JfH2/run_lux_model.py"
+"/tmp/jl_QPojDz/run_lux_model.py"
 ```
 
 This will generate a python file that can be used to run the model using EnzymeJAX.
