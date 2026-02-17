@@ -47,6 +47,22 @@ function Optimisers.init(
     return zero(x), zero(x), Utils.convert_eltype.((T,), opt.opt.beta), zero(x)
 end
 
+# Recurse through chains
+function Optimisers.adjust(
+    chain::ReactantOptimiser{<:Optimisers.OptimiserChain}, 
+    eta::Real
+)
+    results = Optimisers.OptimiserChain([Optimisers.adjust(opt, eta) for opt in chain.opt.opts]...)
+    return ReactantOptimiser(results)
+end
+function Optimisers.adjust(
+    chain::ReactantOptimiser{<:Optimisers.OptimiserChain}; 
+    kw...
+)
+    results = Optimisers.OptimiserChain([Optimisers.adjust(opt; kw...) for opt in chain.opt.opts]...)
+    return ReactantOptimiser(results)
+end
+
 function Optimisers._adjust(opt::ReactantOptimiser, nt::NamedTuple)
     dev = with_track_numbers(get_device(opt), AbstractFloat)
     return ReactantOptimiser(Optimisers._adjust(opt.opt, dev(nt)))
