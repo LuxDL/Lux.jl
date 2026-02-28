@@ -221,27 +221,22 @@ function get_argparse_settings()
     s = ArgParseSettings(; autofix_names=true)
     @add_arg_table! s begin
         "--backend"
-            arg_type = String
-            default = "all"
+        arg_type = String
+        default = "all"
         "--batch-size"
-            arg_type = Int
-            default = 1024
+        arg_type = Int
+        default = 1024
         "--kan-width"
-            arg_type = Int
-            default = 128
+        arg_type = Int
+        default = 128
         "--grid-size"
-            arg_type = Int
-            default = 32
+        arg_type = Int
+        default = 32
     end
     return s
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
     args = parse_args(ARGS, get_argparse_settings(); as_symbols=true)
-    main(;
-        backend=args[:backend],
-        batch_size=args[:batch_size],
-        kan_width=args[:kan_width],
-        grid_size=args[:grid_size],
-    )
+    main(; args...)
 end

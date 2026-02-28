@@ -788,16 +788,19 @@ function get_argparse_settings()
             arg_type = Float32
             default = 0.95f0
         # inference specific
-        "--inference"
+        "--inference-mode"
             help = "Run in inference-only mode"
             action = :store_true
         "--saved-model-path"
-            help = "Path to JLD2 checkpoint (required with --inference)"
+            help = "Path to JLD2 checkpoint (required with --inference-mode)"
             arg_type = String
         "--generate-n-images"
             help = "Number of images to generate during inference or periodic logging"
             arg_type = Int
             default = 12
+        "--minimal"
+            help = "Run in minimal mode for testing"
+            action = :store_true
     end
     #! format: on
     return s
@@ -806,26 +809,12 @@ end
 if abspath(PROGRAM_FILE) == @__FILE__
     args = parse_args(ARGS, get_argparse_settings(); as_symbols=true)
 
-    main(;
-        epochs=args[:epochs],
-        image_size=args[:image_size],
-        batchsize=args[:batchsize],
-        learning_rate_start=args[:learning_rate_start],
-        learning_rate_end=args[:learning_rate_end],
-        weight_decay=args[:weight_decay],
-        checkpoint_interval=args[:checkpoint_interval],
-        expt_dir=args[:expt_dir],
-        diffusion_steps=args[:diffusion_steps],
-        generate_image_interval=args[:generate_image_interval],
-        channels=args[:channels],
-        block_depth=args[:block_depth],
-        min_freq=args[:min_freq],
-        max_freq=args[:max_freq],
-        embedding_dims=args[:embedding_dims],
-        min_signal_rate=args[:min_signal_rate],
-        max_signal_rate=args[:max_signal_rate],
-        inference_mode=args[:inference],
-        saved_model_path=args[:saved_model_path],
-        generate_n_images=args[:generate_n_images],
-    )
+    if args[:minimal]
+        args[:epochs] = 1
+        args[:image_size] = 32
+        args[:batchsize] = 4
+        args[:channels] = [16, 32]
+    end
+
+    main(; args...)
 end

@@ -32,7 +32,9 @@ function Base.getindex(ds::TensorDataset, idxs::Union{Vector{<:Integer},Abstract
     return stack(parent ∘ itemdata ∘ Base.Fix1(apply, ds.transform), img), y
 end
 
-function get_cifar10_dataloaders(::Type{T}, batchsize; kwargs...) where {T}
+function get_cifar10_dataloaders(
+    ::Type{T}, batchsize, subset_size=nothing; kwargs...
+) where {T}
     cifar10_mean = T.((0.4914, 0.4822, 0.4465))
     cifar10_std = T.((0.2471, 0.2435, 0.2616))
 
@@ -45,10 +47,18 @@ function get_cifar10_dataloaders(::Type{T}, batchsize; kwargs...) where {T}
 
     test_transform = ImageToTensor() |> Normalize(cifar10_mean, cifar10_std) |> ToEltype(T)
 
-    trainset = TensorDataset(CIFAR10(; Tx=T, split=:train), train_transform)
+    trainset = CIFAR10(; Tx=T, split=:train)
+    if subset_size !== nothing
+        trainset = subset(trainset, 1:min(subset_size, length(trainset)))
+    end
+    trainset = TensorDataset(trainset, train_transform)
     trainloader = DataLoader(trainset; batchsize, shuffle=true, kwargs...)
 
-    testset = TensorDataset(CIFAR10(; Tx=T, split=:test), test_transform)
+    testset = CIFAR10(; Tx=T, split=:test)
+    if subset_size !== nothing
+        testset = subset(testset, 1:min(subset_size, length(testset)))
+    end
+    testset = TensorDataset(testset, test_transform)
     testloader = DataLoader(testset; batchsize, shuffle=false, kwargs...)
 
     return trainloader, testloader
@@ -78,6 +88,7 @@ function train_model(
     seed::Int=1234,
     epochs::Int=25,
     bfloat16::Bool=false,
+    subset_size=nothing,
 )
     rng = Random.default_rng()
     Random.seed!(rng, seed)
@@ -90,7 +101,7 @@ function train_model(
     dev = reactant_device(; force=true)
 
     trainloader, testloader =
-        get_cifar10_dataloaders(prec_jl, batchsize; partial=false) |> dev
+        get_cifar10_dataloaders(prec_jl, batchsize, subset_size; partial=false) |> dev
 
     ps, st = prec(Lux.setup(rng, model)) |> dev
 

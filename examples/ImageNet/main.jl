@@ -114,7 +114,7 @@ const IMAGENET_CORRUPTED_FILES = [
     "ILSVRC2012_val_00019877.JPEG",
 ]
 
-function load_imagenet1k(base_path::String, split::Symbol)
+function load_imagenet1k(base_path::String, split::Symbol, subset_size=nothing)
     @assert split in (:train, :val)
     full_path = joinpath(base_path, string(split))
     synsets = sort(readdir(full_path))
@@ -128,6 +128,9 @@ function load_imagenet1k(base_path::String, split::Symbol)
         paths = joinpath.((full_path,), (synset,), filenames)
         append!(image_files, paths)
         append!(labels, repeat([i - 1], length(paths)))
+        if subset_size !== nothing && length(image_files) >= subset_size
+            return image_files[1:subset_size], labels[1:subset_size]
+        end
     end
 
     return image_files, labels
@@ -163,7 +166,7 @@ function Base.getindex(dataset::FileDataset, i::Int)
 end
 
 function construct_dataloaders(;
-    base_path::String, train_batchsize, val_batchsize, image_size::Int
+    base_path::String, train_batchsize, val_batchsize, image_size::Int, subset_size=nothing
 )
     sensible_println("=> creating dataloaders.")
 
@@ -176,7 +179,7 @@ function construct_dataloaders(;
         MakeColoredImage() |>
         ToEltype(Float32) |>
         Normalize((0.485f0, 0.456f0, 0.406f0), (0.229f0, 0.224f0, 0.225f0))
-    train_files, train_labels = load_imagenet1k(base_path, :train)
+    train_files, train_labels = load_imagenet1k(base_path, :train, subset_size)
 
     train_dataset = FileDataset(train_files, train_labels, train_augment)
 
@@ -187,7 +190,7 @@ function construct_dataloaders(;
         MakeColoredImage() |>
         ToEltype(Float32) |>
         Normalize((0.485f0, 0.456f0, 0.406f0), (0.229f0, 0.224f0, 0.225f0))
-    val_files, val_labels = load_imagenet1k(base_path, :val)
+    val_files, val_labels = load_imagenet1k(base_path, :val, subset_size)
 
     val_dataset = FileDataset(val_files, val_labels, val_augment)
 
@@ -505,7 +508,15 @@ function main(;
     total_steps::Int=800000,
     evaluate_every::Int=10000,
     print_frequency::Int=100,
+    minimal::Bool=false,
 )
+    if minimal
+        total_steps = 2
+        subset_size = 1024
+    else
+        subset_size = nothing
+    end
+
     best_acc1 = 0
 
     rng = Random.default_rng()
@@ -526,7 +537,7 @@ function main(;
     model, ps, st = construct_model(; rng, model_name, model_args, pretrained)
 
     ds_train, ds_val = construct_dataloaders(;
-        base_path, train_batchsize, val_batchsize, image_size
+        base_path, train_batchsize, val_batchsize, image_size, subset_size
     )
 
     opt, scheduler = construct_optimizer_and_scheduler(;
@@ -634,113 +645,88 @@ function get_argparse_settings()
     s = ArgParseSettings(; autofix_names=true)
     @add_arg_table! s begin
         "--seed"
-            arg_type = Int
-            default = 0
+        arg_type = Int
+        default = 0
         "--model-name"
-            arg_type = String
-            required = true
+        arg_type = String
+        required = true
         "--model-kind"
-            arg_type = String
-            default = "nokind"
+        arg_type = String
+        default = "nokind"
         "--depth"
-            arg_type = Int
-            default = -1
+        arg_type = Int
+        default = -1
         "--pretrained"
-            action = :store_true
+        action = :store_true
         "--base-path"
-            arg_type = String
-            default = ""
+        arg_type = String
+        default = ""
         "--train-batchsize"
-            arg_type = Int
-            default = 64
+        arg_type = Int
+        default = 64
         "--val-batchsize"
-            arg_type = Int
-            default = 64
+        arg_type = Int
+        default = 64
         "--image-size"
-            arg_type = Int
-            default = -1
+        arg_type = Int
+        default = -1
         "--optimizer-kind"
-            arg_type = String
-            default = "sgd"
+        arg_type = String
+        default = "sgd"
         "--learning-rate"
-            arg_type = Float32
-            default = 0.01f0
+        arg_type = Float32
+        default = 0.01f0
         "--nesterov"
-            action = :store_true
+        action = :store_true
         "--momentum"
-            arg_type = Float32
-            default = 0.0f0
+        arg_type = Float32
+        default = 0.0f0
         "--weight-decay"
-            arg_type = Float32
-            default = 0.0f0
+        arg_type = Float32
+        default = 0.0f0
         "--scheduler-kind"
-            arg_type = String
-            default = "step"
+        arg_type = String
+        default = "step"
         "--cycle-length"
-            arg_type = Int
-            default = 50000
+        arg_type = Int
+        default = 50000
         "--damp-factor"
-            arg_type = Float32
-            default = 1.2f0
+        arg_type = Float32
+        default = 1.2f0
         "--lr-step-decay"
-            arg_type = Float32
-            default = 0.1f0
+        arg_type = Float32
+        default = 0.1f0
         "--lr-step"
-            arg_type = Int
-            nargs = '+'
-            default = [100000, 250000, 500000]
+        arg_type = Int
+        nargs = '+'
+        default = [100000, 250000, 500000]
         "--expt-id"
-            arg_type = String
-            default = ""
+        arg_type = String
+        default = ""
         "--expt-subdir"
-            arg_type = String
-            default = @__DIR__
+        arg_type = String
+        default = @__DIR__
         "--resume"
-            arg_type = String
-            default = ""
+        arg_type = String
+        default = ""
         "--evaluate"
-            action = :store_true
+        action = :store_true
         "--total-steps"
-            arg_type = Int
-            default = 800000
+        arg_type = Int
+        default = 800000
         "--evaluate-every"
-            arg_type = Int
-            default = 10000
+        arg_type = Int
+        default = 10000
         "--print-frequency"
-            arg_type = Int
-            default = 100
+        arg_type = Int
+        default = 100
+        "--minimal"
+        action = :store_true
     end
     return s
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
     args = parse_args(ARGS, get_argparse_settings(); as_symbols=true)
-    main(;
-        seed=args[:seed],
-        model_name=args[:model_name],
-        model_kind=args[:model_kind],
-        depth=args[:depth],
-        pretrained=args[:pretrained],
-        base_path=args[:base_path],
-        train_batchsize=args[:train_batchsize],
-        val_batchsize=args[:val_batchsize],
-        image_size=args[:image_size],
-        optimizer_kind=args[:optimizer_kind],
-        learning_rate=args[:learning_rate],
-        nesterov=args[:nesterov],
-        momentum=args[:momentum],
-        weight_decay=args[:weight_decay],
-        scheduler_kind=args[:scheduler_kind],
-        cycle_length=args[:cycle_length],
-        damp_factor=args[:damp_factor],
-        lr_step_decay=args[:lr_step_decay],
-        lr_step=args[:lr_step],
-        expt_id=args[:expt_id],
-        expt_subdir=args[:expt_subdir],
-        resume=args[:resume],
-        evaluate=args[:evaluate],
-        total_steps=args[:total_steps],
-        evaluate_every=args[:evaluate_every],
-        print_frequency=args[:print_frequency],
-    )
+    main(; args...)
 end

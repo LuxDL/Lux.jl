@@ -76,21 +76,18 @@ function get_argparse_settings()
     s = ArgParseSettings(; autofix_names=true)
     @add_arg_table! s begin
         "--batch-size"
-            arg_type = Int
-            nargs = '+'
-            default = [1, 4, 32, 128]
+        arg_type = Int
+        nargs = '+'
+        default = [1, 4, 32, 128]
         "--model-size"
-            arg_type = Int
-            nargs = '+'
-            default = [18, 34, 50, 101]
+        arg_type = Int
+        nargs = '+'
+        default = [18, 34, 50, 101]
     end
     return s
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
     args = parse_args(ARGS, get_argparse_settings(); as_symbols=true)
-    main(;
-        batch_size=args[:batch_size],
-        model_size=args[:model_size],
-    )
+    main(; args...)
 end

@@ -155,10 +155,14 @@ function Base.getindex(ds::TensorDataset, idxs::Union{Vector{<:Integer},Abstract
     return stack(parent ∘ itemdata ∘ Base.Fix1(apply, ds.transform), img)
 end
 
-function loadmnist(batchsize, image_size::Dims{2})
+function loadmnist(batchsize, image_size::Dims{2}, subset_size=nothing)
     ## Load MNIST: Only 1500 for demonstration purposes on CI
     train_dataset = MNIST(; split=:train)
-    N = parse(Bool, get(ENV, "CI", "false")) ? 5000 : length(train_dataset)
+    N = if subset_size !== nothing
+        min(subset_size, length(train_dataset))
+    else
+        parse(Bool, get(ENV, "CI", "false")) ? 5000 : length(train_dataset)
+    end
 
     train_transform = ScaleKeepAspect(image_size) |> ImageToTensor()
     trainset = TensorDataset(train_dataset, train_transform, N)
@@ -174,13 +178,19 @@ nothing #hide
 
 function create_image_grid(imgs::AbstractArray, grid_rows::Int, grid_cols::Int)
     total_images = grid_rows * grid_cols
-    imgs = map(eachslice(imgs[:, :, :, 1:total_images]; dims=4)) do img
+    imgs = map(eachslice(imgs[:, :, :, 1:min(total_images, size(imgs, 4))]; dims=4)) do img
         cimg = if size(img, 3) == 1
             colorview(Gray, view(img, :, :, 1))
         else
             colorview(RGB, permutedims(img, (3, 1, 2)))
         end
         return cimg'
+    end
+    if length(imgs) < total_images
+        # Pad with black images if necessary
+        for _ in 1:(total_images - length(imgs))
+            push!(imgs, fill(zero(eltype(imgs[1])), size(imgs[1])))
+        end
     end
     return create_image_grid(imgs, grid_rows, grid_cols)
 end
@@ -230,13 +240,14 @@ function generate_images(
         images, _ = decode_compiled(model, z, ps, Lux.testmode(st))
         images = cpu_device()(images)
     end
-    return create_image_grid(images, 8, num_samples ÷ 8)
+    return create_image_grid(images, max(1, num_samples ÷ 8), min(8, num_samples))
 end
 
 function reconstruct_images(model, ps, st, X)
     (recon, _, _), _ = model(X, ps, Lux.testmode(st))
     recon = cpu_device()(recon)
-    return create_image_grid(recon, 8, size(X, ndims(X)) ÷ 8)
+    bs = size(X, ndims(X))
+    return create_image_grid(recon, max(1, bs ÷ 8), min(8, bs))
 end
 
 # ## Training the Model
@@ -251,7 +262,18 @@ function main(;
     weight_decay=1.0e-5,
     learning_rate=1.0e-3,
     num_samples=batchsize,
+    minimal=false,
 )
+    if minimal
+        epochs = 1
+        batchsize = 4
+        image_size = (32, 32)
+        subset_size = 8
+        num_samples = 4
+    else
+        subset_size = nothing
+    end
+
     rng = Xoshiro()
     Random.seed!(rng, seed)
 
@@ -263,7 +285,7 @@ function main(;
     x = randn(Float32, image_size..., 1, batchsize) |> xdev
     cvae_compiled = @compile cvae(x, ps, Lux.testmode(st))
 
-    train_dataloader = loadmnist(batchsize, image_size) |> xdev
+    train_dataloader = loadmnist(batchsize, image_size, subset_size) |> xdev
 
     opt = AdamW(; eta=learning_rate, lambda=weight_decay)
 
@@ -324,7 +346,42 @@ function main(;
     return model_img_full
 end
 
-img = main()
+using ArgParse
+
+function get_argparse_settings()
+    s = ArgParseSettings(; autofix_names=true)
+    @add_arg_table! s begin
+        "--batchsize"
+        arg_type = Int
+        default = 128
+        "--num-latent-dims"
+        arg_type = Int
+        default = 8
+        "--max-num-filters"
+        arg_type = Int
+        default = 64
+        "--seed"
+        arg_type = Int
+        default = 0
+        "--epochs"
+        arg_type = Int
+        default = 50
+        "--weight-decay"
+        arg_type = Float64
+        default = 1.0e-5
+        "--learning-rate"
+        arg_type = Float64
+        default = 1.0e-3
+        "--minimal"
+        action = :store_true
+    end
+    return s
+end
+
+if abspath(PROGRAM_FILE) == @__FILE__
+    args = parse_args(ARGS, get_argparse_settings(); as_symbols=true)
+    main(; args...)
+end
 nothing #hide
 
 # ---
