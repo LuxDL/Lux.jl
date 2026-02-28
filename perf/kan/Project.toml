@@ -1,6 +1,6 @@
 [deps]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
-Comonicon = "863f3e99-da2a-4334-8734-de3dacbe5542"
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
 Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
@@ -18,7 +18,7 @@ LuxCUDA = {path = "../../lib/LuxCUDA"}
 
 [compat]
 BenchmarkTools = "1.6.0"
-Comonicon = "1.0.8"
+ArgParse = "1"
 Enzyme = "0.13.81"
 Lux = "1.13.3"
 LuxCUDA = "0.3.3"

@@ -1,6 +1,6 @@
 # Taken from https://github.com/vpuri3/KolmogorovArnold.jl/blob/0fc349813be15982365173bce0e9bf3a814a342a/examples/eg3.jl
 using KolmogorovArnold
-using Comonicon, BenchmarkTools, JSON3
+using ArgParse, BenchmarkTools, JSON3
 using Random, LinearAlgebra
 using Enzyme, Zygote, Lux
 using OrderedCollections
@@ -163,7 +163,7 @@ function run_reactant_benchmarks(;
     return timings
 end
 
-Comonicon.@main function main(;
+function main(;
     backend::String="all", batch_size::Int=1024, kan_width::Int=128, grid_size::Int=32
 )
     results_path = joinpath(@__DIR__, "../results/kan/")
@@ -215,4 +215,33 @@ Comonicon.@main function main(;
     end
 
     return nothing
+end
+
+function get_argparse_settings()
+    s = ArgParseSettings(; autofix_names=true)
+    @add_arg_table! s begin
+        "--backend"
+            arg_type = String
+            default = "all"
+        "--batch-size"
+            arg_type = Int
+            default = 1024
+        "--kan-width"
+            arg_type = Int
+            default = 128
+        "--grid-size"
+            arg_type = Int
+            default = 32
+    end
+    return s
+end
+
+if abspath(PROGRAM_FILE) == @__FILE__
+    args = parse_args(ARGS, get_argparse_settings(); as_symbols=true)
+    main(;
+        backend=args[:backend],
+        batch_size=args[:batch_size],
+        kan_width=args[:kan_width],
+        grid_size=args[:grid_size],
+    )
 end

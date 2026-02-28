@@ -1,4 +1,4 @@
-using Comonicon, BenchmarkTools, JSON3
+using ArgParse, BenchmarkTools, JSON3
 using Lux, Enzyme, Reactant, Random
 using OrderedCollections
 
@@ -10,7 +10,7 @@ function toy_loss_function(model, ps, st, x, y)
     return first(MSELoss()(model, ps, st, (x, y)))
 end
 
-Comonicon.@main function main(;
+function main(;
     optimize::String="all",
     batch_size::Vector{Int}=[1, 4, 32, 128],
     model_size::Vector{Int}=[18, 34, 50, 101],
@@ -88,4 +88,31 @@ Comonicon.@main function main(;
 
     display(timings)
     return nothing
+end
+
+function get_argparse_settings()
+    s = ArgParseSettings(; autofix_names=true)
+    @add_arg_table! s begin
+        "--optimize"
+            arg_type = String
+            default = "all"
+        "--batch-size"
+            arg_type = Int
+            nargs = '+'
+            default = [1, 4, 32, 128]
+        "--model-size"
+            arg_type = Int
+            nargs = '+'
+            default = [18, 34, 50, 101]
+    end
+    return s
+end
+
+if abspath(PROGRAM_FILE) == @__FILE__
+    args = parse_args(ARGS, get_argparse_settings(); as_symbols=true)
+    main(;
+        optimize=args[:optimize],
+        batch_size=args[:batch_size],
+        model_size=args[:model_size],
+    )
 end

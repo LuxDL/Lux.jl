@@ -1,6 +1,6 @@
 [deps]
 Boltz = "4544d5e4-abc5-4dea-817f-29e4c205d9c8"
-Comonicon = "863f3e99-da2a-4334-8734-de3dacbe5542"
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 DataAugmentation = "88a5189c-e7ff-4f85-ac6b-e6158070f02e"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
@@ -23,7 +23,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 Boltz = "1"
-Comonicon = "1"
+ArgParse = "1"
 DataAugmentation = "0.3"
 Dates = "1.10"
 FileIO = "1.16"

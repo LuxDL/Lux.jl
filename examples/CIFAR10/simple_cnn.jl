@@ -2,7 +2,7 @@
 
 # ## Package Imports
 
-using Comonicon, Lux, Optimisers, Printf, Random, Statistics, Enzyme
+using ArgParse, Lux, Optimisers, Printf, Random, Statistics, Enzyme
 
 include("common.jl")
 
@@ -28,7 +28,7 @@ end
 
 # ## Entry Point
 
-Comonicon.@main function main(;
+function main(;
     batchsize::Int=512,
     weight_decay::Float64=0.0001,
     clip_norm::Bool=false,
@@ -43,4 +43,43 @@ Comonicon.@main function main(;
     clip_norm && (opt = OptimiserChain(ClipNorm(), opt))
 
     return train_model(model, opt, nothing; batchsize, seed, epochs, bfloat16)
+end
+
+function get_argparse_settings()
+    s = ArgParseSettings(; autofix_names=true)
+    @add_arg_table! s begin
+        "--batchsize"
+            arg_type = Int
+            default = 512
+        "--weight-decay"
+            arg_type = Float64
+            default = 0.0001
+        "--clip-norm"
+            action = :store_true
+        "--seed"
+            arg_type = Int
+            default = 1234
+        "--epochs"
+            arg_type = Int
+            default = 50
+        "--lr"
+            arg_type = Float64
+            default = 0.003
+        "--bfloat16"
+            action = :store_true
+    end
+    return s
+end
+
+if abspath(PROGRAM_FILE) == @__FILE__
+    args = parse_args(ARGS, get_argparse_settings(); as_symbols=true)
+    main(;
+        batchsize=args[:batchsize],
+        weight_decay=args[:weight_decay],
+        clip_norm=args[:clip_norm],
+        seed=args[:seed],
+        epochs=args[:epochs],
+        lr=args[:lr],
+        bfloat16=args[:bfloat16],
+    )
 end

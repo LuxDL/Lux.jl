@@ -1,6 +1,6 @@
 [deps]
 BFloat16s = "ab4f0b2a-ad5b-11e8-123f-65d77653426b"
-Comonicon = "863f3e99-da2a-4334-8734-de3dacbe5542"
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 ConcreteStructs = "2569d6c7-a4a2-43d3-a901-331e8e4be471"
 DataAugmentation = "88a5189c-e7ff-4f85-ac6b-e6158070f02e"
 Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
@@ -21,7 +21,7 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
 BFloat16s = "0.5.0, 0.6"
-Comonicon = "1.0.8"
+ArgParse = "1"
 ConcreteStructs = "0.2.3"
 DataAugmentation = "0.3"
 Enzyme = "0.13.81"
