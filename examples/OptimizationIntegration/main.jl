@@ -26,7 +26,8 @@ using Lux,
     MLUtils,
     CairoMakie,
     ComponentArrays,
-    Printf
+    Printf,
+    ArgParse
 
 const gdev = gpu_device()
 const cdev = cpu_device()
@@ -97,7 +98,7 @@ nothing #hide
 #     estimation. This effectively means that the `u` in Optimization.jl corresponds to our
 #     model parameters that is being optimized.
 
-function train_model(dataloader)
+function train_model(dataloader; minimal::Bool=false)
     model = Chain(Dense(2, 32, tanh), Dense(32, 32, tanh), Dense(32, 2))
     ps, st = Lux.setup(Random.default_rng(), model)
 
@@ -129,7 +130,7 @@ function train_model(dataloader)
     opt_func = OptimizationFunction(loss_adjoint, Optimization.AutoZygote())
     opt_prob = OptimizationProblem(opt_func, ps_ca, dataloader)
 
-    epochs = 25
+    epochs = minimal ? 1 : 25
     res_adam = solve(opt_prob, Optimisers.Adam(0.001); callback, epochs)
 
     ## Let's finetune a bit with L-BFGS
@@ -140,28 +141,58 @@ function train_model(dataloader)
     ## Minibatching. We need to do this since ODE solves can lead to accumulated errors if
     ## the model was trained on individual parts (without a data-shooting approach).
     opt_prob = remake(opt_prob; u0=res_lbfgs.u)
-    res = solve(opt_prob, Optimisers.Adam(0.005); maxiters=500, callback)
+    res = solve(opt_prob, Optimisers.Adam(0.005); maxiters=(minimal ? 1 : 500), callback)
 
     return StatefulLuxLayer(model, res.u, smodel.st)
 end
 
-trained_model = train_model(dataloader)
-nothing #hide
+function main(; minimal::Bool=false)
+    rng = Random.default_rng()
+    Random.seed!(rng, 0)
 
-# ## Plotting the results
+    u0 = [1.0f0, 1.0f0]
+    datasize = minimal ? 8 : 32
+    tspan = (0.0f0, 2.0f0)
+    t = range(tspan[1], tspan[2]; length=datasize)
+    true_prob = ODEProblem(lotka_volterra, u0, (tspan[1], tspan[2]), [1.5, 1.0, 3.0, 1.0])
+    ode_data = Array(solve(true_prob, Tsit5(); saveat=t))
 
-dudt(u, p, t) = trained_model(u, p)
-prob = ODEProblem(dudt, gdev(u0), (tspan[1], tspan[2]), trained_model.ps)
-sol = solve(prob, Tsit5(); saveat=t)
-pred = convert(AbstractArray, sol) |> cdev
+    dataloader = DataLoader((ode_data, TimeWrapper(t)); batchsize=(minimal ? 4 : 8)) |> gdev
 
-begin
-    fig = Figure()
-    ax = CairoMakie.Axis(fig[1, 1])
-    lines!(ax, t, ode_data[1, :]; label=L"u_1(t)", color=:blue, linestyle=:dot, linewidth=4)
-    lines!(ax, t, ode_data[2, :]; label=L"u_2(t)", color=:red, linestyle=:dot, linewidth=4)
-    lines!(ax, t, pred[1, :]; label=L"\hat{u}_1(t)", color=:blue, linewidth=4)
-    lines!(ax, t, pred[2, :]; label=L"\hat{u}_2(t)", color=:red, linewidth=4)
-    axislegend(ax; position=:lt)
-    fig
+    trained_model = train_model(dataloader; minimal)
+
+    if !minimal
+        # ## Plotting the results
+        dudt(u, p, t) = trained_model(u, p)
+        prob = ODEProblem(dudt, gdev(u0), (tspan[1], tspan[2]), trained_model.ps)
+        sol = solve(prob, Tsit5(); saveat=t)
+        pred = convert(AbstractArray, sol) |> cdev
+
+        begin
+            fig = Figure()
+            ax = CairoMakie.Axis(fig[1, 1])
+            lines!(ax, t, ode_data[1, :]; label=L"u_1(t)", color=:blue, linestyle=:dot, linewidth=4)
+            lines!(ax, t, ode_data[2, :]; label=L"u_2(t)", color=:red, linestyle=:dot, linewidth=4)
+            lines!(ax, t, pred[1, :]; label=L"\hat{u}_1(t)", color=:blue, linewidth=4)
+            lines!(ax, t, pred[2, :]; label=L"\hat{u}_2(t)", color=:red, linewidth=4)
+            axislegend(ax; position=:lt)
+            fig
+        end
+    end
+end
+
+function get_argparse_settings()
+    s = ArgParseSettings(; autofix_names=true)
+    #! format: off
+    @add_arg_table! s begin
+        "--minimal"
+            action = :store_true
+    end
+    #! format: on
+    return s
+end
+
+if abspath(PROGRAM_FILE) == @__FILE__
+    args = parse_args(ARGS, get_argparse_settings(); as_symbols=true)
+    main(; args...)
 end

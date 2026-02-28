@@ -1,4 +1,5 @@
 [deps]
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 ConcreteStructs = "2569d6c7-a4a2-43d3-a901-331e8e4be471"
 DataAugmentation = "88a5189c-e7ff-4f85-ac6b-e6158070f02e"
 Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
@@ -14,6 +15,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
 
 [compat]
+ArgParse = "1"
 ConcreteStructs = "0.2.3"
 DataAugmentation = "0.3.2"
 Enzyme = "0.13.81"

@@ -7,7 +7,7 @@
 
 # ## Package Imports
 
-using BFloat16s, ConcreteStructs, LinearAlgebra, Lux, Random, Reactant
+using BFloat16s, ConcreteStructs, LinearAlgebra, Lux, Random, Reactant, ArgParse
 using HuggingFaceTokenizers, PythonCall, SafeTensors, Scratch, JSON3
 
 const huggingface_hub = pyimport("huggingface_hub")
@@ -30,7 +30,22 @@ const huggingface_hub = pyimport("huggingface_hub")
 end
 
 function Qwen3Config(version::String; kwargs...)
-    if version == "0.6B"
+    if version == "0.0B"
+        return Qwen3Config(;
+            version,
+            vocab_size=1000,
+            context_length=128,
+            emb_dim=64,
+            n_heads=4,
+            n_layers=2,
+            hidden_dim=128,
+            head_dim=16,
+            n_kv_groups=2,
+            rope_base=1.0f4,
+            dtype=f32,
+            kwargs...,
+        )
+    elseif version == "0.6B"
         return Qwen3Config(;
             version,
             vocab_size=151_936,
@@ -841,7 +856,26 @@ function get_model_and_tokenizer(version, reasoning)
     return model, ps, st, tokenizer
 end
 
-function main()
+function main(; minimal::Bool=false)
+    if minimal
+        cfg = Qwen3Config("0.0B"; reasoning_model=false)
+        rdev = reactant_device(; force=true)
+        # Mock tokenizer for minimal testing
+        # We need a real tokenizer for encode/decode, but let's just use a dummy one if possible
+        # Actually HuggingFaceTokenizers requires a file. Let's just mock the generate_text call
+        # or use a very small real model if we can. 
+        # For minimal testing, let's just setup the model and run one forward pass.
+        model, ps, st = setup_model(cfg, rdev)
+        prompt = "Hello"
+        # We can't easily mock Qwen3Tokenizer without a file. 
+        # So in minimal mode we just verify model setup.
+        @info "Minimal mode: Model setup successful."
+        x = rdev(ones(Int32, 8, 1))
+        y, _ = model(x, ps, st)
+        @info "Minimal mode: Forward pass successful. Output size: $(size(y))"
+        return nothing
+    end
+
     @info "Text Generation with Qwen-3 powered by Lux, Reactant & XLA."
 
     version, reasoning = run_model_selection()
@@ -871,6 +905,18 @@ function main()
     return nothing
 end
 
+function get_argparse_settings()
+    s = ArgParseSettings(; autofix_names=true)
+    #! format: off
+    @add_arg_table! s begin
+        "--minimal"
+            action = :store_true
+    end
+    #! format: on
+    return s
+end
+
 if abspath(PROGRAM_FILE) == @__FILE__
-    main()
+    args = parse_args(ARGS, get_argparse_settings(); as_symbols=true)
+    main(; args...)
 end

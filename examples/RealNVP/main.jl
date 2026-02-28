@@ -13,7 +13,8 @@ using Lux,
     ConcreteStructs,
     Printf,
     Optimisers,
-    CairoMakie
+    CairoMakie,
+    ArgParse
 
 const xdev = reactant_device(; force=true)
 const cdev = cpu_device()
@@ -219,7 +220,13 @@ function main(;
     n_layers::Int=4,
     lr::Float64=0.0004,
     noise::Float64=0.06,
+    minimal::Bool=false,
 )
+    if minimal
+        maxiters = 1
+        n_train_samples = 1000
+    end
+
     rng = Random.default_rng()
     Random.seed!(rng, 0)
 
@@ -258,26 +265,65 @@ function main(;
     return StatefulLuxLayer(model, train_state.parameters, Lux.testmode(train_state.states))
 end
 
-trained_model = main()
-nothing #hide
-
-# ## Visualizing the Results
-z_stages = Matrix{Float32}[]
-for i in 1:(trained_model.model.n_transforms)
-    z = @jit sample(Random.default_rng(), Float32, trained_model, 10_000, i)
-    push!(z_stages, Array(z))
+function get_argparse_settings()
+    s = ArgParseSettings(; autofix_names=true)
+    #! format: off
+    @add_arg_table! s begin
+        "--maxiters"
+            arg_type = Int
+            default = 10_000
+        "--n-train-samples"
+            arg_type = Int
+            default = 100_000
+        "--batchsize"
+            arg_type = Int
+            default = 128
+        "--n-transforms"
+            arg_type = Int
+            default = 6
+        "--hidden-dims"
+            arg_type = Int
+            default = 16
+        "--n-layers"
+            arg_type = Int
+            default = 4
+        "--lr"
+            arg_type = Float64
+            default = 0.0004
+        "--noise"
+            arg_type = Float64
+            default = 0.06
+        "--minimal"
+            action = :store_true
+    end
+    #! format: on
+    return s
 end
 
-begin
-    fig = Figure(; size=(1200, 800))
+if abspath(PROGRAM_FILE) == @__FILE__
+    args = parse_args(ARGS, get_argparse_settings(); as_symbols=true)
+    trained_model = main(; args...)
 
-    for (idx, z) in enumerate(z_stages)
-        i, j = (idx - 1) ÷ 3, (idx - 1) % 3
-        ax = Axis(fig[i, j]; title="$(idx) transforms")
-        scatter!(ax, z[1, :], z[2, :]; markersize=2)
+    if !args[:minimal]
+        # ## Visualizing the Results
+        z_stages = Matrix{Float32}[]
+        for i in 1:(trained_model.model.n_transforms)
+            z = @jit sample(Random.default_rng(), Float32, trained_model, 10_000, i)
+            push!(z_stages, Array(z))
+        end
+
+        begin
+            fig = Figure(; size=(1200, 800))
+
+            for (idx, z) in enumerate(z_stages)
+                i, j = (idx - 1) ÷ 3, (idx - 1) % 3
+                ax = Axis(fig[i, j]; title="$(idx) transforms")
+                scatter!(ax, z[1, :], z[2, :]; markersize=2)
+            end
+
+            fig
+        end
     end
-
-    fig
 end
 
 # ![](https://raw.githubusercontent.com/LuxDL/Lux.jl/main/docs/src/public/realnvp.png)

@@ -19,20 +19,25 @@ using Lux,
     Zygote,
     OneHotArrays,
     InteractiveUtils,
-    Printf
+    Printf,
+    ArgParse
 using MLDatasets: MNIST
 using MLUtils: DataLoader, splitobs
 
 CUDA.allowscalar(false)
 
 # ## Loading MNIST
-function loadmnist(batchsize, train_split)
+function loadmnist(batchsize, train_split, subset_size=nothing)
     ## Load MNIST: Only 1500 for demonstration purposes
-    N = parse(Bool, get(ENV, "CI", "false")) ? 1500 : nothing
+    N = if subset_size !== nothing
+        subset_size
+    else
+        parse(Bool, get(ENV, "CI", "false")) ? 1500 : nothing
+    end
     dataset = MNIST(; split=:train)
     if N !== nothing
-        imgs = dataset.features[:, :, 1:N]
-        labels_raw = dataset.targets[1:N]
+        imgs = dataset.features[:, :, 1:min(N, size(dataset.features, 3))]
+        labels_raw = dataset.targets[1:min(N, length(dataset.targets))]
     else
         imgs = dataset.features
         labels_raw = dataset.targets
@@ -153,17 +158,18 @@ function accuracy(model, ps, st, dataloader)
 end
 
 # ## Training
-function train(model_function; cpu::Bool=false, kwargs...)
+function train(model_function; cpu::Bool=false, minimal::Bool=false, kwargs...)
     dev = cpu ? cpu_device() : gpu_device()
     model, ps, st = create_model(model_function; dev, kwargs...)
 
     ## Training
-    train_dataloader, test_dataloader = dev(loadmnist(128, 0.9))
+    subset_size = minimal ? 32 : nothing
+    train_dataloader, test_dataloader = dev(loadmnist(128, 0.9, subset_size))
 
     tstate = Training.TrainState(model, ps, st, Adam(0.001f0))
 
     ### Lets train the model
-    nepochs = 9
+    nepochs = minimal ? 1 : 9
     for epoch in 1:nepochs
         stime = time()
         for (x, y) in train_dataloader
@@ -181,82 +187,49 @@ function train(model_function; cpu::Bool=false, kwargs...)
     return nothing
 end
 
-train(NeuralODECompact)
-nothing #hide
+function main(; minimal::Bool=false)
+    train(NeuralODECompact; minimal)
+    train(NeuralODE; minimal)
 
-#-
+    # We can also change the `sensealg` and train the model! `GaussAdjoint` allows you to use
+    # any arbitrary parameter structure and not just a flat vector (`ComponentArray`).
+    train(NeuralODE; sensealg=GaussAdjoint(; autojacvec=ZygoteVJP()), use_named_tuple=true, minimal)
 
-train(NeuralODE)
-nothing #hide
+    # But remember some AD backends like `ReverseDiff` is not GPU compatible.
+    # For a model this size, you will notice that training time is significantly lower for
+    # training on CPU than on GPU.
+    train(NeuralODE; sensealg=InterpolatingAdjoint(; autojacvec=ReverseDiffVJP()), cpu=true, minimal)
 
-# We can also change the `sensealg` and train the model! `GaussAdjoint` allows you to use
-# any arbitrary parameter structure and not just a flat vector (`ComponentArray`).
+    # For completeness, let's also test out discrete sensitivities!
+    train(NeuralODE; sensealg=ReverseDiffAdjoint(), cpu=true, minimal)
 
-train(NeuralODE; sensealg=GaussAdjoint(; autojacvec=ZygoteVJP()), use_named_tuple=true)
+    # ## Train the new Stateful Neural ODE
+    train(StatefulNeuralODE; minimal)
 
-# But remember some AD backends like `ReverseDiff` is not GPU compatible.
-# For a model this size, you will notice that training time is significantly lower for
-# training on CPU than on GPU.
-
-train(NeuralODE; sensealg=InterpolatingAdjoint(; autojacvec=ReverseDiffVJP()), cpu=true)
-
-# For completeness, let's also test out discrete sensitivities!
-
-train(NeuralODE; sensealg=ReverseDiffAdjoint(), cpu=true)
-
-# ## Alternate Implementation using Stateful Layer
-
-# Starting `v0.5.5`, Lux provides a [`StatefulLuxLayer`](@ref) which can be used
-# to avoid the [`Box`ing of `st`](https://github.com/JuliaLang/julia/issues/15276). Using
-# the `@compact` API avoids this problem entirely.
-struct StatefulNeuralODE{M<:Lux.AbstractLuxLayer,So,T,K} <:
-       Lux.AbstractLuxWrapperLayer{:model}
-    model::M
-    solver::So
-    tspan::T
-    kwargs::K
+    # ## Type Stability
+    if !minimal
+        model, ps, st = create_model(NeuralODE)
+        model_stateful, ps_stateful, st_stateful = create_model(StatefulNeuralODE)
+        x = ones(Float32, 28, 28, 1, 3) |> gpu_device()
+        @code_warntype model(x, ps, st)
+        @code_warntype model_stateful(x, ps_stateful, st_stateful)
+        model_compact, ps_compact, st_compact = create_model(NeuralODECompact)
+        @code_warntype model_compact(x, ps_compact, st_compact)
+    end
 end
 
-function StatefulNeuralODE(
-    model::Lux.AbstractLuxLayer; solver=Tsit5(), tspan=(0.0f0, 1.0f0), kwargs...
-)
-    return StatefulNeuralODE(model, solver, tspan, kwargs)
+function get_argparse_settings()
+    s = ArgParseSettings(; autofix_names=true)
+    #! format: off
+    @add_arg_table! s begin
+        "--minimal"
+            action = :store_true
+    end
+    #! format: on
+    return s
 end
 
-function (n::StatefulNeuralODE)(x, ps, st)
-    st_model = StatefulLuxLayer(n.model, ps, st)
-    dudt(u, p, t) = st_model(u, p)
-    prob = ODEProblem{false}(ODEFunction{false}(dudt), x, n.tspan, ps)
-    return solve(prob, n.solver; n.kwargs...), st_model.st
+if abspath(PROGRAM_FILE) == @__FILE__
+    args = parse_args(ARGS, get_argparse_settings(); as_symbols=true)
+    main(; args...)
 end
-
-# ## Train the new Stateful Neural ODE
-train(StatefulNeuralODE)
-
-# We might not see a significant difference in the training time, but let us investigate
-# the type stabilities of the layers.
-
-# ## Type Stability
-
-model, ps, st = create_model(NeuralODE)
-
-model_stateful, ps_stateful, st_stateful = create_model(StatefulNeuralODE)
-
-x = ones(Float32, 28, 28, 1, 3) |> gpu_device();
-
-# NeuralODE is not type stable due to the boxing of `st`
-
-@code_warntype model(x, ps, st)
-
-# We avoid the problem entirely by using `StatefulNeuralODE`
-
-@code_warntype model_stateful(x, ps_stateful, st_stateful)
-
-# Note, that we still recommend using this layer internally and not exposing this as the
-# default API to the users.
-
-# Finally checking the compact model
-
-model_compact, ps_compact, st_compact = create_model(NeuralODECompact)
-
-@code_warntype model_compact(x, ps_compact, st_compact)

@@ -3,7 +3,15 @@
 # ## Package Imports
 
 using Lux,
-    ComponentArrays, MLDatasets, MLUtils, OneHotArrays, Optimisers, Printf, Random, Reactant
+    ComponentArrays,
+    MLDatasets,
+    MLUtils,
+    OneHotArrays,
+    Optimisers,
+    Printf,
+    Random,
+    Reactant,
+    ArgParse
 
 # ## Loading Datasets
 function load_dataset(
@@ -41,9 +49,11 @@ function load_dataset(
     )
 end
 
-function load_datasets(batchsize=32)
-    n_train = parse(Bool, get(ENV, "CI", "false")) ? 1024 : nothing
-    n_eval = parse(Bool, get(ENV, "CI", "false")) ? 32 : nothing
+function load_datasets(batchsize=32; n_train=nothing, n_eval=nothing)
+    if n_train === nothing && n_eval === nothing
+        n_train = parse(Bool, get(ENV, "CI", "false")) ? 1024 : nothing
+        n_eval = parse(Bool, get(ENV, "CI", "false")) ? 32 : nothing
+    end
     return load_dataset.((MNIST, FashionMNIST), n_train, n_eval, batchsize)
 end
 nothing #hide
@@ -108,11 +118,13 @@ end
 nothing #hide
 
 # ## Training
-function train()
+function train(; minimal::Bool=false)
     dev = reactant_device(; force=true)
 
     model = create_model()
-    dataloaders = load_datasets() |> dev
+    n_train = minimal ? 128 : nothing
+    n_eval = minimal ? 32 : nothing
+    dataloaders = load_datasets(; n_train, n_eval) |> dev
 
     Random.seed!(1234)
     ps, st = Lux.setup(Random.default_rng(), model) |> dev
@@ -124,7 +136,7 @@ function train()
     model_compiled = @compile model((data_idx, x), ps, Lux.testmode(st))
 
     ### Let's train the model
-    nepochs = 50
+    nepochs = minimal ? 1 : 50
     for epoch in 1:nepochs, data_idx in 1:2
         train_dataloader, test_dataloader = dev.(dataloaders[data_idx])
 
@@ -208,6 +220,25 @@ function train()
     return test_acc_list
 end
 
-test_acc_list = train()
-@assert test_acc_list[1] > 35 && test_acc_list[2] > 35 #hide
-nothing #hide
+function main(; minimal::Bool=false)
+    test_acc_list = train(; minimal)
+    if !minimal
+        @assert test_acc_list[1] > 35 && test_acc_list[2] > 35
+    end
+end
+
+function get_argparse_settings()
+    s = ArgParseSettings(; autofix_names=true)
+    #! format: off
+    @add_arg_table! s begin
+        "--minimal"
+            action = :store_true
+    end
+    #! format: on
+    return s
+end
+
+if abspath(PROGRAM_FILE) == @__FILE__
+    args = parse_args(ARGS, get_argparse_settings(); as_symbols=true)
+    main(; args...)
+end

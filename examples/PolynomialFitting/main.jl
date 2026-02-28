@@ -5,7 +5,7 @@
 
 # ## Package Imports
 
-using Lux, ADTypes, Optimisers, Printf, Random, Reactant, Statistics, CairoMakie
+using Lux, ADTypes, Optimisers, Printf, Random, Reactant, Statistics, CairoMakie, ArgParse
 
 # ## Dataset
 
@@ -93,7 +93,10 @@ nothing #hide
 
 # Finally the training loop.
 
-function main(tstate::Training.TrainState, vjp, data, epochs)
+function main(tstate::Training.TrainState, vjp, data, epochs; minimal::Bool=false)
+    if minimal
+        epochs = 1
+    end
     data = xdev(data)
     for epoch in 1:epochs
         _, loss, _, tstate = Training.single_train_step!(vjp, loss_function, data, tstate)
@@ -104,57 +107,75 @@ function main(tstate::Training.TrainState, vjp, data, epochs)
     return tstate
 end
 
-tstate = main(tstate, vjp_rule, (x, y), 250)
+function get_argparse_settings()
+    s = ArgParseSettings(; autofix_names=true)
+    #! format: off
+    @add_arg_table! s begin
+        "--epochs"
+            arg_type = Int
+            default = 250
+        "--minimal"
+            action = :store_true
+    end
+    #! format: on
+    return s
+end
 
-# Since we are using Reactant, we need to compile the model before we can use it.
+if abspath(PROGRAM_FILE) == @__FILE__
+    args = parse_args(ARGS, get_argparse_settings(); as_symbols=true)
 
-forward_pass = @compile Lux.apply(
-    tstate.model, xdev(x), tstate.parameters, Lux.testmode(tstate.states)
-)
+    tstate = Training.TrainState(model, ps, st, opt)
+    tstate = main(tstate, vjp_rule, (x, y), args[:epochs]; minimal=args[:minimal])
 
-y_pred =
-    forward_pass(tstate.model, xdev(x), tstate.parameters, Lux.testmode(tstate.states)) |>
-    first |>
-    cdev
-nothing #hide
+    if !args[:minimal]
+        # Since we are using Reactant, we need to compile the model before we can use it.
+        forward_pass = @compile Lux.apply(
+            tstate.model, xdev(x), tstate.parameters, Lux.testmode(tstate.states)
+        )
 
-# Let's plot the results
+        y_pred =
+            forward_pass(tstate.model, xdev(x), tstate.parameters, Lux.testmode(tstate.states)) |>
+            first |>
+            cdev
 
-begin
-    fig = Figure()
-    ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
+        # Let's plot the results
+        begin
+            fig = Figure()
+            ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
 
-    l = lines!(
-        ax,
-        x[1, :],
-        x -> evalpoly(x, (0, -2, 1));
-        linewidth=3,
-        label="True Quadratic Function",
-    )
-    s1 = scatter!(
-        ax,
-        x[1, :],
-        y[1, :];
-        markersize=12,
-        alpha=0.5,
-        color=:orange,
-        strokecolor=:black,
-        strokewidth=2,
-        label="Actual Data",
-    )
-    s2 = scatter!(
-        ax,
-        x[1, :],
-        y_pred[1, :];
-        markersize=12,
-        alpha=0.5,
-        color=:green,
-        strokecolor=:black,
-        strokewidth=2,
-        label="Predictions",
-    )
+            l = lines!(
+                ax,
+                x[1, :],
+                x -> evalpoly(x, (0, -2, 1));
+                linewidth=3,
+                label="True Quadratic Function",
+            )
+            s1 = scatter!(
+                ax,
+                x[1, :],
+                y[1, :];
+                markersize=12,
+                alpha=0.5,
+                color=:orange,
+                strokecolor=:black,
+                strokewidth=2,
+                label="Actual Data",
+            )
+            s2 = scatter!(
+                ax,
+                x[1, :],
+                y_pred[1, :];
+                markersize=12,
+                alpha=0.5,
+                color=:green,
+                strokecolor=:black,
+                strokewidth=2,
+                label="Predictions",
+            )
 
-    axislegend(ax)
+            axislegend(ax)
 
-    fig
+            fig
+        end
+    end
 end

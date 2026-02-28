@@ -1,5 +1,6 @@
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
 MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458"
 MLUtils = "f1d291b0-491e-4a28-83b9-f70985020b54"
@@ -13,6 +14,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 ADTypes = "1.10"
+ArgParse = "1"
 Lux = "1"
 MLDatasets = "0.7.14"
 MLUtils = "0.4"

@@ -1,4 +1,5 @@
 [deps]
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
 MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458"
@@ -10,6 +11,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
 
 [compat]
+ArgParse = "1"
 ComponentArrays = "0.15.22"
 Lux = "1"
 MLDatasets = "0.7"

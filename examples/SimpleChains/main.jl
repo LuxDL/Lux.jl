@@ -7,20 +7,24 @@
 # reference.
 
 # ## Package Imports
-using Lux, MLUtils, Optimisers, Zygote, OneHotArrays, Random, Statistics, Printf, Reactant
+using Lux, MLUtils, Optimisers, Zygote, OneHotArrays, Random, Statistics, Printf, Reactant, ArgParse
 using MLDatasets: MNIST
 using SimpleChains: SimpleChains
 
 Reactant.set_default_backend("cpu")
 
 # ## Loading MNIST
-function loadmnist(batchsize, train_split)
+function loadmnist(batchsize, train_split, subset_size=nothing)
     ## Load MNIST
-    N = parse(Bool, get(ENV, "CI", "false")) ? 1500 : nothing
+    N = if subset_size !== nothing
+        subset_size
+    else
+        parse(Bool, get(ENV, "CI", "false")) ? 1500 : nothing
+    end
     dataset = MNIST(; split=:train)
     if N !== nothing
-        imgs = dataset.features[:, :, 1:N]
-        labels_raw = dataset.targets[1:N]
+        imgs = dataset.features[:, :, 1:min(N, size(dataset.features, 3))]
+        labels_raw = dataset.targets[1:min(N, length(dataset.targets))]
     else
         imgs = dataset.features
         labels_raw = dataset.targets
@@ -73,8 +77,9 @@ function accuracy(model, ps, st, dataloader)
 end
 
 # ## Define the Training Loop
-function train(model, dev=cpu_device(); rng=Random.default_rng(), kwargs...)
-    train_dataloader, test_dataloader = loadmnist(128, 0.9) |> dev
+function train(model, dev=cpu_device(); rng=Random.default_rng(), minimal=false, kwargs...)
+    subset_size = minimal ? 32 : nothing
+    train_dataloader, test_dataloader = loadmnist(128, 0.9, subset_size) |> dev
     ps, st = Lux.setup(rng, model) |> dev
 
     vjp = dev isa ReactantDevice ? AutoEnzyme() : AutoZygote()
@@ -89,7 +94,7 @@ function train(model, dev=cpu_device(); rng=Random.default_rng(), kwargs...)
     end
 
     ### Lets train the model
-    nepochs = 10
+    nepochs = minimal ? 1 : 10
     tr_acc, te_acc = 0.0, 0.0
     for epoch in 1:nepochs
         stime = time()
@@ -117,17 +122,35 @@ function train(model, dev=cpu_device(); rng=Random.default_rng(), kwargs...)
 end
 nothing #hide
 
-# ## Finally Training the Model
+function main(; minimal::Bool=false)
+    # First we will train the Lux model
+    tr_acc, te_acc = train(lux_model, reactant_device(); minimal)
+    if !minimal
+        @assert tr_acc > 0.75 && te_acc > 0.75
+    end
 
-# First we will train the Lux model
-tr_acc, te_acc = train(lux_model, reactant_device())
-@assert tr_acc > 0.75 && te_acc > 0.75 #hide
-nothing #hide
+    # Now we will train the SimpleChains model
+    tr_acc, te_acc = train(simple_chains_model; minimal)
+    if !minimal
+        @assert tr_acc > 0.75 && te_acc > 0.75
+    end
+end
 
-# Now we will train the SimpleChains model
-tr_acc, te_acc = train(simple_chains_model)
-@assert tr_acc > 0.75 && te_acc > 0.75 #hide
-nothing #hide
+function get_argparse_settings()
+    s = ArgParseSettings(; autofix_names=true)
+    #! format: off
+    @add_arg_table! s begin
+        "--minimal"
+            action = :store_true
+    end
+    #! format: on
+    return s
+end
+
+if abspath(PROGRAM_FILE) == @__FILE__
+    args = parse_args(ARGS, get_argparse_settings(); as_symbols=true)
+    main(; args...)
+end
 
 # On my local machine we see a 3-4x speedup when using SimpleChains.jl. The conditions of
 # the server this documentation is being built on is not ideal for CPU benchmarking hence,

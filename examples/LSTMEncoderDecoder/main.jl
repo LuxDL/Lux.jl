@@ -3,7 +3,7 @@
 # This examples is based on [LSTM_encoder_decoder](https://github.com/lkulowski/LSTM_encoder_decoder)
 # by [Laura Kulowski](https://github.com/lkulowski).
 
-using Lux, Reactant, Random, Optimisers, Statistics, Enzyme, Printf, CairoMakie, MLUtils
+using Lux, Reactant, Random, Optimisers, Statistics, Enzyme, Printf, CairoMakie, MLUtils, ArgParse
 
 const xdev = reactant_device(; force=true)
 const cdev = cpu_device()
@@ -241,7 +241,11 @@ function train(
     training_mode=:mixed_teacher_forcing,
     teacher_forcing_ratio=0.5f0,
     learning_rate=1e-3,
+    minimal=false,
 )
+    if minimal
+        nepochs = 1
+    end
     (X_train, Y_train), (X_test, Y_test) = train_dataset, validation_dataset
     in_dims = size(X_train, 1)
     @assert size(Y_train, 2) == size(Y_test, 2)
@@ -308,52 +312,79 @@ function train(
     )
 end
 
-trained_model = train(
-    (X_train, Y_train),
-    (X_test, Y_test);
-    nepochs=50,
-    batchsize=4,
-    hidden_dims=32,
-    training_mode=:mixed_teacher_forcing,
-    teacher_forcing_ratio=0.5f0,
-    learning_rate=3e-4,
-)
+function main(; minimal::Bool=false)
+    Nt = minimal ? 200 : 2000
+    t, y = synthetic_data(Nt)
+    t_train, y_train, t_test, y_test = train_test_split(t, y)
 
-# ## Making Predictions
+    X_train, Y_train = windowed_dataset(y_train; input_window=80, output_window=20, stride=5)
+    X_test, Y_test = windowed_dataset(y_test; input_window=80, output_window=20, stride=5)
 
-Y_pred = trained_model((X_test, 20, nothing))
+    trained_model = train(
+        (X_train, Y_train),
+        (X_test, Y_test);
+        nepochs=50,
+        batchsize=4,
+        hidden_dims=32,
+        training_mode=:mixed_teacher_forcing,
+        teacher_forcing_ratio=0.5f0,
+        learning_rate=3e-4,
+        minimal,
+    )
 
-begin
-    fig = Figure(; size=(1200, 800))
+    if !minimal
+        # ## Making Predictions
+        Y_pred = trained_model((X_test, 20, nothing))
 
-    for i in 1:4, j in 1:2
-        b = i + j * 4
-        ax = Axis(fig[i, j]; xlabel="t", ylabel="y")
-        i != 4 && hidexdecorations!(ax; grid=false)
-        j != 1 && hideydecorations!(ax; grid=false)
+        begin
+            fig = Figure(; size=(1200, 800))
 
-        lines!(ax, 0:79, X_test[1, :, b]; label="Input", color=:black, linewidth=2)
-        lines!(
-            ax,
-            79:99,
-            vcat(X_test[1, end, b], Y_test[1, :, b]);
-            label="Ground Truth\n(Noisy)",
-            color=:red,
-            linewidth=2,
-        )
-        lines!(
-            ax,
-            79:99,
-            vcat(X_test[1, end, b], Y_pred[1, :, b]);
-            label="Prediction",
-            color=:blue,
-            linewidth=2,
-        )
+            for i in 1:4, j in 1:2
+                b = i + j * 4
+                ax = Axis(fig[i, j]; xlabel="t", ylabel="y")
+                i != 4 && hidexdecorations!(ax; grid=false)
+                j != 1 && hideydecorations!(ax; grid=false)
 
-        i == 4 && j == 2 && axislegend(ax; position=:lb)
+                lines!(ax, 0:79, X_test[1, :, b]; label="Input", color=:black, linewidth=2)
+                lines!(
+                    ax,
+                    79:99,
+                    vcat(X_test[1, end, b], Y_test[1, :, b]);
+                    label="Ground Truth\n(Noisy)",
+                    color=:red,
+                    linewidth=2,
+                )
+                lines!(
+                    ax,
+                    79:99,
+                    vcat(X_test[1, end, b], Y_pred[1, :, b]);
+                    label="Prediction",
+                    color=:blue,
+                    linewidth=2,
+                )
+
+                i == 4 && j == 2 && axislegend(ax; position=:lb)
+            end
+
+            fig[0, :] = Label(fig, "Predictions from Trained Model"; fontsize=20)
+
+            fig
+        end
     end
+end
 
-    fig[0, :] = Label(fig, "Predictions from Trained Model"; fontsize=20)
+function get_argparse_settings()
+    s = ArgParseSettings(; autofix_names=true)
+    #! format: off
+    @add_arg_table! s begin
+        "--minimal"
+            action = :store_true
+    end
+    #! format: on
+    return s
+end
 
-    fig
+if abspath(PROGRAM_FILE) == @__FILE__
+    args = parse_args(ARGS, get_argparse_settings(); as_symbols=true)
+    main(; args...)
 end

@@ -12,7 +12,7 @@
 # Note: If you wish to use `AutoZygote()` for automatic differentiation,
 # add Zygote to your project dependencies and include `using Zygote`.
 
-using ADTypes, Lux, JLD2, MLUtils, Optimisers, Printf, Reactant, Random
+using ADTypes, Lux, JLD2, MLUtils, Optimisers, Printf, Reactant, Random, ArgParse
 
 # ## Dataset
 
@@ -148,12 +148,12 @@ nothing #hide
 
 # ## Training the Model
 
-function main(model_type)
+function main(model_type; epochs=25, dataset_size=1000)
     dev = reactant_device()
     cdev = cpu_device()
 
     ## Get the dataloaders
-    train_loader, val_loader = get_dataloaders() |> dev
+    train_loader, val_loader = get_dataloaders(; dataset_size) |> dev
 
     ## Create the model
     model = model_type(2, 8, 1)
@@ -167,7 +167,7 @@ function main(model_type)
     end
     ad = dev isa ReactantDevice ? AutoReactant() : AutoZygote()
 
-    for epoch in 1:25
+    for epoch in 1:epochs
         ## Train the model
         total_loss = 0.0f0
         total_samples = 0
@@ -204,22 +204,37 @@ function main(model_type)
     return (train_state.parameters, train_state.states) |> cdev
 end
 
-ps_trained, st_trained = main(SpiralClassifier)
-nothing #hide
+function main(; minimal::Bool=false)
+    epochs = minimal ? 1 : 25
+    dataset_size = minimal ? 64 : 1000
 
-# We can also train the compact model with the exact same code!
+    ps_trained, st_trained = main(SpiralClassifier; epochs, dataset_size)
+    # We can also train the compact model with the exact same code!
+    ps_trained2, st_trained2 = main(SpiralClassifierCompact; epochs, dataset_size)
 
-ps_trained2, st_trained2 = main(SpiralClassifierCompact)
-nothing #hide
+    if !minimal
+        # ## Saving the Model
+        # We can save the model using JLD2 (and any other serialization library of your choice)
+        # Note that we transfer the model to CPU before saving. Additionally, we recommend that
+        # you don't save the model struct and only save the parameters and states.
+        @save "trained_model.jld2" ps_trained st_trained
+        # Let's try loading the model
+        @load "trained_model.jld2" ps_trained st_trained
+    end
+end
 
-# ## Saving the Model
+function get_argparse_settings()
+    s = ArgParseSettings(; autofix_names=true)
+    #! format: off
+    @add_arg_table! s begin
+        "--minimal"
+            action = :store_true
+    end
+    #! format: on
+    return s
+end
 
-# We can save the model using JLD2 (and any other serialization library of your choice)
-# Note that we transfer the model to CPU before saving. Additionally, we recommend that
-# you don't save the model struct and only save the parameters and states.
-
-@save "trained_model.jld2" ps_trained st_trained
-
-# Let's try loading the model
-
-@load "trained_model.jld2" ps_trained st_trained
+if abspath(PROGRAM_FILE) == @__FILE__
+    args = parse_args(ARGS, get_argparse_settings(); as_symbols=true)
+    main(; args...)
+end

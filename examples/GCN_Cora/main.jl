@@ -13,7 +13,8 @@ using Lux,
     ConcreteStructs,
     Printf,
     OneHotArrays,
-    Optimisers
+    Optimisers,
+    ArgParse
 
 const xdev = reactant_device(; force=true)
 const cdev = cpu_device()
@@ -87,7 +88,12 @@ function main(;
     weight_decay::Float64=0.0,
     patience::Int=20,
     epochs::Int=200,
+    minimal::Bool=false,
 )
+    if minimal
+        epochs = 1
+    end
+
     rng = Random.default_rng()
     Random.seed!(rng, 0)
 
@@ -189,5 +195,42 @@ function main(;
     return nothing
 end
 
-main()
+function get_argparse_settings()
+    s = ArgParseSettings(; autofix_names=true)
+    #! format: off
+    @add_arg_table! s begin
+        "--hidden-dim"
+            arg_type = Int
+            default = 64
+        "--dropout"
+            arg_type = Float64
+            default = 0.1
+        "--nb-layers"
+            arg_type = Int
+            default = 2
+        "--use-bias"
+            action = :store_true
+        "--lr"
+            arg_type = Float64
+            default = 0.001
+        "--weight-decay"
+            arg_type = Float64
+            default = 0.0
+        "--patience"
+            arg_type = Int
+            default = 20
+        "--epochs"
+            arg_type = Int
+            default = 200
+        "--minimal"
+            action = :store_true
+    end
+    #! format: on
+    return s
+end
+
+if abspath(PROGRAM_FILE) == @__FILE__
+    args = parse_args(ARGS, get_argparse_settings(); as_symbols=true)
+    main(; args...)
+end
 nothing #hide
