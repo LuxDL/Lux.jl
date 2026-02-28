@@ -187,7 +187,7 @@ function create_image_grid(imgs::AbstractArray, grid_rows::Int, grid_cols::Int)
         return cimg'
     end
     if length(imgs) < total_images
-        # Pad with black images if necessary
+        ## Pad with black images if necessary
         for _ in 1:(total_images - length(imgs))
             push!(imgs, fill(zero(eltype(imgs[1])), size(imgs[1])))
         end

@@ -757,7 +757,7 @@ function get_argparse_settings()
             help = "Generate and log images every N epochs"
             arg_type = Int
             default = 5
-        # model hyper params
+        ## model hyper params
         "--channels"
             help = "UNet channels per stage"
             arg_type = Int
@@ -787,7 +787,7 @@ function get_argparse_settings()
             help = "Maximum signal rate"
             arg_type = Float32
             default = 0.95f0
-        # inference specific
+        ## inference specific
         "--inference-mode"
             help = "Run in inference-only mode"
             action = :store_true
