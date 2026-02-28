@@ -99,29 +99,31 @@ end
 
 function get_argparse_settings()
     s = ArgParseSettings(; autofix_names=true)
+    #! format: off
     @add_arg_table! s begin
         "--batchsize"
-        arg_type = Int
-        default = 512
+            arg_type = Int
+            default = 512
         "--weight-decay"
-        arg_type = Float64
-        default = 0.0001
+            arg_type = Float64
+            default = 0.0001
         "--clip-norm"
-        action = :store_true
+            action = :store_true
         "--seed"
-        arg_type = Int
-        default = 1234
+            arg_type = Int
+            default = 1234
         "--epochs"
-        arg_type = Int
-        default = 100
+            arg_type = Int
+            default = 100
         "--lr"
-        arg_type = Float64
-        default = 0.001
+            arg_type = Float64
+            default = 0.001
         "--bfloat16"
-        action = :store_true
+            action = :store_true
         "--minimal"
-        action = :store_true
+            action = :store_true
     end
+    #! format: on
     return s
 end
 

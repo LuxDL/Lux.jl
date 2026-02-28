@@ -350,31 +350,33 @@ using ArgParse
 
 function get_argparse_settings()
     s = ArgParseSettings(; autofix_names=true)
+    #! format: off
     @add_arg_table! s begin
         "--batchsize"
-        arg_type = Int
-        default = 128
+            arg_type = Int
+            default = 128
         "--num-latent-dims"
-        arg_type = Int
-        default = 8
+            arg_type = Int
+            default = 8
         "--max-num-filters"
-        arg_type = Int
-        default = 64
+            arg_type = Int
+            default = 64
         "--seed"
-        arg_type = Int
-        default = 0
+            arg_type = Int
+            default = 0
         "--epochs"
-        arg_type = Int
-        default = 50
+            arg_type = Int
+            default = 50
         "--weight-decay"
-        arg_type = Float64
-        default = 1.0e-5
+            arg_type = Float64
+            default = 1.0e-5
         "--learning-rate"
-        arg_type = Float64
-        default = 1.0e-3
+            arg_type = Float64
+            default = 1.0e-3
         "--minimal"
-        action = :store_true
+            action = :store_true
     end
+    #! format: on
     return s
 end
 

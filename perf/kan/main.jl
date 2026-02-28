@@ -219,20 +219,22 @@ end
 
 function get_argparse_settings()
     s = ArgParseSettings(; autofix_names=true)
+    #! format: off
     @add_arg_table! s begin
         "--backend"
-        arg_type = String
-        default = "all"
+            arg_type = String
+            default = "all"
         "--batch-size"
-        arg_type = Int
-        default = 1024
+            arg_type = Int
+            default = 1024
         "--kan-width"
-        arg_type = Int
-        default = 128
+            arg_type = Int
+            default = 128
         "--grid-size"
-        arg_type = Int
-        default = 32
+            arg_type = Int
+            default = 32
     end
+    #! format: on
     return s
 end
 

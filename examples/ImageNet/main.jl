@@ -643,86 +643,88 @@ end
 
 function get_argparse_settings()
     s = ArgParseSettings(; autofix_names=true)
+    #! format: off
     @add_arg_table! s begin
         "--seed"
-        arg_type = Int
-        default = 0
+            arg_type = Int
+            default = 0
         "--model-name"
-        arg_type = String
-        required = true
+            arg_type = String
+            required = true
         "--model-kind"
-        arg_type = String
-        default = "nokind"
+            arg_type = String
+            default = "nokind"
         "--depth"
-        arg_type = Int
-        default = -1
+            arg_type = Int
+            default = -1
         "--pretrained"
-        action = :store_true
+            action = :store_true
         "--base-path"
-        arg_type = String
-        default = ""
+            arg_type = String
+            default = ""
         "--train-batchsize"
-        arg_type = Int
-        default = 64
+            arg_type = Int
+            default = 64
         "--val-batchsize"
-        arg_type = Int
-        default = 64
+            arg_type = Int
+            default = 64
         "--image-size"
-        arg_type = Int
-        default = -1
+            arg_type = Int
+            default = -1
         "--optimizer-kind"
-        arg_type = String
-        default = "sgd"
+            arg_type = String
+            default = "sgd"
         "--learning-rate"
-        arg_type = Float32
-        default = 0.01f0
+            arg_type = Float32
+            default = 0.01f0
         "--nesterov"
-        action = :store_true
+            action = :store_true
         "--momentum"
-        arg_type = Float32
-        default = 0.0f0
+            arg_type = Float32
+            default = 0.0f0
         "--weight-decay"
-        arg_type = Float32
-        default = 0.0f0
+            arg_type = Float32
+            default = 0.0f0
         "--scheduler-kind"
-        arg_type = String
-        default = "step"
+            arg_type = String
+            default = "step"
         "--cycle-length"
-        arg_type = Int
-        default = 50000
+            arg_type = Int
+            default = 50000
         "--damp-factor"
-        arg_type = Float32
-        default = 1.2f0
+            arg_type = Float32
+            default = 1.2f0
         "--lr-step-decay"
-        arg_type = Float32
-        default = 0.1f0
+            arg_type = Float32
+            default = 0.1f0
         "--lr-step"
-        arg_type = Int
-        nargs = '+'
-        default = [100000, 250000, 500000]
+            arg_type = Int
+            nargs = '+'
+            default = [100000, 250000, 500000]
         "--expt-id"
-        arg_type = String
-        default = ""
+            arg_type = String
+            default = ""
         "--expt-subdir"
-        arg_type = String
-        default = @__DIR__
+            arg_type = String
+            default = @__DIR__
         "--resume"
-        arg_type = String
-        default = ""
+            arg_type = String
+            default = ""
         "--evaluate"
-        action = :store_true
+            action = :store_true
         "--total-steps"
-        arg_type = Int
-        default = 800000
+            arg_type = Int
+            default = 800000
         "--evaluate-every"
-        arg_type = Int
-        default = 10000
+            arg_type = Int
+            default = 10000
         "--print-frequency"
-        arg_type = Int
-        default = 100
+            arg_type = Int
+            default = 100
         "--minimal"
-        action = :store_true
+            action = :store_true
     end
+    #! format: on
     return s
 end
 

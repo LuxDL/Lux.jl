@@ -92,19 +92,21 @@ end
 
 function get_argparse_settings()
     s = ArgParseSettings(; autofix_names=true)
+    #! format: off
     @add_arg_table! s begin
         "--optimize"
-        arg_type = String
-        default = "all"
+            arg_type = String
+            default = "all"
         "--batch-size"
-        arg_type = Int
-        nargs = '+'
-        default = [1, 4, 32, 128]
+            arg_type = Int
+            nargs = '+'
+            default = [1, 4, 32, 128]
         "--model-size"
-        arg_type = Int
-        nargs = '+'
-        default = [18, 34, 50, 101]
+            arg_type = Int
+            nargs = '+'
+            default = [18, 34, 50, 101]
     end
+    #! format: on
     return s
 end
 
