@@ -39,7 +39,7 @@ end
 # Eltype Matching Tests
 if isempty(parsed_args.positionals) || "others" ∈ parsed_args.positionals
     @testset "eltype_mismatch_handling: $option" for option in
-                                                    ("none", "warn", "convert", "error")
+                                                     ("none", "warn", "convert", "error")
         set_preferences!(Lux, "eltype_mismatch_handling" => option; force=true)
         try
             withenv("BACKEND_GROUP" => BACKEND_GROUP) do
