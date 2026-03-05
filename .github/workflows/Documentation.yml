@@ -96,7 +96,7 @@ jobs:
   #       shell: bash
 
   #     - name: Upload Tutorial Artifacts
-  #       uses: actions/upload-artifact@v6
+  #       uses: actions/upload-artifact@v7
   #       with:
   #         name: "tutorial-cuda"
   #         path: |
@@ -137,7 +137,7 @@ jobs:
           BUILDKITE_PARALLEL_JOB: ${{ matrix.group }}
           LD_LIBRARY_PATH: ""
       - name: Upload Tutorial Artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: "tutorial-cpu-${{ matrix.group }}"
           path: |
@@ -173,7 +173,7 @@ jobs:
 
       # Download the artifacts from the tutorials
       - name: Download Tutorial Artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           pattern: "tutorial-*"
           path: tutorial_artifacts
