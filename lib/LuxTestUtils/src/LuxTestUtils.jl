@@ -38,6 +38,7 @@ const FD = FiniteDiff
 const JET_TESTING_ENABLED = Ref{Bool}(false)
 const ENZYME_TESTING_ENABLED = Ref{Bool}(false)
 const ZYGOTE_TESTING_ENABLED = Ref{Bool}(false)
+const MOONCAKE_TESTING_ENABLED = Ref{Bool}(false)
 
 # Check if JET will work
 try
@@ -49,7 +50,7 @@ catch err
     JET_TESTING_ENABLED[] = false
 end
 
-# Check if Enzyme will work (only on non-prerelease versions)
+# Check if Mooncake & Enzyme will work (only on non-prerelease versions)
 @static if isempty(VERSION.prerelease)
     try
         using Enzyme: Enzyme
@@ -60,6 +61,16 @@ end
                 failed to load on $(VERSION). All Enzyme tests will be \
                 skipped." maxlog = 1 err = err
         ENZYME_TESTING_ENABLED[] = false
+    end
+
+    try
+        Mooncake.prepare_gradient_cache(Base.Fix1(sum, abs2), ones(Float32, 10))
+        MOONCAKE_TESTING_ENABLED[] = true
+    catch err
+        @error "`Mooncake.jl` did not successfully differentiate a simple function or \
+                failed to load on $(VERSION). All Mooncake tests will be \
+                skipped." maxlog = 1 err = err
+        MOONCAKE_TESTING_ENABLED[] = false
     end
 end
 

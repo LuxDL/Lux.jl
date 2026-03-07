@@ -206,7 +206,9 @@ function test_gradients(
         push!(backends, AutoZygote())
     end
     if !on_gpu
-        push!(backends, AutoMooncake())
+        if MOONCAKE_TESTING_ENABLED[]
+            push!(backends, AutoMooncake())
+        end
         total_length ≤ 32 && push!(backends, AutoForwardDiff())
         if enable_enzyme_reverse_mode || ENZYME_TESTING_ENABLED[]
             mode = if enzyme_set_runtime_activity
