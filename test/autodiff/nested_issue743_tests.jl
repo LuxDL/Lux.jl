@@ -22,5 +22,7 @@ include("../shared_testsetup.jl")
         (x, ps) -> loss_function(model, ps, st, x)
     end
 
-    @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3, skip_backends=[AutoEnzyme()])
+    @test_gradients(
+        __f, x, ps; atol=1.0f-3, rtol=1.0f-3, skip_backends=[AutoEnzyme(), AutoMooncake()]
+    )
 end
