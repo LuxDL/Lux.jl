@@ -27,7 +27,7 @@ function test_nested_ad_input_gradient_jacobian(aType, dev, ongpu, loss_fn, X, m
         !iszero(ComponentArray(cpu_device()(∂ps))) &&
         all(x -> x === nothing || isfinite(x), ComponentArray(cpu_device()(∂ps)))
 
-    _soft_fail = if loss_fn ∈ (loss_function_param2, loss_function_param4)
+    _soft_fail = if loss_fn ∈ (loss_function_input2, loss_function_input4)
         [AutoFiniteDiff(), AutoMooncake()]
     else
         [AutoFiniteDiff()]
