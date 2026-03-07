@@ -202,19 +202,19 @@ function test_gradients(
 
     # Choose the backends to test
     backends = []
-    # if ZYGOTE_TESTING_ENABLED[]
-    # push!(backends, AutoZygote())
-    # end
+    if ZYGOTE_TESTING_ENABLED[]
+        push!(backends, AutoZygote())
+    end
     if !on_gpu
         push!(backends, AutoMooncake())
-        # total_length ≤ 32 && push!(backends, AutoForwardDiff())
+        total_length ≤ 32 && push!(backends, AutoForwardDiff())
         if enable_enzyme_reverse_mode || ENZYME_TESTING_ENABLED[]
             mode = if enzyme_set_runtime_activity
                 Enzyme.set_runtime_activity(Enzyme.Reverse)
             else
                 Enzyme.Reverse
             end
-            # push!(backends, AutoEnzyme(; mode))
+            push!(backends, AutoEnzyme(; mode))
         end
     end
 
