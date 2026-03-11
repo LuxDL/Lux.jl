@@ -86,12 +86,14 @@ Returns only the gradient for args x.
 """
 function mooncake_gradient_function(f, x)
     # always enable friendly_tangents for ease of testing.
-    cache = Mooncake.prepare_gradient_cache(
-        f, x; config=Mooncake.Config(; friendly_tangents=true)
-    )
-    y, tangents = Mooncake.value_and_gradient!!(cache, f, x)
-    tangent_func, tangent_args = tangents
-    return tangent_args
+    # return closure to evaluate in call scope (solves NNlib, SLEEFPirates switching for activation functions)
+    return (f, x) -> Mooncake.value_and_gradient!!(
+        Mooncake.prepare_gradient_cache(
+            f, x; config=Mooncake.Config(; friendly_tangents=true)
+        ),
+        f,
+        x,
+    )[2]
 end
 
 # ForwardDiff.jl
