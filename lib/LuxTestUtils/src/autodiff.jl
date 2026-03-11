@@ -207,22 +207,22 @@ function test_gradients(
 
     # Choose the backends to test
     backends = []
-    # if ZYGOTE_TESTING_ENABLED[]
-    #     push!(backends, AutoZygote())
-    # end
+    if ZYGOTE_TESTING_ENABLED[]
+        push!(backends, AutoZygote())
+    end
     if !on_gpu
         if MOONCAKE_TESTING_ENABLED[]
             push!(backends, AutoMooncake())
         end
-        # # total_length ≤ 32 && push!(backends, AutoForwardDiff())
-        # if enable_enzyme_reverse_mode || ENZYME_TESTING_ENABLED[]
-        #     mode = if enzyme_set_runtime_activity
-        #         Enzyme.set_runtime_activity(Enzyme.Reverse)
-        #     else
-        #         Enzyme.Reverse
-        #     end
-        #     push!(backends, AutoEnzyme(; mode))
-        # end
+        # total_length ≤ 32 && push!(backends, AutoForwardDiff())
+        if enable_enzyme_reverse_mode || ENZYME_TESTING_ENABLED[]
+            mode = if enzyme_set_runtime_activity
+                Enzyme.set_runtime_activity(Enzyme.Reverse)
+            else
+                Enzyme.Reverse
+            end
+            push!(backends, AutoEnzyme(; mode))
+        end
     end
 
     intersect_backends = intersect(broken_backends, skip_backends)
