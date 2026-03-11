@@ -75,7 +75,17 @@ function gradient(::F, ::AutoEnzyme{<:Enzyme.ForwardMode}, args...) where {F}
 end
 
 function gradient(f::F, ::AutoMooncake, args...) where {F}
-    return gradient(f, mooncake_gradient_function, args...)
+    return gradient(
+        f,
+        (f, x) -> Mooncake.value_and_gradient!!(
+            Mooncake.prepare_gradient_cache(
+                f, x; config=Mooncake.Config(; friendly_tangents=true)
+            ),
+            f,
+            x,
+        )[2][2],
+        args...,
+    )
 end
 
 """
@@ -84,17 +94,10 @@ end
 Compute gradient using Mooncake.jl's value_and_gradient!! function.
 Returns only the gradient for args x.
 """
-function mooncake_gradient_function(f, x)
-    # always enable friendly_tangents for ease of testing.
-    # return closure to evaluate in call scope (solves NNlib, SLEEFPirates switching for activation functions)
-    return (f, x) -> Mooncake.value_and_gradient!!(
-        Mooncake.prepare_gradient_cache(
-            f, x; config=Mooncake.Config(; friendly_tangents=true)
-        ),
-        f,
-        x,
-    )[2]
-end
+# function mooncake_gradient_function(f, x)
+# always enable friendly_tangents for ease of testing.
+# return 
+# end
 
 # ForwardDiff.jl
 function gradient(f::F, ::AutoForwardDiff, args...) where {F}
