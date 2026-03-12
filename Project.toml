@@ -51,6 +51,7 @@ Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
 NCCL = "3fe64909-d7a1-4096-9b7d-7a0f12cf0f6b"
 Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
 ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
+SLEEFPirates = "476501e8-09a2-5ece-8869-fb82de89a1fa"
 SimpleChains = "de6bee2f-e2f4-4ec7-b6ed-219cc6f6e9e5"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
@@ -70,7 +71,7 @@ LossFunctionsExt = "LossFunctions"
 MLUtilsExt = "MLUtils"
 MPIExt = "MPI"
 MPINCCLExt = ["CUDA", "MPI", "NCCL"]
-MooncakeExt = "Mooncake"
+MooncakeExt = ["Mooncake", "SLEEFPirates"]
 ReactantExt = ["Enzyme", "Reactant"]
 # ReactantAttentionPrecompileExt = [
 #     "Enzyme",

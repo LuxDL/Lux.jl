@@ -25,7 +25,14 @@ using Test:
 
 # Autodiff
 using ADTypes:
-    AutoEnzyme, AutoFiniteDiff, AutoTracker, AutoForwardDiff, AutoReverseDiff, AutoZygote, AutoMooncake
+    AutoEnzyme,
+    AutoFiniteDiff,
+    AutoTracker,
+    AutoForwardDiff,
+    AutoReverseDiff,
+    AutoZygote,
+    AutoMooncake
+
 using ChainRulesCore: ChainRulesCore
 using FiniteDiff: FiniteDiff
 using ForwardDiff: ForwardDiff
@@ -90,7 +97,8 @@ include("jet.jl")
 
 include("utils.jl")
 
-export AutoEnzyme, AutoFiniteDiff, AutoTracker, AutoForwardDiff, AutoReverseDiff, AutoZygote, AutoMooncake
+export AutoEnzyme,
+    AutoFiniteDiff, AutoTracker, AutoForwardDiff, AutoReverseDiff, AutoZygote, AutoMooncake
 export test_gradients, @test_gradients
 export Constant
 export @jet, jet_target_modules!
