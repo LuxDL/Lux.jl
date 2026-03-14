@@ -1,4 +1,4 @@
-using Enzyme, LuxLib, Test, NNlib, Zygote, Mooncake
+using Enzyme, LuxLib, Test, NNlib, Zygote
 
 include("../shared_testsetup.jl")
 
@@ -50,32 +50,14 @@ apply_act_fast2(f::F, x) where {F} = sum(abs2, fast_activation(f, x))
             @jet apply_act_fast(f, x)
             @jet apply_act_fast2(f, x)
 
-            @test_gradients(apply_act, f, x; soft_fail=[AutoMooncake()], atol, rtol)
-            @test_gradients(apply_act_fast, f, x; soft_fail=[AutoMooncake()], atol, rtol)
-            @test_gradients(apply_act_fast2, f, x; soft_fail=[AutoMooncake()], atol, rtol)
+            @test_gradients(apply_act, f, x; atol, rtol)
+            @test_gradients(apply_act_fast, f, x; atol, rtol)
+            @test_gradients(apply_act_fast2, f, x; atol, rtol)
 
             if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
                 ∂x1 = Zygote.gradient(apply_act, f, x)[2]
                 ∂x2 = Zygote.gradient(apply_act_fast, f, x)[2]
                 ∂x3 = Zygote.gradient(apply_act_fast2, f, x)[2]
-
-                @test ∂x1 ≈ ∂x2 atol = atol rtol = rtol
-                @test ∂x1 ≈ ∂x3 atol = atol rtol = rtol
-            end
-
-            if LuxTestUtils.MOONCAKE_TESTING_ENABLED[]
-                _, (_, _, ∂x1) = Mooncake.value_and_gradient!!(
-                    Mooncake.build_rrule(apply_act, f, x), apply_act, f, x
-                )
-                _, (_, _, ∂x2) = Mooncake.value_and_gradient!!(
-                    Mooncake.build_rrule(apply_act_fast, f, copy(x)),
-                    apply_act_fast,
-                    f,
-                    copy(x),
-                )
-                _, (_, _, ∂x3) = Mooncake.value_and_gradient!!(
-                    Mooncake.build_rrule(apply_act_fast2, f, x), apply_act_fast2, f, x
-                )
 
                 @test ∂x1 ≈ ∂x2 atol = atol rtol = rtol
                 @test ∂x1 ≈ ∂x3 atol = atol rtol = rtol

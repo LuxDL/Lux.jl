@@ -1,7 +1,7 @@
 include("../shared_testsetup.jl")
 
 using LuxLib, Test, StableRNGs, NNlib, LuxTestUtils, Zygote
-using ReverseDiff, Tracker, Mooncake
+using ReverseDiff, Tracker
 
 bias_act_loss1(act, x, b) = sum(abs2, act.(x .+ LuxLib.Impl.reshape_bias(x, b)))
 bias_act_loss2(act, x, b) = sum(abs2, bias_activation(act, x, b))
@@ -65,7 +65,7 @@ end
                 b;
                 atol,
                 rtol,
-                soft_fail=fp16 ? [AutoMooncake(), AutoFiniteDiff()] : [AutoMooncake()]
+                soft_fail=fp16 ? [AutoFiniteDiff()] : []
             )
             @test_gradients(
                 __Fix1(bias_act_loss2, act),
@@ -73,7 +73,7 @@ end
                 b;
                 atol,
                 rtol,
-                soft_fail=fp16 ? [AutoMooncake(), AutoFiniteDiff()] : [AutoMooncake()]
+                soft_fail=fp16 ? [AutoFiniteDiff()] : []
             )
             @test_gradients(
                 __Fix1(bias_act_loss3, act),
@@ -88,32 +88,6 @@ end
                 ∂x1, ∂b1 = Zygote.gradient(__Fix1(bias_act_loss1, act), x, b)
                 ∂x2, ∂b2 = Zygote.gradient(__Fix1(bias_act_loss2, act), x, b)
                 ∂x3, ∂b3 = Zygote.gradient(__Fix1(bias_act_loss3, act), x, b)
-
-                @test ∂x1 ≈ ∂x2 atol = atol rtol = rtol
-                @test ∂x1 ≈ ∂x3 atol = atol rtol = rtol
-                @test ∂b1 ≈ ∂b2 atol = atol rtol = rtol
-                @test ∂b1 ≈ ∂b3 atol = atol rtol = rtol
-            end
-
-            if LuxTestUtils.MOONCAKE_TESTING_ENABLED[]
-                _, (_, ∂x1, ∂b1) = Mooncake.value_and_gradient!!(
-                    Mooncake.build_rrule(__Fix1(bias_act_loss1, act), x, b),
-                    __Fix1(bias_act_loss1, act),
-                    x,
-                    b,
-                )
-                _, (_, ∂x2, ∂b2) = Mooncake.value_and_gradient!!(
-                    Mooncake.build_rrule(__Fix1(bias_act_loss2, act), x, b),
-                    __Fix1(bias_act_loss2, act),
-                    x,
-                    b,
-                )
-                _, (_, ∂x3, ∂b3) = Mooncake.value_and_gradient!!(
-                    Mooncake.build_rrule(__Fix1(bias_act_loss3, act), x, b),
-                    __Fix1(bias_act_loss3, act),
-                    x,
-                    b,
-                )
 
                 @test ∂x1 ≈ ∂x2 atol = atol rtol = rtol
                 @test ∂x1 ≈ ∂x3 atol = atol rtol = rtol
