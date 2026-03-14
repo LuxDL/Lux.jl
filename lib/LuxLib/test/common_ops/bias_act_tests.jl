@@ -81,7 +81,7 @@ end
                 b;
                 atol,
                 rtol,
-                soft_fail=fp16 ? [AutoMooncake(), AutoFiniteDiff()] : [AutoMooncake()]
+                soft_fail=fp16 ? [AutoFiniteDiff()] : []
             )
 
             if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]

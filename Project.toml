@@ -70,7 +70,7 @@ LossFunctionsExt = "LossFunctions"
 MLUtilsExt = "MLUtils"
 MPIExt = "MPI"
 MPINCCLExt = ["CUDA", "MPI", "NCCL"]
-MooncakeExt = ["Mooncake"]
+MooncakeExt = "Mooncake"
 ReactantExt = ["Enzyme", "Reactant"]
 # ReactantAttentionPrecompileExt = [
 #     "Enzyme",
