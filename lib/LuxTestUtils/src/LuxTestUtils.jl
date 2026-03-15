@@ -37,7 +37,7 @@ using ChainRulesCore: ChainRulesCore
 using FiniteDiff: FiniteDiff
 using ForwardDiff: ForwardDiff
 using Zygote: Zygote
-using Mooncake
+using Mooncake: Mooncake
 
 const CRC = ChainRulesCore
 const FD = FiniteDiff
