@@ -85,7 +85,7 @@ Compute gradient using Mooncake.jl's value_and_gradient!! function.
 Returns only the gradient for args x.
 """
 function mooncake_gradient_function(f, x)
-    # always enable friendly_tangents for ease of testing.
+    # Enable friendly_tangents for testing.
     cache = Mooncake.prepare_gradient_cache(
         f, x; config=Mooncake.Config(; friendly_tangents=true)
     )
