@@ -78,8 +78,8 @@ function Internal.unsafe_free_internal!(::Type{AMDGPUDevice}, x::AbstractArray)
 end
 
 # Device Transfer
-function amdgpu_array_adapt(::Type{T}, x) where {T}
-    return Internal.array_adapt(AMDGPU.roc, ROCArray, T, x)
+function amdgpu_array_adapt(::AMDGPUDevice{D,E}, x) where {D,E}
+    return Internal.array_adapt(AMDGPU.roc, ROCArray, E, x)
 end
 
 function Adapt.adapt_storage(to::AMDGPUDevice{D,E}, x::AbstractArray) where {D,E}
