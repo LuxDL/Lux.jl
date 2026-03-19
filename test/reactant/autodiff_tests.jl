@@ -21,8 +21,8 @@ using LuxTestUtils: check_approx
             ),
             Chain(
                 Chain(
-                    Conv((3, 3), 2 => 3, gelu; pad=SamePad()),
-                    Conv((3, 3), 3 => 2, gelu; pad=SamePad()),
+                    Conv((3, 3), 2 => 3, tanh; pad=SamePad()),
+                    Conv((3, 3), 3 => 2, tanh; pad=SamePad()),
                 ),
                 FlattenLayer(),
                 Dense(18 => 1),
@@ -58,12 +58,12 @@ end
 
     models = (
         Chain(
-            Conv((3, 3), 2 => 4, gelu; pad=SamePad()),
-            Conv((3, 3), 4 => 2, gelu; pad=SamePad()),
+            Conv((3, 3), 2 => 4, tanh; pad=SamePad()),
+            Conv((3, 3), 4 => 2, tanh; pad=SamePad()),
             FlattenLayer(),
             Dense(18 => 2),
         ),
-        Chain(Dense(2, 4, gelu), Dense(4, 2)),
+        Chain(Dense(2, 4, tanh), Dense(4, 2)),
     )
     Xs = (randn(rng, Float32, 3, 3, 2, 4), randn(rng, Float32, 2, 4))
 
