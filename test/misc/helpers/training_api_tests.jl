@@ -24,7 +24,12 @@ include("../../shared_testsetup.jl")
         opt = Adam(0.001f0)
 
         @testset "$(ad)" for ad in (
-            AutoZygote(), AutoTracker(), AutoReverseDiff(), AutoEnzyme(), AutoMooncake()
+            AutoZygote(),
+            AutoTracker(),
+            AutoReverseDiff(),
+            AutoEnzyme(),
+            # FIXME(#1679): Mooncake is completely busted
+            # AutoMooncake(),
         )
             ongpu &&
                 (ad isa AutoReverseDiff || ad isa AutoEnzyme || ad isa AutoMooncake) &&
