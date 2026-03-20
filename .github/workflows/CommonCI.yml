@@ -127,7 +127,7 @@ jobs:
             if isfile(toml) && contains(read(toml, String), "Mooncake")
               @info "Developing Mooncake in $p"
               Pkg.activate(p)
-              Pkg.develop(url="https://github.com/compintell/Mooncake.jl")
+              Pkg.develop(url="https://github.com/chalk-lab/Mooncake.jl.git")
             end
           end
         shell: julia --color=yes {0}
