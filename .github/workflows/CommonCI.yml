@@ -110,6 +110,29 @@ jobs:
         env:
           PROJECT: ${{ inputs.project }}
           TEST_DEPS: ${{ inputs.local_test_dependencies }}
+      # use dev Mooncake for CI temporarily
+      - name: "Use dev Mooncake"
+        run: |
+          import Pkg
+          # Collect all Project.toml locations
+          projects = [get(ENV, "PROJECT", ""), joinpath(get(ENV, "PROJECT", ""), "test")]
+          if isdir("lib")
+            for d in readdir("lib"; join=true)
+              isdir(d) && push!(projects, d)
+            end
+          end
+          for proj in projects
+            p = joinpath(pwd(), proj)
+            toml = joinpath(p, "Project.toml")
+            if isfile(toml) && contains(read(toml, String), "Mooncake")
+              @info "Developing Mooncake in $p"
+              Pkg.activate(p)
+              Pkg.develop(url="https://github.com/compintell/Mooncake.jl")
+            end
+          end
+        shell: julia --color=yes {0}
+        env:
+          PROJECT: ${{ inputs.project }}
       - name: "Run Tests"
         run: |
           import Pkg
