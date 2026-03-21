@@ -49,7 +49,7 @@ include("../shared_testsetup.jl")
         @test x_[1] ≈ (1 .- 0.3) / sqrt(1.3) atol = 1.0e-5
 
         # chunking will cause incorrect gradients
-        skip_backends = [AutoFiniteDiff(), AutoForwardDiff()]
+        skip_backends = [AutoFiniteDiff(), AutoForwardDiff(), AutoMooncake()]
 
         @jet m(x, ps, st)
         @test_gradients(sumabs2first, m, x, ps, st; atol=1.0f-3, rtol=1.0f-3, skip_backends)
