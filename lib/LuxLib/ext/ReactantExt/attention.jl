@@ -45,7 +45,9 @@ function Impl.unsafe_scaled_dot_product_attention(
     end
 
     if mask !== nothing
-        mask = @opcall broadcast_in_dim(mask, [N, N - 1], collect(Int, size(alpha)))
+        mask = @opcall broadcast_in_dim(
+            mask, collect(N:-1:(N - ndims(mask) + 1)), collect(Int, size(alpha))
+        )
         neginf = @opcall fill(typemin(eltype(alpha)), size(alpha))
         alpha = @opcall select(mask, alpha, neginf)
     end
