@@ -19,10 +19,14 @@ include("../../shared_testsetup.jl")
 
         x = aType(randn(Lux.replicate(rng), Float32, (3, 1)))
 
-        for ad in (AutoZygote(), AutoTracker(), AutoReverseDiff(), AutoEnzyme())
-            ongpu && (ad isa AutoReverseDiff || ad isa AutoEnzyme) && continue
+        for ad in
+            (AutoZygote(), AutoTracker(), AutoReverseDiff(), AutoEnzyme(), AutoMooncake())
+            ongpu &&
+                (ad isa AutoReverseDiff || ad isa AutoEnzyme || ad isa AutoMooncake) &&
+                continue
             !LuxTestUtils.ENZYME_TESTING_ENABLED[] && ad isa AutoEnzyme && continue
             !LuxTestUtils.ZYGOTE_TESTING_ENABLED[] && ad isa AutoZygote && continue
+            !LuxTestUtils.MOONCAKE_TESTING_ENABLED[] && ad isa AutoMooncake && continue
 
             grads, _, _, _ = Training.compute_gradients(ad, _loss_function, x, tstate)
             tstate_ = Training.apply_gradients(tstate, grads)

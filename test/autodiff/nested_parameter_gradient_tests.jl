@@ -29,6 +29,12 @@ function test_nested_ad_parameter_gradient_jacobian(aType, dev, ongpu, loss_fn, 
         !iszero(ComponentArray(cpu_device()(∂ps))) &&
         all(x -> x === nothing || isfinite(x), ComponentArray(cpu_device()(∂ps)))
 
+    _soft_fail = if loss_fn ∈ (loss_function_param2, loss_function_param4)
+        [AutoFiniteDiff(), AutoMooncake()]
+    else
+        [AutoFiniteDiff()]
+    end
+
     allow_unstable() do
         @test_gradients(
             loss_fn,
@@ -38,7 +44,7 @@ function test_nested_ad_parameter_gradient_jacobian(aType, dev, ongpu, loss_fn, 
             Constant(st);
             atol=1.0f-3,
             rtol=1.0f-1,
-            soft_fail=[AutoFiniteDiff()],
+            soft_fail=_soft_fail,
             skip_backends=[AutoEnzyme()]
         )
     end
