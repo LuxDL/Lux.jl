@@ -28,14 +28,14 @@ include("../../shared_testsetup.jl")
             AutoTracker(),
             AutoReverseDiff(),
             AutoEnzyme(),
-            # FIXME(#1679): Mooncake is completely busted
-            # AutoMooncake(),
+            AutoMooncake(),
         )
             ongpu &&
                 (ad isa AutoReverseDiff || ad isa AutoEnzyme || ad isa AutoMooncake) &&
                 continue
             !LuxTestUtils.ENZYME_TESTING_ENABLED[] && ad isa AutoEnzyme && continue
             !LuxTestUtils.ZYGOTE_TESTING_ENABLED[] && ad isa AutoZygote && continue
+            !LuxTestUtils.MOONCAKE_TESTING_ENABLED[] && ad isa AutoMooncake && continue
 
             function get_total_loss(model, tstate)
                 loss = 0.0f0
