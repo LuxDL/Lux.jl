@@ -255,6 +255,20 @@ using LuxLib, Reactant, NNlib, Random, MLDataDevices, Enzyme, Statistics, Test, 
 
                 @test y ≈ y_ra atol = 1e-5 rtol = 1e-5
                 @test α ≈ α_ra atol = 1e-5 rtol = 1e-5
+
+                @testset "4D Bias" begin
+                    bias_4d = aType(randn(Float32, 3, 5, 1, 1))
+
+                    y_4d, α_4d = sdpa_with_bias(q, k, v, bias_4d) |> cpu_device()
+                    @test size(α_4d) == (3, 5, 2, 1)
+                    @test size(y_4d) == (2, 2, 5, 1)
+
+                    bias_4d_ra = Reactant.to_rarray(bias_4d)
+                    y_4d_ra, α_4d_ra = @jit sdpa_with_bias(q_ra, k_ra, v_ra, bias_4d_ra)
+
+                    @test y_4d ≈ y_4d_ra atol = 1e-5 rtol = 1e-5
+                    @test α_4d ≈ α_4d_ra atol = 1e-5 rtol = 1e-5
+                end
             end
 
             @testset "Dropout" begin
