@@ -32,3 +32,9 @@ test_gradients
 ```@docs
 @test_softfail
 ```
+
+## Private API
+
+```@docs
+LuxTestUtils.mooncake_gradient_function
+```
