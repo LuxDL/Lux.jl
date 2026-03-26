@@ -323,10 +323,8 @@ function LuxLib.Impl.cublasLt_fused_dense!(
         return nothing
     else
         LinearAlgebra.mul!(y, weight, x)
-        if b === nothing
-            broadcast!(act, y, y)
-        else
-            broadcast!(act ∘ +, y, y, reshape(b, :, 1))
+        if b !== nothing
+            broadcast!(+, y, y, reshape(b, :, 1))
         end
         broadcast!(act, z, y)
         return nothing
