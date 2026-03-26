@@ -25,6 +25,7 @@ LuxTestUtils.jet_target_modules!
 ```@docs
 test_gradients
 @test_gradients
+LuxTestUtils.mooncake_gradient_function
 ```
 
 ## Extensions to `@test`
