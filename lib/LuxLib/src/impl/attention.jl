@@ -76,7 +76,7 @@ function unsafe_scaled_dot_product_attention(
     num_heads_dim::Int,
     scale::TQ,
     mask,
-    bias::Union{Nothing,AbstractMatrix},
+    bias::Union{Nothing,AbstractArray},
     fdrop::F,
 ) where {TQ,TK,TV,F,N}
     batching_dims = (num_heads_dim, 4:N...)

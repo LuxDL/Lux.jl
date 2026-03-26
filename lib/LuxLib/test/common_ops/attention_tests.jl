@@ -184,6 +184,25 @@ using LuxLib, Reactant, NNlib, Random, MLDataDevices, Enzyme, Statistics, Test, 
                 @test all((Array(α_ra)[:, :, 1, 1] .> 0) .== Array(mask))
                 @test all((Array(α_ra)[:, :, 2, 1] .> 0) .== Array(mask))
 
+                @testset "4D Mask" begin
+                    mask_4d = aType(rand(Bool, (5, 3, 1, 1)))
+
+                    y_4d, α_4d = sdpa_with_mask(q, k, v, mask_4d) |> cpu_device()
+                    @test all((α_4d[:, :, 1, 1] .> 0) .== Array(mask_4d[:, :, 1, 1]))
+                    @test all((α_4d[:, :, 2, 1] .> 0) .== Array(mask_4d[:, :, 1, 1]))
+
+                    mask_4d_ra = Reactant.to_rarray(mask_4d)
+                    y_4d_ra, α_4d_ra = @jit sdpa_with_mask(q_ra, k_ra, v_ra, mask_4d_ra)
+                    @test all(
+                        (Array(α_4d_ra)[:, :, 1, 1] .> 0) .== Array(mask_4d)[:, :, 1, 1]
+                    )
+                    @test all(
+                        (Array(α_4d_ra)[:, :, 2, 1] .> 0) .== Array(mask_4d)[:, :, 1, 1]
+                    )
+                    @test y_4d ≈ y_4d_ra atol = 1e-5 rtol = 1e-5
+                    @test α_4d ≈ α_4d_ra atol = 1e-5 rtol = 1e-5
+                end
+
                 @testset "causal" begin
                     mask = LuxLib.Impl.make_causal_mask(q, size(k, 3), size(q, 3))
                     mask_ra = Reactant.to_rarray(mask)
@@ -236,6 +255,20 @@ using LuxLib, Reactant, NNlib, Random, MLDataDevices, Enzyme, Statistics, Test, 
 
                 @test y ≈ y_ra atol = 1e-5 rtol = 1e-5
                 @test α ≈ α_ra atol = 1e-5 rtol = 1e-5
+
+                @testset "4D Bias" begin
+                    bias_4d = aType(randn(Float32, 3, 5, 1, 1))
+
+                    y_4d, α_4d = sdpa_with_bias(q, k, v, bias_4d) |> cpu_device()
+                    @test size(α_4d) == (3, 5, 2, 1)
+                    @test size(y_4d) == (2, 2, 5, 1)
+
+                    bias_4d_ra = Reactant.to_rarray(bias_4d)
+                    y_4d_ra, α_4d_ra = @jit sdpa_with_bias(q_ra, k_ra, v_ra, bias_4d_ra)
+
+                    @test y_4d ≈ y_4d_ra atol = 1e-5 rtol = 1e-5
+                    @test α_4d ≈ α_4d_ra atol = 1e-5 rtol = 1e-5
+                end
             end
 
             @testset "Dropout" begin

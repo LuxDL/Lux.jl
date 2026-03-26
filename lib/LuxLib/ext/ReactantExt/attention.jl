@@ -17,7 +17,7 @@ function Impl.unsafe_scaled_dot_product_attention(
     num_heads_dim::Int,
     scale,
     mask,
-    bias::Union{Nothing,AbstractMatrix},
+    bias::Union{Nothing,AbstractArray},
     fdrop::F,
 ) where {TQ,TK,TV,F,N}
     q = materialize_traced_array(q)
@@ -40,12 +40,18 @@ function Impl.unsafe_scaled_dot_product_attention(
     )
 
     if bias !== nothing
-        bias = @opcall broadcast_in_dim(bias, [N, N - 1], collect(Int, size(alpha)))
+        # Map trailing dims of bias to the corresponding trailing dims of alpha
+        bias = @opcall broadcast_in_dim(
+            bias, collect(N:-1:(N - ndims(bias) + 1)), collect(Int, size(alpha))
+        )
         alpha = @opcall add(alpha, bias)
     end
 
     if mask !== nothing
-        mask = @opcall broadcast_in_dim(mask, [N, N - 1], collect(Int, size(alpha)))
+        # Map trailing dims of mask to the corresponding trailing dims of alpha
+        mask = @opcall broadcast_in_dim(
+            mask, collect(N:-1:(N - ndims(mask) + 1)), collect(Int, size(alpha))
+        )
         neginf = @opcall fill(typemin(eltype(alpha)), size(alpha))
         alpha = @opcall select(mask, alpha, neginf)
     end
