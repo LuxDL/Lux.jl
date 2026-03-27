@@ -53,6 +53,122 @@ function cublaslt_matmul_fused!(
     )
 end
 
+function lt_handle_ctor(ctx)
+    CUDA.context!(ctx) do
+        @info "Creating cuBLASLt handle for context $(ctx)"
+        handle = Ref{CUBLAS.cublasLtHandle_t}()
+        CUBLAS.cublasLtCreate(handle)
+        return handle[]
+    end
+end
+
+function lt_handle_dtor(ctx, handle)
+    CUDA.context!(ctx; skip_destroyed=true) do
+        @info "Destroying cuBLASLt handle $(handle) for context $(ctx)"
+        CUBLAS.cublasLtDestroy(handle)
+    end
+end
+
+const idle_lt_handles = CUDA.APIUtils.HandleCache{CUDA.CuContext,CUBLAS.cublasLtHandle_t}(
+    lt_handle_ctor, lt_handle_dtor
+)
+
+mutable struct CuBLASLtMatmulDesc
+    desc::CUBLAS.cublasLtMatmulDesc_t
+
+    function CuBLASLtMatmulDesc(args...)
+        desc_ref = Ref{CUBLAS.cublasLtMatmulDesc_t}()
+        CUBLAS.cublasLtMatmulDescCreate(desc_ref, args...)
+        return finalizer(
+            CUBLAS.cublasLtMatmulDescDestroy ∘ Base.Fix2(getproperty, :desc),
+            new(desc_ref[]),
+        )
+    end
+end
+Base.getindex(x::CuBLASLtMatmulDesc) = x.desc
+Base.unsafe_convert(::Type{CUBLAS.cublasLtMatmulDesc_t}, x::CuBLASLtMatmulDesc) = x.desc
+
+const _CUBLASLT_MATMUL_DESC_ATTRIBUTES = Dict(
+    :transa => (CUBLAS.CUBLASLT_MATMUL_DESC_TRANSA, CUBLAS.cublasOperation_t),
+    :transb => (CUBLAS.CUBLASLT_MATMUL_DESC_TRANSB, CUBLAS.cublasOperation_t),
+    :transc => (CUBLAS.CUBLASLT_MATMUL_DESC_TRANSC, CUBLAS.cublasOperation_t),
+    :epilogue => (CUBLAS.CUBLASLT_MATMUL_DESC_EPILOGUE, CUBLAS.cublasLtEpilogue_t),
+    :bias_pointer => (CUBLAS.CUBLASLT_MATMUL_DESC_BIAS_POINTER, CuPtr{Cvoid}),
+    :epilogue_aux_pointer =>
+        (CUBLAS.CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_POINTER, CuPtr{Cvoid}),
+    :epilogue_aux_ld => (CUBLAS.CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_LD, Csize_t),
+)
+
+function Base.setproperty!(desc::CuBLASLtMatmulDesc, name::Symbol, value)
+    if haskey(_CUBLASLT_MATMUL_DESC_ATTRIBUTES, name)
+        attr, T = _CUBLASLT_MATMUL_DESC_ATTRIBUTES[name]
+        CUBLAS.cublasLtMatmulDescSetAttribute(desc.desc, attr, Ref{T}(value), sizeof(T))
+        return value
+    else
+        return setfield!(desc, name, value)
+    end
+end
+
+mutable struct CuBLASLtMatrixLayout
+    layout::CUBLAS.cublasLtMatrixLayout_t
+
+    function CuBLASLtMatrixLayout(args...)
+        layout_ref = Ref{CUBLAS.cublasLtMatrixLayout_t}()
+        CUBLAS.cublasLtMatrixLayoutCreate(layout_ref, args...)
+        return finalizer(
+            CUBLAS.cublasLtMatrixLayoutDestroy ∘ Base.Fix2(getproperty, :layout),
+            new(layout_ref[]),
+        )
+    end
+end
+Base.getindex(x::CuBLASLtMatrixLayout) = x.layout
+function Base.unsafe_convert(::Type{CUBLAS.cublasLtMatrixLayout_t}, x::CuBLASLtMatrixLayout)
+    return x.layout
+end
+
+mutable struct CuBLASLtMatmulPreference
+    pref::CUBLAS.cublasLtMatmulPreference_t
+
+    function CuBLASLtMatmulPreference()
+        pref_ref = Ref{CUBLAS.cublasLtMatmulPreference_t}()
+        CUBLAS.cublasLtMatmulPreferenceCreate(pref_ref)
+        return finalizer(
+            CUBLAS.cublasLtMatmulPreferenceDestroy ∘ Base.Fix2(getproperty, :pref),
+            new(pref_ref[]),
+        )
+    end
+end
+Base.getindex(x::CuBLASLtMatmulPreference) = x.pref
+function Base.unsafe_convert(
+    ::Type{CUBLAS.cublasLtMatmulPreference_t}, x::CuBLASLtMatmulPreference
+)
+    return x.pref
+end
+
+function get_cublaslt_handle()
+    cuda = CUDA.active_state()
+
+    # every task maintains library state per set of devices
+    LibraryState = @NamedTuple{handle::CUBLAS.cublasLtHandle_t}
+    states = get!(task_local_storage(), :CUBLASLt) do
+        Dict{CUDA.CuContext,LibraryState}()
+    end::Dict{CUDA.CuContext,LibraryState}
+
+    # get library state
+    @noinline function new_state(cuda)
+        new_handle = pop!(idle_lt_handles, cuda.context)
+        finalizer(current_task()) do _
+            push!(idle_lt_handles, cuda.context, new_handle)
+        end
+        return (; handle=new_handle)
+    end
+    state = get!(states, cuda.context) do
+        new_state(cuda)
+    end
+
+    return state.handle
+end
+
 # TODO: use https://docs.nvidia.com/cuda/cublas/#cublasltmatmul for a more robust
 #       computeType mapping. Currently no one uses Lux with weird type combinations so we
 #       don't need to worry about it too much and just fall back to the generic
@@ -86,110 +202,59 @@ function cublaslt_matmul_fused!(
     size(x, transx ? 2 : 1) == size(w, transw ? 1 : 2) ||
         throw(DimensionMismatch("size(x) = $(size(x)), size(w) = $(size(w))"))
 
-    # Create the operation descriptor
-    operationDesc = Ref{CUBLAS.cublasLtMatmulDesc_t}()
-
     ## While querying the compute type, promote the types
     computeType = CUBLAS.gemmExComputeType(wxT, wxT, yT, m, k, n)
     computeType === nothing && return -1
     dataType = convert(CUDA.cudaDataType, yT)
-    CUBLAS.cublasLtMatmulDescCreate(operationDesc, computeType, dataType)
+
+    # Create the operation descriptor
+    operationDesc = CuBLASLtMatmulDesc(computeType, dataType)
 
     # Set the matrix descriptors
-    ytransop = transy ? CUBLAS.CUBLAS_OP_T : CUBLAS.CUBLAS_OP_N
-    wtransop = transw ? CUBLAS.CUBLAS_OP_T : CUBLAS.CUBLAS_OP_N
-    xtransop = transx ? CUBLAS.CUBLAS_OP_T : CUBLAS.CUBLAS_OP_N
-
-    CUBLAS.cublasLtMatmulDescSetAttribute(
-        operationDesc[],
-        CUBLAS.CUBLASLT_MATMUL_DESC_TRANSA,
-        Ref{CUBLAS.cublasOperation_t}(wtransop),
-        sizeof(wtransop),
-    )
-    CUBLAS.cublasLtMatmulDescSetAttribute(
-        operationDesc[],
-        CUBLAS.CUBLASLT_MATMUL_DESC_TRANSB,
-        Ref{CUBLAS.cublasOperation_t}(xtransop),
-        sizeof(xtransop),
-    )
-    CUBLAS.cublasLtMatmulDescSetAttribute(
-        operationDesc[],
-        CUBLAS.CUBLASLT_MATMUL_DESC_TRANSC,
-        Ref{CUBLAS.cublasOperation_t}(ytransop),
-        sizeof(ytransop),
-    )
+    operationDesc.transa = transw ? CUBLAS.CUBLAS_OP_T : CUBLAS.CUBLAS_OP_N
+    operationDesc.transb = transx ? CUBLAS.CUBLAS_OP_T : CUBLAS.CUBLAS_OP_N
+    operationDesc.transc = transy ? CUBLAS.CUBLAS_OP_T : CUBLAS.CUBLAS_OP_N
 
     # Decide on the epilogue
     epilogue, activation_fused = epilogue_act(σ, b, aux)
-    CUBLAS.cublasLtMatmulDescSetAttribute(
-        operationDesc[],
-        CUBLAS.CUBLASLT_MATMUL_DESC_EPILOGUE,
-        Ref{CUBLAS.cublasLtEpilogue_t}(epilogue),
-        sizeof(epilogue),
-    )
+    operationDesc.epilogue = epilogue
 
     # We have a bias so set the bias pointer
     if b !== nothing
-        bias_ptr = Ref{CuPtr{Cvoid}}(pointer(b))
-        CUBLAS.cublasLtMatmulDescSetAttribute(
-            operationDesc[],
-            CUBLAS.CUBLASLT_MATMUL_DESC_BIAS_POINTER,
-            bias_ptr,
-            sizeof(bias_ptr),
-        )
+        operationDesc.bias_pointer = pointer(b)
     end
 
     if aux !== nothing
-        aux_ptr = Ref{CuPtr{Cvoid}}(pointer(aux))
-        CUBLAS.cublasLtMatmulDescSetAttribute(
-            operationDesc[],
-            CUBLAS.CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_POINTER,
-            aux_ptr,
-            sizeof(aux_ptr),
-        )
-        ldaux = max(1, stride(aux, 2))
-        CUBLAS.cublasLtMatmulDescSetAttribute(
-            operationDesc[],
-            CUBLAS.CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_LD,
-            Ref{Csize_t}(ldaux),
-            sizeof(ldaux),
-        )
+        operationDesc.epilogue_aux_pointer = pointer(aux)
+        operationDesc.epilogue_aux_ld = max(1, stride(aux, 2))
     end
 
     # Create the matrix layouts
-    wdesc = Ref{CUBLAS.cublasLtMatrixLayout_t}()
-    xdesc = Ref{CUBLAS.cublasLtMatrixLayout_t}()
-    ydesc = Ref{CUBLAS.cublasLtMatrixLayout_t}()
-
-    CUBLAS.cublasLtMatrixLayoutCreate(
-        wdesc, convert(CUDA.cudaDataType, wxT), m, k, max(1, stride(w, 2))
+    wdesc = CuBLASLtMatrixLayout(
+        convert(CUDA.cudaDataType, wxT), m, k, max(1, stride(w, 2))
     )
-    CUBLAS.cublasLtMatrixLayoutCreate(
-        xdesc, convert(CUDA.cudaDataType, wxT), size(x)..., max(1, stride(x, 2))
+    xdesc = CuBLASLtMatrixLayout(
+        convert(CUDA.cudaDataType, wxT), size(x)..., max(1, stride(x, 2))
     )
-    CUBLAS.cublasLtMatrixLayoutCreate(
-        ydesc, convert(CUDA.cudaDataType, yT), m, n, max(1, stride(y, 2))
-    )
+    ydesc = CuBLASLtMatrixLayout(convert(CUDA.cudaDataType, yT), m, n, max(1, stride(y, 2)))
 
     # Create the preference. we can customize this but we will stick to the defaults
-    preference = Ref{CUBLAS.cublasLtMatmulPreference_t}()
-    CUBLAS.cublasLtMatmulPreferenceCreate(preference)
+    preference = CuBLASLtMatmulPreference()
 
     # Create the light handle
-    lthandle = Ref{CUBLAS.cublasLtHandle_t}()
-    CUBLAS.cublasLtCreate(lthandle)
+    lthandle = get_cublaslt_handle()
 
     # Search for the best algorithm
     heuristic = Ref{CUBLAS.cublasLtMatmulHeuristicResult_t}()
     returnedResults = Ref{Cint}(0)
     CUBLAS.cublasLtMatmulAlgoGetHeuristic(
-        lthandle[],
-        operationDesc[],
-        wdesc[],
-        xdesc[],
-        ydesc[],
-        ydesc[],
-        preference[],
+        lthandle,
+        operationDesc,
+        wdesc,
+        xdesc,
+        ydesc,
+        ydesc,
+        preference,
         1,
         heuristic,
         returnedResults,
@@ -198,18 +263,18 @@ function cublaslt_matmul_fused!(
     returnedResults[] == 0 && return -1
 
     CUBLAS.cublasLtMatmul(
-        lthandle[],
-        operationDesc[],
+        lthandle,
+        operationDesc,
         Ref{wxT}(1),
         w,
-        wdesc[],
+        wdesc,
         x,
-        xdesc[],
+        xdesc,
         Ref{yT}(0),
         y,
-        ydesc[],
+        ydesc,
         y,
-        ydesc[],
+        ydesc,
         Ref(heuristic[].algo),
         CUDA.CU_NULL,
         0,
