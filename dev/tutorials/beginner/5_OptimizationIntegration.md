@@ -161,36 +161,36 @@ trained_model = train_model(dataloader)
 ```
 
 ```
-Iteration:     1, Loss: 4.307627e-02
-Iteration:    25, Loss: 7.333490e-02
-Iteration:    50, Loss: 1.755054e-02
-Iteration:    75, Loss: 7.604355e-02
-Iteration:   100, Loss: 2.049138e-01
-Iteration:   100, Loss: 6.683367e-03
-Iteration:     1, Loss: 4.167731e-01
-Iteration:    25, Loss: 2.930835e-02
-Iteration:     1, Loss: 2.906775e-02
-Iteration:    25, Loss: 5.798466e-02
-Iteration:    50, Loss: 3.075150e-02
-Iteration:    75, Loss: 2.795947e-02
-Iteration:   100, Loss: 2.722382e-02
-Iteration:   125, Loss: 2.672793e-02
-Iteration:   150, Loss: 2.616209e-02
-Iteration:   175, Loss: 2.549821e-02
-Iteration:   200, Loss: 2.474338e-02
-Iteration:   225, Loss: 2.393964e-02
-Iteration:   250, Loss: 2.314789e-02
-Iteration:   275, Loss: 2.238566e-02
-Iteration:   300, Loss: 2.161166e-02
-Iteration:   325, Loss: 2.073510e-02
-Iteration:   350, Loss: 1.965697e-02
-Iteration:   375, Loss: 1.835825e-02
-Iteration:   400, Loss: 1.825710e-02
-Iteration:   425, Loss: 1.693930e-02
-Iteration:   450, Loss: 1.544370e-02
-Iteration:   475, Loss: 3.217209e-02
-Iteration:   500, Loss: 1.600827e-02
-Iteration:   500, Loss: 1.473177e-02
+Iteration:     1, Loss: 9.374641e-03
+Iteration:    25, Loss: 4.838122e-02
+Iteration:    50, Loss: 3.133653e-03
+Iteration:    75, Loss: 1.057630e-01
+Iteration:   100, Loss: 2.387108e-01
+Iteration:   100, Loss: 2.420795e-03
+Iteration:     1, Loss: 4.616191e-01
+Iteration:    25, Loss: 2.470566e-02
+Iteration:     1, Loss: 2.451105e-02
+Iteration:    25, Loss: 3.622935e-02
+Iteration:    50, Loss: 2.740483e-02
+Iteration:    75, Loss: 2.470088e-02
+Iteration:   100, Loss: 2.367884e-02
+Iteration:   125, Loss: 2.296093e-02
+Iteration:   150, Loss: 2.237548e-02
+Iteration:   175, Loss: 2.185350e-02
+Iteration:   200, Loss: 2.135477e-02
+Iteration:   225, Loss: 2.086696e-02
+Iteration:   250, Loss: 2.038661e-02
+Iteration:   275, Loss: 1.990888e-02
+Iteration:   300, Loss: 1.940333e-02
+Iteration:   325, Loss: 1.889444e-02
+Iteration:   350, Loss: 1.817870e-02
+Iteration:   375, Loss: 1.692045e-02
+Iteration:   400, Loss: 1.551464e-02
+Iteration:   425, Loss: 1.419491e-02
+Iteration:   450, Loss: 2.675790e-02
+Iteration:   475, Loss: 1.941978e-02
+Iteration:   500, Loss: 1.623113e-02
+Iteration:   500, Loss: 1.409783e-02
 
 ```
 

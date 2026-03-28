@@ -48,7 +48,7 @@ python_file_path = Reactant.Serialization.export_to_enzymejax(
 ```
 
 ```ansi
-"/tmp/jl_2LF7vu/run_lux_model.py"
+"/tmp/jl_e6LtoA/run_lux_model.py"
 ```
 
 This will generate a python file that can be used to run the model using EnzymeJAX.
@@ -83,6 +83,7 @@ def load_inputs():
     npz_data = np.load(os.path.join(_script_dir, "run_lux_model_0_inputs.npz"))
     inputs = [npz_data['arr_1'], npz_data['arr_2'], npz_data['arr_3'], npz_data['arr_4'], npz_data['arr_5'], npz_data['arr_6'], npz_data['arr_7'], npz_data['arr_8'], npz_data['arr_9'], npz_data['arr_10'], npz_data['arr_11']]
     return tuple(inputs)
+
 
 @jax.jit
 def run_run_lux_model(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11):
