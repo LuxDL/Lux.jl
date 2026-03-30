@@ -213,7 +213,7 @@ jobs:
           pfs = mapreduce(process_folder, vcat, directories)
           LCOV.writefile("lcov.info", pfs)
         shell: julia --color=yes --threads=auto {0}
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v6
         with:
           files: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
