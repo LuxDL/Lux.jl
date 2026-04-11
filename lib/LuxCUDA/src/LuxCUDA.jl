@@ -2,7 +2,12 @@ module LuxCUDA
 
 using Reexport
 
-@reexport using CUDA, CUDA.CUDAKernels, cuDNN
+# TODO: investigate if we actually need to pull in full CUDA here
+@reexport using CUDA, cuDNN
+
+@static if isdefined(CUDA, :CUDAKernels)
+    @reexport using CUDA.CUDAKernels
+end
 
 const USE_CUDA_GPU = Ref{Union{Nothing,Bool}}(nothing)
 
