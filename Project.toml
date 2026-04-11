@@ -1,7 +1,7 @@
 name = "Lux"
 uuid = "b2108857-7c20-44ae-9111-449ecde12c47"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "1.31.3"
+version = "1.31.4"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -103,7 +103,7 @@ ZygoteExt = "Zygote"
 ADTypes = "1.19"
 Adapt = "4.4"
 ArrayInterface = "7.17.1"
-CUDA = "5.8"
+CUDA = "5.8, 6"
 ChainRulesCore = "1.25.1"
 ComponentArrays = "0.15.28"
 ConcreteStructs = "0.2.3"
