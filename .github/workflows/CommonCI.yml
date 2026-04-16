@@ -36,6 +36,16 @@ on:
         required: false
         type: string
         default: ""
+      enable_telemetry:
+        description: "Enable Workflow Telemetry collection"
+        required: false
+        type: boolean
+        default: true
+      enable_cache:
+        description: "Enable Julia package cache"
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   test:
@@ -52,7 +62,9 @@ jobs:
         run: |
           mkdir -p ${{ env.TMPDIR }}
       - name: Collect Workflow Telemetry
+        if: ${{ inputs.enable_telemetry }}
         uses: catchpoint/workflow-telemetry-action@v2
+        continue-on-error: true
         with:
           comment_on_pr: false
           job_summary: true
@@ -60,6 +72,8 @@ jobs:
         with:
           version: ${{ inputs.julia_version }}
       - uses: julia-actions/cache@v3
+        if: ${{ inputs.enable_cache }}
+        continue-on-error: true
         with:
           cache-name: julia-cache;workflow=${{ inputs.julia_version }}-${{ inputs.os }}-${{ github.event_name }}-${{ inputs.project }}-${{ inputs.downgrade_testing }}-${{ inputs.local_dependencies }}-${{ inputs.local_test_dependencies }}-${{ inputs.test_args }}
 
