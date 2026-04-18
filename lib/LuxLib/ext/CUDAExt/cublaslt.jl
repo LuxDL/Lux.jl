@@ -69,7 +69,13 @@ function lt_handle_dtor(ctx, handle)
     end
 end
 
-const idle_lt_handles = CUDA.APIUtils.HandleCache{CUDA.CuContext,CUBLAS.cublasLtHandle_t}(
+const HandleCache = @static if pkgversion(CUDA) ≥ v"6"
+    CUDA.CUDACore.HandleCache
+else
+    CUDA.APIUtils.HandleCache
+end
+
+const idle_lt_handles = HandleCache{CUDA.CuContext,CUBLAS.cublasLtHandle_t}(
     lt_handle_ctor, lt_handle_dtor
 )
 
