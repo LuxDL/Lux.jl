@@ -21,12 +21,14 @@ function MLDataDevices.functional(::Union{OpenCLDevice,Type{<:OpenCLDevice}})
 end
 
 # Default RNG
-MLDataDevices.default_device_rng(::OpenCLDevice) = GPUArrays.default_rng(CLArray)
+MLDataDevices.default_device_rng(::OpenCLDevice) = GPUArrays.RNG{CLArray}()
 
 # Query Device from Array
 Internal.get_device(::CLArray) = OpenCLDevice()
+Internal.get_device(::Type{<:CLArray}) = OpenCLDevice()
 
 Internal.get_device_type(::CLArray) = OpenCLDevice
+Internal.get_device_type(::Type{<:CLArray}) = OpenCLDevice
 
 # unsafe_free!
 function Internal.unsafe_free_internal!(::Type{OpenCLDevice}, x::AbstractArray)

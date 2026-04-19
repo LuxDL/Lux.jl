@@ -8,8 +8,8 @@ using Random: Random
 
 Adapt.adapt_storage(::CPUDevice, rng::GPUArrays.RNG) = Random.default_rng()
 
-Internal.get_device(rng::GPUArrays.RNG) = Internal.get_device(rng.state)
-Internal.get_device_type(rng::GPUArrays.RNG) = Internal.get_device_type(rng.state)
+Internal.get_device(::GPUArrays.RNG{AT}) where {AT} = Internal.get_device(AT)
+Internal.get_device_type(::GPUArrays.RNG{AT}) where {AT} = Internal.get_device_type(AT)
 
 for (T1, T2) in
     ((AbstractGPUSparseMatrixCSC, SparseMatrixCSC), (AbstractGPUSparseVector, SparseVector))

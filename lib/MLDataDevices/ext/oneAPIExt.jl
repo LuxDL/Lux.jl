@@ -23,12 +23,14 @@ function MLDataDevices.functional(::Union{oneAPIDevice,Type{<:oneAPIDevice}})
 end
 
 # Default RNG
-MLDataDevices.default_device_rng(::oneAPIDevice) = GPUArrays.default_rng(oneArray)
+MLDataDevices.default_device_rng(::oneAPIDevice) = GPUArrays.RNG{oneArray}()
 
 # Query Device from Array
 Internal.get_device(::oneArray) = oneAPIDevice()
+Internal.get_device(::Type{<:oneArray}) = oneAPIDevice()
 
 Internal.get_device_type(::oneArray) = oneAPIDevice
+Internal.get_device_type(::Type{<:oneArray}) = oneAPIDevice
 
 # unsafe_free!
 function Internal.unsafe_free_internal!(::Type{oneAPIDevice}, x::AbstractArray)

@@ -50,9 +50,11 @@ function Internal.get_device(x::AMDGPU.AnyROCArray)
     parent_x === x && return AMDGPUDevice(AMDGPU.device(x))
     return Internal.get_device(parent_x)
 end
+Internal.get_device(::Type{<:AMDGPU.AnyROCArray}) = AMDGPUDevice(AMDGPU.device())
 Internal.get_device(::AMDGPU.rocRAND.RNG) = AMDGPUDevice(AMDGPU.device())
 
 Internal.get_device_type(::AMDGPU.AnyROCArray) = AMDGPUDevice
+Internal.get_device_type(::Type{<:AMDGPU.AnyROCArray}) = AMDGPUDevice
 Internal.get_device_type(::AMDGPU.rocRAND.RNG) = AMDGPUDevice
 
 # Set Device

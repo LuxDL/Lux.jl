@@ -12,12 +12,14 @@ MLDataDevices.loaded(::Union{MetalDevice,Type{<:MetalDevice}}) = true
 MLDataDevices.functional(::Union{MetalDevice,Type{<:MetalDevice}}) = Metal.functional()
 
 # Default RNG
-MLDataDevices.default_device_rng(::MetalDevice) = GPUArrays.default_rng(MtlArray)
+MLDataDevices.default_device_rng(::MetalDevice) = GPUArrays.RNG{MtlArray}()
 
 # Query Device from Array
 Internal.get_device(::MtlArray) = MetalDevice()
+Internal.get_device(::Type{<:MtlArray}) = MetalDevice()
 
 Internal.get_device_type(::MtlArray) = MetalDevice
+Internal.get_device_type(::Type{<:MtlArray}) = MetalDevice
 
 # unsafe_free!
 function Internal.unsafe_free_internal!(::Type{MetalDevice}, x::AbstractArray)

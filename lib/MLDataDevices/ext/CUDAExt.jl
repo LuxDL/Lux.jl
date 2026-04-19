@@ -28,10 +28,12 @@ function Internal.get_device(x::CUDA.AnyCuArray)
     parent_x === x && return CUDADevice(CUDA.device(x))
     return MLDataDevices.get_device(parent_x)
 end
+Internal.get_device(::Type{<:CUDA.AnyCuArray}) = CUDADevice(CUDA.device())
 Internal.get_device(::CUDA.RNG) = CUDADevice(CUDA.device())
 Internal.get_device(::CUDA.CURAND.RNG) = CUDADevice(CUDA.device())
 
 Internal.get_device_type(::CUDA.AnyCuArray) = CUDADevice
+Internal.get_device_type(::Type{<:CUDA.AnyCuArray}) = CUDADevice
 Internal.get_device_type(::CUDA.RNG) = CUDADevice
 Internal.get_device_type(::CUDA.CURAND.RNG) = CUDADevice
 
