@@ -2,6 +2,16 @@ const TransOrAdjOrRegCuMatrix{T} = Union{
     Transpose{T,<:CuMatrix{T}},Adjoint{T,<:CuMatrix{T}},CuMatrix{T}
 }
 
+@static if pkgversion(CUDA) ≥ v"6"
+    const cudaDataType = CUDA.CUDACore.cudaDataType
+    const active_state = CUDA.CUDACore.active_state
+    const HandleCache = CUDA.CUDACore.HandleCache
+else
+    const cudaDataType = CUDA.cudaDataType
+    const active_state = CUDA.active_state
+    const HandleCache = CUDA.APIUtils.HandleCache
+end
+
 prepare_transposed(arr) = arr, false
 prepare_transposed(arr::Union{Transpose,Adjoint}) = parent(arr), true
 
@@ -55,7 +65,6 @@ end
 
 function lt_handle_ctor(ctx)
     CUDA.context!(ctx) do
-        @info "Creating cuBLASLt handle for context $(ctx)"
         handle = Ref{CUBLAS.cublasLtHandle_t}()
         CUBLAS.cublasLtCreate(handle)
         return handle[]
@@ -64,15 +73,8 @@ end
 
 function lt_handle_dtor(ctx, handle)
     CUDA.context!(ctx; skip_destroyed=true) do
-        @info "Destroying cuBLASLt handle $(handle) for context $(ctx)"
         CUBLAS.cublasLtDestroy(handle)
     end
-end
-
-const HandleCache = @static if pkgversion(CUDA) ≥ v"6"
-    CUDA.CUDACore.HandleCache
-else
-    CUDA.APIUtils.HandleCache
 end
 
 const idle_lt_handles = HandleCache{CUDA.CuContext,CUBLAS.cublasLtHandle_t}(
@@ -152,7 +154,7 @@ function Base.unsafe_convert(
 end
 
 function get_cublaslt_handle()
-    cuda = CUDA.active_state()
+    cuda = active_state()
 
     # every task maintains library state per set of devices
     LibraryState = @NamedTuple{handle::CUBLAS.cublasLtHandle_t}
@@ -211,7 +213,7 @@ function cublaslt_matmul_fused!(
     ## While querying the compute type, promote the types
     computeType = CUBLAS.gemmExComputeType(wxT, wxT, yT, m, k, n)
     computeType === nothing && return -1
-    dataType = convert(CUDA.cudaDataType, yT)
+    dataType = convert(cudaDataType, yT)
 
     # Create the operation descriptor
     operationDesc = CuBLASLtMatmulDesc(computeType, dataType)
@@ -236,13 +238,11 @@ function cublaslt_matmul_fused!(
     end
 
     # Create the matrix layouts
-    wdesc = CuBLASLtMatrixLayout(
-        convert(CUDA.cudaDataType, wxT), m, k, max(1, stride(w, 2))
-    )
+    wdesc = CuBLASLtMatrixLayout(convert(cudaDataType, wxT), m, k, max(1, stride(w, 2)))
     xdesc = CuBLASLtMatrixLayout(
-        convert(CUDA.cudaDataType, wxT), size(x)..., max(1, stride(x, 2))
+        convert(cudaDataType, wxT), size(x)..., max(1, stride(x, 2))
     )
-    ydesc = CuBLASLtMatrixLayout(convert(CUDA.cudaDataType, yT), m, n, max(1, stride(y, 2)))
+    ydesc = CuBLASLtMatrixLayout(convert(cudaDataType, yT), m, n, max(1, stride(y, 2)))
 
     # Create the preference. we can customize this but we will stick to the defaults
     preference = CuBLASLtMatmulPreference()
