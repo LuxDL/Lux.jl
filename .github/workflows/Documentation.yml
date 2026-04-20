@@ -123,7 +123,7 @@ jobs:
         with:
           comment_on_pr: false
           job_summary: true
-      - uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@v3
         with:
           version: "1.12"
       - uses: julia-actions/cache@v3
@@ -164,7 +164,7 @@ jobs:
         with:
           comment_on_pr: false
           job_summary: true
-      - uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@v3
         with:
           version: "1.12"
       - uses: julia-actions/cache@v3
