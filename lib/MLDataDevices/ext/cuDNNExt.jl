@@ -8,12 +8,18 @@ __init__() = reset_gpu_device!()
 
 const USE_CUDA_GPU = Ref{Union{Nothing,Bool}}(nothing)
 
+const cudnn_functional = @static if isdefined(cuDNN, :has_cudnn)
+    cuDNN.has_cudnn
+else
+    cuDNN.functional
+end
+
 function _check_use_cuda!()
     USE_CUDA_GPU[] === nothing || return nothing
 
     USE_CUDA_GPU[] = CUDA.functional()
     if USE_CUDA_GPU[]
-        if !cuDNN.has_cudnn()
+        if !cudnn_functional()
             @warn """
             cuDNN is not functional. Some functionality will not be available.
             """ maxlog = 1
