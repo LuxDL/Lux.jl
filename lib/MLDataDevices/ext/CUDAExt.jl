@@ -30,12 +30,15 @@ function Internal.get_device(x::CUDA.AnyCuArray)
 end
 Internal.get_device(::Type{<:CUDA.AnyCuArray}) = CUDADevice(CUDA.device())
 Internal.get_device(::CUDA.RNG) = CUDADevice(CUDA.device())
-Internal.get_device(::CUDA.CURAND.RNG) = CUDADevice(CUDA.device())
 
 Internal.get_device_type(::CUDA.AnyCuArray) = CUDADevice
 Internal.get_device_type(::Type{<:CUDA.AnyCuArray}) = CUDADevice
 Internal.get_device_type(::CUDA.RNG) = CUDADevice
-Internal.get_device_type(::CUDA.CURAND.RNG) = CUDADevice
+
+@static if isdefined(CUDA, :CURAND) && isdefined(CUDA.CURAND, :RNG)
+    Internal.get_device_type(::CUDA.CURAND.RNG) = CUDADevice
+    Internal.get_device(::CUDA.CURAND.RNG) = CUDADevice(CUDA.device())
+end
 
 # Set Device
 MLDataDevices.set_device!(::Type{CUDADevice}, dev::CUDA.CuDevice) = CUDA.device!(dev)
