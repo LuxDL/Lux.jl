@@ -122,6 +122,34 @@ end
     @test loss isa Number
 end
 
+@testset "Reactant Optimisers Patch: adjust/adjust! with OptimiserChain" begin
+    dev = reactant_device(; force=true)
+
+    model = Chain(Dense(2 => 4, relu), Dense(4 => 1))
+    ps, st = Lux.setup(Random.default_rng(), model) |> dev
+
+    train_state = Training.TrainState(
+        model, ps, st, OptimiserChain(ClipGrad(3.0f0), AdamW(0.001f0))
+    )
+
+    opt = train_state.optimizer
+    @test opt isa Lux.ReactantCompatibleOptimisers.ReactantOptimiser
+
+    # Test adjust (non-mutating)
+    opt_adjusted = Optimisers.adjust(opt; eta=100.0f0)
+    @test opt_adjusted isa Lux.ReactantCompatibleOptimisers.ReactantOptimiser
+    opt_inner = opt_adjusted.opt
+    @test opt_inner isa Optimisers.OptimiserChain
+    adamw_adjusted = opt_inner.opts[2].opt
+    @test Float32(adamw_adjusted.eta) ≈ 100.0f0
+
+    # Test adjust! (mutating via TrainState)
+    ts_adjusted = Optimisers.adjust!(train_state; eta=50.0f0)
+    opt_inner2 = ts_adjusted.optimizer.opt
+    adamw_adjusted2 = opt_inner2.opts[2].opt
+    @test Float32(adamw_adjusted2.eta) ≈ 50.0f0
+end
+
 @testset "Reactant Distributed: Training API" begin
     ndevices = length(Reactant.devices())
 

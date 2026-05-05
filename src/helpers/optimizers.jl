@@ -57,6 +57,13 @@ function Optimisers._adjust(opt::ReactantOptimiser{<:Optimisers.AccumGrad}, nt::
     return ReactantOptimiser(Optimisers._adjust(opt.opt, dev(nt)))
 end
 
+function Optimisers._adjust(
+    opt::ReactantOptimiser{<:Optimisers.OptimiserChain}, nt::NamedTuple
+)
+    dev = with_track_numbers(get_device(opt), AbstractFloat)
+    return ReactantOptimiser(Optimisers.adjust(opt.opt; pairs(dev(nt))...))
+end
+
 # Convert existing Optimisers.jl rules to ReactantOptimisers
 function make_reactant_compatible(opt::Optimisers.OptimiserChain, dev::ReactantDevice)
     return ReactantOptimiser(
