@@ -10,7 +10,7 @@ hero:
   actions:
     - theme: brand
       text: Tutorials
-      link: /tutorials
+      link: /tutorials/
     - theme: alt
       text: API Reference 📚
       link: /api/Lux/layers
