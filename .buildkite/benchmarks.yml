@@ -2,39 +2,6 @@ steps:
   - group: ":racehorse: Benchmarks"
     if: build.message !~ /\[skip benchmarks\]/ && build.message !~ /\[skip ci\]/ && !build.pull_request.draft
     steps:
-      - label: "CPU: Run Benchmarks with {{matrix.threads}} thread(s)"
-        matrix:
-          setup:
-            threads:
-              - "1"
-              - "2"
-              - "4"
-              - "8"
-        plugins:
-          - JuliaCI/julia#v1:
-              version: "1.12"
-        command: |
-          julia --project=benchmarks -e 'println("--- :julia: Instantiating project")
-              using Pkg
-              Pkg.develop([
-                PackageSpec(path=pwd()),
-                PackageSpec(path="lib/LuxLib"),
-                PackageSpec(path="lib/MLDataDevices"),
-              ])'
-
-          julia --project=benchmarks -e 'println("--- :julia: Run Benchmarks")
-              include("benchmarks/runbenchmarks.jl")'
-        artifact_paths:
-          - "benchmarks/results/*"
-        agents:
-          arch: "aarch64"  # these ones tend to be more free
-          queue: "juliaecosystem"
-          num_cpus: "4"
-        env:
-          BENCHMARK_GROUP: CPU
-          JULIA_NUM_THREADS: "{{matrix.threads}}"
-        timeout_in_minutes: 120
-
       - label: "CUDA: Run Benchmarks"
         plugins:
           - JuliaCI/julia#v1:
@@ -57,9 +24,9 @@ steps:
         artifact_paths:
           - "benchmarks/results/*"
         agents:
-          queue: "benchmark"
+          queue: "cuda"
           gpu: "rtx2070"
-          cuda: "*"
+          benchmark: "*"
         env:
           BENCHMARK_GROUP: CUDA
         timeout_in_minutes: 120
@@ -82,6 +49,4 @@ steps:
               include("benchmarks/aggregate.jl")'
         artifact_paths:
           - "benchmarks/results/combinedbenchmarks.json"
-        agents:
-          queue: "juliagpu"
         timeout_in_minutes: 10

@@ -1,0 +1,95 @@
+# Steps running on the `juliaecosystem` queues (macOS Metal, CPU benchmarks).
+# These were moved out of the GPU-cluster pipelines, which cannot target queues
+# of other clusters. To be wired up to a separate ecosystem-cluster pipeline.
+
+steps:
+  - group: ":julia: (MLDataDevices) Metal GPU"
+    steps:
+      - label: ":julia: (MLDataDevices) Julia: {{matrix.julia}} + Metal"
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "{{matrix.julia}}"
+          - JuliaCI/julia-test#v1:
+              project: "lib/MLDataDevices"
+              test_args: "--BACKEND_GROUP=Metal"
+          - JuliaCI/julia-coverage#v1:
+              codecov: true
+              dirs:
+                - lib/MLDataDevices/src
+                - lib/MLDataDevices/ext
+        agents:
+          queue: "juliaecosystem"
+          os: "macos"
+          arch: "aarch64"
+        if: build.message !~ /\[skip tests\]/
+        timeout_in_minutes: 60
+        matrix:
+          setup:
+            julia:
+              - "1.12"
+
+  - group: ":julia: (WeightInitializers) Metal GPU"
+    steps:
+      - label: ":julia: (WeightInitializers) Julia: {{matrix.julia}} + Metal"
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "{{matrix.julia}}"
+          - JuliaCI/julia-test#v1:
+              project: "lib/WeightInitializers"
+              test_args: "--BACKEND_GROUP=Metal"
+          - JuliaCI/julia-coverage#v1:
+              codecov: true
+              dirs:
+                - lib/WeightInitializers/src
+                - lib/WeightInitializers/ext
+        agents:
+          queue: "juliaecosystem"
+          os: "macos"
+          arch: "aarch64"
+        if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
+        timeout_in_minutes: 60
+        matrix:
+          setup:
+            julia:
+              - "1.12"
+
+  # Moved from benchmarks.yml (currently not uploaded by the launcher).
+  - group: ":racehorse: Benchmarks"
+    if: build.message !~ /\[skip benchmarks\]/ && build.message !~ /\[skip ci\]/ && !build.pull_request.draft
+    steps:
+      - label: "CPU: Run Benchmarks with {{matrix.threads}} thread(s)"
+        matrix:
+          setup:
+            threads:
+              - "1"
+              - "2"
+              - "4"
+              - "8"
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "1.12"
+        command: |
+          julia --project=benchmarks -e 'println("--- :julia: Instantiating project")
+              using Pkg
+              Pkg.develop([
+                PackageSpec(path=pwd()),
+                PackageSpec(path="lib/LuxLib"),
+                PackageSpec(path="lib/MLDataDevices"),
+              ])'
+
+          julia --project=benchmarks -e 'println("--- :julia: Run Benchmarks")
+              include("benchmarks/runbenchmarks.jl")'
+        artifact_paths:
+          - "benchmarks/results/*"
+        agents:
+          arch: "aarch64"  # these ones tend to be more free
+          queue: "juliaecosystem"
+          num_cpus: "4"
+        env:
+          BENCHMARK_GROUP: CPU
+          JULIA_NUM_THREADS: "{{matrix.threads}}"
+        timeout_in_minutes: 120
+
+env:
+  SECRET_CODECOV_TOKEN: "jQ0BMTQgyZx7QGyU0Q2Ec7qB9mtE2q/tDu0FsfxvEG7/zOAGvXkyXrzIFFOQxvDoFcP+K2+hYZKMxicYdNqzr5wcxu505aNGN2GM3wyegAr+hO6q12bCFYx6qXzU9FLCCdeqINqn9gUSSOlGtWNFrbAlrTyz/D4Yo66TqBDzvaLL63FMnhCLaXW/zJt3hNuEAJaPY2O6Ze1rX2WZ3Y+i+s3uQ8aLImtoCJhPe8CRx+OhuYiTzGhynFfGntZ0738/1RN4gNM0S/hTC4gLE7XMVBanJpGh32rFaiDwW4zAyXKBrDkL3QA3MS1RvLTJxGJ085S16hCk0C4ddAhZCvIM9Q==;U2FsdGVkX1+bXdFeKMs5G79catOCyby2n07A2fg0FjVAvrjQLZ0yfvDS4paJiFikLkodho0khz2YALKb2Y0K6w=="
+  XLA_REACTANT_GPU_PREALLOCATE: "false"
