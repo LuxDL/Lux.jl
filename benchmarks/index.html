@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes"
+    />
+    <style>
+      html {
+        font-family: "Comic Sans", BlinkMacSystemFont, -apple-system, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue",
+          Helvetica, Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        background-color: #fff;
+        font-size: 16px;
+      }
+      body {
+        color: #4a4a4a;
+        margin: 8px;
+        font-size: 1em;
+        font-weight: 400;
+      }
+      header {
+        margin-bottom: 8px;
+        display: flex;
+        flex-direction: column;
+      }
+      main {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+      a {
+        color: #3273dc;
+        cursor: pointer;
+        text-decoration: none;
+      }
+      a:hover {
+        color: #000;
+      }
+      button {
+        color: #fff;
+        background-color: #3298dc;
+        border-color: transparent;
+        cursor: pointer;
+        text-align: center;
+      }
+      button:hover {
+        background-color: #2793da;
+        flex: none;
+      }
+      .spacer {
+        flex: auto;
+      }
+      .small {
+        font-size: 0.75rem;
+      }
+      footer {
+        margin-top: 16px;
+        display: flex;
+        align-items: center;
+      }
+      .header-label {
+        margin-right: 4px;
+      }
+      .benchmark-set {
+        margin: 8px 0;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .chartCard {
+        width: 20vw;
+        height: 25vh;
+        padding-left: 12px;
+        padding-right: 12px;
+        padding-top: 0px;
+        margin-right: 8px;
+        margin-left: 8px;
+        margin-top: 0px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+      }
+      .option-container {
+        display: flex;
+      }
+      .option-label {
+        margin-right: 8px;
+      }
+      .option {
+        margin-right: 4px;
+      }
+      .disabled {
+        color: #ccc;
+        cursor: default;
+        pointer-events: none;
+      }
+    </style>
+    <title>Benchmarks</title>
+  </head>
+
+  <body>
+    <header id="header">
+      <div class="header-item">
+        <strong class="header-label">Last Update:</strong>
+        <span id="last-update"></span>
+      </div>
+      <div class="header-item">
+        <strong class="header-label">Repository:</strong>
+        <a id="repository-link" rel="noopener"></a>
+      </div>
+      <div class="option-container">
+        <strong class="option-label">Option:</strong>
+        <a id="option-time" class="option">time</a>
+        <a id="option-memory" class="option">memory</a>
+        <a id="option-allocations" class="option">allocations</a>
+      </div>
+    </header>
+    <main id="main"></main>
+    <footer>
+      <button id="dl-button">Download data as JSON</button>
+      <div class="spacer"></div>
+      <div class="small">
+        Powered by
+        <a
+          rel="noopener"
+          href="https://github.com/marketplace/actions/continuous-benchmark"
+          >github-action-benchmark</a
+        >
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.2/dist/Chart.min.js"></script>
+    <script src="data.js"></script>
+    <script id="main-script">
+      "use strict";
+      (function () {
+        // Get option from query string
+        const pageOption =
+          new URLSearchParams(document.location.search).get("option") ?? "time";
+
+        // Colors from https://github.com/github/linguist/blob/master/lib/linguist/languages.yml
+        const backendToColor = {
+          "1 thread(s)": "#00add8",
+          "2 thread(s)": "#a270ba",
+          "4 thread(s)": "#dea584",
+          "8 thread(s)": "#f1e05a",
+          AMDGPU: "#5D6D7E",
+          CUDA: "#EC7063",
+          Metal: "#F4D03F",
+          oneAPI: "#52BE80",
+        };
+
+        function init() {
+          function collectBenchesPerTestCase(entries) {
+            const map = new Map();
+            for (const entry of entries) {
+              const { commit, date, tool, benches } = entry;
+              for (const bench of benches) {
+                const result = { commit, date, tool, bench };
+                const splitted_name = bench.name.split("/");
+                const benchmarkName = splitted_name[0];
+                const variant = splitted_name[1];
+                const device = splitted_name[2];
+                const backend = splitted_name[3];
+
+                if (map.get(benchmarkName) === undefined) {
+                  map.set(benchmarkName, new Map());
+                }
+
+                const mapBenchmarkName = map.get(benchmarkName);
+                if (mapBenchmarkName.get(variant) === undefined) {
+                  mapBenchmarkName.set(variant, new Map());
+                }
+
+                const mapSimMethod = mapBenchmarkName.get(variant);
+                if (mapSimMethod.get(device) === undefined) {
+                  mapSimMethod.set(device, new Map());
+                }
+
+                const mapDevice = mapSimMethod.get(device);
+                if (mapDevice.get(backend) === undefined) {
+                  mapDevice.set(backend, [result]);
+                } else {
+                  mapDevice.get(backend).push(result);
+                }
+              }
+            }
+            return map;
+          }
+
+          const data = window.BENCHMARK_DATA;
+
+          // Render header
+          document.getElementById("last-update").textContent = new Date(
+            data.lastUpdate
+          ).toString();
+          const repoLink = document.getElementById("repository-link");
+          repoLink.href = data.repoUrl;
+          repoLink.textContent = data.repoUrl;
+
+          // Render option links
+          const options = ["time", "memory", "allocations"];
+          for (const option of options) {
+            const optionLink = document.getElementById("option-" + option);
+            if (option === pageOption) {
+              optionLink.classList.add("disabled");
+            } else {
+              optionLink.href =
+                window.location.href.split("?")[0] + "?option=" + option;
+            }
+          }
+
+          // Render footer
+          document.getElementById("dl-button").onclick = () => {
+            const dataUrl = "data:," + JSON.stringify(data, null, 2);
+            const a = document.createElement("a");
+            a.href = dataUrl;
+            a.download = "benchmark_data.json";
+            a.click();
+          };
+
+          // Prepare data points for charts
+          return Object.keys(data.entries).map((name) => ({
+            name,
+            dataSet: collectBenchesPerTestCase(data.entries[name]),
+          }));
+        }
+
+        function renderAllChars(dataSets) {
+          function renderGraph(parent, name, graphData) {
+            const canvas = document.createElement("canvas");
+            parent.appendChild(canvas);
+
+            const datasets = [];
+            const data = {
+              labels: graphData
+                .entries()
+                .next()
+                .value[1].map((d) => d.commit.id.slice(0, 7)),
+              datasets,
+            };
+
+            const backendIndices = new Map();
+            const backendNames = [...graphData.keys()].sort();
+            let datasetIndex = 0;
+
+            for (const backendName of backendNames) {
+              const backendData = graphData.get(backendName);
+              const color = backendToColor[backendName];
+              const lineData = {
+                label: backendName,
+                data: backendData.map((d) => {
+                  switch (pageOption) {
+                    case "memory":
+                      return (
+                        Number(
+                          d.bench.extra
+                            .split("\n")
+                            .find((val) => val.split("=")[0] === "memory")
+                            ?.split("=")[1]
+                        ) / 1e6
+                      );
+                    case "allocations":
+                      return Number(
+                        d.bench.extra
+                          .split("\n")
+                          .find((val) => val.split("=")[0] === "allocs")
+                          ?.split("=")[1]
+                      );
+                    case "time":
+                    default:
+                      return d.bench.value / 1e6;
+                  }
+                }),
+                borderColor: color,
+                fill: false,
+              };
+              datasets.push(lineData);
+              backendIndices.set(datasetIndex, backendName);
+              datasetIndex++;
+            }
+
+            const yAxisLabel =
+              pageOption === "time"
+                ? "Time (ms)"
+                : pageOption === "memory"
+                ? "Memory (MB)"
+                : "Allocations";
+            const options = {
+              scales: {
+                xAxes: [
+                  {
+                    scaleLabel: {
+                      display: true,
+                      labelString: "commit",
+                    },
+                  },
+                ],
+                yAxes: [
+                  {
+                    scaleLabel: {
+                      display: true,
+                      labelString: yAxisLabel + " (log scale)",
+                    },
+                    ticks: {
+                      beginAtZero: true,
+                    },
+                    type: "logarithmic",
+                  },
+                ],
+              },
+              tooltips: {
+                callbacks: {
+                  afterTitle: (items) => {
+                    const item = items[0];
+                    const datasetIndex = item.datasetIndex;
+                    const dataIndex = item.index;
+                    const commit = graphData.get(
+                      backendIndices.get(datasetIndex)
+                    )[dataIndex].commit;
+                    return (
+                      "\n" +
+                      commit.message +
+                      "\n\n" +
+                      commit.timestamp +
+                      " committed by @" +
+                      commit.author.username +
+                      "\n"
+                    );
+                  },
+                  label: (item) => {
+                    const datasetIndex = item.datasetIndex;
+                    const backendName = backendIndices.get(datasetIndex);
+                    let label = backendName + ": " + item.value;
+                    const unit =
+                      pageOption === "memory"
+                        ? "MB"
+                        : pageOption === "allocations"
+                        ? "allocations"
+                        : "ms";
+                    label += " " + unit;
+                    return label;
+                  },
+                  afterLabel: (item) => {
+                    const datasetIndex = item.datasetIndex;
+                    const dataIndex = item.index;
+                    const { extra } = graphData.get(
+                      backendIndices.get(datasetIndex)
+                    )[dataIndex].bench;
+                    return extra ? "\n" + extra : "";
+                  },
+                },
+              },
+              onClick: (_mouseEvent, activeElems) => {
+                if (activeElems.length === 0) {
+                  console.log("got here");
+                  return;
+                }
+
+                const datasetIndex = activeElems[0]._datasetIndex;
+                const dataIndex = activeElems[0]._index;
+                const url = graphData.get(backendIndices.get(datasetIndex))[
+                  dataIndex
+                ].commit.url;
+                window.open(url, "_blank");
+              },
+            };
+
+            new Chart(canvas, {
+              type: "line",
+              data,
+              options,
+            });
+          }
+
+          function renderRow(benchmarkName, variant, rowData, parent) {
+            const mainDiv = document.createElement("div");
+            parent.appendChild(mainDiv);
+
+            const devices = [...rowData.keys()].sort();
+            for (const device of devices) {
+              const graphTitle =
+                benchmarkName + " + " + variant + " + " + device;
+
+              const titleElem = document.createElement("h6");
+              titleElem.textContent = graphTitle.toUpperCase();
+              titleElem.style.textAlign = "center";
+              titleElem.style.marginBottom = "0.25em";
+              titleElem.style.marginTop = "0.25em";
+              mainDiv.appendChild(titleElem);
+
+              const graphsElem = document.createElement("div");
+              graphsElem.className = "chartCard";
+              mainDiv.appendChild(graphsElem);
+
+              renderGraph(graphsElem, graphTitle, rowData.get(device));
+            }
+          }
+
+          const main = document.getElementById("main");
+          const div1 = document.createElement("div");
+          div1.className = "benchmark-set";
+          main.appendChild(div1);
+          const dataSet = dataSets[0].dataSet;
+          const benchmarkNames = [...dataSet.keys()].sort();
+          const simMethods = [...dataSet.get(benchmarkNames[0]).keys()].sort();
+
+          for (const benchmarkName of benchmarkNames) {
+            for (const variant of simMethods) {
+              renderRow(
+                benchmarkName,
+                variant,
+                dataSet.get(benchmarkName).get(variant),
+                div1
+              );
+            }
+          }
+        }
+
+        renderAllChars(init()); // Start
+      })();
+    </script>
+  </body>
+</html>
