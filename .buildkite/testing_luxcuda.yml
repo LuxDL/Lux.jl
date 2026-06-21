@@ -12,8 +12,7 @@ steps:
               dirs:
                 - lib/LuxCUDA/src
         agents:
-          queue: "juliagpu"
-          cuda: "*"
+          queue: "cuda"
         if: build.message !~ /\[skip tests\]/
         timeout_in_minutes: 60
         matrix:
