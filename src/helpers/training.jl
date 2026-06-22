@@ -105,22 +105,22 @@ function Adapt.adapt_structure(to::ReactantDevice, ts::TrainState)
 end
 
 """
-    TrainState(model::Lux.AbstractLuxLayer, ps, st, optimizer::Optimisers.AbstractRule)
+    TrainState(model, ps, st, optimizer::Optimisers.AbstractRule)
 
 Constructor for [`TrainState`](@ref).
 
 ## Arguments
 
+  - `model`: `Lux` model.
   - `ps`: Parameters of the model.
   - `st`: States of the model.
-  - `model`: `Lux` model.
   - `optimizer`: Optimizer from `Optimisers.jl`.
 
 ## Returns
 
 [`TrainState`](@ref) object.
 """
-function TrainState(model::AbstractLuxLayer, ps, st, optimizer::Optimisers.AbstractRule)
+function TrainState(model, ps, st, optimizer::Optimisers.AbstractRule)
     dev = get_device(ps)
     if dev isa ReactantDevice
         optimizer = ReactantCompatibleOptimisers.make_reactant_compatible(optimizer, dev)
