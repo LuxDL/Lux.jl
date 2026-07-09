@@ -2,17 +2,9 @@ module cuDNNExt
 
 using LuxLib: LuxLib, Optional, ∂∅, Impl
 using LuxLib.Utils: Utils, safe_reshape, safe_vec, unsafe_known, recursive_unthunk
-using CUDA: CUDA, CuArray, CuVector, CU_NULL, DenseCuArray, DenseCuVector
+using CUDA: CUDA, CuArray, CuVector, DenseCuArray, DenseCuVector
 using ChainRulesCore: ChainRulesCore
-using cuDNN:
-    cuDNN,
-    cudnnBatchNormalizationBackward,
-    cudnnBatchNormalizationForwardInference,
-    CUDNN_BATCHNORM_SPATIAL,
-    cudnnBatchNormalizationForwardTraining,
-    cudnnTensorDescriptor,
-    CUDNN_TENSOR_NCHW,
-    cudnnDataType
+using cuDNN: batchnorm_gradient!, batchnorm_inference!, batchnorm_training!
 using FastClosures: @closure
 using Static: StaticBool, False, True
 
