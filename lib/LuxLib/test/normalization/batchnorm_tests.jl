@@ -57,7 +57,7 @@ is_training(::Val{training}) where {training} = training
 sumabs2first(f::F, args...) where {F} = sum(abs2, first(f(args...)))
 
 function run_batchnorm_testing(gen_f, T, sz, training, affine, track_stats, act, aType)
-    epsilon = eps(T)^(5 // 7)
+    epsilon = eps(T)^(5//7)
     x, scale, bias, rm, rv = setup_batchnorm(gen_f, aType, T, sz; track_stats, affine)
 
     y, nt = batchnorm(x, scale, bias, rm, rv, training, act, T(0.9), epsilon)
@@ -137,7 +137,6 @@ const ALL_TEST_CONFIGS = Iterators.product(
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (
             T, sz, training, (affine, track_stats), act
         ) in ALL_TEST_CONFIGS
-
             !fp64 && T == Float64 && continue
             run_batchnorm_testing(
                 generate_fixed_array, T, sz, training, affine, track_stats, act, aType
@@ -193,7 +192,8 @@ function check_mooncake_correctness(f::F, args...; atol=1.0f-3, rtol=1.0f-3) whe
     )
     ∂args_mooncake = ∂all_mooncake[2:end]  # drop the gradient w.r.t. `f` itself
     for (∂zyg, ∂mc) in zip(∂args_zygote, ∂args_mooncake)
-        @test Array(∂mc) ≈ Array(∂zyg) atol = atol rtol = rtol
+        ∂mc_arr = Array(LuxTestUtils._unwrap_mooncake_tangent(∂mc))
+        @test ∂mc_arr ≈ Array(∂zyg) atol = atol rtol = rtol
     end
 end
 
@@ -211,7 +211,9 @@ if cuda_testing() && LuxTestUtils.MOONCAKE_TESTING_ENABLED[]
                 _f(g, b, x) = sum(
                     abs2,
                     first(
-                        batchnorm(x, g, b, nothing, nothing, Val(true), identity, T(0.9), ϵ)
+                        batchnorm(
+                            x, g, b, nothing, nothing, Val(true), identity, T(0.9), ϵ
+                        ),
                     ),
                 )
                 mooncake_test_rule(
@@ -233,7 +235,9 @@ if cuda_testing() && LuxTestUtils.MOONCAKE_TESTING_ENABLED[]
                 _f(g, b, x) = sum(
                     abs2,
                     first(
-                        batchnorm(x, g, b, nothing, nothing, Val(true), identity, T(0.9), ϵ)
+                        batchnorm(
+                            x, g, b, nothing, nothing, Val(true), identity, T(0.9), ϵ
+                        ),
                     ),
                 )
                 mooncake_test_rule(
@@ -255,7 +259,8 @@ if cuda_testing() && LuxTestUtils.MOONCAKE_TESTING_ENABLED[]
                 rv = CuArray(abs2.(generate_fixed_array(T, N)) .+ T(1.0e-5))
                 x = CuArray(generate_fixed_array(T, 3, 3, N, B))
                 _f(g, b, x) = sum(
-                    abs2, first(batchnorm(x, g, b, rm, rv, Val(true), identity, T(0.9), ϵ))
+                    abs2,
+                    first(batchnorm(x, g, b, rm, rv, Val(true), identity, T(0.9), ϵ)),
                 )
                 mooncake_test_rule(
                     rng,
