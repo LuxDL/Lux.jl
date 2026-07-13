@@ -24,7 +24,13 @@ make_causal_mask
 
 ```@docs
 softmax
+softmax!
 logsoftmax
+logsoftmax!
+∇softmax
+∇softmax!
+∇logsoftmax
+∇logsoftmax!
 ```
 
 ## Pooling
@@ -165,22 +171,18 @@ NNlib.is_strided
 NNlib.conv_direct!
 NNlib.gemm!
 NNlib.calc_padding_regions
-NNlib.∇depthwiseconv_data_im2col!
 NNlib._prepare_imrotate
 NNlib.insert_singleton_spatial_dimension
 NNlib._fast_broadcast!
 NNlib.hann_window
 NNlib._rng_from_array
-NNlib.∇depthwiseconv_filter_im2col!
 NNlib.istft
 NNlib.transpose_swapbatch
 NNlib.transpose_pad
 NNlib.power_to_db
 NNlib.col2im!
-NNlib.depthwiseconv_im2col!
 NNlib.storage_type
 NNlib.im2col_dims
-NNlib.∇depthwiseconv_filter_direct!
 NNlib.reverse_indices
 NNlib.∇conv_filter_im2col!
 NNlib.conv_im2col!
@@ -192,7 +194,6 @@ NNlib.add_blanks
 NNlib.∇filter_im2col_dims
 NNlib._bilinear_helper
 NNlib._triangular_filterbanks
-NNlib.∇depthwiseconv_data_direct!
 NNlib.db_to_power
 NNlib.predilated_size
 NNlib.stft
@@ -202,7 +203,6 @@ NNlib.BatchedTranspose
 NNlib._rotate_coordinates
 NNlib.melscale_filterbanks
 NNlib.logaddexp
-NNlib.depthwiseconv_direct!
 NNlib.im2col!
 NNlib.predilate
 NNlib.safe_div
