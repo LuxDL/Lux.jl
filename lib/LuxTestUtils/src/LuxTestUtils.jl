@@ -37,7 +37,6 @@ using ChainRulesCore: ChainRulesCore
 using FiniteDiff: FiniteDiff
 using ForwardDiff: ForwardDiff
 using Zygote: Zygote
-using Mooncake: Mooncake
 
 const CRC = ChainRulesCore
 const FD = FiniteDiff
@@ -57,7 +56,7 @@ catch err
     JET_TESTING_ENABLED[] = false
 end
 
-# Check if Mooncake & Enzyme will work (only on non-prerelease versions)
+# Check if Enzyme will work (only on non-prerelease versions)
 @static if isempty(VERSION.prerelease)
     try
         using Enzyme: Enzyme
@@ -68,19 +67,6 @@ end
                 failed to load on $(VERSION). All Enzyme tests will be \
                 skipped." maxlog = 1 err = err
         ENZYME_TESTING_ENABLED[] = false
-    end
-
-    try
-        # FIXME: Mooncake is currently wreaking havoc in the Lux repo test,
-        # dropping testing for now
-        # Mooncake.prepare_gradient_cache(Base.Fix1(sum, abs2), ones(Float32, 10))
-        # MOONCAKE_TESTING_ENABLED[] = true
-        MOONCAKE_TESTING_ENABLED[] = false
-    catch err
-        @error "`Mooncake.jl` did not successfully differentiate a simple function or \
-                failed to load on $(VERSION). All Mooncake tests will be \
-                skipped." maxlog = 1 err = err
-        MOONCAKE_TESTING_ENABLED[] = false
     end
 end
 
