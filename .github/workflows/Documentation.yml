@@ -117,7 +117,7 @@ jobs:
       matrix:
         group: [0, 1, 2, 3, 4, 5]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Collect Workflow Telemetry
         uses: catchpoint/workflow-telemetry-action@v2
         with:
@@ -156,7 +156,7 @@ jobs:
     # needs: [tutorial-cpu, tutorial-cuda]
     needs: [tutorial-cpu]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Collect Workflow Telemetry
