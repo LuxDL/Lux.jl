@@ -156,12 +156,16 @@ end
             @jet celoss(ŷ, y)
             @jet celoss_smooth(ŷ, y)
 
+            # ŷ is Adjoint-wrapped; Mooncake can't rebuild that wrapper yet, so the
+            # gradient comes back with the wrong shape.
             @test_gradients(
                 Base.Fix2(celoss, y),
                 ŷ;
                 atol=1.0f-3,
                 rtol=1.0f-3,
-                skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : []
+                skip_backends=vcat(
+                    VERSION ≥ v"1.11-" ? [AutoEnzyme()] : [], [AutoMooncake()]
+                )
             )
         end
 
@@ -182,12 +186,15 @@ end
             @jet logitceloss(logŷ, y)
             @jet logitceloss_smooth(logŷ, y)
 
+            # Same Adjoint-wrapper issue as above.
             @test_gradients(
                 Base.Fix2(logitceloss, y),
                 logŷ;
                 atol=1.0f-3,
                 rtol=1.0f-3,
-                skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : []
+                skip_backends=vcat(
+                    VERSION ≥ v"1.11-" ? [AutoEnzyme()] : [], [AutoMooncake()]
+                )
             )
         end
 
