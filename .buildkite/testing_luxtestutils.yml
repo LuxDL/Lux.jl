@@ -15,8 +15,7 @@ steps:
                 - lib/MLDataDevices/src
                 - lib/MLDataDevices/ext
         agents:
-          queue: "juliagpu"
-          cuda: "*"
+          queue: "cuda"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
         timeout_in_minutes: 60
         matrix:
