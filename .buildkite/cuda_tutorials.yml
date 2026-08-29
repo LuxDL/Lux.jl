@@ -12,8 +12,7 @@ steps:
         env:
           TUTORIAL_BACKEND_GROUP: "CUDA"
         agents:
-          queue: "juliagpu"
-          cuda: "*"
+          queue: "cuda"
         artifact_paths:
           - "docs/src/tutorials/beginner/**/*"
           - "docs/src/tutorials/intermediate/**/*"
