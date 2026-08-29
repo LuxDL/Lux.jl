@@ -525,13 +525,13 @@ end
 # Simple extension to the `adjust!` API
 function Optimisers.adjust!(ts::TrainState, eta::Real)
     Optimisers.adjust!(ts.optimizer_state, eta)
-    @set! ts.optimizer = Optimisers.adjust(ts.optimizer, eta)
+    ts.optimizer = Optimisers.adjust(ts.optimizer, eta)
     return ts
 end
 
 function Optimisers.adjust!(ts::TrainState; kwargs...)
     Optimisers.adjust!(ts.optimizer_state; kwargs...)
-    @set! ts.optimizer = Optimisers.adjust(ts.optimizer; kwargs...)
+    ts.optimizer = Optimisers.adjust(ts.optimizer; kwargs...)
     return ts
 end
 
