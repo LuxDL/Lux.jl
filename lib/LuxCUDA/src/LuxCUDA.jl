@@ -9,12 +9,6 @@ using Reexport
     @reexport using CUDA.CUDAKernels
 end
 
-const cudnn_functional = @static if isdefined(cuDNN, :has_cudnn)
-    cuDNN.has_cudnn
-else
-    cuDNN.functional
-end
-
 const USE_CUDA_GPU = Ref{Union{Nothing,Bool}}(nothing)
 
 function _check_use_cuda!()
@@ -22,7 +16,7 @@ function _check_use_cuda!()
 
     USE_CUDA_GPU[] = CUDA.functional()
     if USE_CUDA_GPU[]
-        if !cudnn_functional()
+        if !cuDNN.functional()
             @warn """
             cuDNN is not functional in CUDA.jl. Some functionality will not be available.
             """ maxlog = 1
