@@ -19,7 +19,6 @@ const nil = Nil()
 Nil(::T) where {T<:Real} = nil
 Nil(::Nil) = nil
 (::Type{T})(::Nil) where {T<:Real} = nil
-Base.convert(::Type{Nil}, ::Real) = nil
 Base.convert(::Type{T}, ::Nil) where {T<:Real} = zero(T)
 Base.convert(::Type{Nil}, ::Nil) = nil
 
