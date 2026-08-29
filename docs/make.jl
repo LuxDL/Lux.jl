@@ -28,9 +28,8 @@ makedocs(;
     linkcheck_ignore=[],
     repo="https://github.com/LuxDL/Lux.jl/blob/{commit}{path}#{line}",
     remotes=Dict(
-        pkgdir(NNlib) => (
-            Documenter.Remotes.GitHub("FluxML", "NNlib.jl"), "v$(pkgversion(NNlib))"
-        ),
+        pkgdir(NNlib) =>
+            (Documenter.Remotes.GitHub("FluxML", "NNlib.jl"), "v$(pkgversion(NNlib))"),
     ),
     format=DocumenterVitepress.MarkdownVitepress(;
         repo="github.com/LuxDL/Lux.jl",
