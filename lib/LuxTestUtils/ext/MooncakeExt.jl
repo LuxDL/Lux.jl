@@ -25,12 +25,6 @@ function LuxTestUtils.gradient(f::F, ::AutoMooncake, args...) where {F}
     return LuxTestUtils.gradient(f, mooncake_gradient_function, args...)
 end
 
-"""
-    mooncake_gradient_function(f, x)
-
-Compute gradient using Mooncake.jl's value_and_gradient!! function.
-Returns only the gradient for args x.
-"""
 function mooncake_gradient_function(f, x)
     # Enable friendly_tangents for testing.
     cache = Mooncake.prepare_gradient_cache(
