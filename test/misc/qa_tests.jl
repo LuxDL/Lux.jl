@@ -3,7 +3,7 @@ using Lux, LuxCore, LuxLib, MLDataDevices
 using ComponentArrays, ReverseDiff, Tracker, Zygote, Enzyme, Reactant, Mooncake
 
 @testset "Public API documentation" begin
-    @test Base.Docs.hasdoc(Lux, :SamePad)
+    @test haskey(Base.Docs.meta(Lux), Base.Docs.Binding(Lux, :SamePad))
 end
 
 @testset "Aqua: Quality Assurance" begin
