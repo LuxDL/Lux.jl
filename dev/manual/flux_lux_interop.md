@@ -1,6 +1,7 @@
 ---
 url: /dev/manual/flux_lux_interop.md
 ---
+
 # Supporting Both Flux and Lux {#flux-lux-interop}
 
 A common question for package maintainers is: "How can I support both Flux and Lux in my package?" This guide provides a comprehensive approach to maintaining compatibility with both frameworks while minimizing code duplication and dependency overhead.
@@ -8,10 +9,9 @@ A common question for package maintainers is: "How can I support both Flux and L
 ## The Core Strategy {#The-Core-Strategy}
 
 The recommended approach is to:
+2\. **Define your core layers using LuxCore**: Use `LuxCore.jl` as your primary interface since it's a lighter dependency than full `Lux.jl`
 
-1. **Define your core layers using LuxCore**: Use `LuxCore.jl` as your primary interface since it's a lighter dependency than full `Lux.jl`
-
-2. **Construct a StatefulLuxLayer**: Wrap the layer in a [`StatefulLuxLayer`](/api/Building_Blocks/LuxCore#LuxCore.StatefulLuxLayerImpl.StatefulLuxLayer) to provide a Flux-style interface
+3. **Construct a StatefulLuxLayer**: Wrap the layer in a [`StatefulLuxLayer`](/api/Building_Blocks/LuxCore#LuxCore.StatefulLuxLayerImpl.StatefulLuxLayer) to provide a Flux-style interface
 
 This strategy allows users to choose their preferred framework while keeping your package's core functionality framework-agnostic.
 
@@ -108,16 +108,16 @@ opt_state, flux_model = Optimisers.update(opt_state, flux_model, grads[1])
 
 ## Best Practices {#Best-Practices}
 
-1. **Use LuxCore for core definitions**: Depend on `LuxCore.jl` rather than full `Lux.jl` to minimize dependencies.
+2. **Use LuxCore for core definitions**: Depend on `LuxCore.jl` rather than full `Lux.jl` to minimize dependencies.
 
-2. **Lazy loading**: Use package extensions to avoid loading Flux unless needed.
+3. **Lazy loading**: Use package extensions to avoid loading Flux unless needed.
 
 ## Common Gotchas {#Common-Gotchas}
 
-1. **Mutable state in layer structs**: Remember that Lux layers should not contain mutable state. Put mutable objects in the state, not the layer.
+2. **Mutable state in layer structs**: Remember that Lux layers should not contain mutable state. Put mutable objects in the state, not the layer.
 
-2. **Parameter sharing**: Be careful with parameter sharing when converting between interfaces.
+3. **Parameter sharing**: Be careful with parameter sharing when converting between interfaces.
 
-3. **Extension loading**: Users need to load Flux explicitly to access the Flux interface, even if your package supports it.
+4. **Extension loading**: Users need to load Flux explicitly to access the Flux interface, even if your package supports it.
 
 By following this pattern, you can provide excellent support for both Flux and Lux users while maintaining clean, maintainable code.

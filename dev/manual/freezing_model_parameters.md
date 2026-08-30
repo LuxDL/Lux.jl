@@ -1,6 +1,7 @@
 ---
 url: /dev/manual/freezing_model_parameters.md
 ---
+
 # Freezing Model Parameters {#freezing-model-parameters}
 
 ::: warning Warning

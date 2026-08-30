@@ -1,6 +1,7 @@
 ---
 url: /dev/api/Lux/utilities.md
 ---
+
 # Utilities {#Utilities}
 
 ## Training API {#Training-API}
@@ -216,10 +217,9 @@ source
 ## Loss Functions {#Loss-Functions}
 
 Loss Functions Objects take 2 forms of inputs:
+2\. `ŷ` and `y` where `ŷ` is the predicted output and `y` is the target output.
 
-1. `ŷ` and `y` where `ŷ` is the predicted output and `y` is the target output.
-
-2. `model`, `ps`, `st`, `(x, y)` where `model` is the model, `ps` are the parameters, `st` are the states and `(x, y)` are the input and target pair. Then it returns the loss, updated states, and an empty named tuple. This makes them compatible with the [Training API](/api/Lux/utilities#Training-API).
+3. `model`, `ps`, `st`, `(x, y)` where `model` is the model, `ps` are the parameters, `st` are the states and `(x, y)` are the input and target pair. Then it returns the loss, updated states, and an empty named tuple. This makes them compatible with the [Training API](/api/Lux/utilities#Training-API).
 
 ::: warning Warning
 
@@ -312,7 +312,10 @@ source
 BinaryFocalLoss(; gamma = 2, agg = mean, epsilon = nothing)
 ```
 
-Return the binary focal loss \[[5](/references#lin2017focal)]. The model input, $\hat{y}$, is expected to be normalized (i.e. softmax output).
+Return the binary focal loss \[
+DocumenterCitations.CitationSiteNode("lin2017focal-cite-1")
+
+]. The model input, $\hat{y}$, is expected to be normalized (i.e. softmax output).
 
 For $\gamma = 0$ this is equivalent to [`BinaryCrossEntropyLoss`](/api/Lux/utilities#Lux.BinaryCrossEntropyLoss).
 
@@ -388,7 +391,10 @@ source
 DiceCoeffLoss(; smooth = true, agg = mean)
 ```
 
-Return the Dice Coefficient loss \[[6](/references#milletari2016v)] which is used in segmentation tasks. The dice coefficient is similar to the F1\_score. Loss calculated as:
+Return the Dice Coefficient loss \[
+DocumenterCitations.CitationSiteNode("milletari2016v-cite-1")
+
+] which is used in segmentation tasks. The dice coefficient is similar to the F1\_score. Loss calculated as:
 
 $$\text{agg}\left(1 - \frac{2 \sum y \hat{y} + \alpha}{\sum y^2 + \sum \hat{y}^2 + \alpha}\right)$$
 
@@ -415,7 +421,10 @@ source
 FocalLoss(; gamma = 2, dims = 1, agg = mean, epsilon = nothing)
 ```
 
-Return the focal loss \[[5](/references#lin2017focal)] which can be used in classification tasks with highly imbalanced classes. It down-weights well-classified examples and focuses on hard examples. The input, $\hat{y}$, is expected to be normalized (i.e. `softmax` output).
+Return the focal loss \[
+DocumenterCitations.CitationSiteNode("lin2017focal-cite-2")
+
+] which can be used in classification tasks with highly imbalanced classes. It down-weights well-classified examples and focuses on hard examples. The input, $\hat{y}$, is expected to be normalized (i.e. `softmax` output).
 
 The modulating factor $\gamma$, controls the down-weighting strength. For $\gamma = 0$ this is equivalent to [`CrossEntropyLoss`](/api/Lux/utilities#Lux.CrossEntropyLoss).
 
@@ -621,7 +630,10 @@ source
 SiameseContrastiveLoss(; margin = true, agg = mean)
 ```
 
-Return the contrastive loss \[[7](/references#hadsell2006dimensionality)] which can be useful for training Siamese Networks. It is given by:
+Return the contrastive loss \[
+DocumenterCitations.CitationSiteNode("hadsell2006dimensionality-cite-1")
+
+] which can be useful for training Siamese Networks. It is given by:
 
 $$\text{agg}\left((1 - y) \hat{y}^2 + y \* \max(0, \text{margin} - \hat{y})^2\right)$$
 
@@ -764,14 +776,13 @@ Starting Lux v1.3.0, this function is deprecated in favor of `Functors.fmap`. Fu
 **How this works?**
 
 For the following types it directly defines recursion rules:
+2\. `AbstractArray`: If eltype is `isbitstype`, then `f` is applied to the array, else we recurse on the array.
 
-1. `AbstractArray`: If eltype is `isbitstype`, then `f` is applied to the array, else we recurse on the array.
+3. `Tuple/NamedTuple`: We recurse on the values.
 
-2. `Tuple/NamedTuple`: We recurse on the values.
+4. `Number/Val/Nothing`: We directly apply `f`.
 
-3. `Number/Val/Nothing`: We directly apply `f`.
-
-4. For all other types, we recurse on the fields using `Functors.fmap`.
+5. For all other types, we recurse on the fields using `Functors.fmap`.
 
 ::: tip Note
 
@@ -969,10 +980,9 @@ Creates a layer by specifying some `parameters`, in the form of keywords, and (u
 Defining the version with `p` allows you to access the parameters in the forward pass. This is useful when using it with SciML tools which require passing in the parameters explicitly.
 
 **Reserved Kwargs:**
+2\. `name`: The name of the layer.
 
-1. `name`: The name of the layer.
-
-2. `dispatch`: The constructed layer has the type `Lux.CompactLuxLayer{dispatch}` which can be used for custom dispatches.
+3. `dispatch`: The constructed layer has the type `Lux.CompactLuxLayer{dispatch}` which can be used for custom dispatches.
 
 ::: tip Tip
 

@@ -1,6 +1,7 @@
 ---
 url: /dev/introduction/updating_to_v1.md
 ---
+
 # Updating to Lux v1 {#updating-to-v1}
 
 Lux v1 is a Major Release, mostly to signify the stability of the API. In this page, we list out a concrete set of changes that need to be made to your code to update to Lux v1. We also list out some new exciting features that were added as part of this release.

@@ -1,6 +1,7 @@
 ---
 url: /dev/tutorials/intermediate/8_LSTMEncoderDecoder.md
 ---
+
 # Building a LSTM Encoder-Decoder model using Lux.jl {#Building-a-LSTM-Encoder-Decoder-model-using-Lux.jl}
 
 This examples is based on [LSTM\_encoder\_decoder](https://github.com/lkulowski/LSTM_encoder_decoder) by [Laura Kulowski](https://github.com/lkulowski).
@@ -409,15 +410,15 @@ end
 ```
 
 ```
-Julia Version 1.12.6
-Commit 15346901f00 (2026-04-09 19:20 UTC)
+Julia Version 1.12.7
+Commit 6d172b025e4 (2026-08-15 08:05 UTC)
 Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 4 × AMD EPYC 9V74 80-Core Processor
+  CPU: 4 × AMD EPYC 7763 64-Core Processor
   WORD_SIZE: 64
-  LLVM: libLLVM-18.1.7 (ORCJIT, znver4)
+  LLVM: libLLVM-18.1.7 (ORCJIT, znver3)
   GC: Built with stock GC
 Threads: 4 default, 1 interactive, 4 GC (on 4 virtual cores)
 Environment:

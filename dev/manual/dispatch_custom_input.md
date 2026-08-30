@@ -1,6 +1,7 @@
 ---
 url: /dev/manual/dispatch_custom_input.md
 ---
+
 # Dispatching on Custom Input Types {#Dispatching-on-Custom-Input-Types}
 
 ## Which function should participate in dispatch? {#Which-function-should-participate-in-dispatch?}

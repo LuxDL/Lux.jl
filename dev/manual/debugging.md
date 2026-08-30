@@ -1,6 +1,7 @@
 ---
 url: /dev/manual/debugging.md
 ---
+
 # Debugging Lux Models {#debug-lux-layers}
 
 Debugging DNNs can be very painful. Especially with the gigantic stacktraces for Lux, it is even harder to pin-point to which particular layer errored out. This page describes some useful tools that ship with Lux, that can help you debug your models.

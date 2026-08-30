@@ -1,6 +1,7 @@
 ---
 url: /dev/manual/interface.md
 ---
+
 # Lux Interface {#lux-interface}
 
 ::: tip Lux.jl vs LuxCore.jl

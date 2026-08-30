@@ -1,6 +1,7 @@
 ---
 url: /dev/manual/nested_autodiff.md
 ---
+
 # Nested Automatic Differentiation {#nested\_autodiff}
 
 ::: tip Reactant
@@ -280,10 +281,9 @@ We can use this to compute the trace of a Jacobian Matrix $J \in \mathbb{R}^{D \
 $$\text{Tr}(J) = \frac{1}{V} \sum\_{i = 1}^V v\_i^T J v\_i$$
 
 Note that we can compute this using two methods:
+2\. Compute $v\_i^T J$ using a Vector-Jacobian product and then do a matrix-vector product to get the trace.
 
-1. Compute $v\_i^T J$ using a Vector-Jacobian product and then do a matrix-vector product to get the trace.
-
-2. Compute $J v\_i$ using a Jacobian-Vector product and then do a matrix-vector product to get the trace.
+3. Compute $J v\_i$ using a Jacobian-Vector product and then do a matrix-vector product to get the trace.
 
 For simplicity, we will use a single sample of $v\_i$ to compute the trace. Additionally, we will fix the sample to ensure that our tests against the finite difference implementation are not affected by the randomness in the sample.
 

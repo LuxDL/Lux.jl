@@ -20,7 +20,7 @@ OneHotArrays = "0.2.5"
 Optimisers = "0.4.6"
 Random = "1"
 Reactant = "0.2.170"
-SimpleChains = "0.4.6"
+SimpleChains = "0.4.6, 0.5"
 Zygote = "0.7"
 
 [sources]

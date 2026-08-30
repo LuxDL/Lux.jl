@@ -1,6 +1,7 @@
 ---
 url: /dev/tutorials/intermediate/11_CIFAR10_resnet20.md
 ---
+
 ::: danger Not Run on CI
 
 This tutorial is not run on CI to reduce the computational burden. If you encounter any issues, please open an issue on the [Lux.jl](https://github.com/LuxDL/Lux.jl) repository.

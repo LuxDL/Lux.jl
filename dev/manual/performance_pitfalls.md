@@ -1,13 +1,13 @@
 ---
 url: /dev/manual/performance_pitfalls.md
 ---
+
 # Performance Pitfalls & How to Catch Them {#Performance-Pitfalls-and-How-to-Catch-Them}
 
 Go through the following documentations for general performance tips:
+2\. [Official Julia Performance Tips](https://docs.julialang.org/en/v1/manual/performance-tips/).
 
-1. [Official Julia Performance Tips](https://docs.julialang.org/en/v1/manual/performance-tips/).
-
-2. [Recommendations for selecting AD packages](/manual/autodiff#autodiff-recommendations).
+3. [Recommendations for selecting AD packages](/manual/autodiff#autodiff-recommendations).
 
 ::: tip Using Reactant?
 
@@ -58,10 +58,9 @@ Float32
 ```
 
 This was easy to fix for a small model. But certain layers might incorrectly promote objects to a higher precision. This will cause a regression in performance. There are 2 recommendations to fix this or track them down:
+2\. Use [`Lux.Experimental.@debug_mode`](/manual/debugging#debug-lux-layers) to see which layer is causing the type-promotion.
 
-1. Use [`Lux.Experimental.@debug_mode`](/manual/debugging#debug-lux-layers) to see which layer is causing the type-promotion.
-
-2. Alternatively to control the global behavior of eltypes in Lux and allow it to auto-correct the precision use [`match_eltype`](/api/Lux/utilities#Lux.match_eltype) and the [`eltype_mismatch_handling`](/manual/preferences#automatic-eltypes-preference) preference.
+3. Alternatively to control the global behavior of eltypes in Lux and allow it to auto-correct the precision use [`match_eltype`](/api/Lux/utilities#Lux.match_eltype) and the [`eltype_mismatch_handling`](/manual/preferences#automatic-eltypes-preference) preference.
 
 ## Scalar Indexing on GPU Arrays {#Scalar-Indexing-on-GPU-Arrays}
 
@@ -123,16 +122,15 @@ If you are using Lux with Reactant, we will automatically use optimized versions
 :::
 
 Prefer to use deep learning primitives and their fused variants from `LuxLib.jl` instead of `NNlib.jl`. Some of the alternatives are:
+2\. Replace `NNlib.batched_mul` with [`LuxLib.batched_matmul`](/api/NN_Primitives/LuxLib#LuxLib.API.batched_matmul).
 
-1. Replace `NNlib.batched_mul` with [`LuxLib.batched_matmul`](/api/NN_Primitives/LuxLib#LuxLib.API.batched_matmul).
+3. Replace `NNlib.conv` with bias and activation with [`LuxLib.fused_conv_bias_activation`](/api/NN_Primitives/LuxLib#LuxLib.API.fused_conv_bias_activation).
 
-2. Replace `NNlib.conv` with bias and activation with [`LuxLib.fused_conv_bias_activation`](/api/NN_Primitives/LuxLib#LuxLib.API.fused_conv_bias_activation).
+4. Replace `σ.(w * x .+ b)` with [`LuxLib.fused_dense_bias_activation`](/api/NN_Primitives/LuxLib#LuxLib.API.fused_dense_bias_activation).
 
-3. Replace `σ.(w * x .+ b)` with [`LuxLib.fused_dense_bias_activation`](/api/NN_Primitives/LuxLib#LuxLib.API.fused_dense_bias_activation).
+5. Replace uses of `σ.(x)` with [`LuxLib.fast_activation`](/api/NN_Primitives/LuxLib#LuxLib.API.fast_activation) or [`LuxLib.fast_activation!!`](/api/NN_Primitives/LuxLib#LuxLib.API.fast_activation!!) (the latter one is often faster).
 
-4. Replace uses of `σ.(x)` with [`LuxLib.fast_activation`](/api/NN_Primitives/LuxLib#LuxLib.API.fast_activation) or [`LuxLib.fast_activation!!`](/api/NN_Primitives/LuxLib#LuxLib.API.fast_activation!!) (the latter one is often faster).
-
-5. Replace uses of `σ.(x .+ b)` with [`LuxLib.bias_activation`](/api/NN_Primitives/LuxLib#LuxLib.API.bias_activation) or [`LuxLib.bias_activation!!`](/api/NN_Primitives/LuxLib#LuxLib.API.bias_activation!!) (the latter one is often faster).
+6. Replace uses of `σ.(x .+ b)` with [`LuxLib.bias_activation`](/api/NN_Primitives/LuxLib#LuxLib.API.bias_activation) or [`LuxLib.bias_activation!!`](/api/NN_Primitives/LuxLib#LuxLib.API.bias_activation!!) (the latter one is often faster).
 
 ## Optional Dependencies for Performance {#Optional-Dependencies-for-Performance}
 
@@ -143,9 +141,8 @@ These dependencies are not needed for Reactant. You can safely ignore this secti
 :::
 
 For faster performance on CPUs load the following packages:
+2\. `LoopVectorization.jl`
 
-1. `LoopVectorization.jl`
-
-2. `Octavian.jl`
+3. `Octavian.jl`
 
 If these are available, we automatically use optimized versions of the layers. Though there are cases where this might be an issue (see [#980](https://github.com/LuxDL/Lux.jl/issues/980) and [disabling loop vectorization](/manual/preferences#disable_loop_vectorization)).

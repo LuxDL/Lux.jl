@@ -1,6 +1,7 @@
 ---
 url: /dev/manual/visualize_lux_models.md
 ---
+
 # Visualizing Lux Models using Model Explorer {#Visualizing-Lux-Models-using-Model-Explorer}
 
 We can use [model explorer](https://ai.google.dev/edge/model-explorer) to visualize both Lux models and the corresponding gradient expressions. To do this we just need to compile our model [using Reactant](/manual/compiling_lux_models#reactant-compilation) and save the resulting `mlir` file.

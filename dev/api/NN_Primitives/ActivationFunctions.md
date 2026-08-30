@@ -1,6 +1,7 @@
 ---
 url: /dev/api/NN_Primitives/ActivationFunctions.md
 ---
+
 # Activation Functions {#NNlib-ActivationFunctions-API}
 
 Non-linearities that go between layers of your model. Note that, unless otherwise stated, activation functions operate on scalars. To apply them to an array you can call `σ.(xs)`, `relu.(xs)` and so on.
@@ -12,7 +13,7 @@ celu(x, α=1) = x ≥ 0 ? x : α * (exp(x/α) - 1)
 Activation function from ["Continuously Differentiable Exponential Linear Units"](https://arxiv.org/abs/1704.07483).
 
 ```julia
-julia> lineplot(celu, -2, 2, height=7)
+julia> lineplot(-2, 2, celu, height=7)
            ┌────────────────────────────────────────┐        
          2 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠤⠒⠉│ celu(x)
            │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡠⠔⠊⠉⠀⠀⠀⠀│        
@@ -38,7 +39,7 @@ elu(x, α=1) = x > 0 ? x : α * (exp(x) - 1)
 Exponential Linear Unit activation function. See ["Fast and Accurate Deep Network Learning by Exponential Linear Units"](https://arxiv.org/abs/1511.07289). You can also specify the coefficient explicitly, e.g. `elu(x, 1)`.
 
 ```julia
-julia> lineplot(elu, -2, 2, height=7)
+julia> lineplot(-2, 2, elu, height=7)
            ┌────────────────────────────────────────┐       
          2 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠤⠒⠉│ elu(x)
            │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡠⠔⠊⠉⠀⠀⠀⠀│       
@@ -75,7 +76,7 @@ hardσ(x) = max(0, min(1, (x + 3) / 6))
 Piecewise linear approximation of [`sigmoid`](/api/NN_Primitives/ActivationFunctions#NNlib.sigmoid).
 
 ```julia
-julia> lineplot(hardsigmoid, -5, 5, height=7)
+julia> lineplot(-5, 5, hardsigmoid, height=7)
           ┌────────────────────────────────────────┐         
         1 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⢀⡠⠖⠋⠉⠉⠉⠉⠉⠉⠉⠉│ hardσ(x)
           │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⣀⡤⠒⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│         
@@ -88,7 +89,7 @@ julia> lineplot(hardsigmoid, -5, 5, height=7)
           ⠀-5⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀5⠀         
           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀x⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀         
 
-julia> lineplot(sigmoid, -5, 5, height=7)
+julia> lineplot(-5, 5, sigmoid, height=7)
           ┌────────────────────────────────────────┐     
         1 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⣀⡠⠤⠖⠒⠒⠋⠉⠉⠉⠉⠉⠉│ σ(x)
           │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⢀⡠⠖⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│     
@@ -111,7 +112,7 @@ hardσ(x) = max(0, min(1, (x + 3) / 6))
 Piecewise linear approximation of [`sigmoid`](/api/NN_Primitives/ActivationFunctions#NNlib.sigmoid).
 
 ```julia
-julia> lineplot(hardsigmoid, -5, 5, height=7)
+julia> lineplot(-5, 5, hardsigmoid, height=7)
           ┌────────────────────────────────────────┐         
         1 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⢀⡠⠖⠋⠉⠉⠉⠉⠉⠉⠉⠉│ hardσ(x)
           │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⣀⡤⠒⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│         
@@ -124,7 +125,7 @@ julia> lineplot(hardsigmoid, -5, 5, height=7)
           ⠀-5⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀5⠀         
           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀x⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀         
 
-julia> lineplot(sigmoid, -5, 5, height=7)
+julia> lineplot(-5, 5, sigmoid, height=7)
           ┌────────────────────────────────────────┐     
         1 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⣀⡠⠤⠖⠒⠒⠋⠉⠉⠉⠉⠉⠉│ σ(x)
           │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⢀⡠⠖⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│     
@@ -170,7 +171,7 @@ Segment-wise linear approximation of `tanh`, much cheaper to compute. See ["Larg
 See also [`tanh_fast`](/api/NN_Primitives/ActivationFunctions#NNlib.tanh_fast).
 
 ```julia
-julia> lineplot(hardtanh, -2, 2, height=7)
+julia> lineplot(-2, 2, hardtanh, height=7)
            ┌────────────────────────────────────────┐            
          1 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⣀⠔⠋⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉│ hardtanh(x)
            │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⣀⡤⠊⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│            
@@ -183,7 +184,7 @@ julia> lineplot(hardtanh, -2, 2, height=7)
            ⠀-2⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀2⠀            
            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀x
 
-julia> lineplot(tanh, -2, 2, height=7)
+julia> lineplot(-2, 2, tanh, height=7)
            ┌────────────────────────────────────────┐        
          1 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⣀⡠⠤⠤⠒⠒⠒⠊⠉⠉⠉│ tanh(x)
            │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⢀⡠⠔⠊⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│        
@@ -231,7 +232,7 @@ leakyrelu(x, a=0.01) = max(a*x, x)
 Leaky [Rectified Linear Unit](https://en.wikipedia.org/wiki/Rectifier_\(neural_networks\)) activation function. You can also specify the coefficient explicitly, e.g. `leakyrelu(x, 0.01)`.
 
 ```julia
-julia> lineplot(x -> leakyrelu(x, 0.5), -2, 2, height=7)
+julia> lineplot(-2, 2, x -> leakyrelu(x, 0.5), height=7)
            ┌────────────────────────────────────────┐       
          2 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠤⠒⠉│ #42(x)
            │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡠⠔⠊⠉⠀⠀⠀⠀│       
@@ -260,7 +261,7 @@ lisht(x) = x * tanh(x)
 Activation function from  ["LiSHT: Non-Parametric Linearly Scaled Hyperbolic Tangent ..."](https://arxiv.org/abs/1901.05894)
 
 ```julia
-julia> lineplot(lisht, -2, 2, height=7)
+julia> lineplot(-2, 2, lisht, height=7)
           ┌────────────────────────────────────────┐         
         2 │⠢⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠔│ lisht(x)
           │⠀⠈⠑⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡤⠊⠁⠀│         
@@ -296,7 +297,7 @@ logcosh(x)
 Return `log(cosh(x))` which is computed in a numerically stable way.
 
 ```julia
-julia> lineplot(logcosh, -5, 5, height=7)
+julia> lineplot(-5, 5, logcosh, height=7)
           ┌────────────────────────────────────────┐           
         5 │⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│ logcosh(x)
           │⠉⠢⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠔⠋│           
@@ -319,7 +320,7 @@ logσ(x)
 Return `log(σ(x))` which is computed in a numerically stable way.
 
 ```julia
-julia> lineplot(logsigmoid, -5, 5, height=7)
+julia> lineplot(-5, 5, logsigmoid, height=7)
            ┌────────────────────────────────────────┐        
          0 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡧⠤⠔⠒⠒⠒⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉│ logσ(x)
            │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡤⠖⠊⠉⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│        
@@ -342,7 +343,7 @@ logσ(x)
 Return `log(σ(x))` which is computed in a numerically stable way.
 
 ```julia
-julia> lineplot(logsigmoid, -5, 5, height=7)
+julia> lineplot(-5, 5, logsigmoid, height=7)
            ┌────────────────────────────────────────┐        
          0 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡧⠤⠔⠒⠒⠒⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉│ logσ(x)
            │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡤⠖⠊⠉⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│        
@@ -365,7 +366,7 @@ mish(x) = x * tanh(softplus(x))
 Activation function from ["Mish: A Self Regularized Non-Monotonic Neural Activation Function"](https://arxiv.org/abs/1908.08681).
 
 ```julia
-julia> lineplot(mish, -5, 5, height=7)
+julia> lineplot(-5, 5, mish, height=7)
            ┌────────────────────────────────────────┐        
          5 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡠⠖⠋│ mish(x)
            │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡤⠒⠁⠀⠀⠀│        
@@ -388,7 +389,7 @@ relu(x) = max(0, x)
 [Rectified Linear Unit](https://en.wikipedia.org/wiki/Rectifier_\(neural_networks\)) activation function.
 
 ```julia
-julia> lineplot(relu, -2, 2, height=7)
+julia> lineplot(-2, 2, relu, height=7)
           ┌────────────────────────────────────────┐        
         2 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠔⠋│ relu(x)
           │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡤⠊⠁⠀⠀│        
@@ -411,7 +412,7 @@ relu6(x) = min(max(0, x), 6)
 [Rectified Linear Unit](https://en.wikipedia.org/wiki/Rectifier_\(neural_networks\)) activation function capped at 6. See ["Convolutional Deep Belief Networks"](https://www.cs.toronto.edu/~kriz/conv-cifar10-aug2010.pdf) from CIFAR-10.
 
 ```julia
-julia> lineplot(relu6, -10, 10, height=7)
+julia> lineplot(-10, 10, relu6, height=7)
           ┌────────────────────────────────────────┐         
         6 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠎⠉⠉⠉⠉⠉⠉⠉⠉│ relu6(x)
           │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⢀⡔⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀│         
@@ -435,7 +436,7 @@ rrelu(x, lo=1/8, hi=1/3) = max(a*x, x)
 Randomized Leaky Rectified Linear Unit activation function. See ["Empirical Evaluation of Rectified Activations"](https://arxiv.org/abs/1505.00853) You can also specify the bound explicitly, e.g. `rrelu(x, 0.0, 1.0)`.
 
 ```julia
-julia> lineplot(rrelu, -20, 10, height=7)
+julia> lineplot(-20, 10, rrelu, height=7)
             ┌────────────────────────────────────────┐         
          10 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡤⠖⠋│ rrelu(x)
             │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⢀⡠⠖⠋⠁⠀⠀⠀│         
@@ -464,7 +465,7 @@ selu(x) = λ * (x ≥ 0 ? x : α * (exp(x) - 1))
 Scaled exponential linear units. See ["Self-Normalizing Neural Networks"](https://arxiv.org/abs/1706.02515).
 
 ```julia
-julia> lineplot(selu, -3, 2, height=7)
+julia> lineplot(-3, 2, selu, height=7)
            ┌────────────────────────────────────────┐        
          3 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│ selu(x)
            │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡤⠤⠒│        
@@ -494,7 +495,7 @@ See also [`sigmoid_fast`](/api/NN_Primitives/ActivationFunctions#NNlib.sigmoid_f
 ```julia
 julia> using UnicodePlots
 
-julia> lineplot(sigmoid, -5, 5, height=7)
+julia> lineplot(-5, 5, sigmoid, height=7)
           ┌────────────────────────────────────────┐     
         1 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⣀⡠⠤⠖⠒⠒⠋⠉⠉⠉⠉⠉⠉│ σ(x)
           │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⢀⡠⠖⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│     
@@ -524,7 +525,7 @@ See also [`sigmoid_fast`](/api/NN_Primitives/ActivationFunctions#NNlib.sigmoid_f
 ```julia
 julia> using UnicodePlots
 
-julia> lineplot(sigmoid, -5, 5, height=7)
+julia> lineplot(-5, 5, sigmoid, height=7)
           ┌────────────────────────────────────────┐     
         1 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⣀⡠⠤⠖⠒⠒⠋⠉⠉⠉⠉⠉⠉│ σ(x)
           │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⢀⡠⠖⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│     
@@ -550,7 +551,7 @@ softplus(x) = log(exp(x) + 1)
 See ["Deep Sparse Rectifier Neural Networks"](http://proceedings.mlr.press/v15/glorot11a/glorot11a.pdf), JMLR 2011.
 
 ```julia
-julia> lineplot(softplus, -3, 3, height=7)
+julia> lineplot(-3, 3, softplus, height=7)
           ┌────────────────────────────────────────┐            
         4 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│ softplus(x)
           │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡠│            
@@ -590,7 +591,7 @@ softshrink(x, λ=0.5) =
 See ["Softshrink Activation Function"](https://www.gabormelli.com/RKB/Softshrink_Activation_Function).
 
 ```julia
-julia> lineplot(softshrink, -2, 2, height=7)
+julia> lineplot(-2, 2, softshrink, height=7)
            ┌────────────────────────────────────────┐              
          2 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀│ softshrink(x)
            │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡤⠔⠒⠉⠁│              
@@ -629,7 +630,7 @@ softsign(x) = x / (1 + |x|)
 See ["Quadratic Polynomials Learn Better Image Features"](http://www.iro.umontreal.ca/~lisa/publications2/index.php/attachments/single/205) (2009).
 
 ```julia
-julia> lineplot(softsign, -5, 5, height=7)
+julia> lineplot(-5, 5, softsign, height=7)
            ┌────────────────────────────────────────┐            
          1 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣀⣀⣀⠤⠤⠤⠤⠤│ softsign(x)
            │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⣀⡤⠖⠒⠋⠉⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀│            
@@ -671,7 +672,7 @@ swish(x) = x * σ(x)
 Self-gated activation function. See ["Swish: a Self-Gated Activation Function"](https://arxiv.org/abs/1710.05941).
 
 ```julia
-julia> lineplot(swish, -2, 2, height=7)
+julia> lineplot(-2, 2, swish, height=7)
            ┌────────────────────────────────────────┐         
          2 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡤│ swish(x)
            │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡤⠖⠋⠁⠀│         
@@ -694,7 +695,7 @@ hardswish(x) = x * hardσ(x)
 Hard-Swish activation function. See ["Searching for MobileNetV3"](https://arxiv.org/abs/1905.02244).
 
 ```julia
-julia> lineplot(hardswish, -2, 5, height = 7)
+julia> lineplot(-2, 5, hardswish, height = 7)
            ┌────────────────────────────────────────┐             
          5 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡤⠔⠒⠉│ hardswish(x)
            │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡠⠔⠒⠉⠁⠀⠀⠀⠀│             
@@ -707,7 +708,7 @@ julia> lineplot(hardswish, -2, 5, height = 7)
            ⠀-2⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀5⠀             
            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀x⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀             
 
-julia> lineplot(hardswish, -4, 0, height = 7);
+julia> lineplot(-4, 0, hardswish, height = 7);
 
 julia> lineplot!(ans, swish)
              ┌────────────────────────────────────────┐             
@@ -736,7 +737,7 @@ tanhshrink(x) = x - tanh(x)
 See ["Tanhshrink Activation Function"](https://www.gabormelli.com/RKB/Tanhshrink_Activation_Function).
 
 ```julia
-julia> lineplot(tanhshrink, -3, 3, height=7)
+julia> lineplot(-3, 3, tanhshrink, height=7)
            ┌────────────────────────────────────────┐              
          3 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│ tanhshrink(x)
            │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡠⠤⠖⠊│              
@@ -762,7 +763,7 @@ trelu(x, theta=1) = x > theta ? x : 0
 Threshold gated rectified linear activation function. See ["Zero-bias autoencoders and the benefits of co-adapting features"](https://arxiv.org/abs/1402.3337)
 
 ```julia
-julia> lineplot(trelu, -2, 4, height=7)
+julia> lineplot(-2, 4, trelu, height=7)
           ┌────────────────────────────────────────┐         
         4 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡤⠖⠋│ trelu(x)
           │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡠⠖⠋⠁⠀⠀⠀│         
@@ -787,7 +788,7 @@ Activation function from ["Gaussian Error Linear Units"](https://arxiv.org/abs/1
 This implementation uses `tanh` which allows for better pattern matching and fusion in optimizing  compilers compared to the sigmoid-based implementation. For a potentially faster implementation  that uses `sigmoid_fast`, see [`gelu_sigmoid`](/api/NN_Primitives/ActivationFunctions#NNlib.gelu_sigmoid).
 
 ```julia
-julia> lineplot(gelu_tanh, -2, 2, height=7)
+julia> lineplot(-2, 2, gelu_tanh, height=7)
            ┌────────────────────────────────────────┐        
          2 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡠⠔⠊│ gelu_tanh(x)
            │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠔⠊⠁⠀⠀⠀│        
@@ -800,7 +801,7 @@ julia> lineplot(gelu_tanh, -2, 2, height=7)
            ⠀-2⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀2⠀        
            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀x⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀        
 
-julia> lineplot(gelu_tanh, -5, 0, height=7);
+julia> lineplot(-5, 0, gelu_tanh, height=7);
 
 julia> lineplot!(ans, swish)
              ┌────────────────────────────────────────┐         

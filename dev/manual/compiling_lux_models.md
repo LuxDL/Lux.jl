@@ -1,6 +1,7 @@
 ---
 url: /dev/manual/compiling_lux_models.md
 ---
+
 # Compiling Lux Models using `Reactant.jl` {#reactant-compilation}
 
 Quoting the Reactant.jl Readme:
@@ -74,7 +75,7 @@ model_compiled = @compile model(x_ra, ps_ra, Lux.testmode(st_ra))
 ```
 
 ```ansi
-Reactant compiled function Chain{@NamedTuple{layer_1::Dense{typeof(gelu_tanh), Int64, Int64, Nothing, Nothing, Static.True}, layer_2::Dense{typeof(gelu_tanh), Int64, Int64, Nothing, Nothing, Static.True}, layer_3::Dense{typeof(identity), Int64, Int64, Nothing, Nothing, Static.True}}, Nothing}((layer_1 = Dense(2 => 32, gelu_tanh), layer_2 = Dense(32 => 32, gelu_tanh), layer_3 = Dense(32 => 2)), nothing) (with tag ##Chain{@NamedTuple{layer_1::Dense{typeof(gelu_tanh), Int64, Int64, Nothing, Nothing, Static.True}, layer_2::Dense{typeof(gelu_tanh), Int64, Int64, Nothing, Nothing, Static.True}, layer_3::Dense{typeof(identity), Int64, Int64, Nothing, Nothing, Static.True}}, Nothing}((layer_1 = Dense(2 => 32, gelu_tanh), layer_2 = Dense(32 => 32, gelu_tanh), layer_3 = Dense(32 => 2)), nothing)_reactant#912992)
+Reactant compiled function Chain{@NamedTuple{layer_1::Dense{typeof(gelu_tanh), Int64, Int64, Nothing, Nothing, Static.True}, layer_2::Dense{typeof(gelu_tanh), Int64, Int64, Nothing, Nothing, Static.True}, layer_3::Dense{typeof(identity), Int64, Int64, Nothing, Nothing, Static.True}}, Nothing}((layer_1 = Dense(2 => 32, gelu_tanh), layer_2 = Dense(32 => 32, gelu_tanh), layer_3 = Dense(32 => 2)), nothing) (with tag ##Chain{@NamedTuple{layer_1::Dense{typeof(gelu_tanh), Int64, Int64, Nothing, Nothing, Static.True}, layer_2::Dense{typeof(gelu_tanh), Int64, Int64, Nothing, Nothing, Static.True}, layer_3::Dense{typeof(identity), Int64, Int64, Nothing, Nothing, Static.True}}, Nothing}((layer_1 = Dense(2 => 32, gelu_tanh), layer_2 = Dense(32 => 32, gelu_tanh), layer_3 = Dense(32 => 2)), nothing)_reactant#117588)
 ```
 
 Now we can test the difference between the results:
@@ -126,7 +127,7 @@ enzyme_gradient_compiled = @compile enzyme_gradient(model, ps_ra, st_ra, x_ra, y
 ```
 
 ```ansi
-(layer_1 = (weight = Reactant.ConcretePJRTArray{Float32, 2, 1}(Float32[0.2601668 -0.092877164; -0.028029911 -0.013659924; … ; -0.07384163 -0.060032368; 0.042984392 0.05160542]), bias = Reactant.ConcretePJRTArray{Float32, 1, 1}(Float32[0.12923914, -0.009405826, -0.026362803, -0.014524885, 0.013915381, 0.09343623, 0.08193635, 0.0077627855, 0.001044217, 0.018755728  …  0.06704106, -0.043209504, 0.104868725, 0.014353443, 0.024228811, -0.065829255, 0.010303015, 0.09878268, 0.0678494, -0.08268405])), layer_2 = (weight = Reactant.ConcretePJRTArray{Float32, 2, 1}(Float32[-0.0044578887 0.00021804239 … -0.0033274866 -0.008014374; 0.13051207 -0.0046890327 … 0.038353655 0.0933025; … ; -0.041253403 0.00088798575 … 0.0007470111 -0.020347355; 0.063391745 -0.0021197703 … 0.012145702 0.068770304]), bias = Reactant.ConcretePJRTArray{Float32, 1, 1}(Float32[-0.006240551, 0.13950492, -0.22439212, -0.113269635, -0.02316084, 0.14702772, 0.035196126, 0.1398194, -0.23715453, 0.32662553  …  -0.014224287, 0.009401781, 0.18295963, 0.13164552, 0.16955197, -0.110567965, -0.0074349036, 0.118868664, -0.026588855, 0.031815786])), layer_3 = (weight = Reactant.ConcretePJRTArray{Float32, 2, 1}(Float32[-0.6772371 -0.19355828 … 0.092198 -0.33821842; -0.29864174 -0.09485076 … 0.022576137 -0.1759051]), bias = Reactant.ConcretePJRTArray{Float32, 1, 1}(Float32[-1.1515996, -0.55646694])))
+(layer_1 = (weight = Reactant.ConcretePJRTArray{Float32, 2, 1}(Float32[0.2601668 -0.092877164; -0.028029911 -0.013659924; … ; -0.07384163 -0.060032368; 0.042984392 0.05160542]), bias = Reactant.ConcretePJRTArray{Float32, 1, 1}(Float32[0.12923914, -0.009405826, -0.026362803, -0.014524885, 0.013915381, 0.09343623, 0.08193635, 0.0077627855, 0.001044217, 0.018755728  …  0.06704106, -0.043209504, 0.104868725, 0.014353443, 0.024228811, -0.065829255, 0.010303015, 0.09878268, 0.0678494, -0.08268405])), layer_2 = (weight = Reactant.ConcretePJRTArray{Float32, 2, 1}(Float32[-0.0044578887 0.00021804239 … -0.0033274866 -0.008014374; 0.13051207 -0.0046890327 … 0.038353655 0.0933025; … ; -0.041253403 0.00088798575 … 0.0007470111 -0.020347355; 0.063391745 -0.0021197703 … 0.012145702 0.068770304]), bias = Reactant.ConcretePJRTArray{Float32, 1, 1}(Float32[-0.006240551, 0.13950492, -0.22439212, -0.113269635, -0.02316084, 0.14702772, 0.035196126, 0.1398194, -0.23715453, 0.32662553  …  -0.014224287, 0.009401781, 0.18295963, 0.13164552, 0.16955197, -0.110567965, -0.0074349036, 0.118868664, -0.026588855, 0.031815786])), layer_3 = (weight = Reactant.ConcretePJRTArray{Float32, 2, 1}(Float32[-0.67723703 -0.1935583 … 0.092198 -0.33821842; -0.29864174 -0.09485076 … 0.022576135 -0.17590511]), bias = Reactant.ConcretePJRTArray{Float32, 1, 1}(Float32[-1.1515996, -0.55646694])))
 ```
 
 Now we check the difference:
@@ -136,20 +137,19 @@ fmap(Broadcast.BroadcastFunction(-), ∂ps_zyg, ∂ps_enzyme |> cpu_device())
 ```
 
 ```ansi
-(layer_1 = (weight = Float32[-5.9604645f-8 -1.4901161f-8; 1.8626451f-9 -2.7939677f-9; … ; -7.450581f-9 -2.2351742f-8; 2.2351742f-8 -3.7252903f-9], bias = Float32[0.0, -9.313226f-10, 3.7252903f-9, -9.313226f-9, 4.656613f-9, -5.9604645f-8, 7.450581f-9, 1.8626451f-9, 9.313226f-10, 1.8626451f-8  …  -7.450581f-9, 0.0, -7.450581f-9, -4.656613f-9, -3.7252903f-9, -1.4901161f-8, -1.8626451f-9, 1.4901161f-8, 1.4901161f-8, -1.4901161f-8]), layer_2 = (weight = Float32[-4.656613f-10 -2.910383f-11 … 4.656613f-10 -9.313226f-10; -2.9802322f-8 -9.313226f-10 … 7.450581f-9 -7.450581f-9; … ; 0.0 -7.566996f-10 … 8.731149f-10 1.8626451f-9; -1.4901161f-8 2.0954758f-9 … -1.4901161f-8 -3.7252903f-8], bias = Float32[-4.656613f-10, 0.0, 0.0, 0.0, 1.8626451f-9, 1.4901161f-8, -3.7252903f-9, -1.4901161f-8, -4.4703484f-8, 2.9802322f-8  …  -1.8626451f-9, -5.5879354f-9, -1.4901161f-8, 0.0, 0.0, 0.0, 8.381903f-9, 0.0, 1.8626451f-9, -2.2351742f-8]), layer_3 = (weight = Float32[0.0 1.4901161f-8 … 1.4901161f-8 5.9604645f-8; -2.9802322f-8 1.4901161f-8 … 7.450581f-9 1.0430813f-7], bias = Float32[-1.1920929f-7, 0.0]))
+(layer_1 = (weight = Float32[-5.9604645f-8 -1.4901161f-8; 1.8626451f-9 -2.7939677f-9; … ; -7.450581f-9 -2.2351742f-8; 2.2351742f-8 -3.7252903f-9], bias = Float32[0.0, -9.313226f-10, 3.7252903f-9, -9.313226f-9, 4.656613f-9, -5.9604645f-8, 7.450581f-9, 1.8626451f-9, 9.313226f-10, 1.8626451f-8  …  -7.450581f-9, 0.0, -7.450581f-9, -4.656613f-9, -3.7252903f-9, -1.4901161f-8, -1.8626451f-9, 1.4901161f-8, 1.4901161f-8, -1.4901161f-8]), layer_2 = (weight = Float32[-4.656613f-10 -2.910383f-11 … 4.656613f-10 -9.313226f-10; -2.9802322f-8 -9.313226f-10 … 7.450581f-9 -7.450581f-9; … ; 0.0 -7.566996f-10 … 8.731149f-10 1.8626451f-9; -1.4901161f-8 2.0954758f-9 … -1.4901161f-8 -3.7252903f-8], bias = Float32[-4.656613f-10, 0.0, 0.0, 0.0, 1.8626451f-9, 1.4901161f-8, -3.7252903f-9, -1.4901161f-8, -4.4703484f-8, 2.9802322f-8  …  -1.8626451f-9, -5.5879354f-9, -1.4901161f-8, 0.0, 0.0, 0.0, 8.381903f-9, 0.0, 1.8626451f-9, -2.2351742f-8]), layer_3 = (weight = Float32[-5.9604645f-8 4.4703484f-8 … 1.4901161f-8 5.9604645f-8; -2.9802322f-8 1.4901161f-8 … 9.313226f-9 1.1920929f-7], bias = Float32[-1.1920929f-7, 0.0]))
 ```
 
 ## Using the `TrainState` API {#compile\_lux\_model\_trainstate}
 
 Now that we saw the low-level API let's see how to train the model without any of this boilerplate. Simply follow the following steps:
+2\. Create a device using `reactant_device`. Remember to load `Reactant.jl` before doing this.
 
-1. Create a device using `reactant_device`. Remember to load `Reactant.jl` before doing this.
+3. Similar to other device functions move the model, parameters, states and data to the device. Note that you might want to use [`DeviceIterator`](/api/Accelerator_Support/MLDataDevices#MLDataDevices.DeviceIterator) to move the data loader to the device with an iterator.
 
-2. Similar to other device functions move the model, parameters, states and data to the device. Note that you might want to use [`DeviceIterator`](/api/Accelerator_Support/MLDataDevices#MLDataDevices.DeviceIterator) to move the data loader to the device with an iterator.
+4. Construct a `TrainState` using [`Training.TrainState`](/api/Lux/utilities#Lux.Training.TrainState).
 
-3. Construct a `TrainState` using [`Training.TrainState`](/api/Lux/utilities#Lux.Training.TrainState).
-
-4. And most importantly use `AutoEnzyme`/`AutoReactant` while calling [`Training.single_train_step!`](/api/Lux/utilities#Lux.Training.single_train_step!) or [`Training.single_train_step`](/api/Lux/utilities#Lux.Training.single_train_step).
+5. And most importantly use `AutoEnzyme`/`AutoReactant` while calling [`Training.single_train_step!`](/api/Lux/utilities#Lux.Training.single_train_step!) or [`Training.single_train_step`](/api/Lux/utilities#Lux.Training.single_train_step).
 
 ```julia
 model = Chain(
@@ -188,14 +188,14 @@ train_model(model, ps_ra, st_ra, dataloader)
 
 ```ansi
 Iter: [   1/1000]	Loss: 13.22820091
-Iter: [ 100/1000]	Loss: 2.58897161
-Iter: [ 200/1000]	Loss: 1.14364433
-Iter: [ 300/1000]	Loss: 0.37711889
-Iter: [ 400/1000]	Loss: 0.13413195
-Iter: [ 500/1000]	Loss: 0.05696166
-Iter: [ 600/1000]	Loss: 0.03033140
-Iter: [ 700/1000]	Loss: 0.01917107
-Iter: [ 800/1000]	Loss: 0.01335674
-Iter: [ 900/1000]	Loss: 0.01001781
-Iter: [1000/1000]	Loss: 0.00796735
+Iter: [ 100/1000]	Loss: 2.58897114
+Iter: [ 200/1000]	Loss: 1.14364719
+Iter: [ 300/1000]	Loss: 0.37711829
+Iter: [ 400/1000]	Loss: 0.13414547
+Iter: [ 500/1000]	Loss: 0.05696408
+Iter: [ 600/1000]	Loss: 0.03033253
+Iter: [ 700/1000]	Loss: 0.01917158
+Iter: [ 800/1000]	Loss: 0.01335712
+Iter: [ 900/1000]	Loss: 0.01001810
+Iter: [1000/1000]	Loss: 0.00796766
 ```

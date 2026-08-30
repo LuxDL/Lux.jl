@@ -1,6 +1,7 @@
 ---
 url: /dev/manual/exporting_to_jax.md
 ---
+
 # Exporting Lux Models to Jax (via EnzymeJAX & Reactant) {#exporting\_to\_stablehlo}
 
 In this manual, we will go over how to export Lux models to StableHLO and use [EnzymeJAX](https://github.com/EnzymeAD/Enzyme-JAX) to run integrate Lux models with JAX. We assume that users are familiar with [Reactant compilation of Lux models](/manual/compiling_lux_models#reactant-compilation).
@@ -48,7 +49,7 @@ python_file_path = Reactant.Serialization.export_to_enzymejax(
 ```
 
 ```ansi
-"/tmp/jl_i4ytvk/run_lux_model.py"
+"/tmp/jl_gHdH9c/run_lux_model.py"
 ```
 
 This will generate a python file that can be used to run the model using EnzymeJAX.

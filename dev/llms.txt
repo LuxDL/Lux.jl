@@ -8,7 +8,6 @@ Model with the elegance of Julia, and the performance of XLA.
 
 ### Getting Started
 
-- [Introduction {#getting-started}](/dev/introduction.md)
 - [Why we wrote Lux? {#Why-we-wrote-Lux?}](/dev/introduction/overview.md)
 - [Resources to Get Started {#Resources-to-Get-Started}](/dev/introduction/resources.md)
 - [Updating to Lux v1 {#updating-to-v1}](/dev/introduction/updating_to_v1.md)
@@ -117,4 +116,5 @@ Model with the elegance of Julia, and the performance of XLA.
 ### Other
 
 - [Bayesian Neural Network {#Bayesian-Neural-Network}](/dev/tutorials/intermediate/2_BayesianNN.md)
+- [Introduction {#getting-started}](/dev/introduction.md)
 - [References {#References}](/dev/references.md)

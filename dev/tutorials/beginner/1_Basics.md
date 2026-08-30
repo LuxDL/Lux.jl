@@ -1,15 +1,15 @@
 ---
 url: /dev/tutorials/beginner/1_Basics.md
 ---
+
 # Julia & Lux for the Uninitiated {#Julia-and-Lux-for-the-Uninitiated}
 
 This is a quick intro to [Lux](https://github.com/LuxDL/Lux.jl) loosely based on:
+2\. [PyTorch's tutorial](https://pytorch.org/tutorials/beginner/deep_learning_60min_blitz.html).
 
-1. [PyTorch's tutorial](https://pytorch.org/tutorials/beginner/deep_learning_60min_blitz.html).
+3. Flux's tutorial (the link for which has now been lost to abyss).
 
-2. Flux's tutorial (the link for which has now been lost to abyss).
-
-3. [Jax's tutorial](https://jax.readthedocs.io/en/latest/jax-101/index.html).
+4. [Jax's tutorial](https://jax.readthedocs.io/en/latest/jax-101/index.html).
 
 It introduces basic Julia programming, as well `Zygote`, a source-to-source automatic differentiation (AD) framework in Julia. We'll use these tools to build a very simple neural network. Let's start with importing `Lux.jl`
 
@@ -19,7 +19,7 @@ using Lux, Random
 
 ```
 Precompiling packages...
-    423.3 ms  ✓ StructUtilsStaticArraysCoreExt (serial)
+    401.2 ms  ✓ StructUtilsStaticArraysCoreExt (serial)
   1 dependency successfully precompiled in 0 seconds
 
 ```
@@ -369,10 +369,9 @@ Iteration 3 [0.19597391412112541, 0.6830945313415872, 0.6776220912718907, 0.6456
 ## Automatic Differentiation {#Automatic-Differentiation}
 
 Julia has quite a few (maybe too many) AD tools. For the purpose of this tutorial, we will use:
+2\. [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) – For Jacobian-Vector Product (JVP)
 
-1. [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) – For Jacobian-Vector Product (JVP)
-
-2. [Zygote.jl](https://github.com/FluxML/Zygote.jl) – For Vector-Jacobian Product (VJP)
+3. [Zygote.jl](https://github.com/FluxML/Zygote.jl) – For Vector-Jacobian Product (VJP)
 
 *Slight Detour*: We have had several questions regarding if we will be considering any other AD system for the reverse-diff backend. For now we will stick to Zygote.jl, however once we have tested Lux extensively with [Enzyme.jl](https://github.com/EnzymeAD/Enzyme.jl), we will make the switch.
 
@@ -384,7 +383,7 @@ using ComponentArrays, ForwardDiff, Zygote
 
 ```
 Precompiling packages...
-    432.2 ms  ✓ StructUtilsTablesExt (serial)
+    412.1 ms  ✓ StructUtilsTablesExt (serial)
   1 dependency successfully precompiled in 0 seconds
 
 ```
@@ -610,15 +609,15 @@ end
 ```
 
 ```
-Julia Version 1.12.6
-Commit 15346901f00 (2026-04-09 19:20 UTC)
+Julia Version 1.12.7
+Commit 6d172b025e4 (2026-08-15 08:05 UTC)
 Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 4 × AMD EPYC 9V74 80-Core Processor
+  CPU: 4 × AMD EPYC 7763 64-Core Processor
   WORD_SIZE: 64
-  LLVM: libLLVM-18.1.7 (ORCJIT, znver4)
+  LLVM: libLLVM-18.1.7 (ORCJIT, znver3)
   GC: Built with stock GC
 Threads: 4 default, 1 interactive, 4 GC (on 4 virtual cores)
 Environment:

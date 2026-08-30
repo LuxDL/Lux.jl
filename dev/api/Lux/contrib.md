@@ -1,15 +1,15 @@
 ---
 url: /dev/api/Lux/contrib.md
 ---
+
 # Experimental Features {#Experimental-Features}
 
 All features listed on this page are **experimental** which means:
+2\. No SemVer Guarantees. We use code here to iterate fast. That said, historically we have never broken any code in this module and have always provided a deprecation period.
 
-1. No SemVer Guarantees. We use code here to iterate fast. That said, historically we have never broken any code in this module and have always provided a deprecation period.
+3. Expect edge-cases and report them. It will help us move these features out of experimental sooner.
 
-2. Expect edge-cases and report them. It will help us move these features out of experimental sooner.
-
-3. None of the features are exported.
+4. None of the features are exported.
 
 ## Parameter Freezing {#Parameter-Freezing}
 

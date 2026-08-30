@@ -1,6 +1,7 @@
 ---
 url: /dev/api/Testing_Functionality/LuxTestUtils.md
 ---
+
 # LuxTestUtils {#LuxTestUtils}
 
 ::: warning Warning
@@ -129,15 +130,5 @@ source
 Evaluate `expr` and record a test result. If `expr` throws an exception, the test result will be recorded as an error. If `expr` returns a value, and it is not a boolean, the test result will be recorded as an error.
 
 If the test result is false then the test will be recorded as a broken test, else it will be recorded as a pass.
-
-source
-
-## Private API {#Private-API}
-
-```julia
-mooncake_gradient_function(f, x)
-```
-
-Compute gradient using Mooncake.jl's value\_and\_gradient!! function. Returns only the gradient for args x.
 
 source

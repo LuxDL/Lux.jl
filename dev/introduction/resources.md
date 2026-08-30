@@ -1,6 +1,7 @@
 ---
 url: /dev/introduction/resources.md
 ---
+
 # Resources to Get Started {#Resources-to-Get-Started}
 
 * Go through the [Quickstart Example](/introduction/index#Quickstart).

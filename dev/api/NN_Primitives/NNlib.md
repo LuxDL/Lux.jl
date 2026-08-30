@@ -1,6 +1,7 @@
 ---
 url: /dev/api/NN_Primitives/NNlib.md
 ---
+
 # NNlib {#NNlib-API}
 
 Neural Network Primitives with custom bindings for different accelerator backends in Julia.
@@ -127,6 +128,15 @@ ERROR: `softmax(x)` called with a number, but it expects an array.
 source
 
 ```julia
+softmax!(out, x; dims = 1)
+softmax!(x; dims = 1)
+```
+
+In-place version of [`softmax`](/api/NN_Primitives/NNlib#NNlib.softmax), writing the result into `out` (or `x` itself).
+
+source
+
+```julia
 logsoftmax(x; dims = 1)
 ```
 
@@ -139,6 +149,47 @@ logsoftmax(x; dims = 1) = x .- log.(sum(exp.(x), dims = dims))
 ```
 
 See also [`softmax`](/api/NN_Primitives/NNlib#NNlib.softmax).
+
+source
+
+```julia
+logsoftmax!(out, x; dims = 1)
+logsoftmax!(x; dims = 1)
+```
+
+In-place version of [`logsoftmax`](/api/NN_Primitives/NNlib#NNlib.logsoftmax), writing the result into `out` (or `x` itself).
+
+source
+
+```julia
+∇softmax(dy, y; dims = 1)
+```
+
+Gradient of [`softmax`](/api/NN_Primitives/NNlib#NNlib.softmax) with respect to its input, given the output `y = softmax(x; dims)` and the upstream cotangent `dy`. Does not depend on `x`.
+
+source
+
+```julia
+∇softmax!(dx, dy, y; dims = 1)
+```
+
+In-place version of [`∇softmax`](/api/NN_Primitives/NNlib#NNlib.∇softmax), writing the gradient into `dx`.
+
+source
+
+```julia
+∇logsoftmax(dy, y; dims = 1)
+```
+
+Gradient of [`logsoftmax`](/api/NN_Primitives/NNlib#NNlib.logsoftmax) with respect to its input, given the output `y = logsoftmax(x; dims)` and the upstream cotangent `dy`. Does not depend on `x`.
+
+source
+
+```julia
+∇logsoftmax!(dx, dy, y; dims = 1)
+```
+
+In-place version of [`∇logsoftmax`](/api/NN_Primitives/NNlib#NNlib.∇logsoftmax), writing the gradient into `dx`.
 
 source
 
@@ -170,7 +221,7 @@ Arguments:
 source
 
 ```julia
-meanpool(x, k::NTuple{N, Integer}; pad=0, stride=k)
+meanpool(x, k::NTuple{N, Integer}; pad=0, stride=k, count_include_pad=true)
 ```
 
 Perform mean pool operation with window size `k` on input tensor `x`.
@@ -182,6 +233,8 @@ Arguments:
 * `pad`: See [`pad_zeros`](/api/NN_Primitives/NNlib#NNlib.pad_zeros) for details.
 
 * `stride`: Either a tuple with the same length as `k`, or one integer for all directions. Default is `k`.
+
+* `count_include_pad`: When `true` (the default), padding (zero) elements are included in the averaging denominator, so each output element divides by the full window size `prod(k)`. When `false`, only the in-bounds (non-padding) elements are counted, matching cuDNN's `CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING` and PyTorch's `count_include_pad=false`. Has no effect when `pad == 0`.
 
 source
 
@@ -439,7 +492,43 @@ source
 conv(x, w; stride = 1, pad = 0, dilation = 1, flipped = false, groups = 1)
 ```
 
-Apply convolution filter `w` to input `x`. `x` and `w` are 3d/4d/5d tensors in 1d/2d/3d convolutions respectively. `x` and `w` may have real or complex element types.
+Apply convolution filter `w` to input `x`. `x` and `w` are 3d/4d/5d tensors in 1d/2d/3d convolutions respectively. They may have real or complex element types.
+
+The dimensions are arranged as follows, with the spatial dimensions first:
+
+* `x`: `(spatial..., channels_in, batch)`
+
+* `w`: `(spatial..., channels_in ÷ groups, channels_out)`
+
+* output: `(spatial_out..., channels_out, batch)`
+
+The output spatial size for each dimension is `(spatial + 2*pad - (dilation*(spatial_w - 1) + 1)) ÷ stride + 1`.
+
+**Keyword arguments**
+
+* `stride`: stride of the filter (`Int` or tuple of one `Int` per spatial dimension).
+
+* `pad`: zero padding. An `Int` or tuple applies symmetric padding; a tuple of `2*ndims` entries gives `(left, right)` padding per spatial dimension.
+
+* `dilation`: spacing between filter elements (atrous convolution).
+
+* `flipped`: if `false` (default), perform true mathematical convolution; if `true`, perform cross-correlation (the usual deep-learning convention).
+
+* `groups`: number of groups for grouped convolution.
+
+**Examples**
+
+```julia
+julia> x = rand(Float32, 28, 28, 3, 16);  # (width, height, channels_in, batch)
+
+julia> w = rand(Float32, 5, 5, 3, 8);     # (width, height, channels_in, channels_out)
+
+julia> size(conv(x, w))                    # 28 - 5 + 1 = 24
+(24, 24, 8, 16)
+
+julia> size(conv(x, w; stride=2, pad=1))
+(13, 13, 8, 16)
+```
 
 source
 
@@ -455,7 +544,9 @@ source
 depthwiseconv(x, w; stride=1, pad=0, dilation=1, flipped=false)
 ```
 
-Depthwise convolution operation with filter `w` on input `x`. `x` and `w` are 3d/4d/5d tensors in 1d/2d/3d convolutions respectively.
+Depthwise convolution operation with filter `w` on input `x`. `x` and `w` are 3d/4d/5d tensors in 1d/2d/3d convolutions respectively. The filter `w` has shape `(spatial..., channel_multiplier, channels_in)`.
+
+This is equivalent to a grouped [`conv`](/api/NN_Primitives/NNlib#NNlib.conv) with `groups = channels_in`, and is implemented in terms of it.
 
 source
 
@@ -1149,6 +1240,31 @@ See [`gather`](/api/NN_Primitives/NNlib#NNlib.gather) for an allocating version.
 source
 
 ```julia
+gather!(dst, src, IJK...)
+```
+
+Convert the tuple of integer vectors `IJK` to a tuple of `CartesianIndex` and call `gather!` on it: `gather!(dst, src, CartesianIndex.(IJK...))`.
+
+**Examples**
+
+```julia
+julia> src = reshape([1:15;], 3, 5)
+3×5 Matrix{Int64}:
+ 1  4  7  10  13
+ 2  5  8  11  14
+ 3  6  9  12  15
+
+julia> dst = zeros(Int, 2);
+
+julia> NNlib.gather!(dst, src, [1, 2], [2, 4])
+2-element Vector{Int64}:
+  4
+ 11
+```
+
+source
+
+```julia
 NNlib.scatter(op, src, idx; [init, dstsize])
 ```
 
@@ -1489,6 +1605,125 @@ This does exactly `B .= dropout(A, p; dims)`, or rather, it's the implementation
 
 source
 
+## Normalization {#Normalization}
+
+```julia
+normalise(x; dims=ndims(x), eps=1f-5)
+```
+
+Normalise `x` to zero mean and unit standard deviation across the dimension(s) given by `dims`. Per default, `dims` is the last dimension. `eps` is a small term added to the variance for numerical stability.
+
+This is the stateless building block behind [`layernorm`](/api/NN_Primitives/NNlib#NNlib.layernorm); it applies no learnable shift or scale.
+
+**Examples**
+
+```julia
+julia> using Statistics
+
+julia> x = [90, 100, 110, 130, 70];
+
+julia> y = NNlib.normalise(x);
+
+julia> isapprox(std(y; corrected=false), 1, atol=1e-5)
+true
+```
+
+source
+
+```julia
+batchnorm(g, b, x, running_mean=nothing, running_var=nothing, momentum=0.1f0;
+          eps=1f-5, training=true, track_stats=true)
+```
+
+Functional [batch normalization](https://arxiv.org/abs/1502.03167). `g` and `b` are the per-channel scale and bias (either may be `nothing` for no affine transform); `x` are the feature maps. For an input with `N` dimensions the `N-1`th is the channel dimension (the usual convention for `WHCN` images); statistics are computed over every `D_1×…×D_{N-2}×1×D_N` slice, so per channel.
+
+If `running_mean`/`running_var` are supplied:
+
+* with `training=true` (default) they are updated **in place** (when `track_stats=true`) with an exponential moving average controlled by `momentum`, while statistics of the current batch are used to normalise;
+
+* with `training=false` they are used to normalise (inference / test mode).
+
+`eps` is added to the variance for numerical stability. On the GPU, 2D/4D/5D `CuArray`s are dispatched to the cuDNN implementation.
+
+For half-precision (`Float16`/`BFloat16`) feature maps the statistics are computed in `Float32` and the result is cast back; `g`, `b`, `running_mean` and `running_var` must then be `Float32`.
+
+See also [`instancenorm`](/api/NN_Primitives/NNlib#NNlib.instancenorm), [`groupnorm`](/api/NN_Primitives/NNlib#NNlib.groupnorm), [`layernorm`](/api/NN_Primitives/NNlib#NNlib.layernorm).
+
+source
+
+```julia
+∇batchnorm(g, b, x, dy, running_mean=nothing, running_var=nothing, momentum=0.1f0;
+           eps=1f-5, training=true)
+```
+
+Gradient of [`batchnorm`](/api/NN_Primitives/NNlib#NNlib.batchnorm): given the upstream gradient `dy`, return `(dg, db, dx)`. On the GPU, 2D/4D/5D `CuArray`s are dispatched to the cuDNN implementation in `NNlibCUDACUDNNExt`; this generic method is the fallback used everywhere else and is itself differentiable (second-order).
+
+source
+
+```julia
+instancenorm(g, b, x, running_mean=nothing, running_var=nothing, momentum=0.1f0;
+             eps=1f-5, training=true, track_stats=false)
+```
+
+Functional [instance normalization](https://arxiv.org/abs/1607.08022). Arguments match [`batchnorm`](/api/NN_Primitives/NNlib#NNlib.batchnorm), but for an input with `N > 2` dimensions statistics are computed over every `D_1×…×D_{N-2}×1×1` slice, so per channel **and** per sample in the batch. When tracked, the running statistics (length `size(x, N-1)`) accumulate the per-channel average across the batch.
+
+On the GPU (without running statistics) the standardisation is dispatched to the cuDNN `batchnorm` fast path; the running-statistics case uses the generic code.
+
+See also [`batchnorm`](/api/NN_Primitives/NNlib#NNlib.batchnorm), [`groupnorm`](/api/NN_Primitives/NNlib#NNlib.groupnorm), [`layernorm`](/api/NN_Primitives/NNlib#NNlib.layernorm).
+
+source
+
+```julia
+∇instancenorm(g, b, x, dy, running_mean=nothing, running_var=nothing, momentum=0.1f0;
+              eps=1f-5, training=true)
+```
+
+Gradient of [`instancenorm`](/api/NN_Primitives/NNlib#NNlib.instancenorm), returning `(dg, db, dx)`.
+
+source
+
+```julia
+groupnorm(g, b, x, G::Integer; eps=1f-5)
+```
+
+Functional [group normalization](https://arxiv.org/abs/1803.08494). `g` and `b` are the per-channel scale and bias (either may be `nothing`); `x` are the feature maps. For an input with `N > 2` dimensions the `N-1`th is the channel dimension; its `C = size(x, N-1)` channels are split into `G` groups (`G` must divide `C`) and statistics are computed over each group together with the spatial dimensions, per sample. `eps` is added to the variance.
+
+On the GPU the standardisation is dispatched to the cuDNN `batchnorm` fast path.
+
+See also [`batchnorm`](/api/NN_Primitives/NNlib#NNlib.batchnorm), [`instancenorm`](/api/NN_Primitives/NNlib#NNlib.instancenorm), [`layernorm`](/api/NN_Primitives/NNlib#NNlib.layernorm).
+
+source
+
+```julia
+∇groupnorm(g, b, x, dy, G::Integer; eps=1f-5)
+```
+
+Gradient of [`groupnorm`](/api/NN_Primitives/NNlib#NNlib.groupnorm), returning `(dg, db, dx)`.
+
+source
+
+```julia
+layernorm(g, b, x; dims=1, eps=1f-5)
+```
+
+Functional [layer normalization](https://arxiv.org/abs/1607.06450). `g` and `b` are the scale and bias (either may be `nothing`); `x` is normalised over the dimensions `dims` (the leading dimension by default).
+
+`g` and `b`, when given, must broadcast against the normalised region, e.g. have size `size(x)[dims]` with singleton trailing dimensions.
+
+On the GPU, normalising over leading `dims` (`1:k`) dispatches the standardisation to the cuDNN `batchnorm` fast path; other `dims` use the generic code.
+
+See also [`normalise`](/api/NN_Primitives/NNlib#NNlib.normalise), [`batchnorm`](/api/NN_Primitives/NNlib#NNlib.batchnorm), [`instancenorm`](/api/NN_Primitives/NNlib#NNlib.instancenorm), [`groupnorm`](/api/NN_Primitives/NNlib#NNlib.groupnorm).
+
+source
+
+```julia
+∇layernorm(g, b, x, dy; dims=1, eps=1f-5)
+```
+
+Gradient of [`layernorm`](/api/NN_Primitives/NNlib#NNlib.layernorm), returning `(dg, db, dx)`.
+
+source
+
 ## Internal NNlib Functions {#Internal-NNlib-Functions}
 
 These functions are not part of the public API and are subject to change without notice.
@@ -1622,14 +1857,6 @@ Padding is a jerk.  A HUGE jerk that tries to sneak a bunch of conditionals and 
 source
 
 ```julia
-∇depthwiseconv_data_im2col!(dx, w, dy, cdims, col=similar(dx); alpha=1, beta=0)
-```
-
-Depwthwise conv2d backward pass onto the input using im2col and GEMM. See [`conv_im2col!`](/api/NN_Primitives/NNlib#NNlib.conv_im2col!) for explanation of optional parameters.
-
-source
-
-```julia
 _prepare_imrotate(arr, θ, rotation_center)
 ```
 
@@ -1726,15 +1953,6 @@ Return the random number generator most appropriate for `x`: `CUDA.default_rng()
 source
 
 ```julia
-∇depthwiseconv_filter_im2col!(dw, w, dy, cdims, col=similar(dw, ∇filter_im2col_dims(cdims));
-                              alpha=1, beta=0)
-```
-
-Depthwise conv backward pass onto the weights using im2col and GEMM. See [`conv_im2col!`](/api/NN_Primitives/NNlib#NNlib.conv_im2col!) for explanation of optional parameters.
-
-source
-
-```julia
 istft(y;
     n_fft::Int, hop_length::Int = n_fft ÷ 4, window = nothing,
     center::Bool = true, normalized::Bool = false,
@@ -1818,14 +2036,6 @@ Note that this method has not been optimized in the same way as `im2col()` has, 
 source
 
 ```julia
-depthwiseconv_im2col!(y, x, w, cdims, col=similar(x); alpha=1, beta=0)
-```
-
-Perform a depthwise convolution using im2col and GEMM, store the result in `y`. See [`conv_im2col!`](/api/NN_Primitives/NNlib#NNlib.conv_im2col!) for explanation of optional parameters.
-
-source
-
-```julia
 storage_type(A) -> Type
 ```
 
@@ -1848,14 +2058,6 @@ im2col_dims(c::ConvDims)
 im2col calculates, for each output pixel, the "convolution" of N kernels where N is the number of output channels, by doing a matrix multiply.  The dimensions of that matrix are given by this function.
 
 Note that because im2col is multithreaded, we need to allocate a separate workspace of memory per-thread; hence the dimensions returned by this will depend on the number of threads Julia is currently running with.
-
-source
-
-```julia
-∇depthwiseconv_filter_direct!(dw, x, dy, cdims; alpha=1, beta=0)
-```
-
-Calculate the gradient imposed upon `w` in the depthwise convolution `y = x * w`.
 
 source
 
@@ -1969,14 +2171,6 @@ Create triangular filter banks.
 **Returns:**
 
 Array of size `(n_freqs, n_filters)`.
-
-source
-
-```julia
-∇depthwiseconv_data_direct!(dx, dy, w, cdims; alpha=1, beta=0)
-```
-
-Calculate the gradient imposed upon `x` in the depthwise convolution `y = x * w`. We make use of the fact that a depthwise convolution is equivalent to `C_in` separate normal convolutions between that channel of `x` and the `C_mult` different kernels that get applied to it.  The output of such a convolution is the gradient imposed upon that particular channel of `x`, and so we simply walk through `x`, calculating the gradient for each batch and channel independently.
 
 source
 
@@ -2194,18 +2388,6 @@ logaddexp(a, b)
 ```
 
 Adds log-space `a` and `b` such that the result equals `log(exp(a)+exp(b))`
-
-source
-
-```julia
-depthwiseconv_direct!(y, x, w, cdims; alpha=1, beta=0)
-```
-
-Direct depthwise convolution implementation; used for debugging, tests, and mixing/ matching of strange datatypes within a single convolution.  Uses naive nested for loop implementation and does not attempt to optimize performance.  Rather, this implementation is intended to be maximally understandable and debuggable, to aid in testing other, more performant implementations.  We also explicitly support mixing and matching of strange datatypes, so that if the user really wants to convolve an image of `UInt8`'s with a `Float16` kernel, storing the result in a `Float32` output, there is at least a function call for that madness.
-
-One subtlety about depthwise convolutions; the shape of a depthwise convolutional kernel is `(spatial_dims..., C_mult, C_in)`, so the axis that must match with the number of channels in `x` is the last, not the second-to-last, as in a normal dense convolution.
-
-See the docstring for `conv_direct!()` for more on the optional parameters.
 
 source
 

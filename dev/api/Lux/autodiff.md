@@ -1,6 +1,7 @@
 ---
 url: /dev/api/Lux/autodiff.md
 ---
+
 # Automatic Differentiation Helpers {#autodiff-lux-helpers}
 
 ## JVP & VJP Wrappers {#JVP-and-VJP-Wrappers}
@@ -82,10 +83,9 @@ batched_jacobian(f, backend::AbstractADType, x::AbstractArray)
 ```
 
 Computes the Jacobian of a function `f` with respect to a batch of inputs `x`. This expects the following properties for `y = f(x)`:
+2\. `ndims(y) ≥ 2`
 
-1. `ndims(y) ≥ 2`
-
-2. `size(y, ndims(y)) == size(x, ndims(x))`
+3. `size(y, ndims(y)) == size(x, ndims(x))`
 
 **Backends & AD Packages**
 

@@ -1,6 +1,7 @@
 ---
 url: /dev/api/Lux/layers.md
 ---
+
 # Built-In Layers {#Built-In-Layers}
 
 ## Containers {#Containers}
@@ -160,8 +161,7 @@ x1 → layer1 → y1 ↘
 **Inputs**
 
 Layer behaves differently based on input type:
-
-1. If the input `x` is a tuple of length `N + 1`, then the `layers` must be a tuple of length `N`. The computation is as follows
+2\. If the input `x` is a tuple of length `N + 1`, then the `layers` must be a tuple of length `N`. The computation is as follows
 
 ```julia
 y = x[1]
@@ -170,7 +170,7 @@ for i in 1:N
 end
 ```
 
-2. Any other kind of input
+3. Any other kind of input
 
 ```julia
 y = x
@@ -1412,7 +1412,10 @@ MultiHeadAttention(dims; nheads=1, dense_kwargs=(; use_bias=False()),
                    is_causal::Union{Bool,Nothing}=nothing)
 ```
 
-The multi-head dot-product attention layer used in Transformer architectures \[[1](/references#vaswani2017attention)].
+The multi-head dot-product attention layer used in Transformer architectures \[
+DocumenterCitations.CitationSiteNode("vaswani2017attention-cite-1")
+
+].
 
 **Arguments**
 
@@ -1555,7 +1558,10 @@ RotaryPositionalEmbedding(
 )
 ```
 
-Rotary Positional Embedding. For details see [Su *et al.* \[2\]](/references#su2024roformer).
+Rotary Positional Embedding. For details see
+DocumenterCitations.CitationSiteNode("su2024roformer-cite-1")
+
+.
 
 The traditional implementation rotates consecutive pairs of elements in the feature dimension while the default implementation rotates pairs with stride half the feature dimensions for efficiency.
 
@@ -1595,7 +1601,10 @@ SinusoidalPositionalEmbedding(
 )
 ```
 
-Sinusoidal Positional Embedding. For details see [Vaswani *et al.* \[1\]](/references#vaswani2017attention).
+Sinusoidal Positional Embedding. For details see
+DocumenterCitations.CitationSiteNode("vaswani2017attention-cite-2")
+
+.
 
 **Arguments**
 
@@ -1727,7 +1736,10 @@ Maxout(f::Function, n_alts::Int)
 
 This contains a number of internal layers, each of which receives the same input. Its output is the elementwise maximum of the the internal layers' outputs.
 
-Maxout over linear dense layers satisfies the universal approximation theorem \[[3](/references#goodfellow2013maxout)].
+Maxout over linear dense layers satisfies the universal approximation theorem \[
+DocumenterCitations.CitationSiteNode("goodfellow2013maxout-cite-1")
+
+].
 
 See also [`Parallel`](/api/Lux/layers#Lux.Parallel) to reduce with other operators.
 
@@ -2075,7 +2087,10 @@ InstanceNorm(chs::Integer, activation=identity; init_bias=zeros32, init_scale=on
              affine=False(), track_stats=False(), epsilon=1f-5, momentum=0.1f0)
 ```
 
-Instance Normalization. For details see [Ulyanov *et al.* \[4\]](/references#ulyanov2016instance).
+Instance Normalization. For details see
+DocumenterCitations.CitationSiteNode("ulyanov2016instance-cite-1")
+
+.
 
 Instance Normalization computes the mean and variance for each $D\_1 \times ... \times D\_{N - 2} \times 1 \times 1$\` input slice and normalises the input accordingly.
 

@@ -1,6 +1,7 @@
 ---
 url: /dev/manual/migrate_from_flux.md
 ---
+
 # Migrating from Flux to Lux {#migrate-from-flux}
 
 For the core library layers like [`Dense`](/api/Lux/layers#Lux.Dense), [`Conv`](/api/Lux/layers#Lux.Conv), etc. we have intentionally kept the API very similar to Flux. In most cases, replacing `using Flux` with `using Lux` should be enough to get you started. We cover the additional changes that you will have to make in the following example.

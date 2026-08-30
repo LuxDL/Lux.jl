@@ -1,6 +1,7 @@
 ---
 url: /dev/manual/preferences.md
 ---
+
 # Preferences for Lux.jl {#Preferences-for-Lux.jl}
 
 ::: tip How to set Preferences
@@ -25,33 +26,32 @@ Lux.jl relies on several preferences to make decision on how to run your code. H
 
 ## Nested Automatic Differentiation {#Nested-Automatic-Differentiation}
 
-1. `automatic_nested_ad_switching` - Set this to `false` to disable automatic switching of backends for nested automatic differentiation. See the manual section on [nested automatic differentiation](/manual/nested_autodiff#nested_autodiff) for more details.
+2. `automatic_nested_ad_switching` - Set this to `false` to disable automatic switching of backends for nested automatic differentiation. See the manual section on [nested automatic differentiation](/manual/nested_autodiff#nested_autodiff) for more details.
 
 ## Training with Reactant {#Training-with-Reactant}
 
-1. `precision_config` - Set this to `"auto"` to use select `HIGH` precision for CUDA and `DEFAULT` precision for other backends. The choice made here can change across versions of Lux.jl and is generally recommended for best performance. Alternatively, you can set this to `"default"` to use `DEFAULT` precision or `"high"` to use `HIGH` precision or `"highest"` to use `HIGHEST` precision.
+2. `precision_config` - Set this to `"auto"` to use select `HIGH` precision for CUDA and `DEFAULT` precision for other backends. The choice made here can change across versions of Lux.jl and is generally recommended for best performance. Alternatively, you can set this to `"default"` to use `DEFAULT` precision or `"high"` to use `HIGH` precision or `"highest"` to use `HIGHEST` precision.
 
 ## GPU-Aware MPI Support {#gpu-aware-mpi-preferences}
 
 If you are using a custom MPI build that supports CUDA or ROCM, you can use the following preferences with [Preferences.jl](https://github.com/JuliaPackaging/Preferences.jl):
+2\. `cuda_aware_mpi` - Set this to `true` if your MPI build is CUDA aware.
 
-1. `cuda_aware_mpi` - Set this to `true` if your MPI build is CUDA aware.
-
-2. `rocm_aware_mpi` - Set this to `true` if your MPI build is ROCM aware.
+3. `rocm_aware_mpi` - Set this to `true` if your MPI build is ROCM aware.
 
 By default, both of these preferences are set to `false`.
 
 ## GPU Backend Selection {#GPU-Backend-Selection}
 
-1. `gpu_backend` - Set this to bypass the automatic backend selection and use a specific gpu backend. Valid options are "cuda", "rocm", "metal", and "oneapi". This preference needs to be set for `MLDataDevices` package. It is recommended to use [`MLDataDevices.gpu_backend!`](/api/Accelerator_Support/MLDataDevices#MLDataDevices.gpu_backend!) to set this preference.
+2. `gpu_backend` - Set this to bypass the automatic backend selection and use a specific gpu backend. Valid options are "cuda", "rocm", "metal", and "oneapi". This preference needs to be set for `MLDataDevices` package. It is recommended to use [`MLDataDevices.gpu_backend!`](/api/Accelerator_Support/MLDataDevices#MLDataDevices.gpu_backend!) to set this preference.
 
 ## Automatic Eltype Conversion {#automatic-eltypes-preference}
 
-1. `eltype_mismatch_handling` - Preference controlling what happens when layers get different eltypes as input. See the documentation on [`match_eltype`](/api/Lux/utilities#Lux.match_eltype) for more details.
+2. `eltype_mismatch_handling` - Preference controlling what happens when layers get different eltypes as input. See the documentation on [`match_eltype`](/api/Lux/utilities#Lux.match_eltype) for more details.
 
 ## Dispatch Doctor {#dispatch-doctor-preference}
 
-1. `instability_check` - Preference controlling the dispatch doctor. See the documentation on [`Lux.set_dispatch_doctor_preferences!`](/api/Lux/utilities#Lux.set_dispatch_doctor_preferences!) for more details. The preferences need to be set for `LuxCore` and `LuxLib` packages. Both of them default to `disable`.
+2. `instability_check` - Preference controlling the dispatch doctor. See the documentation on [`Lux.set_dispatch_doctor_preferences!`](/api/Lux/utilities#Lux.set_dispatch_doctor_preferences!) for more details. The preferences need to be set for `LuxCore` and `LuxLib` packages. Both of them default to `disable`.
 
 * Setting the `LuxCore` preference sets the check at the level of `LuxCore.apply`. This essentially activates the dispatch doctor for all Lux layers.
 

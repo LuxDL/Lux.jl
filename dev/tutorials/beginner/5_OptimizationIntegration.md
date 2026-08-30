@@ -1,6 +1,7 @@
 ---
 url: /dev/tutorials/beginner/5_OptimizationIntegration.md
 ---
+
 # Fitting with Optimization.jl {#Optimization-Lux-Tutorial}
 
 Lux's native [Training.TrainState](/api/Lux/utilities#Lux.Training.TrainState) is a great API for gradient-based learning of neural networks, however, it is geared towards using `Optimisers.jl` as the backend. However, often times we want to train the neural networks with other optimization methods like BFGS, LBFGS, etc. In this tutorial, we will show how to train Lux models with Optimization.jl that provides a simple unified interface to various optimization methods.
@@ -161,36 +162,36 @@ trained_model = train_model(dataloader)
 ```
 
 ```
-Iteration:     1, Loss: 1.740769e-01
-Iteration:    25, Loss: 8.644896e-02
-Iteration:    50, Loss: 5.306665e-02
-Iteration:    75, Loss: 8.427274e-02
-Iteration:   100, Loss: 1.756596e-01
-Iteration:   100, Loss: 2.055030e-02
-Iteration:     1, Loss: 3.068537e-01
-Iteration:    25, Loss: 3.350112e-02
-Iteration:     1, Loss: 3.302021e-02
-Iteration:    25, Loss: 4.320877e-02
-Iteration:    50, Loss: 3.087694e-02
-Iteration:    75, Loss: 2.725422e-02
-Iteration:   100, Loss: 2.353250e-02
-Iteration:   125, Loss: 2.144463e-02
-Iteration:   150, Loss: 1.901578e-02
-Iteration:   175, Loss: 1.681522e-02
-Iteration:   200, Loss: 2.023219e-02
-Iteration:   225, Loss: 1.649002e-02
-Iteration:   250, Loss: 1.468544e-02
-Iteration:   275, Loss: 1.324297e-02
-Iteration:   300, Loss: 2.042319e-02
-Iteration:   325, Loss: 1.605902e-02
-Iteration:   350, Loss: 1.312578e-02
-Iteration:   375, Loss: 1.188488e-02
-Iteration:   400, Loss: 1.076655e-02
-Iteration:   425, Loss: 1.006581e-02
-Iteration:   450, Loss: 1.139796e-02
-Iteration:   475, Loss: 9.892777e-03
-Iteration:   500, Loss: 8.870113e-03
-Iteration:   500, Loss: 8.870113e-03
+Iteration:     1, Loss: 1.695282e-01
+Iteration:    25, Loss: 6.597062e-02
+Iteration:    50, Loss: 6.880120e-03
+Iteration:    75, Loss: 1.027357e-01
+Iteration:   100, Loss: 3.112202e-01
+Iteration:   100, Loss: 6.261745e-03
+Iteration:     1, Loss: 4.947987e-01
+Iteration:    25, Loss: 3.482134e-02
+Iteration:     1, Loss: 3.460428e-02
+Iteration:    25, Loss: 4.891109e-02
+Iteration:    50, Loss: 4.054382e-02
+Iteration:    75, Loss: 3.304270e-02
+Iteration:   100, Loss: 3.085445e-02
+Iteration:   125, Loss: 2.960508e-02
+Iteration:   150, Loss: 2.846256e-02
+Iteration:   175, Loss: 2.734506e-02
+Iteration:   200, Loss: 2.618537e-02
+Iteration:   225, Loss: 2.483753e-02
+Iteration:   250, Loss: 2.283314e-02
+Iteration:   275, Loss: 2.114385e-02
+Iteration:   300, Loss: 1.981410e-02
+Iteration:   325, Loss: 1.865512e-02
+Iteration:   350, Loss: 1.757593e-02
+Iteration:   375, Loss: 1.655643e-02
+Iteration:   400, Loss: 1.561046e-02
+Iteration:   425, Loss: 1.487479e-02
+Iteration:   450, Loss: 1.414635e-02
+Iteration:   475, Loss: 1.434530e-02
+Iteration:   500, Loss: 1.751227e-02
+Iteration:   500, Loss: 1.308969e-02
 
 ```
 
@@ -235,15 +236,15 @@ end
 ```
 
 ```
-Julia Version 1.12.6
-Commit 15346901f00 (2026-04-09 19:20 UTC)
+Julia Version 1.12.7
+Commit 6d172b025e4 (2026-08-15 08:05 UTC)
 Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 4 × AMD EPYC 9V74 80-Core Processor
+  CPU: 4 × INTEL(R) XEON(R) PLATINUM 8573C
   WORD_SIZE: 64
-  LLVM: libLLVM-18.1.7 (ORCJIT, znver4)
+  LLVM: libLLVM-18.1.7 (ORCJIT, sapphirerapids)
   GC: Built with stock GC
 Threads: 4 default, 1 interactive, 4 GC (on 4 virtual cores)
 Environment:

@@ -1,6 +1,7 @@
 ---
 url: /dev/tutorials/beginner/2_PolynomialFitting.md
 ---
+
 # Fitting a Polynomial using MLP {#Fitting-a-Polynomial-using-MLP}
 
 In this tutorial we will fit a MultiLayer Perceptron (MLP) on data generated from a polynomial.
@@ -255,8 +256,8 @@ end
 ```
 
 ```
-Julia Version 1.12.6
-Commit 15346901f00 (2026-04-09 19:20 UTC)
+Julia Version 1.12.7
+Commit 6d172b025e4 (2026-08-15 08:05 UTC)
 Build Info:
   Official https://julialang.org release
 Platform Info:

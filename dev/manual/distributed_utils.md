@@ -1,6 +1,7 @@
 ---
 url: /dev/manual/distributed_utils.md
 ---
+
 # Distributed Data Parallel Training {#Distributed-Data-Parallel-Training}
 
 ::: tip Tip
@@ -53,33 +54,32 @@ DDP Training using `Lux.DistributedUtils` is a spiritual successor to [FluxMPI.j
 ## Migration Guide from `FluxMPI.jl` {#Migration-Guide-from-FluxMPI.jl}
 
 Let's compare the changes we need to make wrt the [FluxMPI.jl integration guide](https://avik-pal.github.io/FluxMPI.jl/dev/guide/).
+2\. `FluxMPI.Init` is now [`DistributedUtils.initialize`](/api/Lux/distributed_utils#Lux.DistributedUtils.initialize).
 
-1. `FluxMPI.Init` is now [`DistributedUtils.initialize`](/api/Lux/distributed_utils#Lux.DistributedUtils.initialize).
+3. `FluxMPI.synchronize!(x)` needs to be changed to `x_new = DistributedUtils.synchronize!!(backend, x)`.
 
-2. `FluxMPI.synchronize!(x)` needs to be changed to `x_new = DistributedUtils.synchronize!!(backend, x)`.
-
-3. [`DistributedUtils.DistributedDataContainer`](/api/Lux/distributed_utils#Lux.DistributedUtils.DistributedDataContainer), [`DistributedUtils.local_rank`](/api/Lux/distributed_utils#Lux.DistributedUtils.local_rank), and [`DistributedUtils.DistributedOptimizer`](/api/Lux/distributed_utils#Lux.DistributedUtils.DistributedOptimizer) need `backend` as  the first input.
+4. [`DistributedUtils.DistributedDataContainer`](/api/Lux/distributed_utils#Lux.DistributedUtils.DistributedDataContainer), [`DistributedUtils.local_rank`](/api/Lux/distributed_utils#Lux.DistributedUtils.local_rank), and [`DistributedUtils.DistributedOptimizer`](/api/Lux/distributed_utils#Lux.DistributedUtils.DistributedOptimizer) need `backend` as  the first input.
 
 And that's pretty much it!
 
 ### Removed Functionality {#Removed-Functionality}
 
-1. `FluxMPI.allreduce_gradients` no longer exists. Previously this was needed when CUDA communication was flaky, with `NCCL.jl` this is no longer the case.
+2. `FluxMPI.allreduce_gradients` no longer exists. Previously this was needed when CUDA communication was flaky, with `NCCL.jl` this is no longer the case.
 
-2. `FluxMPIFluxModel` has been removed. `DistributedUtils` no longer works with `Flux`.
+3. `FluxMPIFluxModel` has been removed. `DistributedUtils` no longer works with `Flux`.
 
 ### Key Differences {#Key-Differences}
 
-1. `FluxMPI.synchronize!` is now `DistributedUtils.synchronize!!` to highlight the fact that some of the inputs are not updated in-place.
+2. `FluxMPI.synchronize!` is now `DistributedUtils.synchronize!!` to highlight the fact that some of the inputs are not updated in-place.
 
-2. All of the functions now require a [communication backend](/api/Lux/distributed_utils#communication-backends) as input.
+3. All of the functions now require a [communication backend](/api/Lux/distributed_utils#communication-backends) as input.
 
-3. We don't automatically determine if the MPI Implementation is CUDA or ROCM aware. See [GPU-aware MPI](/manual/preferences#gpu-aware-mpi-preferences) for more information.
+4. We don't automatically determine if the MPI Implementation is CUDA or ROCM aware. See [GPU-aware MPI](/manual/preferences#gpu-aware-mpi-preferences) for more information.
 
-4. Older (now non-existent) `Lux.gpu` implementations used to "just work" with `FluxMPI.jl`. We expect [`gpu_device`](/api/Accelerator_Support/MLDataDevices#MLDataDevices.gpu_device) to continue working as expected, however, we recommend using [`gpu_device`](/api/Accelerator_Support/MLDataDevices#MLDataDevices.gpu_device) after calling [`DistributedUtils.initialize`](/api/Lux/distributed_utils#Lux.DistributedUtils.initialize) to avoid any mismatch between the device set via `DistributedUtils` and the device stores in `CUDADevice` or `AMDGPUDevice`.
+5. Older (now non-existent) `Lux.gpu` implementations used to "just work" with `FluxMPI.jl`. We expect [`gpu_device`](/api/Accelerator_Support/MLDataDevices#MLDataDevices.gpu_device) to continue working as expected, however, we recommend using [`gpu_device`](/api/Accelerator_Support/MLDataDevices#MLDataDevices.gpu_device) after calling [`DistributedUtils.initialize`](/api/Lux/distributed_utils#Lux.DistributedUtils.initialize) to avoid any mismatch between the device set via `DistributedUtils` and the device stores in `CUDADevice` or `AMDGPUDevice`.
 
 ## Known Shortcomings {#Known-Shortcomings}
 
-1. Currently we don't run tests with CUDA or ROCM aware MPI, use those features at your own risk. We are working on adding tests for these features.
+2. Currently we don't run tests with CUDA or ROCM aware MPI, use those features at your own risk. We are working on adding tests for these features.
 
-2. Native AMDGPU.jl support is experimental and causes deadlocks in certain situations. **For AMD GPUs, we strongly recommend using Reactant instead of native AMDGPU.jl for distributed training.** If you have a minimal reproducer for AMDGPU.jl issues, please open an issue.
+3. Native AMDGPU.jl support is experimental and causes deadlocks in certain situations. **For AMD GPUs, we strongly recommend using Reactant instead of native AMDGPU.jl for distributed training.** If you have a minimal reproducer for AMDGPU.jl issues, please open an issue.

@@ -1,6 +1,7 @@
 ---
 url: /dev/introduction/overview.md
 ---
+
 # Why we wrote Lux? {#Why-we-wrote-Lux?}
 
 Julia already has quite a few well established Neural Network Frameworks – [Flux](https://fluxml.ai/) & [KNet](https://denizyuret.github.io/Knet.jl/latest/). However, certain design elements – **Coupled Model and Parameters** & **Internal Mutations** – associated with these frameworks make them less compiler and user friendly. Making changes to address these problems in the respective frameworks would be too disruptive for users. Here comes in `Lux`: a neural network framework built completely using pure functions to make it both compiler and autodiff friendly.

@@ -1,6 +1,7 @@
 ---
 url: /dev/manual/weight_initializers.md
 ---
+
 # Initializing Weights {#Initializing-Weights}
 
 `WeightInitializers.jl` provides common weight initialization schemes for deep learning models.

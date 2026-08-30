@@ -1,6 +1,7 @@
 ---
 url: /dev/api/Accelerator_Support/MLDataDevices.md
 ---
+
 # MLDataDevices {#MLDataDevices-API}
 
 `MLDataDevices.jl` is a lightweight package defining rules for transferring data across devices.
@@ -51,14 +52,13 @@ gpu_device(
 ```
 
 Selects GPU device based on the following criteria:
+2\. If `gpu_backend` preference is set and the backend is functional on the system, then that device is selected.
 
-1. If `gpu_backend` preference is set and the backend is functional on the system, then that device is selected.
+3. Otherwise, an automatic selection algorithm is used. We go over possible device backends in the order specified by `supported_gpu_backends()` and select the first functional backend.
 
-2. Otherwise, an automatic selection algorithm is used. We go over possible device backends in the order specified by `supported_gpu_backends()` and select the first functional backend.
+4. If no GPU device is functional and  `force` is `false`, then `cpu_device()` is invoked.
 
-3. If no GPU device is functional and  `force` is `false`, then `cpu_device()` is invoked.
-
-4. If nothing works, an error is thrown.
+5. If nothing works, an error is thrown.
 
 **Arguments**
 

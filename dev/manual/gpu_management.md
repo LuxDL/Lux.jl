@@ -1,6 +1,7 @@
 ---
 url: /dev/manual/gpu_management.md
 ---
+
 # GPU Management {#GPU-Management}
 
 `Lux.jl` can handle multiple GPU backends. Currently, the following backends are supported:
@@ -54,10 +55,9 @@ Automatic Backend Management is done by two simple functions: `cpu_device` and `
   ```
 
 * [`gpu_device`](/api/Accelerator_Support/MLDataDevices#MLDataDevices.gpu_device): This function performs automatic GPU device selection and returns an object.
+  2\. If no GPU is available, it returns a `CPUDevice` object.
 
-  1. If no GPU is available, it returns a `CPUDevice` object.
-
-  2. If a LocalPreferences file is present, then the backend specified in the file is used. To set a backend, use `Lux.gpu_backend!(<backend_name>)`. (a) If the trigger package corresponding to the device is not loaded, then a warning is displayed. (b) If no LocalPreferences file is present, then the first working GPU with loaded trigger package is used.
+  3. If a LocalPreferences file is present, then the backend specified in the file is used. To set a backend, use `Lux.gpu_backend!(<backend_name>)`. (a) If the trigger package corresponding to the device is not loaded, then a warning is displayed. (b) If no LocalPreferences file is present, then the first working GPU with loaded trigger package is used.
 
   ```julia
   gdev = gpu_device()

@@ -1,6 +1,7 @@
 ---
 url: /dev/api/NN_Primitives/LuxLib.md
 ---
+
 # LuxLib {#LuxLib-API}
 
 Backend for Lux.jl
@@ -275,7 +276,10 @@ alpha_dropout(rng::AbstractRNG, x, p, training)
 alpha_dropout(rng::AbstractRNG, x, p, training, α, A, B)
 ```
 
-Alpha Dropout: Dropout ensuring that the mean and variance of the output remains same as the input. For details see [Klambauer *et al.* \[8\]](/references#klambauer2017self). Use the second call signature to avoid recomputing the constants for a fixed dropout probability.
+Alpha Dropout: Dropout ensuring that the mean and variance of the output remains same as the input. For details see
+DocumenterCitations.CitationSiteNode("klambauer2017self-cite-1")
+
+. Use the second call signature to avoid recomputing the constants for a fixed dropout probability.
 
 **Arguments**
 
@@ -307,7 +311,10 @@ dropout(rng::AbstractRNG, x, mask, p, training, update_mask::Union{Val, StaticBo
     invp, dims)
 ```
 
-Dropout: Simple Way to prevent Neural Networks for Overfitting. For details see [Srivastava *et al.* \[9\]](/references#srivastava2014dropout).
+Dropout: Simple Way to prevent Neural Networks for Overfitting. For details see
+DocumenterCitations.CitationSiteNode("srivastava2014dropout-cite-1")
+
+.
 
 **Arguments**
 
@@ -379,7 +386,10 @@ batchnorm(x, scale, bias, running_mean, running_var, training,
     σ=identity, momentum = 0.1f0, epsilon = eps(eltype(x)) ^ (5 // 7))
 ```
 
-Batch Normalization. For details see [Ioffe and Szegedy \[10\]](/references#ioffe2015batch).
+Batch Normalization. For details see
+DocumenterCitations.CitationSiteNode("ioffe2015batch-cite-1")
+
+.
 
 Batch Normalization computes the mean and variance for each $D\_1 \times ... \times D\_{N - 2} \times 1 \times D\_N$ input slice and normalises the input accordingly.
 
@@ -414,7 +424,10 @@ groupnorm(x, scale, bias, groups::Int, σ::F=identity,
     epsilon=eps(eltype(x)) ^ (5 // 7))
 ```
 
-Group Normalization. For details see [Wu and He \[11\]](/references#wu2018group).
+Group Normalization. For details see
+DocumenterCitations.CitationSiteNode("wu2018group-cite-1")
+
+.
 
 This op is similar to batch normalization, but statistics are shared across equally-sized groups of channels and not shared across batch dimension. Thus, group normalization does not depend on the batch composition and does not require maintaining internal state for storing statistics.
 
@@ -444,7 +457,10 @@ instancenorm(x, scale, bias, running_mean, running_var, training, act, momentum,
     epsilon = eps(eltype(x)) ^ (5 // 7))
 ```
 
-Instance Normalization. For details see [Ulyanov *et al.* \[4\]](/references#ulyanov2016instance).
+Instance Normalization. For details see
+DocumenterCitations.CitationSiteNode("ulyanov2016instance-cite-2")
+
+.
 
 Instance Normalization computes the mean and variance for each $D\_1 \times ... \times D\_{N - 2} \times 1 \times 1$ input slice and normalises the input accordingly.
 
@@ -479,7 +495,10 @@ layernorm(x::AbstractArray{xT, N}, scale, bias, σ = identity, dims=1:(N - 1),
     epsilon = eps(eltype(x)) ^ (5 / 7)) where {xT, N}
 ```
 
-Layer Normalization. For details see [Ba *et al.* \[12\]](/references#ba2016layer).
+Layer Normalization. For details see
+DocumenterCitations.CitationSiteNode("ba2016layer-cite-1")
+
+.
 
 Given an input array $x$, this layer computes
 

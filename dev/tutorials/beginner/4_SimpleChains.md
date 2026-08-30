@@ -1,6 +1,7 @@
 ---
 url: /dev/tutorials/beginner/4_SimpleChains.md
 ---
+
 ::: danger Not Run on CI
 
 This tutorial is not run on CI to reduce the computational burden. If you encounter any issues, please open an issue on the [Lux.jl](https://github.com/LuxDL/Lux.jl) repository.

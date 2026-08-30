@@ -1,6 +1,7 @@
 ---
 url: /dev/api/Building_Blocks/LuxCore.md
 ---
+
 # LuxCore {#LuxCore}
 
 `LuxCore.jl` defines the abstract layers for Lux. Allows users to be compatible with the entirely of `Lux.jl` without having such a heavy dependency. If you are depending on `Lux.jl` directly, you do not need to depend on `LuxCore.jl` (all the functionality is exported via `Lux.jl`).
@@ -76,10 +77,9 @@ apply(model, x, ps, st)
 ```
 
 In most cases this function simply calls `model(x, ps, st)`. However, it is still recommended to call `apply` instead of `model(x, ps, st)` directly. Some of the reasons for this include:
+2\. For certain types of inputs `x`, we might want to perform preprocessing before calling `model`. For eg, if `x` is an Array of `ReverseDiff.TrackedReal`s this can cause significant regressions in `model(x, ps, st)` (since it won't hit any of the BLAS dispatches). In those cases, we would automatically convert `x` to a `ReverseDiff.TrackedArray`.
 
-1. For certain types of inputs `x`, we might want to perform preprocessing before calling `model`. For eg, if `x` is an Array of `ReverseDiff.TrackedReal`s this can cause significant regressions in `model(x, ps, st)` (since it won't hit any of the BLAS dispatches). In those cases, we would automatically convert `x` to a `ReverseDiff.TrackedArray`.
-
-2. Certain user defined inputs need to be applied to specific layers but we want the datatype of propagate through all the layers (even unsupported ones). In these cases, we can unpack the input in `apply` and pass it to the appropriate layer and then repack it before returning. See the Lux manual on Custom Input Types for a motivating example.
+3. Certain user defined inputs need to be applied to specific layers but we want the datatype of propagate through all the layers (even unsupported ones). In these cases, we can unpack the input in `apply` and pass it to the appropriate layer and then repack it before returning. See the Lux manual on Custom Input Types for a motivating example.
 
 ::: tip Tip
 
