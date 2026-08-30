@@ -2,6 +2,10 @@ using Aqua, ChainRulesCore, ForwardDiff, Test, ExplicitImports
 using Lux, LuxCore, LuxLib, MLDataDevices
 using ComponentArrays, ReverseDiff, Tracker, Zygote, Enzyme, Reactant, Mooncake
 
+@testset "Public API documentation" begin
+    @test Base.Docs.hasdoc(Lux, :SamePad)
+end
+
 @testset "Aqua: Quality Assurance" begin
     Aqua.test_all(
         Lux; ambiguities=false, piracies=false, unbound_args=false, persistent_tasks=false
