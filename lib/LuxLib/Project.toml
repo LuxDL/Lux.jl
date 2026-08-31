@@ -1,6 +1,6 @@
 name = "LuxLib"
 uuid = "82251201-b29d-42c6-8e01-566dec8acb11"
-version = "1.15.9"
+version = "1.15.10"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
 
 [deps]
@@ -73,7 +73,7 @@ AppleAccelerate = "0.4, 0.5"
 ArrayInterface = "7.17.1"
 BLISBLAS = "0.1, 0.2"
 CPUSummary = "0.2.6"
-CUDA = "5.8, 6"
+CUDA = "6"
 ChainRulesCore = "1.25.1"
 DispatchDoctor = "0.4.28"
 Enzyme = "0.13.120"
