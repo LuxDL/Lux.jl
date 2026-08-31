@@ -3,6 +3,8 @@ include("../shared_testsetup.jl")
 @testset "Conv" begin
     rng = StableRNG(12345)
 
+    @test haskey(Base.Docs.meta(Lux), Base.Docs.Binding(Lux, :SamePad))
+
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "Grouped Conv" begin
             x = aType(rand(rng, Float32, 4, 6, 1))
