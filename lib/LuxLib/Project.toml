@@ -40,6 +40,7 @@ OneHotArrays = "0b1bfda6-eb8a-41d2-88d8-f5af5cad476f"
 Polyester = "f517fe37-dbe3-4b94-8317-1923a5111588"
 Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
 ReactantCore = "a3311ec8-5e00-46d5-b541-4f83e724a433"
+Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
 ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
 SLEEFPirates = "476501e8-09a2-5ece-8869-fb82de89a1fa"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
@@ -65,6 +66,7 @@ ReverseDiffExt = "ReverseDiff"
 SLEEFPiratesExt = "SLEEFPirates"
 TrackerAMDGPUExt = ["AMDGPU", "Tracker"]
 TrackerExt = "Tracker"
+LuxLibMooncakecuDNNExt = ["CUDA", "Mooncake", "cuDNN"]
 cuDNNExt = ["CUDA", "cuDNN"]
 
 [compat]
@@ -87,6 +89,7 @@ LoopVectorization = "0.12.171"
 LuxCore = "1.5"
 MKL = "0.7, 0.8, 0.9"
 MLDataDevices = "1.17.1"
+Mooncake = "0.4, 0.5"
 Markdown = "1.10"
 NNlib = "0.9.33"
 Octavian = "0.3.28"

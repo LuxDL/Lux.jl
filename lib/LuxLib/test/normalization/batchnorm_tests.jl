@@ -1,6 +1,7 @@
 include("../shared_testsetup.jl")
 
-using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, Static
+using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, Static, Mooncake
+using Mooncake.TestUtils: test_rule as mooncake_test_rule
 
 function setup_batchnorm(gen_f, aType, T, sz; affine::Bool=true, track_stats::Bool)
     x = aType(gen_f(T, sz))
@@ -103,7 +104,7 @@ function run_batchnorm_testing(gen_f, T, sz, training, affine, track_stats, act,
         @test size(nt.running_var) == (size(x, length(sz) - 1),)
     end
 
-    if is_training(training)
+    return if is_training(training)
         @test_gradients(
             sumabs2first,
             batchnorm,
@@ -174,5 +175,106 @@ end
             atol=1.0f-3,
             rtol=1.0f-3
         )
+    end
+end
+
+# Mooncake GPU tests for the batchnorm_cudnn rrule!!. running_mean/var are nothing
+# below to avoid in-place mutation between test_rule's two pullback calls (Reuse check).
+#
+# `interface_only=true` only checks the rule is registered correctly: `ϵ` is captured
+# as a plain Float32 in `_f`, and FD perturbation would push it below cuDNN's minimum
+# and crash. `check_mooncake_correctness` covers actual correctness instead, comparing
+# against Zygote's gradient at the same fixed `ϵ`.
+function check_mooncake_correctness(f::F, args...; atol=1.0f-3, rtol=1.0f-3) where {F}
+    ∂args_zygote = Zygote.gradient(f, args...)
+    _, ∂all_mooncake = Mooncake.value_and_gradient!!(
+        Mooncake.prepare_gradient_cache(f, args...), f, args...
+    )
+    ∂args_mooncake = ∂all_mooncake[2:end]  # drop the gradient w.r.t. `f` itself
+    for (∂zyg, ∂mc) in zip(∂args_zygote, ∂args_mooncake)
+        ∂mc_arr = Array(LuxTestUtils._unwrap_mooncake_tangent(∂mc))
+        @test ∂mc_arr ≈ Array(∂zyg) atol = atol rtol = rtol
+    end
+end
+
+if cuda_testing() && LuxTestUtils.MOONCAKE_TESTING_ENABLED[]
+    @testset "Batch Norm (Mooncake GPU)" begin
+        rng = StableRNG(42)
+        for T in (Float32,)
+            N, B = 6, 4
+            scale = CuArray(generate_fixed_array(T, N))
+            bias = CuArray(generate_fixed_array(T, N))
+            ϵ = T(1.0e-5)
+
+            @testset "4D input (H, W, C, B)" begin
+                x = CuArray(generate_fixed_array(T, 3, 3, N, B))
+                _f(g, b, x) = sum(
+                    abs2,
+                    first(
+                        batchnorm(
+                            x, g, b, nothing, nothing, Val(true), identity, T(0.9), ϵ
+                        ),
+                    ),
+                )
+                mooncake_test_rule(
+                    rng,
+                    _f,
+                    scale,
+                    bias,
+                    x;
+                    interface_only=true,
+                    is_primitive=false,
+                    unsafe_perturb=true,
+                    mode=Mooncake.ReverseMode,
+                )
+                check_mooncake_correctness(_f, scale, bias, x)
+            end
+
+            @testset "2D input (C, B)" begin
+                x = CuArray(generate_fixed_array(T, N, B))
+                _f(g, b, x) = sum(
+                    abs2,
+                    first(
+                        batchnorm(
+                            x, g, b, nothing, nothing, Val(true), identity, T(0.9), ϵ
+                        ),
+                    ),
+                )
+                mooncake_test_rule(
+                    rng,
+                    _f,
+                    scale,
+                    bias,
+                    x;
+                    interface_only=true,
+                    is_primitive=false,
+                    unsafe_perturb=true,
+                    mode=Mooncake.ReverseMode,
+                )
+                check_mooncake_correctness(_f, scale, bias, x)
+            end
+
+            @testset "with running stats (track_stats=true, training)" begin
+                rm = CuArray(generate_fixed_array(T, N))
+                rv = CuArray(abs2.(generate_fixed_array(T, N)) .+ T(1.0e-5))
+                x = CuArray(generate_fixed_array(T, 3, 3, N, B))
+                _f(g, b, x) = sum(
+                    abs2,
+                    first(batchnorm(x, g, b, rm, rv, Val(true), identity, T(0.9), ϵ)),
+                )
+                mooncake_test_rule(
+                    rng,
+                    _f,
+                    scale,
+                    bias,
+                    x;
+                    interface_only=true,
+                    is_primitive=false,
+                    unsafe_perturb=true,
+                    mode=Mooncake.ReverseMode,
+                )
+                check_mooncake_correctness(_f, scale, bias, x)
+            end
+        end
     end
 end

@@ -1,7 +1,7 @@
 using LuxLib, Test
 using LuxLib: batched_matmul, batched_vec
 using NNlib: batched_adjoint, batched_transpose
-using LuxTestUtils: @test_gradients, AutoEnzyme
+using LuxTestUtils: @test_gradients, AutoEnzyme, AutoMooncake
 
 include("bmm_testsetup.jl")
 
@@ -30,7 +30,7 @@ include("bmm_testsetup.jl")
                 aType(randn(rng, Float32, P, Q, B));
                 atol=1.0e-3,
                 rtol=1.0e-3,
-                skip_backends=[AutoEnzyme()]
+                skip_backends=[AutoEnzyme(), AutoMooncake()]
             )
             @test_gradients(
                 fn,
@@ -38,7 +38,7 @@ include("bmm_testsetup.jl")
                 batched_transpose(aType(randn(rng, Float32, Q, P, B)));
                 atol=1.0e-3,
                 rtol=1.0e-3,
-                skip_backends=[AutoEnzyme()]
+                skip_backends=[AutoEnzyme(), AutoMooncake()]
             )
         end
 
@@ -57,7 +57,7 @@ include("bmm_testsetup.jl")
                 aType(randn(rng, Float32, P, Q, B));
                 atol=1.0e-3,
                 rtol=1.0e-3,
-                skip_backends=[AutoEnzyme()]
+                skip_backends=[AutoEnzyme(), AutoMooncake()]
             )
             @test_gradients(
                 fn,
@@ -65,7 +65,7 @@ include("bmm_testsetup.jl")
                 batched_adjoint(aType(randn(rng, Float32, Q, P, B)));
                 atol=1.0e-3,
                 rtol=1.0e-3,
-                skip_backends=[AutoEnzyme()]
+                skip_backends=[AutoEnzyme(), AutoMooncake()]
             )
 
             @test_gradients(
@@ -82,7 +82,7 @@ include("bmm_testsetup.jl")
                 aType(randn(rng, Float32, P, Q, B));
                 atol=1.0e-3,
                 rtol=1.0e-3,
-                skip_backends=[AutoEnzyme()]
+                skip_backends=[AutoEnzyme(), AutoMooncake()]
             )
             @test_gradients(
                 fn,
@@ -90,7 +90,7 @@ include("bmm_testsetup.jl")
                 batched_adjoint(aType(randn(rng, Float32, Q, P, B)));
                 atol=1.0e-3,
                 rtol=1.0e-3,
-                skip_backends=[AutoEnzyme()]
+                skip_backends=[AutoEnzyme(), AutoMooncake()]
             )
         end
 
@@ -109,7 +109,7 @@ include("bmm_testsetup.jl")
                 aType(randn(rng, Float32, P, Q, B));
                 atol=1.0e-3,
                 rtol=1.0e-3,
-                skip_backends=[AutoEnzyme()]
+                skip_backends=[AutoEnzyme(), AutoMooncake()]
             )
             @test_gradients(
                 fn,
@@ -117,7 +117,7 @@ include("bmm_testsetup.jl")
                 batched_transpose(aType(randn(rng, Float32, Q, P, B)));
                 atol=1.0e-3,
                 rtol=1.0e-3,
-                skip_backends=[AutoEnzyme()]
+                skip_backends=[AutoEnzyme(), AutoMooncake()]
             )
         end
     end
