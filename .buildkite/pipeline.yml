@@ -1,8 +1,6 @@
 steps:
   - label: "Triggering Pipelines (Pull Request)"
     if: build.branch != "main" && build.tag == null
-    agents:
-      queue: "juliagpu"
     plugins:
       - monebag/monorepo-diff#v2.5.9:
           diff: ".buildkite/scripts/diff.sh $BUILDKITE_COMMIT"
@@ -27,8 +25,6 @@ steps:
                 - "lib/LuxLib/ext/"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing.yml"
-                agents:
-                  queue: "juliagpu"
 
             - label: "LuxCUDA"
               path:
@@ -36,8 +32,6 @@ steps:
                 - ".buildkite/testing_luxcuda.yml"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing_luxcuda.yml"
-                agents:
-                  queue: "juliagpu"
 
             - label: "WeightInitializers"
               path:
@@ -45,8 +39,6 @@ steps:
                 - ".buildkite/testing_weightinitializers.yml"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing_weightinitializers.yml"
-                agents:
-                  queue: "juliagpu"
 
             - label: "MLDataDevices"
               path:
@@ -54,8 +46,6 @@ steps:
                 - ".buildkite/testing_mldatadevices.yml"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing_mldatadevices.yml"
-                agents:
-                  queue: "juliagpu"
 
             - label: "LuxLib"
               path:
@@ -69,8 +59,6 @@ steps:
                 - "lib/MLDataDevices/ext/"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing_luxlib.yml"
-                agents:
-                  queue: "juliagpu"
 
             - label: "LuxTestUtils"
               path:
@@ -78,8 +66,6 @@ steps:
                 - ".buildkite/testing_luxtestutils.yml"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing_luxtestutils.yml"
-                agents:
-                  queue: "juliagpu"
 
             # - label: "Benchmarks"
             #   path:
@@ -92,8 +78,6 @@ steps:
             #   if: build.pull_request.labels includes "run benchmarks"
             #   config:
             #     command: "buildkite-agent pipeline upload .buildkite/benchmarks.yml"
-            #     agents:
-            #       queue: "juliagpu"
 
             - label: "Downstream"
               path:
@@ -105,13 +89,9 @@ steps:
               if: build.pull_request.labels includes "run downstream test"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/downstream.yml"
-                agents:
-                  queue: "juliagpu"
 
   - label: "Triggering Pipelines (Main Branch)"
     if: build.branch == "main"
-    agents:
-      queue: "juliagpu"
     command: |
       # Core Lux Testing
       buildkite-agent pipeline upload .buildkite/testing.yml

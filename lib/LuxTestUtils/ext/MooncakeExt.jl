@@ -22,12 +22,6 @@ function LuxTestUtils.gradient(f::F, ::AutoMooncake, args...) where {F}
     return LuxTestUtils.gradient(f, mooncake_gradient_function, args...)
 end
 
-"""
-    mooncake_gradient_function(f, x)
-
-Compute gradient using Mooncake.jl's value_and_gradient!! function.
-Returns only the gradient for args x.
-"""
 # Mooncake's friendly_tangents falls back to a raw Tangent for wrappers it has no
 # dedicated support for (Adjoint, Diagonal, SubArray, ...). Drop the non-differentiable
 # fields, then unwrap to the single value left, or a plain NamedTuple if several are

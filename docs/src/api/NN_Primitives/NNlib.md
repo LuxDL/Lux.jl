@@ -80,6 +80,7 @@ pixel_shuffle
 ```
 
 ## Rotation
+
 Rotate images in the first two dimensions of an array.
 
 ```@docs
@@ -155,6 +156,20 @@ bias_act!
 ```@docs
 NNlib.dropout
 NNlib.dropout!
+```
+
+## Normalization
+
+```@docs
+NNlib.normalise
+NNlib.batchnorm
+NNlib.∇batchnorm
+NNlib.instancenorm
+NNlib.∇instancenorm
+NNlib.groupnorm
+NNlib.∇groupnorm
+NNlib.layernorm
+NNlib.∇layernorm
 ```
 
 ## Internal NNlib Functions

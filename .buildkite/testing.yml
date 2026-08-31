@@ -22,8 +22,7 @@ steps:
                 - lib/LuxLib/ext
                 - lib/LuxTestUtils/src
         agents:
-          queue: "juliagpu"
-          cuda: "*"
+          queue: "cuda"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
         timeout_in_minutes: 150
         matrix:
@@ -63,8 +62,7 @@ steps:
   #               - lib/LuxLib/ext
   #               - lib/LuxTestUtils/src
   #       agents:
-  #         queue: "juliagpu"
-  #         rocm: "*"
+  #         queue: "rocm"
   #         rocmgpu: "*"
   #       if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
   #       timeout_in_minutes: 120

@@ -20,8 +20,7 @@ steps:
                 - lib/WeightInitializers/ext
         command: julia --code-coverage=user --color=yes --project .buildkite/scripts/downstream.jl "{{matrix.repo}}" "CUDA"
         agents:
-          queue: "juliagpu"
-          cuda: "*"
+          queue: "cuda"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip downstream\]/ && build.message !~ /\[skip ci\]/ && build.pull_request.labels includes "run downstream test"
         timeout_in_minutes: 60
         matrix:
@@ -53,8 +52,7 @@ steps:
                 - lib/WeightInitializers/ext
         command: julia --code-coverage=user --color=yes --project .buildkite/scripts/downstream.jl "{{matrix.repo}}" "AMDGPU"
         agents:
-          queue: "juliagpu"
-          rocm: "*"
+          queue: "rocm"
           rocmgpu: "*"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip downstream\]/ && build.message !~ /\[skip ci\]/ && build.pull_request.labels includes "run downstream test"
         timeout_in_minutes: 60
