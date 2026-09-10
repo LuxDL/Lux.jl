@@ -1,7 +1,7 @@
 module CUDAExt
 
 using Adapt: Adapt
-using CUDA: CUDA, CuArray
+using CUDA: CUDA, cuRAND, CuArray
 using MLDataDevices: MLDataDevices, Internal, CUDADevice, CPUDevice
 using Random: Random
 
@@ -20,7 +20,7 @@ end
 Internal.get_device_id(dev::CUDADevice) = CUDA.deviceid(dev.device) + 1
 
 # Default RNG
-MLDataDevices.default_device_rng(::CUDADevice) = CUDA.default_rng()
+MLDataDevices.default_device_rng(::CUDADevice) = cuRAND.native_rng()
 
 # Query Device from Array
 function Internal.get_device(x::CUDA.AnyCuArray)
@@ -29,16 +29,11 @@ function Internal.get_device(x::CUDA.AnyCuArray)
     return MLDataDevices.get_device(parent_x)
 end
 Internal.get_device(::Type{<:CUDA.AnyCuArray}) = CUDADevice(CUDA.device())
-Internal.get_device(::CUDA.RNG) = CUDADevice(CUDA.device())
+Internal.get_device(::cuRAND.NativeRNG) = CUDADevice(CUDA.device())
 
 Internal.get_device_type(::CUDA.AnyCuArray) = CUDADevice
 Internal.get_device_type(::Type{<:CUDA.AnyCuArray}) = CUDADevice
-Internal.get_device_type(::CUDA.RNG) = CUDADevice
-
-@static if isdefined(CUDA, :CURAND) && isdefined(CUDA.CURAND, :RNG)
-    Internal.get_device_type(::CUDA.CURAND.RNG) = CUDADevice
-    Internal.get_device(::CUDA.CURAND.RNG) = CUDADevice(CUDA.device())
-end
+Internal.get_device_type(::cuRAND.NativeRNG) = CUDADevice
 
 # Set Device
 MLDataDevices.set_device!(::Type{CUDADevice}, dev::CUDA.CuDevice) = CUDA.device!(dev)
@@ -83,6 +78,6 @@ function Adapt.adapt_storage(to::CUDADevice{D,E}, x::AbstractArray) where {D,E}
     end
 end
 
-Adapt.adapt_storage(::CPUDevice, rng::CUDA.RNG) = Random.default_rng()
+Adapt.adapt_storage(::CPUDevice, rng::cuRAND.NativeRNG) = Random.default_rng()
 
 end
