@@ -1,3 +1,30 @@
+"""
+    SamePad()
+
+A padding specification for convolutional and pooling layers that preserves the spatial
+shape when `stride == 1`.
+
+Pass `SamePad()` as the `pad` keyword argument to [`Conv`](@ref), [`ConvTranspose`](@ref),
+or a pooling layer. Lux derives a possibly asymmetric zero-padding tuple from the effective
+kernel size, including dilation. For a forward convolution or pooling layer, each spatial
+output dimension is `cld(input_dimension, stride)`; for a transposed convolution, it is
+`input_dimension * stride` up to the layer's `outpad` setting.
+
+## Fields
+
+`SamePad` is a singleton marker type and has no fields.
+
+## Examples
+
+```julia
+julia> using Lux, Random
+
+julia> layer = Conv((3, 3), 3 => 8; pad=SamePad());
+
+julia> size(layer(rand(Float32, 16, 16, 3, 2), Lux.setup(Random.default_rng(), layer)...)[1])
+(16, 16, 8, 2)
+```
+"""
 struct SamePad end
 
 function calc_padding(pad, ::NTuple{N}, dilation, stride) where {N}
