@@ -92,11 +92,64 @@ const ALL_TEST_CONFIGS = Iterators.product(
     ),
 )
 
+# The generic-device path (Metal, oneAPI, ...) cannot use NNlib's im2col routines because
+# they scalar-index the input arrays. Check that the replacements agree with NNlib.
+const FALLBACK_TEST_CONFIGS = [
+    ((2,), (1,), (1,), 1),
+    ((1,), (0,), (1,), 1),
+    ((3,), (1,), (2,), 1),
+    ((2, 2), (1, 1), (1, 1), 1),
+    ((2, 2), (0, 0), (2, 2), 1),
+    ((3, 3), (2, 2), (1, 1), 1),
+    ((2, 2, 2), (1, 1, 1), (1, 1, 1), 1),
+]
+
+@testset "Slow Conv Fallbacks" begin
+    rng = StableRNG(12345)
+
+    @testset "kernel: $(kernel) padding: $(padding) stride: $(stride) flipkernel: $(flipkernel)" for (
+            kernel, padding, stride, groups
+        ) in FALLBACK_TEST_CONFIGS,
+        flipkernel in (true, false)
+
+        weight = convfilter(
+            (T, sz...) -> randn(rng, T, sz...), Float32, kernel, 4 => 8; groups
+        )
+        x = randn(rng, Float32, ntuple(Returns(6), length(kernel))..., 4, 2)
+
+        cdims = DenseConvDims(
+            x,
+            weight;
+            stride,
+            padding=calc_padding(padding, kernel, 1, stride),
+            dilation=1,
+            groups,
+            flipkernel,
+        )
+
+        y = NNlib.conv(x, weight, cdims)
+        dy = randn(rng, Float32, size(y)...)
+
+        # forward, for reference: this path is already exercised on Metal/oneAPI
+        @test LuxLib.Impl.fallback_slow_conv(CPUDevice, x, weight, cdims) ≈ y atol = 1.0f-3 rtol =
+            1.0f-3
+
+        ∂x = LuxLib.Impl.fallback_slow_∇conv_data(CPUDevice, dy, weight, cdims)
+        @test size(∂x) == size(x)
+        @test ∂x ≈ NNlib.∇conv_data(dy, weight, cdims) atol = 1.0f-3 rtol = 1.0f-3
+
+        ∂w = LuxLib.Impl.fallback_slow_∇conv_filter(CPUDevice, x, dy, cdims)
+        @test size(∂w) == size(weight)
+        @test ∂w ≈ NNlib.∇conv_filter(x, dy, cdims) atol = 1.0f-3 rtol = 1.0f-3
+    end
+end
+
 @testset "Fused Conv" begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "$(Tw) x $(Tx) hasbias: $(hasbias) activation: $(activation) kernel: $(kernel) padding: $(padding) stride: $(stride) groups: $(groups)" for (
-            (Tx, Tw), hasbias, activation, (kernel, padding, stride, groups)
-        ) in ALL_TEST_CONFIGS
+                (Tx, Tw), hasbias, activation, (kernel, padding, stride, groups)
+            ) in ALL_TEST_CONFIGS
+
             !fp64 && (Tx == Float64 || Tw == Float64) && continue
             run_conv_testing(
                 generate_fixed_array,
