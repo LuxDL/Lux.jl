@@ -11,9 +11,8 @@ using LuxLib, Reactant, Enzyme, Statistics, StableRNGs, Test, Zygote
 @testset "Reactant mean_var" begin
     rng = StableRNG(0)
 
-    @testset "statistics match Statistics (dims = $dims, corrected = $corrected)" for dims in (
-            1, (1, 2), (1, 2, 3),
-        ),
+    all_dims = (1, (1, 2), (1, 2, 3))
+    @testset "statistics (dims = $dims, corrected = $corrected)" for dims in all_dims,
         corrected in (false, true)
 
         x = randn(rng, Float32, 5, 6, 8, 3) .+ 2.0f0
@@ -33,7 +32,9 @@ using LuxLib, Reactant, Enzyme, Statistics, StableRNGs, Test, Zygote
         w = randn(rng, Float64, 4, 5, 8, 2)
         loss(x, γ, β, w) = sum(groupnorm(x, γ, β, 4, identity, 1.0e-5) .* w)
         ∂_ref = Zygote.gradient(loss, x, γ, β, w)
-        ∂_ra = @jit Enzyme.gradient(Reverse, Const(loss), Reactant.to_rarray.((x, γ, β, w))...)
+        ∂_ra = @jit Enzyme.gradient(
+            Reverse, Const(loss), Reactant.to_rarray.((x, γ, β, w))...
+        )
         for (ref, ra) in zip(∂_ref, ∂_ra)
             @test Array(ra) ≈ ref atol = 1.0e-10 rtol = 1.0e-10
         end
@@ -45,7 +46,9 @@ using LuxLib, Reactant, Enzyme, Statistics, StableRNGs, Test, Zygote
         w = randn(rng, Float64, 6, 5, 3)
         loss(x, γ, β, w) = sum(layernorm(x, γ, β, identity, 1, 1.0e-5) .* w)
         ∂_ref = Zygote.gradient(loss, x, γ, β, w)
-        ∂_ra = @jit Enzyme.gradient(Reverse, Const(loss), Reactant.to_rarray.((x, γ, β, w))...)
+        ∂_ra = @jit Enzyme.gradient(
+            Reverse, Const(loss), Reactant.to_rarray.((x, γ, β, w))...
+        )
         for (ref, ra) in zip(∂_ref, ∂_ra)
             @test Array(ra) ≈ ref atol = 1.0e-10 rtol = 1.0e-10
         end
