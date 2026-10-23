@@ -176,9 +176,9 @@ dimensions for efficiency.
 
 ## Keyword Arguments
 
+  - `max_sequence_length`: The maximum sequence length. Default: `4096`.
   - `base`: The base used to compute angular frequency for each dimension in the positional
     encodings. Default: `10000`.
-  - `max_sequence_length`: The maximum sequence length. Default: `4096`.
   - `low_memory_variant`: If `true` then cos and sin cache have leading dimension of
     `dim ÷ 2`. If `false` then cos and sin cache have leading dimension of `dim`.
     Default: `true`.
@@ -240,7 +240,7 @@ end
 ## parameters
 """
     compute_rotary_embedding_params(head_dim::Integer, max_sequence_length::Integer;
-                                    base::Number, dtype::Type{T}=Float32,
+                                    base::Number=10000, dtype::Type{T}=Float32,
                                     low_memory_variant::Bool=true)
 
 Computes the cosine and sine cache for rotary positional embeddings.
@@ -248,7 +248,7 @@ Computes the cosine and sine cache for rotary positional embeddings.
 ## Arguments
 
   - `head_dim`: The feature dimensions to be rotated.
-  - `max_sequence_length`: The maximum sequence length. Default: `4096`.
+  - `max_sequence_length`: The maximum sequence length.
 
 ## Keyword Arguments
 
@@ -262,7 +262,7 @@ Computes the cosine and sine cache for rotary positional embeddings.
 function compute_rotary_embedding_params(
     head_dim::Integer,
     max_sequence_length::Integer;
-    base::Number,
+    base::Number=10000,
     dtype::Type{T}=Float32,
     low_memory_variant::Bool=true,
 ) where {T}
@@ -275,14 +275,14 @@ end
 
 """
     apply_rotary_embedding(x::AbstractArray{T,4}, cos_cache::AbstractMatrix,
-                           sin_cache::AbstractMatrix; head_dim::Integer, seq_dim::Integer)
+                           sin_cache::AbstractMatrix; seq_dim::Integer)
     apply_rotary_embedding(x::AbstractArray{T,4}, input_positions::AbstractVector{<:Integer},
                            cos_cache::AbstractMatrix, sin_cache::AbstractMatrix;
-                           head_dim::Integer, seq_dim::Integer)
+                           seq_dim::Integer)
 
 Apply rotary embedding to the input `x` using the `cos_cache` and `sin_cache` parameters.
 If `input_positions` is provided, then we extract the cosine and sine cache for the
-corresponding positions in the sequence. Otherwise, we use the entire cache upto
+corresponding positions in the sequence. Otherwise, we use the entire cache up to the
 sequence length of `x`.
 
 ## Arguments
@@ -294,7 +294,7 @@ sequence length of `x`.
     [`compute_rotary_embedding_params`](@ref).
   - `seq_dim`: Dimension of the sequence. Must be between 1 and 4.
   - `input_positions`: Positions in the sequence to extract the cosine and sine cache for.
-    If not provided, then we use the entire cache upto sequence length of `x`.
+    If not provided, then we use the entire cache up to the sequence length of `x`.
 
 ## Returns
 
