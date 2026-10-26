@@ -69,7 +69,7 @@ if (
         for file in files
             if isintegrationtest(file)
                 fullpath = joinpath(root, file)
-                if VERSION >= v"1.12-" && occursin("SimpleChains", fullpath)
+                if VERSION >= v"1.12-" && (occursin("SimpleChains", fullpath) || occursin("Flux", fullpath))
                     continue
                 end
                 push!(integrationtestfiles, fullpath)

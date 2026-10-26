@@ -23,6 +23,7 @@ function Lux.Training.compute_gradients_impl(
 
     loss, st, stats = obj_fn(ts.model, ps_tracked, ts.states, data)
     loss.deriv = true
+    isdefined(ReverseDiff, :finish!) && ReverseDiff.finish!(tape)
     ReverseDiff.reverse_pass!(tape)
 
     @set! ts.cache.first_try = False()
@@ -85,6 +86,7 @@ function Lux.Training.compute_gradients_impl(
 
     loss = first(obj_fn(ts.model, ps_tracked, ts.states, data_cache))
     loss.deriv = true
+    isdefined(ReverseDiff, :finish!) && ReverseDiff.finish!(tape)
     ReverseDiff.reverse_pass!(tape)
 
     forward_executor = [
