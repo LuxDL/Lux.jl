@@ -63,7 +63,7 @@ jobs:
           mkdir -p ${{ env.TMPDIR }}
       - name: Collect Workflow Telemetry
         if: ${{ inputs.enable_telemetry }}
-        uses: catchpoint/workflow-telemetry-action@v2
+        uses: step-security/workflow-telemetry-action@v2
         continue-on-error: true
         with:
           comment_on_pr: false
