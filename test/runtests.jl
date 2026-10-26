@@ -33,7 +33,7 @@ withenv(
     "JULIA_CUDA_HARD_MEMORY_LIMIT" => "$(100 / (total_jobs + 0.1))%",
     "BACKEND_GROUP" => BACKEND_GROUP,
 ) do
-    runtests(Lux, parsed_args; testsuite)
+    return runtests(Lux, parsed_args; testsuite)
 end
 
 # Eltype Matching Tests
@@ -69,7 +69,8 @@ if (
         for file in files
             if isintegrationtest(file)
                 fullpath = joinpath(root, file)
-                if VERSION >= v"1.12-" && (occursin("SimpleChains", fullpath) || occursin("Flux", fullpath))
+                if VERSION >= v"1.12-" &&
+                    (occursin("SimpleChains", fullpath) || occursin("Flux", fullpath))
                     continue
                 end
                 push!(integrationtestfiles, fullpath)
