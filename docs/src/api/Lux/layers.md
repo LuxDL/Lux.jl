@@ -19,6 +19,7 @@ AlternatePrecision
 ## Convolutional Layers
 
 ```@docs
+SamePad
 Conv
 ConvTranspose
 ```

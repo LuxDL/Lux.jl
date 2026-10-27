@@ -1,3 +1,13 @@
+"""
+    SamePad()
+
+Padding marker for convolution and pooling layers that automatically chooses padding from
+the kernel or window size and dilation. With `stride = 1`, `pad = SamePad()` preserves each
+spatial input dimension. For larger strides, convolution and pooling output dimensions are
+the corresponding input dimensions divided by the stride and rounded up.
+
+See also [`Conv`](@ref), [`ConvTranspose`](@ref), [`MaxPool`](@ref), and [`MeanPool`](@ref).
+"""
 struct SamePad end
 
 function calc_padding(pad, ::NTuple{N}, dilation, stride) where {N}
