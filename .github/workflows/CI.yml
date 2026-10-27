@@ -34,8 +34,8 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - "1.10"
-          - "1.12"
+          - "min"
+          - "1"
         os:
           - ubuntu-latest
         test_group:
