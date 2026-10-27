@@ -29,7 +29,11 @@ include("../shared_testsetup.jl")
 
             function loss_function_simple(model, x, ps, st)
                 smodel = StatefulLuxLayer(model, ps, st)
-                J = ForwardDiff.jacobian(smodel, x)
+                J = if ongpu
+                    only(Zygote.jacobian(smodel, x))
+                else
+                    ForwardDiff.jacobian(smodel, x)
+                end
                 return sum(abs2, J)
             end
 
