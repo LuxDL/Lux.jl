@@ -64,13 +64,14 @@ jobs:
       - uses: julia-actions/setup-julia@v3
         with:
           version: ${{ inputs.julia_version }}
+          project: ${{ inputs.project }}
       - uses: julia-actions/cache@v3
         if: ${{ inputs.enable_cache }}
         continue-on-error: true
         with:
           cache-name: julia-cache;workflow=${{ inputs.julia_version }}-${{ inputs.os }}-${{ github.event_name }}-${{ inputs.project }}-${{ inputs.local_dependencies }}-${{ inputs.local_test_dependencies }}-${{ inputs.test_args }}
 
-      # For 1.10 we need to manually develop the packages.
+      # For the minimum Julia version, manually develop the local packages.
       - name: "Develop Dependencies"
         run: |
           import Pkg
@@ -81,7 +82,7 @@ jobs:
           end
           length(dev_pkgs) > 0 && Pkg.develop(dev_pkgs)
         shell: julia --color=yes --threads=auto {0}
-        if: ${{ (inputs.julia_version == '1.10' || inputs.julia_version == 'lts') && inputs.local_dependencies != '' }}
+        if: ${{ (inputs.julia_version == '1.10' || inputs.julia_version == 'lts' || inputs.julia_version == 'min') && inputs.local_dependencies != '' }}
         env:
           PROJECT: ${{ inputs.project }}
           DEV_DEPS: ${{ inputs.local_dependencies }}
@@ -92,7 +93,7 @@ jobs:
         with:
           project: ${{ inputs.project }}
           precompile: true
-        if: ${{ (inputs.julia_version != '1.10' && inputs.julia_version != 'lts') || inputs.local_dependencies == '' }}
+        if: ${{ (inputs.julia_version != '1.10' && inputs.julia_version != 'lts' && inputs.julia_version != 'min') || inputs.local_dependencies == '' }}
 
       - name: "Develop Test Dependencies"
         run: |
@@ -105,7 +106,7 @@ jobs:
           end
           length(dev_pkgs) > 0 && Pkg.develop(dev_pkgs)
         shell: julia --color=yes --threads=auto {0}
-        if: ${{ (inputs.julia_version == '1.10' || inputs.julia_version == 'lts') && inputs.local_test_dependencies != '' }}
+        if: ${{ (inputs.julia_version == '1.10' || inputs.julia_version == 'lts' || inputs.julia_version == 'min') && inputs.local_test_dependencies != '' }}
         env:
           PROJECT: ${{ inputs.project }}
           TEST_DEPS: ${{ inputs.local_test_dependencies }}
@@ -117,7 +118,7 @@ jobs:
           const TEST_ARGS = filter(!isempty, split(get(ENV, "TEST_ARGS", "")))
           include(joinpath(project, "test", "runtests.jl"))
         shell: julia --color=yes --code-coverage=user --depwarn=yes --threads=auto --check-bounds=yes {0}
-        if: ${{ (inputs.julia_version == '1.10' || inputs.julia_version == 'lts') && inputs.local_test_dependencies != '' }}
+        if: ${{ (inputs.julia_version == '1.10' || inputs.julia_version == 'lts' || inputs.julia_version == 'min') && inputs.local_test_dependencies != '' }}
         env:
           PROJECT: ${{ inputs.project }}
           TEST_ARGS: ${{ inputs.test_args }}
@@ -126,7 +127,7 @@ jobs:
         with:
           project: ${{ inputs.project }}
           test_args: ${{ inputs.test_args }}
-        if: ${{ (inputs.julia_version != '1.10' && inputs.julia_version != 'lts') || inputs.local_test_dependencies == '' }}
+        if: ${{ (inputs.julia_version != '1.10' && inputs.julia_version != 'lts' && inputs.julia_version != 'min') || inputs.local_test_dependencies == '' }}
 
       - name: "Upload MLIR modules"
         uses: actions/upload-artifact@v7
