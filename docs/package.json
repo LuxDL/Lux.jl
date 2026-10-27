@@ -1,6 +1,6 @@
 {
   "devDependencies": {
-    "@nolebase/vitepress-plugin-enhanced-readabilities": "^2.15.0",
+    "@nolebase/vitepress-plugin-enhanced-readabilities": "~2.18.2",
     "@types/d3-format": "^3.0.4",
     "@types/node": "^22.13.4",
     "markdown-it": "^14.1.0",
