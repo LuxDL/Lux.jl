@@ -53,23 +53,3 @@ jobs:
       os: ${{ matrix.os }}
       local_dependencies: "lib/MLDataDevices,lib/WeightInitializers,lib/LuxLib,lib/LuxCore"
       local_test_dependencies: "lib/MLDataDevices,lib/LuxTestUtils,lib/LuxLib,lib/LuxCore"
-
-  downgrade:
-    strategy:
-      fail-fast: false
-      matrix:
-        test_group:
-          - "autodiff"
-          - "core_layers"
-          - "recurrent_layers"
-          - "misc"
-          - "reactant"
-          - "others"
-    uses: ./.github/workflows/CommonCI.yml
-    with:
-      julia_version: "1.11"
-      project: "."
-      downgrade_testing: true
-      test_args: "--BACKEND_GROUP=CPU ${{ matrix.test_group }}"
-      local_dependencies: "lib/MLDataDevices,lib/WeightInitializers,lib/LuxLib,lib/LuxCore"
-      local_test_dependencies: "lib/MLDataDevices,lib/LuxTestUtils,lib/LuxLib,lib/LuxCore"

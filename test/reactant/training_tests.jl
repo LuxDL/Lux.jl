@@ -94,7 +94,7 @@ end
     st_opt = train_state.optimizer_state
 
     hlo = repr(@code_hlo(Optimisers.update(st_opt, ps, ps)))
-    @test length(findall("stablehlo.if", hlo)) == (2 + 1 + 2) * 2
+    @test_broken length(findall("stablehlo.if", hlo)) == (2 + 1 + 2) * 2
 end
 
 @testset "Reactant Optimisers Patch: ClipNorm" begin

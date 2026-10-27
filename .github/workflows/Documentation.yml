@@ -119,7 +119,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Collect Workflow Telemetry
-        uses: catchpoint/workflow-telemetry-action@v2
+        uses: step-security/workflow-telemetry-action@v2
         with:
           comment_on_pr: false
           job_summary: true
@@ -160,7 +160,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Collect Workflow Telemetry
-        uses: catchpoint/workflow-telemetry-action@v2
+        uses: step-security/workflow-telemetry-action@v2
         with:
           comment_on_pr: false
           job_summary: true
