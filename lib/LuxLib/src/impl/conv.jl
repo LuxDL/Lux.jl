@@ -125,14 +125,81 @@ function fallback_slow_conv(dev, x, weight, cdims::ConvDims)
     return y
 end
 
-function ∇conv_data(x′, weight′, cdims::ConvDims)
-    x, weight = get_conv_input_weight(x′, weight′)
-    return NNlib.∇conv_data(x, weight, cdims)
+function ∇conv_data(dy′, weight′, cdims::ConvDims)
+    dev = get_device_type((dy′, weight′))
+    dy, weight = get_conv_input_weight(dev, dy′, weight′)
+    return ∇conv_data(dev, dy, weight, cdims)
 end
 
-function ∇conv_filter(x′, y′, cdims::ConvDims)
-    x, y = get_conv_input_weight(x′, y′)
-    return NNlib.∇conv_filter(x, y, cdims)
+function ∇conv_data(
+    ::Type{<:Union{CPUDevice,CUDADevice,AMDGPUDevice,ReactantDevice}},
+    dy,
+    weight,
+    cdims::ConvDims,
+)
+    return NNlib.∇conv_data(dy, weight, cdims)
+end
+function ∇conv_data(dev::Type{<:AbstractDevice}, dy, weight, cdims::ConvDims)
+    return fallback_slow_∇conv_data(dev, dy, weight, cdims)
+end
+
+function ∇conv_filter(x′, dy′, cdims::ConvDims)
+    dev = get_device_type((x′, dy′))
+    x, dy = get_conv_input_weight(dev, x′, dy′)
+    return ∇conv_filter(dev, x, dy, cdims)
+end
+
+function ∇conv_filter(
+    ::Type{<:Union{CPUDevice,CUDADevice,AMDGPUDevice,ReactantDevice}},
+    x,
+    dy,
+    cdims::ConvDims,
+)
+    return NNlib.∇conv_filter(x, dy, cdims)
+end
+function ∇conv_filter(dev::Type{<:AbstractDevice}, x, dy, cdims::ConvDims)
+    return fallback_slow_∇conv_filter(dev, x, dy, cdims)
+end
+
+# NNlib's `∇conv_data`/`∇conv_filter` fall back to the CPU im2col routines for devices it
+# has no specialized kernels for, and those scalar-index the input arrays. Mirror
+# `fallback_slow_conv!` instead: both are the exact adjoints of `unfold`+`batched_matmul`,
+# expressed with `NNlib.fold` and `batched_matmul`, all of which are GPU friendly.
+
+function fallback_slow_∇conv_data(
+    dev, dy::AbstractArray{dyT,N}, weight::AbstractArray{wT,N}, cdims::ConvDims
+) where {dyT,wT,N}
+    @warn "Falling back to slow ∇conv_data routine for $(dev) with dy: size = \
+           $(size(dy)) eltype = $(dyT) and weight: size = $(size(weight)) \
+           eltype = $(wT)." maxlog = 1
+    @assert NNlib.groupcount(cdims) == 1 "Only groups=1 is supported for now." # FIXME
+    batchsize = size(dy, N)
+    dy_compact = reshape(dy, :, NNlib.channels_out(cdims), batchsize)
+    weight_compact = reshape(weight, :, size(weight, N), 1)
+    # contract over the output channels of both operands
+    dcol = batched_matmul(dy_compact, weight_compact; rhs_contracting_dim=2)
+    return NNlib.fold(
+        dcol, (NNlib.input_size(cdims)..., NNlib.channels_in(cdims), batchsize), cdims
+    )
+end
+
+function fallback_slow_∇conv_filter(
+    dev, x::AbstractArray{xT,N}, dy::AbstractArray{dyT,N}, cdims::ConvDims
+) where {xT,dyT,N}
+    @warn "Falling back to slow ∇conv_filter routine for $(dev) with x: size = \
+           $(size(x)) eltype = $(xT) and dy: size = $(size(dy)) \
+           eltype = $(dyT)." maxlog = 1
+    @assert NNlib.groupcount(cdims) == 1 "Only groups=1 is supported for now." # FIXME
+    tmp = NNlib.unfold(x, cdims)
+    dy_compact = reshape(dy, :, NNlib.channels_out(cdims), size(dy, N))
+    # contract over the spatial windows of both operands, then accumulate over the batch
+    dweight = batched_matmul(tmp, dy_compact; lhs_contracting_dim=1)
+    return reshape(
+        sum(dweight; dims=3),
+        NNlib.kernel_size(cdims)...,
+        NNlib.channels_in(cdims),
+        NNlib.channels_out(cdims),
+    )
 end
 
 function conv_bias_act(x′, weight′, cdims::ConvDims, bias′, act::F) where {F}
