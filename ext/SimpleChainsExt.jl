@@ -18,6 +18,7 @@ using Lux:
     MaxPool,
     SamePad
 using NNlib: NNlib
+using Static: known
 
 Lux.is_extension_loaded(::Val{:SimpleChains}) = true
 
@@ -87,7 +88,49 @@ end
 Lux.make_simplechain_network(layer) = throw(SimpleChainsModelConversionException(layer))
 
 function LuxCore.initialparameters(rng::AbstractRNG, layer::SimpleChainsLayer)
-    return (; params=Array(SimpleChains.init_params(layer.layer; rng)))
+    θ = flatten_to_simplechains_params(rng, layer.lux_layer)
+    if θ === nothing || length(θ) != SimpleChains.numparam(layer.layer)
+        return (; params=Array(SimpleChains.init_params(layer.layer; rng)))
+    end
+    return (; params=θ)
+end
+
+# Initialize the original Lux model, so that its initialization functions are respected, and
+# flatten the parameters into the layout used by SimpleChains. Returns `nothing` if the
+# layout of some layer is not known.
+flatten_to_simplechains_params(::AbstractRNG, ::Nothing) = nothing
+
+function flatten_to_simplechains_params(rng::AbstractRNG, lux_layer)
+    blocks = simplechains_param_blocks(lux_layer, LuxCore.initialparameters(rng, lux_layer))
+    (blocks === nothing || isempty(blocks)) && return nothing
+    return Array(reduce(vcat, blocks))
+end
+
+simplechains_param_blocks(layer, ps) = nothing
+
+simplechains_param_blocks(::Union{Dropout,FlattenLayer,MaxPool}, ps) = ()
+
+# `TurboDense` stores `[weight bias]` as a single `out_dims × (in_dims + 1)` matrix
+function simplechains_param_blocks(layer::Dense, ps)
+    Lux.has_bias(layer) && return (vec(ps.weight), vec(ps.bias))
+    return (vec(ps.weight),)
+end
+
+# `SimpleChains.Conv` performs cross-correlation and always has a bias
+function simplechains_param_blocks(layer::Conv, ps)
+    weight = if known(layer.cross_correlation)
+        ps.weight
+    else
+        reverse(ps.weight; dims=ntuple(identity, ndims(ps.weight) - 2))
+    end
+    bias = Lux.has_bias(layer) ? vec(ps.bias) : zeros(eltype(weight), layer.out_chs)
+    return (vec(weight), bias)
+end
+
+function simplechains_param_blocks(layer::Chain, ps)
+    blocks = map(k -> simplechains_param_blocks(layer.layers[k], ps[k]), keys(layer.layers))
+    any(isnothing, blocks) && return nothing
+    return reduce((x, y) -> (x..., y...), blocks; init=())
 end
 
 # Some type-piracy for nicer interaction with NNlib
