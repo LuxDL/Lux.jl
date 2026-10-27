@@ -83,7 +83,7 @@ jobs:
           mode: forcedeps
           projects: ${{ inputs.project }}
           julia_version: ${{ inputs.julia_version }}
-          skip: Pkg, TOML, Statistics, LinearAlgebra, Random, Serialization, Markdown, Test, LuxCore, LuxLib, LuxTestUtils, MLDataDevices, WeightInitializers, UUIDs, AMDGPU, oneAPI
+          skip: Pkg, TOML, Statistics, LinearAlgebra, Random, Serialization, Markdown, Test, LuxCore, LuxLib, LuxTestUtils, MLDataDevices, WeightInitializers, UUIDs, AMDGPU, oneAPI, Atomix, UnsafeAtomics, LLVM
 
       # For 1.10 we need to manually develop the packages.
       - name: "Develop Dependencies"
