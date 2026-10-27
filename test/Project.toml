@@ -53,7 +53,7 @@ MLDataDevices = {path = "../lib/MLDataDevices"}
 
 [compat]
 ADTypes = "1.19"
-AMDGPU = "2.9"
+AMDGPU = "2.2"
 Adapt = "4"
 Aqua = "0.8.4"
 CPUSummary = "0.2.6"
