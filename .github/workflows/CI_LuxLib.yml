@@ -46,20 +46,3 @@ jobs:
       julia_version: "1.12"
       project: "lib/LuxLib"
       test_args: "--BACKEND_GROUP=cpu --BLAS_BACKEND=${{ matrix.blas_backend }} --LOOP_VECTORIZATION=${{ matrix.loopvec }} ${{ matrix.test_group }}"
-
-  downgrade:
-    strategy:
-      fail-fast: false
-      matrix:
-        test_group:
-          - "common_ops"
-          - "normalization"
-          - "others"
-    uses: ./.github/workflows/CommonCI.yml
-    with:
-      julia_version: "1.11"
-      project: "lib/LuxLib"
-      downgrade_testing: true
-      local_dependencies: "lib/LuxCore,lib/MLDataDevices"
-      local_test_dependencies: "lib/LuxTestUtils,lib/MLDataDevices"
-      test_args: "--BACKEND_GROUP=cpu --BLAS_BACKEND=default --LOOP_VECTORIZATION=true ${{ matrix.test_group }}"

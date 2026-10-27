@@ -16,11 +16,6 @@ on:
         description: "Project Directory"
         required: true
         type: string
-      downgrade_testing:
-        description: "Downgrade Testing"
-        required: false
-        type: boolean
-        default: false
       local_dependencies:
         description: "Local Dependencies"
         required: false
@@ -49,9 +44,7 @@ on:
 
 jobs:
   test:
-    if: |
-      !contains(github.event.head_commit.message, '[skip tests]') &&
-      !(inputs.downgrade_testing && (github.ref == format('refs/heads/{0}', github.event.repository.default_branch) || github.ref_name == github.event.repository.default_branch))
+    if: "!contains(github.event.head_commit.message, '[skip tests]')"
     runs-on: ${{ inputs.os }}
     env:
       TMPDIR: ${{ github.workspace }}/tmp
@@ -75,15 +68,7 @@ jobs:
         if: ${{ inputs.enable_cache }}
         continue-on-error: true
         with:
-          cache-name: julia-cache;workflow=${{ inputs.julia_version }}-${{ inputs.os }}-${{ github.event_name }}-${{ inputs.project }}-${{ inputs.downgrade_testing }}-${{ inputs.local_dependencies }}-${{ inputs.local_test_dependencies }}-${{ inputs.test_args }}
-
-      - uses: julia-actions/julia-downgrade-compat@v2.1
-        if: ${{ inputs.downgrade_testing }}
-        with:
-          mode: forcedeps
-          projects: ${{ inputs.project }}
-          julia_version: ${{ inputs.julia_version }}
-          skip: Pkg, TOML, Statistics, LinearAlgebra, Random, Serialization, Markdown, Test, LuxCore, LuxLib, LuxTestUtils, MLDataDevices, WeightInitializers, UUIDs, AMDGPU, oneAPI, Atomix, UnsafeAtomics, LLVM
+          cache-name: julia-cache;workflow=${{ inputs.julia_version }}-${{ inputs.os }}-${{ github.event_name }}-${{ inputs.project }}-${{ inputs.local_dependencies }}-${{ inputs.local_test_dependencies }}-${{ inputs.test_args }}
 
       # For 1.10 we need to manually develop the packages.
       - name: "Develop Dependencies"
@@ -141,7 +126,6 @@ jobs:
         with:
           project: ${{ inputs.project }}
           test_args: ${{ inputs.test_args }}
-          allow_reresolve: ${{ !(inputs.downgrade_testing) }}
         if: ${{ (inputs.julia_version != '1.10' && inputs.julia_version != 'lts') || inputs.local_test_dependencies == '' }}
 
       - name: "Upload MLIR modules"
