@@ -70,6 +70,15 @@ end
     end
 end
 
+@static if !isdefined(@__MODULE__, :Enzyme)
+    @eval baremodule Enzyme
+        struct ReverseMode end
+        struct ForwardMode end
+        const Reverse = ReverseMode()
+        const Forward = ForwardMode()
+    end
+end
+
 function __init__()
     ZYGOTE_TESTING_ENABLED[] = VERSION < v"1.12-"
 
