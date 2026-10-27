@@ -21,6 +21,7 @@ AlternatePrecision
 ```@docs
 Conv
 ConvTranspose
+SamePad
 ```
 
 ## Dropout Layers
