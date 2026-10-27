@@ -89,13 +89,15 @@ function Lux.Training.compute_gradients_impl(
     isdefined(ReverseDiff, :finish!) && ReverseDiff.finish!(tape)
     ReverseDiff.reverse_pass!(tape)
 
+    tape_instructions =
+        isdefined(ReverseDiff, :instructions) ? ReverseDiff.instructions(tape) : tape
     forward_executor = [
         FunctionWrapper{Nothing,Tuple{}}(ForwardExecutor(instruction)) for
-        instruction in tape
+        instruction in tape_instructions
     ]
     reverse_executor = [
-        FunctionWrapper{Nothing,Tuple{}}(ReverseExecutor(tape[i])) for
-        i in length(tape):-1:1
+        FunctionWrapper{Nothing,Tuple{}}(ReverseExecutor(tape_instructions[i])) for
+        i in length(tape_instructions):-1:1
     ]
 
     @set! ts.cache = TrainingBackendCache(

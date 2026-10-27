@@ -44,7 +44,7 @@ LuxTestUtils = {path = "../../LuxTestUtils"}
 MLDataDevices = {path = "../../MLDataDevices"}
 
 [compat]
-AMDGPU = "2.2"
+AMDGPU = "2.9"
 AppleAccelerate = "0.4, 0.5"
 Aqua = "0.8.7"
 BLISBLAS = "0.1, 0.2"
