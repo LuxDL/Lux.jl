@@ -99,7 +99,26 @@ Internal.get_device(rng::Reactant.ReactantRNG) = Internal.get_device(rng.seed)
 Internal.get_device_type(rng::Reactant.ReactantRNG) = Internal.get_device_type(rng.seed)
 
 # unsafe_free!
-Internal.unsafe_free_internal!(::Type{ReactantDevice}, x::AbstractArray) = nothing
+function Internal.unsafe_free_internal!(::Type{ReactantDevice}, x::AbstractArray)
+    p = parent(x)
+    p !== x && return Internal.unsafe_free_internal!(ReactantDevice, p)
+    if !(p isa Reactant.AbstractConcreteArray)
+        @warn "Reactant unsafe_free! is not defined for $(typeof(x))." maxlog = 1
+        return nothing
+    end
+    Reactant.synchronize(p)
+    data = p.data
+    for item in (data isa Tuple ? data : (data,))
+        buf = item.buffer
+        if buf.buffer != C_NULL
+            GC.@preserve p begin
+                finalize(buf)
+                buf.buffer = C_NULL
+            end
+        end
+    end
+    return nothing
+end
 
 # Device Transfer
 Profiler.@annotate "Device Transfer (Reactant)" function Adapt.adapt_storage(
