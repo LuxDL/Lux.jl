@@ -21,8 +21,14 @@ include("../shared_testsetup.jl")
             ps, st = dev(Lux.setup(rng, model))
             smodel = StatefulLuxLayer(model, ps, st)
 
-            J1 = allow_unstable() do
-                ForwardDiff.jacobian(smodel, X)
+            J1 = if ongpu
+                allow_unstable() do
+                    only(Zygote.jacobian(smodel, X))
+                end
+            else
+                allow_unstable() do
+                    ForwardDiff.jacobian(smodel, X)
+                end
             end
 
             @testset "$(backend)" for backend in (AutoZygote(), AutoForwardDiff())

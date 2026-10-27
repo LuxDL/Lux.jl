@@ -33,7 +33,9 @@ using Lux, Reactant, PythonCall, Random, Test
     restored_model = tf.saved_model.load(model_dir)
 
     x_tf = tf.constant(np.asarray(permutedims(Array(x), (4, 3, 2, 1))); dtype=tf.float32)
-    res_tf = permutedims(PyArray(restored_model.f(x_tf)[0]), (2, 1))
+    res_tf = pywith(tf.device("/CPU:0")) do _
+        return permutedims(PyArray(restored_model.f(x_tf)[0]), (2, 1))
+    end
 
     @test res ≈ res_tf atol = 1e-2 rtol = 1e-2
 end
