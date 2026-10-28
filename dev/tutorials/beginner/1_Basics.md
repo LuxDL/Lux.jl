@@ -20,7 +20,7 @@ using Lux, Random
 
 ```
 Precompiling packages...
-    344.4 ms  ✓ StructUtilsStaticArraysCoreExt (serial)
+    423.9 ms  ✓ StructUtilsStaticArraysCoreExt (serial)
   1 dependency successfully precompiled in 0 seconds
 
 ```
@@ -265,10 +265,10 @@ W * x
 ```
 5-element Vector{Float64}:
   1.2197981041108443
- -2.6262587710059595
+ -2.62625877100596
  -2.8573820474674845
- -2.4319346874291305
-  1.010866857715021
+ -2.4319346874291314
+  1.0108668577150213
 ```
 
 Julia's arrays are very powerful, and you can learn more about what they can do [here](https://docs.julialang.org/en/v1/manual/arrays/).
@@ -385,10 +385,10 @@ using ComponentArrays, ForwardDiff, Zygote
 
 ```
 Precompiling packages...
-    432.7 ms  ✓ JSONSerializationExt (serial)
-  1 dependency successfully precompiled in 0 seconds
+    537.9 ms  ✓ JSONSerializationExt (serial)
+  1 dependency successfully precompiled in 1 seconds
 Precompiling packages...
-    361.0 ms  ✓ StructUtilsTablesExt (serial)
+    435.0 ms  ✓ StructUtilsTablesExt (serial)
   1 dependency successfully precompiled in 0 seconds
 
 ```
@@ -620,9 +620,9 @@ Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 4 × AMD EPYC 9V45 96-Core Processor
+  CPU: 4 × AMD EPYC 7763 64-Core Processor
   WORD_SIZE: 64
-  LLVM: libLLVM-18.1.7 (ORCJIT, znver5)
+  LLVM: libLLVM-18.1.7 (ORCJIT, znver3)
   GC: Built with stock GC
 Threads: 4 default, 1 interactive, 4 GC (on 4 virtual cores)
 Environment:
