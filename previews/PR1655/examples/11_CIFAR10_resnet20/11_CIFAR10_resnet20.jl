@@ -1,0 +1,228 @@
+using Comonicon, Lux, Optimisers, Printf, Random, Statistics
+
+XLA_FLAGS = get(ENV, "XLA_FLAGS", "")
+ENV["XLA_FLAGS"] = "$(XLA_FLAGS) --xla_gpu_enable_cublaslt=true"
+
+using ConcreteStructs,
+    DataAugmentation,
+    ImageShow,
+    Lux,
+    MLDatasets,
+    MLUtils,
+    OneHotArrays,
+    Printf,
+    ProgressTables,
+    Random,
+    BFloat16s
+using Reactant
+
+@concrete struct TensorDataset
+    dataset
+    transform
+end
+
+Base.length(ds::TensorDataset) = length(ds.dataset)
+
+function Base.getindex(ds::TensorDataset, idxs::Union{Vector{<:Integer},AbstractRange})
+    img = Image.(eachslice(convert2image(ds.dataset, idxs); dims=3))
+    y = onehotbatch(ds.dataset.targets[idxs], 0:9)
+    return stack(parent ∘ itemdata ∘ Base.Fix1(apply, ds.transform), img), y
+end
+
+function get_cifar10_dataloaders(::Type{T}, batchsize; kwargs...) where {T}
+    cifar10_mean = T.((0.4914, 0.4822, 0.4465))
+    cifar10_std = T.((0.2471, 0.2435, 0.2616))
+
+    train_transform =
+        RandomResizeCrop((32, 32)) |>
+        Maybe(FlipX{2}()) |>
+        ImageToTensor() |>
+        Normalize(cifar10_mean, cifar10_std) |>
+        ToEltype(T)
+
+    test_transform = ImageToTensor() |> Normalize(cifar10_mean, cifar10_std) |> ToEltype(T)
+
+    trainset = TensorDataset(CIFAR10(; Tx=T, split=:train), train_transform)
+    trainloader = DataLoader(trainset; batchsize, shuffle=true, kwargs...)
+
+    testset = TensorDataset(CIFAR10(; Tx=T, split=:test), test_transform)
+    testloader = DataLoader(testset; batchsize, shuffle=false, kwargs...)
+
+    return trainloader, testloader
+end
+
+function accuracy(model, ps, st, dataloader)
+    total_correct, total = 0, 0
+    cdev = cpu_device()
+    for (x, y) in dataloader
+        target_class = onecold(cdev(y))
+        predicted_class = onecold(cdev(first(model(x, ps, st))))
+        total_correct += sum(target_class .== predicted_class)
+        total += length(target_class)
+    end
+    return total_correct / total
+end
+
+function train_model(
+    model,
+    opt,
+    scheduler=nothing;
+    batchsize::Int=512,
+    seed::Int=1234,
+    epochs::Int=25,
+    bfloat16::Bool=false,
+)
+    rng = Random.default_rng()
+    Random.seed!(rng, seed)
+
+    prec = bfloat16 ? bf16 : f32
+    prec_jl = bfloat16 ? BFloat16 : Float32
+    prec_str = bfloat16 ? "BFloat16" : "Float32"
+    @printf "[Info] Using %s precision\n" prec_str
+
+    dev = reactant_device(; force=true)
+
+    trainloader, testloader =
+        get_cifar10_dataloaders(prec_jl, batchsize; partial=false) |> dev
+
+    ps, st = prec(Lux.setup(rng, model)) |> dev
+
+    train_state = Training.TrainState(model, ps, st, opt)
+
+    x_ra = rand(rng, prec_jl, size(first(trainloader)[1])) |> dev
+    @printf "[Info] Compiling model with Reactant.jl\n"
+    model_compiled = @compile model(x_ra, ps, Lux.testmode(st))
+    @printf "[Info] Model compiled!\n"
+
+    loss_fn = CrossEntropyLoss(; logits=Val(true))
+
+    pt = ProgressTable(;
+        header=[
+            "Epoch", "Learning Rate", "Train Accuracy (%)", "Test Accuracy (%)", "Time (s)"
+        ],
+        widths=[24, 24, 24, 24, 24],
+        format=["%3d", "%.6f", "%.6f", "%.6f", "%.6f"],
+        color=[:normal, :normal, :blue, :blue, :normal],
+        border=true,
+        alignment=[:center, :center, :center, :center, :center],
+    )
+
+    @printf "[Info] Training model\n"
+    initialize(pt)
+
+    for epoch in 1:epochs
+        stime = time()
+        lr = 0
+        for (i, (x, y)) in enumerate(trainloader)
+            if scheduler !== nothing
+                lr = scheduler((epoch - 1) + (i + 1) / length(trainloader))
+                train_state = Optimisers.adjust!(train_state, lr)
+            end
+            (_, loss, _, train_state) = Training.single_train_step!(
+                AutoEnzyme(), loss_fn, (x, y), train_state; return_gradients=Val(false)
+            )
+            isnan(loss) && error("NaN loss encountered!")
+        end
+        ttime = time() - stime
+
+        train_acc =
+            accuracy(
+                model_compiled,
+                train_state.parameters,
+                Lux.testmode(train_state.states),
+                trainloader,
+            ) * 100
+        test_acc =
+            accuracy(
+                model_compiled,
+                train_state.parameters,
+                Lux.testmode(train_state.states),
+                testloader,
+            ) * 100
+
+        scheduler === nothing && (lr = NaN32)
+        next(pt, [epoch, lr, train_acc, test_acc, ttime])
+    end
+
+    finalize(pt)
+    return @printf "[Info] Finished training\n"
+end
+
+function ConvBN(kernel_size, (in_chs, out_chs), act; kwargs...)
+    return Chain(Conv(kernel_size, in_chs => out_chs, act; kwargs...), BatchNorm(out_chs))
+end
+
+function BasicBlock(in_channels, out_channels; stride=1)
+    connection = if (stride == 1 && in_channels == out_channels)
+        NoOpLayer()
+    else
+        Conv((3, 3), in_channels => out_channels, identity; stride=stride, pad=SamePad())
+    end
+    return Chain(
+        Parallel(
+            +,
+            connection,
+            Chain(
+                ConvBN((3, 3), in_channels => out_channels, relu; stride, pad=SamePad()),
+                ConvBN((3, 3), out_channels => out_channels, identity; pad=SamePad()),
+            ),
+        ),
+        Base.BroadcastFunction(relu),
+    )
+end
+
+function ResNet20(; num_classes=10)
+    layers = []
+
+    # Initial Conv Layer
+    push!(layers, Chain(Conv((3, 3), 3 => 16, relu; pad=SamePad()), BatchNorm(16)))
+
+    # Residual Blocks
+    block_configs = [
+        # (in_channels, out_channels, num_blocks, stride)
+        (16, 16, 3, 1),
+        (16, 32, 3, 2),
+        (32, 64, 3, 2),
+    ]
+
+    for (in_channels, out_channels, num_blocks, stride) in block_configs
+        for i in 1:num_blocks
+            push!(
+                layers,
+                BasicBlock(
+                    i == 1 ? in_channels : out_channels,
+                    out_channels;
+                    stride=(i == 1 ? stride : 1),
+                ),
+            )
+        end
+    end
+
+    # Global Pooling and Final Dense Layer
+    push!(layers, GlobalMeanPool())
+    push!(layers, FlattenLayer())
+    push!(layers, Dense(64 => num_classes))
+
+    return Chain(layers...)
+end
+
+Comonicon.@main function main(;
+    batchsize::Int=512,
+    weight_decay::Float64=0.0001,
+    clip_norm::Bool=false,
+    seed::Int=1234,
+    epochs::Int=100,
+    lr::Float64=0.001,
+    bfloat16::Bool=false,
+)
+    model = ResNet20()
+
+    opt = AdamW(; eta=lr, lambda=weight_decay)
+    clip_norm && (opt = OptimiserChain(ClipNorm(), opt))
+
+    lr_schedule = nothing
+
+    return train_model(model, opt, lr_schedule; batchsize, seed, epochs, bfloat16)
+end
+
+# This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
