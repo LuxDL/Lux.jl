@@ -198,3 +198,37 @@ end
         @test x isa Float64
     end
 end
+
+@testset "unsafe_free!" begin
+    if MLDataDevices.functional(ReactantDevice)
+        dev = reactant_device()
+        x = dev(rand(Float32, 4, 4))
+        @test !isempty(x)
+        MLDataDevices.Internal.unsafe_free!(x)
+        @test isempty(x)
+
+        # Freeing a view should free the parent buffer
+        x = dev(rand(Float32, 4, 4))
+        v = view(x, 1:2, 1:2)
+        @test !isempty(v)
+        MLDataDevices.Internal.unsafe_free!(v)
+        @test isempty(v)
+        @test isempty(x)
+
+        # Double free should be a no-op / safe
+        MLDataDevices.Internal.unsafe_free!(x)
+        @test isempty(x)
+
+        # DeviceIterator frees previous batch
+        datalist = [rand(Float32, 10) for _ in 1:5]
+        let prev_batch = nothing
+            for batch in DeviceIterator(dev, datalist)
+                if prev_batch !== nothing
+                    @test isempty(prev_batch)
+                end
+                @test !isempty(batch)
+                prev_batch = batch
+            end
+        end
+    end
+end
