@@ -1,0 +1,54 @@
+---
+url: /previews/PR1794/manual/profiling_training_loop.md
+---
+
+# Profiling Lux Training Loops {#profiling-training-loop-reactant}
+
+::: warning Only for Reactant
+
+This tutorial is applicable iff you are using `Reactant.jl` (`AutoEnzyme` with `ReactantDevice`) for training.
+
+:::
+
+To profile the training loop, wrap the training loop with `Reactant.with_profiler` and pass the path to the directory where the traces should be saved. Note that this will have some overhead and hence should be used only for debugging purposes.
+
+A simple example is shown below:
+
+```julia
+using Reactant, Lux, Random, MLUtils, Optimisers
+
+dev = reactant_device()
+
+x_data = rand(Float32, 32, 1024)
+y_data = x_data .^ 2 .- 1
+
+dl = DataLoader((x_data, y_data); batchsize=32, shuffle=true) |> dev;
+
+model = Chain(Dense(32 => 64, relu), Dense(64 => 32))
+ps, st = Lux.setup(Random.default_rng(), model) |> dev;
+
+Reactant.with_profiler(joinpath(tempdir(), "lux_training_trace")) do
+    train_state = Training.TrainState(model, ps, st, Adam(0.001))
+    for epoch in 1:10
+        for (x, y) in dl
+            _, loss, _, train_state = Training.single_train_step!(
+                AutoEnzyme(), MSELoss(), (x, y), train_state; return_gradients=Val(false)
+            )
+        end
+    end
+end
+```
+
+```ansi
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1793242699.920090   10140 profiler_session.cc:171] Profiler session initializing.
+I0000 00:00:1793242699.920139   10140 profiler_session.cc:186] Profiler session started.
+I0000 00:00:1793242723.424196   10140 profiler_session.cc:134] Profiler session collecting data.
+I0000 00:00:1793242723.502906   10140 save_profile.cc:206] Collecting XSpace to repository: /tmp/lux_training_trace/plugins/profile/2026_10_29_02_58_43/runnervm48cm3.xplane.pb
+I0000 00:00:1793242723.582942   10140 save_profile.cc:179] Creating directory: /tmp/lux_training_trace/plugins/profile/2026_10_29_02_58_43
+
+I0000 00:00:1793242723.651701   10140 save_profile.cc:185] Dumped gzipped tool data for trace.json.gz to /tmp/lux_training_trace/plugins/profile/2026_10_29_02_58_43/runnervm48cm3.trace.json.gz
+I0000 00:00:1793242723.669865   10140 profiler_session.cc:217] Profiler session tear down.
+```
+
+Once the run is completed, you can use [`xprof`](https://github.com/openxla/xprof) to analyze the traces. An example of the output is shown below:
