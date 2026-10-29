@@ -169,10 +169,15 @@ function msle_loss(x::T1, y::T2, ϵ) where {T1,T2}
     return log((x + ϵ) / (y + ϵ))^2
 end
 
-label_smoothing(::Nothing, y, ::Type{T}) where {T} = y
-function label_smoothing(label_smoothing, y, ::Type{T}) where {T}
+# Number of classes, i.e. the size of `y` along the dimension(s) the loss reduces over
+num_classes(y, dims::Integer) = size(y, dims)
+num_classes(y, ::Colon) = length(y)
+num_classes(y, dims) = prod(Base.Fix1(size, y), dims)
+
+label_smoothing(::Nothing, y, ::Type{T}, dims=1) where {T} = y
+function label_smoothing(label_smoothing, y, ::Type{T}, dims=1) where {T}
     label_smoothing = T(label_smoothing)
-    return y .* (1 - label_smoothing) .+ label_smoothing ./ size(y, ndims(y) - 1)
+    return y .* (1 - label_smoothing) .+ label_smoothing ./ num_classes(y, dims)
 end
 
 label_smoothing_binary(::Nothing, y, ::Type{T}) where {T} = y
@@ -347,9 +352,10 @@ using label smoothing. If `label_smoothing` is `nothing`, then no label smoothin
 applied. If `label_smoothing` is a real number $\in [0, 1]$, then the value of
 $\tilde{y}$ is calculated as:
 
-$$\tilde{y} = (1 - \alpha) * y + \alpha * \text{size along dim}$$
+$$\tilde{y} = (1 - \alpha) * y + \frac{\alpha}{K}$$
 
-where $\alpha$ is the value of `label_smoothing`.
+where $\alpha$ is the value of `label_smoothing` and $K$ is the number of classes, i.e. the
+size of $y$ along `dims`.
 
 # Extended Help
 
@@ -403,7 +409,7 @@ end
 function unsafe_apply_loss(loss::CrossEntropyLoss, ŷ, y)
     T = promote_type(eltype(ŷ), eltype(y))
     ϵ = LossFunctionImpl.get_ϵ(T, loss.epsilon)
-    ỹ = LossFunctionImpl.label_smoothing(loss.label_smoothing, y, T)
+    ỹ = LossFunctionImpl.label_smoothing(loss.label_smoothing, y, T, loss.dims)
     return compute_cross_entropy(loss.logits, loss, ŷ, ỹ, ϵ)
 end
 
