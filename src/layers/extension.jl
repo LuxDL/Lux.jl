@@ -60,7 +60,8 @@ regular `Array` or not. Default is `false`.
 ## Arguments
 
   - `layer`: SimpleChains layer
-  - `lux_layer`: Potentially equivalent Lux layer that is used for printing
+  - `lux_layer`: Potentially equivalent Lux layer that is used for printing and, if it is
+    not `nothing`, for initializing the parameters
 """
 @concrete struct SimpleChainsLayer <: AbstractLuxLayer
     layer

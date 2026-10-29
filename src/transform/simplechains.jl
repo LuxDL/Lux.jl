@@ -10,10 +10,15 @@ performed using SimpleChains.
     There is no way to preserve trained parameters and states when converting to
     `SimpleChains.jl`.
 
-!!! warning
+!!! note
 
-    Any kind of initialization function is not preserved when converting to
-    `SimpleChains.jl`.
+    The parameters of the converted model are initialized by calling
+    `LuxCore.initialparameters` on the original Lux model and flattening the result into
+    the `SimpleChains.jl` parameter layout, so initialization functions such as
+    `init_weight` and `init_bias` are preserved. `Conv` kernels are flipped when
+    `cross_correlation = false`, since `SimpleChains.jl` performs cross-correlation, and a
+    `Conv` without bias gets a zero-initialized bias, since `SimpleChains.Conv` always has
+    one.
 
 ## Arguments
 
