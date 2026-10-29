@@ -162,36 +162,39 @@ trained_model = train_model(dataloader)
 ```
 
 ```
-Iteration:     1, Loss: 7.089908e-02
-Iteration:    25, Loss: 7.249802e-02
-Iteration:    50, Loss: 3.758948e-02
-Iteration:    75, Loss: 7.279331e-02
-Iteration:   100, Loss: 1.662080e-01
-Iteration:   100, Loss: 2.246141e-02
-Iteration:     1, Loss: 1.967561e-01
-Iteration:    25, Loss: 3.651245e-02
-Iteration:     1, Loss: 3.456438e-02
-Iteration:    25, Loss: 4.520456e-02
-Iteration:    50, Loss: 3.325092e-02
-Iteration:    75, Loss: 3.032768e-02
-Iteration:   100, Loss: 2.899895e-02
-Iteration:   125, Loss: 2.794514e-02
-Iteration:   150, Loss: 2.706561e-02
-Iteration:   175, Loss: 2.629171e-02
-Iteration:   200, Loss: 2.557351e-02
-Iteration:   225, Loss: 2.487043e-02
-Iteration:   250, Loss: 2.415485e-02
-Iteration:   275, Loss: 2.340769e-02
-Iteration:   300, Loss: 2.261362e-02
-Iteration:   325, Loss: 2.176470e-02
-Iteration:   350, Loss: 2.084781e-02
-Iteration:   375, Loss: 1.983858e-02
-Iteration:   400, Loss: 1.868328e-02
-Iteration:   425, Loss: 1.729607e-02
-Iteration:   450, Loss: 1.575589e-02
-Iteration:   475, Loss: 1.408659e-02
-Iteration:   500, Loss: 1.338911e-02
-Iteration:   500, Loss: 1.262400e-02
+Iteration:     1, Loss: 1.002783e-01
+Iteration:    25, Loss: 5.295739e-02
+Iteration:    50, Loss: 2.060315e-02
+Iteration:    75, Loss: 1.074278e-01
+Iteration:   100, Loss: 1.729741e-01
+Iteration:   100, Loss: 2.037987e-02
+Iteration:     1, Loss: 5.547348e-01
+┌ Warning: Verbosity toggle: dt_epsilon 
+│  Initial timestep too small (near machine epsilon), using default: dt = -1.0e-6
+└ @ OrdinaryDiffEqCore ~/.julia/packages/OrdinaryDiffEqCore/rnOL4/src/initdt.jl:196
+Iteration:    25, Loss: 3.064262e-02
+Iteration:     1, Loss: 2.845685e-02
+Iteration:    25, Loss: 3.994942e-02
+Iteration:    50, Loss: 2.820340e-02
+Iteration:    75, Loss: 2.510553e-02
+Iteration:   100, Loss: 2.363635e-02
+Iteration:   125, Loss: 2.233142e-02
+Iteration:   150, Loss: 2.109788e-02
+Iteration:   175, Loss: 1.984286e-02
+Iteration:   200, Loss: 7.859717e-02
+Iteration:   225, Loss: 3.343892e-02
+Iteration:   250, Loss: 3.026707e-02
+Iteration:   275, Loss: 2.862756e-02
+Iteration:   300, Loss: 2.731509e-02
+Iteration:   325, Loss: 2.616500e-02
+Iteration:   350, Loss: 2.512925e-02
+Iteration:   375, Loss: 2.414583e-02
+Iteration:   400, Loss: 2.317166e-02
+Iteration:   425, Loss: 2.217196e-02
+Iteration:   450, Loss: 2.111900e-02
+Iteration:   475, Loss: 1.999393e-02
+Iteration:   500, Loss: 1.878418e-02
+Iteration:   500, Loss: 1.878418e-02
 
 ```
 
@@ -242,9 +245,9 @@ Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 4 × AMD EPYC 9V45 96-Core Processor
+  CPU: 4 × AMD EPYC 9V74 80-Core Processor
   WORD_SIZE: 64
-  LLVM: libLLVM-18.1.7 (ORCJIT, znver5)
+  LLVM: libLLVM-18.1.7 (ORCJIT, znver4)
   GC: Built with stock GC
 Threads: 4 default, 1 interactive, 4 GC (on 4 virtual cores)
 Environment:
