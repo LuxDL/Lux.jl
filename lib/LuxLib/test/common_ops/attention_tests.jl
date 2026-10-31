@@ -329,10 +329,10 @@ end
                 q, k, v; return_attention_weights=false, kwargs...
             )
             @test weights === nothing
-            @test y ≈ ref atol=1e-5 rtol=1e-4
+            @test y ≈ ref atol = 1e-5 rtol = 1e-4
             qr, kr, vr = Reactant.to_rarray.((q, k, v))
             yr = @jit output_only(qr, kr, vr; kwargs...)
-            @test Array(yr) ≈ ref atol=1e-3 rtol=1e-3
+            @test Array(yr) ≈ ref atol = 1e-3 rtol = 1e-3
         end
         @testset "head_dim=$hd, token_dim=$td" for hd in 1:3, td in 1:3
             hd == td && continue
@@ -362,14 +362,14 @@ end
         grads = @jit Enzyme.gradient(Reverse, Const(loss), q, k, v)
         reference_grads = @jit Enzyme.gradient(Reverse, Const(reference_loss), q, k, v)
         for (grad, reference_grad) in zip(grads, reference_grads)
-            @test Array(grad) ≈ Array(reference_grad) atol=1e-3 rtol=1e-3
+            @test Array(grad) ≈ Array(reference_grad) atol = 1e-3 rtol = 1e-3
         end
     end
 
     # Reactant versions with the attention op should preserve it until lowering.
     if isdefined(Reactant.Ops, :attention)
         q, k, v = (Reactant.to_rarray(rand(Float16, 64, 4, 128, 1)) for _ in 1:3)
-        hlo = repr(@code_hlo optimize=false output_only(q, k, v))
+        hlo = repr(@code_hlo optimize = false output_only(q, k, v))
         @test occursin("enzymexla.ml.attention", hlo)
         if lowercase(Reactant.XLA.platform_name(Reactant.XLA.default_backend())) == "cuda"
             hlo = repr(@code_hlo output_only(q, k, v))

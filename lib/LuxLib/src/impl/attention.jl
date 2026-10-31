@@ -54,7 +54,9 @@ function scaled_dot_product_attention(
             q, k, v, bias; scale, mask, is_causal, fdrop
         )
     end
-    output = NNlib.scaled_dot_product_attention(q, k, v, bias; scale, mask, is_causal, fdrop)
+    output = NNlib.scaled_dot_product_attention(
+        q, k, v, bias; scale, mask, is_causal, fdrop
+    )
     return output, nothing
 end
 
