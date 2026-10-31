@@ -1,7 +1,3 @@
-function repeat_inner_gqa(x::AbstractArray{T,N}, nrepeat::Int, K::Int) where {T,N}
-    return repeat(x; inner=ntuple(i -> ifelse(i == K, nrepeat, 1), Val(N)))
-end
-
 function scaled_dot_product_attention(
     q::AbstractArray{TQ,N},
     k::AbstractArray{TK,N},
@@ -13,6 +9,7 @@ function scaled_dot_product_attention(
     is_causal::Union{Bool,Nothing}=nothing,
     bias=nothing,
     fdrop::F=identity,
+    return_attention_weights::Bool=true,
 ) where {TQ,TK,TV,F,N}
     @assert N ≥ 4 "N must be at least 4"
     @assert 1 ≤ head_dim ≤ 3 "head_dim must be between 1 and 3"
@@ -40,91 +37,30 @@ function scaled_dot_product_attention(
     @assert num_kv_groups == size(v, num_heads_dim)
     @assert num_heads % num_kv_groups == 0 "num_heads must be divisible by num_kv_groups"
 
-    if num_kv_groups ≠ num_heads
-        group_size = num_heads ÷ num_kv_groups
-        k = repeat_inner_gqa(k, group_size, num_heads_dim)
-        v = repeat_inner_gqa(v, group_size, num_heads_dim)
-    end
-
-    scale = scale === nothing ? sqrt(TQ(size(q, head_dim))) : TQ(scale)
-    scale = inv(scale)
-
     if is_causal isa Bool
         @assert mask === nothing "`mask` and `is_causal` cannot both be specified"
-        if is_causal
-            # generally recommended to use `is_causal=true` for causal attention rather
-            # than specifying `mask` manually
-            mask = make_causal_mask(q, size(k, token_dim), size(q, token_dim))
-        end
     end
+    is_causal = is_causal === true
 
-    return unsafe_scaled_dot_product_attention(
-        q, k, v; head_dim, token_dim, num_heads_dim, scale, mask, bias, fdrop
-    )
+    # NNlib uses (features, heads, tokens, batch...) and a multiplicative scale.
+    perm = (head_dim, num_heads_dim, token_dim, 4:N...)
+    if perm != ntuple(identity, Val(N))
+        q, k, v = permutedims(q, perm), permutedims(k, perm), permutedims(v, perm)
+    end
+    scale = scale === nothing ? nothing : inv(TQ(scale))
+
+    if return_attention_weights
+        return NNlib.scaled_dot_product_attention_with_weights(
+            q, k, v, bias; scale, mask, is_causal, fdrop
+        )
+    end
+    output = NNlib.scaled_dot_product_attention(q, k, v, bias; scale, mask, is_causal, fdrop)
+    return output, nothing
 end
 
 get_non_heads_dim(head_dim::Int, token_dim::Int) = only(setdiff(1:3, (head_dim, token_dim)))
 
 CRC.@non_differentiable get_non_heads_dim(::Any...)
-
-function unsafe_scaled_dot_product_attention(
-    q::AbstractArray{TQ,N},
-    k::AbstractArray{TK,N},
-    v::AbstractArray{TV,N};
-    head_dim::Int,
-    token_dim::Int,
-    num_heads_dim::Int,
-    scale::TQ,
-    mask,
-    bias::Union{Nothing,AbstractArray},
-    fdrop::F,
-) where {TQ,TK,TV,F,N}
-    batching_dims = (num_heads_dim, 4:N...)
-
-    # logits: [S, L, H, B...]
-    attn_scores = fdrop(
-        NNlib.softmax(
-            apply_attention_mask_bias(
-                batched_matmul(
-                    k,
-                    q .* scale;
-                    lhs_contracting_dim=head_dim,
-                    rhs_contracting_dim=head_dim,
-                    lhs_batching_dims=batching_dims,
-                    rhs_batching_dims=batching_dims,
-                ),
-                mask,
-                bias,
-            );
-            dims=1,
-        ),
-    )
-
-    # x: [Ev, H, L, B...]
-    x = permutedims(
-        batched_matmul(
-            v,
-            attn_scores;
-            lhs_contracting_dim=token_dim,
-            rhs_contracting_dim=1,
-            lhs_batching_dims=batching_dims,
-            rhs_batching_dims=ntuple(Base.Fix2(+, 2), Val(N - 2)),
-        ),
-        (1, 3, 2, 4:N...),
-    )
-
-    return x, attn_scores
-end
-
-apply_attention_mask_bias(logits, ::Nothing, ::Nothing) = logits
-function apply_attention_mask_bias(logits, mask, ::Nothing)
-    return ifelse.(mask, logits, typemin(eltype(logits)))
-end
-apply_attention_mask_bias(logits, ::Nothing, bias) = logits .+ bias
-function apply_attention_mask_bias(logits, mask, bias)
-    neginf = typemin(eltype(logits))
-    return @. ifelse(mask, logits + bias, neginf)
-end
 
 make_causal_mask(x; dims::Int) = make_causal_mask(x, size(x, dims), size(x, dims))
 
