@@ -1,6 +1,7 @@
 include("../shared_testsetup.jl")
 
 using LuxLib, Reactant, Random, MLDataDevices, Enzyme, Statistics, Test, Zygote
+using LuxLib: scaled_dot_product_attention
 
 @testset "Scaled Dot Product Attention" begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
@@ -353,6 +354,89 @@ using LuxLib, Reactant, Random, MLDataDevices, Enzyme, Statistics, Test, Zygote
                 @test y ≈ y_ra atol = 1e-3 rtol = 1e-3
                 @test α ≈ α_ra atol = 1e-3 rtol = 1e-3
             end
+        end
+    end
+end
+
+@testset "Output-only attention" begin
+    output_only(q, k, v; kwargs...) = first(
+        LuxLib.scaled_dot_product_attention(
+            q, k, v; return_attention_weights=false, kwargs...
+        ),
+    )
+    @testset "batch=$batch, heads=$heads" for batch in [(2,), (2, 1, 3)], heads in [2, 4]
+        q = randn(Float32, 8, heads, 3, batch...)
+        k = randn(Float32, 8, 2, 5, batch...)
+        v = randn(Float32, 6, 2, 5, batch...)
+        mask = trues(5, 3)
+        mask[end, :] .= false
+        bias = randn(Float32, 5, 3, 1, batch...)
+        @testset "$kwargs" for kwargs in [
+            (;),
+            (; scale=2.5f0),
+            (; is_causal=true),
+            (; mask, bias),
+            (; fdrop=Base.Fix1(*, 0.5f0)),
+        ]
+            ref, _ = LuxLib.scaled_dot_product_attention(q, k, v; kwargs...)
+            y, weights = LuxLib.scaled_dot_product_attention(
+                q, k, v; return_attention_weights=false, kwargs...
+            )
+            @test weights === nothing
+            @test y ≈ ref atol = 1e-5 rtol = 1e-4
+            qr, kr, vr = Reactant.to_rarray.((q, k, v))
+            yr = @jit output_only(qr, kr, vr; kwargs...)
+            @test Array(yr) ≈ ref atol = 1e-3 rtol = 1e-3
+        end
+        @testset "head_dim=$hd, token_dim=$td" for hd in 1:3, td in 1:3
+            hd == td && continue
+            nh = only(setdiff(1:3, (hd, td)))
+            perm = (
+                findfirst(==(1), (hd, nh, td)),
+                findfirst(==(2), (hd, nh, td)),
+                findfirst(==(3), (hd, nh, td)),
+                4:ndims(q)...,
+            )
+            qp, kp, vp = permutedims.((q, k, v), Ref(perm))
+            @test output_only(qp, kp, vp; head_dim=hd, token_dim=td) ≈ output_only(q, k, v)
+        end
+    end
+
+    @testset "Output-only gradients" begin
+        q = Reactant.to_rarray(randn(Float32, 4, 4, 3, 2))
+        k = Reactant.to_rarray(randn(Float32, 4, 2, 5, 2))
+        v = Reactant.to_rarray(randn(Float32, 6, 2, 5, 2))
+        loss(q, k, v) = sum(abs2, output_only(q, k, v; is_causal=true, scale=2.5f0))
+        reference_loss(q, k, v) = sum(
+            abs2,
+            first(
+                LuxLib.scaled_dot_product_attention(q, k, v; is_causal=true, scale=2.5f0),
+            ),
+        )
+        grads = @jit Enzyme.gradient(Reverse, Const(loss), q, k, v)
+        reference_grads = @jit Enzyme.gradient(Reverse, Const(reference_loss), q, k, v)
+        for (grad, reference_grad) in zip(grads, reference_grads)
+            @test Array(grad) ≈ Array(reference_grad) atol = 1e-3 rtol = 1e-3
+        end
+    end
+
+    # Reactant preserves the attention op until lowering.
+    q, k, v = (Reactant.to_rarray(rand(Float16, 64, 4, 128, 1)) for _ in 1:3)
+    hlo = repr(@code_hlo optimize = false output_only(q, k, v))
+    @test occursin("enzymexla.ml.attention", hlo)
+    hlo_cuda = repr(
+        @code_hlo optimize = " lower-enzymexla-math{backend=cuda}" output_only(q, k, v)
+    )
+    @test occursin("__cudnn\$fmha", hlo_cuda)
+    backend = Reactant.XLA.default_backend()
+    if lowercase(Reactant.XLA.platform_name(backend)) == "cuda"
+        hlo = repr(@code_hlo output_only(q, k, v))
+        # cuDNN fused FMHA requires Ampere (SM80) or newer; older GPUs (e.g. Turing SM75)
+        # lower enzymexla.ml.attention to a StableHLO decomposition instead.
+        if Reactant.XLA.device_properties(Reactant.XLA.default_device(backend)).major >= 8
+            @test occursin("__cudnn\$fmha", hlo)
+        else
+            @test !occursin("enzymexla.ml.attention", hlo)
         end
     end
 end
