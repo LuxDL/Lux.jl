@@ -41,14 +41,14 @@ end
 
 ```ansi
 WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-I0000 00:00:1793244236.500166    9610 profiler_session.cc:171] Profiler session initializing.
-I0000 00:00:1793244236.500198    9610 profiler_session.cc:186] Profiler session started.
-I0000 00:00:1793244260.786081    9610 profiler_session.cc:134] Profiler session collecting data.
-I0000 00:00:1793244260.876129    9610 save_profile.cc:206] Collecting XSpace to repository: /tmp/lux_training_trace/plugins/profile/2026_10_29_03_24_20/runnervm48cm3.xplane.pb
-I0000 00:00:1793244260.958901    9610 save_profile.cc:179] Creating directory: /tmp/lux_training_trace/plugins/profile/2026_10_29_03_24_20
+I0000 00:00:1793469851.845209    9504 profiler_session.cc:171] Profiler session initializing.
+I0000 00:00:1793469851.845261    9504 profiler_session.cc:186] Profiler session started.
+I0000 00:00:1793469875.842125    9504 profiler_session.cc:134] Profiler session collecting data.
+I0000 00:00:1793469875.928734    9504 save_profile.cc:206] Collecting XSpace to repository: /tmp/lux_training_trace/plugins/profile/2026_10_31_18_04_35/runnervm48cm3.xplane.pb
+I0000 00:00:1793469876.010307    9504 save_profile.cc:179] Creating directory: /tmp/lux_training_trace/plugins/profile/2026_10_31_18_04_35
 
-I0000 00:00:1793244261.028119    9610 save_profile.cc:185] Dumped gzipped tool data for trace.json.gz to /tmp/lux_training_trace/plugins/profile/2026_10_29_03_24_20/runnervm48cm3.trace.json.gz
-I0000 00:00:1793244261.057677    9610 profiler_session.cc:217] Profiler session tear down.
+I0000 00:00:1793469876.080878    9504 save_profile.cc:185] Dumped gzipped tool data for trace.json.gz to /tmp/lux_training_trace/plugins/profile/2026_10_31_18_04_35/runnervm48cm3.trace.json.gz
+I0000 00:00:1793469876.101312    9504 profiler_session.cc:217] Profiler session tear down.
 ```
 
 Once the run is completed, you can use [`xprof`](https://github.com/openxla/xprof) to analyze the traces. An example of the output is shown below:

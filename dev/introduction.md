@@ -32,19 +32,19 @@ using Lux, Random, Optimisers, Enzyme, Reactant
 ```
 
 ```ansi
-[34m[1m┌ [22m[39m[34m[1mDebug: [22m[39mPersistent compilation cache enabled. Using base directory: /home/runner/.julia/scratchspaces/3c362404-f566-11ee-1572-e11a4b42c853/xla_persistent_cache_0_0_433
-[34m[1m└ [22m[39m[90m@ Reactant.PersistentCompileCache ~/.julia/packages/Reactant/SpVbk/src/PersistentCompileCache.jl:28[39m
+[34m[1m┌ [22m[39m[34m[1mDebug: [22m[39mPersistent compilation cache enabled. Using base directory: /home/runner/.julia/scratchspaces/3c362404-f566-11ee-1572-e11a4b42c853/xla_persistent_cache_0_0_436
+[34m[1m└ [22m[39m[90m@ Reactant.PersistentCompileCache ~/.julia/packages/Reactant/P5zcn/src/PersistentCompileCache.jl:28[39m
 [34m[1m┌ [22m[39m[34m[1mDebug: [22m[39mKernel cache enabled: false
-[34m[1m└ [22m[39m[90m@ Reactant.PersistentCompileCache ~/.julia/packages/Reactant/SpVbk/src/PersistentCompileCache.jl:33[39m
+[34m[1m└ [22m[39m[90m@ Reactant.PersistentCompileCache ~/.julia/packages/Reactant/P5zcn/src/PersistentCompileCache.jl:33[39m
 [34m[1m┌ [22m[39m[34m[1mDebug: [22m[39mAutotune cache enabled: true
-[34m[1m└ [22m[39m[90m@ Reactant.PersistentCompileCache ~/.julia/packages/Reactant/SpVbk/src/PersistentCompileCache.jl:38[39m
+[34m[1m└ [22m[39m[90m@ Reactant.PersistentCompileCache ~/.julia/packages/Reactant/P5zcn/src/PersistentCompileCache.jl:38[39m
 [34m[1m┌ [22m[39m[34m[1mDebug: [22m[39mRegistering Backend cpu with Priority 100.
-[34m[1m└ [22m[39m[90m@ Reactant.Accelerators.Registration ~/.julia/packages/Reactant/SpVbk/src/accelerators/Registration.jl:39[39m
-[34m[1m┌ [22m[39m[34m[1mDebug: [22m[39mUsing libReactantExtra from /home/runner/.julia/artifacts/7e5340cbb57452de49d3ba76e53da1e682b6890f/lib/libReactantExtra.so
-[34m[1m└ [22m[39m[90m@ Reactant.XLA ~/.julia/packages/Reactant/SpVbk/src/xla/XLA.jl:212[39m
+[34m[1m└ [22m[39m[90m@ Reactant.Accelerators.Registration ~/.julia/packages/Reactant/P5zcn/src/accelerators/Registration.jl:39[39m
+[34m[1m┌ [22m[39m[34m[1mDebug: [22m[39mUsing libReactantExtra from /home/runner/.julia/artifacts/268d6d978eb38a12d299420afbf7a490b5146452/lib/libReactantExtra.so
+[34m[1m└ [22m[39m[90m@ Reactant.XLA ~/.julia/packages/Reactant/P5zcn/src/xla/XLA.jl:217[39m
 [34m[1m┌ [22m[39m[34m[1mDebug: [22m[39mREACTANT_XLA_RUNTIME:
 [34m[1m│ [22m[39m  REACTANT_XLA_RUNTIME = "PJRT"
-[34m[1m└ [22m[39m[90m@ Reactant.XLA ~/.julia/packages/Reactant/SpVbk/src/xla/XLA.jl:251[39m
+[34m[1m└ [22m[39m[90m@ Reactant.XLA ~/.julia/packages/Reactant/P5zcn/src/xla/XLA.jl:256[39m
 ```
 
 We take randomness very seriously
