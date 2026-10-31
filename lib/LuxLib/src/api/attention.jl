@@ -2,7 +2,7 @@
     scaled_dot_product_attention(
         query, key, value; head_dim=1, token_dim=3,
         scale=nothing, mask=nothing, is_causal=nothing, bias=nothing,
-        fdrop=identity
+        fdrop=identity, return_attention_weights=true
     )
 
 Compute scaled dot-product attention for general tensors.
@@ -32,11 +32,13 @@ attention weights.
   (i.e. divides by `sqrt(d_head)`). You may pass a number to override.
 - `mask=nothing`: Optional boolean mask broadcastable to the attention logits.
   When provided it selects which key positions are allowed (true = keep).
-- `is_causal::Union{Bool,Nothing}=nothing`: If `true` a causal mask is
-  constructed automatically with `NNlib.make_causal_mask(...; dims=token_dim)`.
+- `is_causal::Union{Bool,Nothing}=nothing`: If `true`, causal attention is
+  requested from NNlib without materializing a mask on fused backends.
   `is_causal` and `mask` cannot both be specified.
 - `bias=nothing`: Optional additive bias applied to attention logits before
   softmax.
+- `return_attention_weights::Bool=true`: Return attention weights alongside the output.
+  Set to `false` to return `(output, nothing)` and enable fused attention backends.
 - `fdrop=identity`: Function applied to the attention probabilities (e.g.
   a dropout function). It is applied after softmax and after mask/bias are
   applied.
@@ -76,12 +78,8 @@ attention weights.
 - The implementation asserts `N ≥ 4` and enforces that `q` and `k` have the
   same size along `head_dim`, and that `k` and `v` have the same token length
   (along `token_dim`).
-- Grouped KV: If `k`/`v` provide fewer KV groups than `q`'s number of heads,
-  they are repeated along the non-head batching dimension so that the number
-  of KV groups divides the number of heads. This supports e.g. shared keys for
-  multiple heads.
-- Masking and bias are combined using the internal `apply_attention_mask_bias`
-  helper which produces numerically stable logits before softmax.
+- Grouped KV: NNlib supports sharing fewer key/value heads across query heads.
+- Masking, bias, causal attention, and dropout are handled by NNlib.
 
 ## Returns
 
@@ -89,14 +87,14 @@ attention weights.
     - `output` contains the attended values with the same batch/head layout as
       `q`/`v` (see implementation for exact ordering), and
     - `attn_weights` contains the attention probabilities (softmax over the
-      key/token dimension).
+      key/token dimension), or `nothing` when `return_attention_weights=false`.
 
 ## Performance
 
-- CPU: The implementation relies on `batched_matmul` (which may use
-  LoopVectorization when available) for good CPU performance.
-- Reactant: Lowered to a `dot_general`-style op. It is highly recommended to use this
-  function instead of writing out the sdpa implementation directly.
+- Delegates to NNlib's attention implementations. With
+  `return_attention_weights=false`, supported backends can use fused attention
+  without materializing the attention weights. This includes Reactant's optimized
+  attention lowering when available.
 """
 function scaled_dot_product_attention(
     q::AbstractArray, k::AbstractArray, v::AbstractArray; kwargs...
