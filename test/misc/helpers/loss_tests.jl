@@ -191,6 +191,36 @@ end
             )
         end
 
+        @testset "CrossEntropyLoss label smoothing respects `dims`" begin
+            # (classes, sequence, batch) -- e.g. a language model output
+            nclasses, seqlen, batch = 5, 7, 3
+            y3 = dev(onehotbatch(rand(1:nclasses, seqlen, batch), 1:nclasses))
+            logŷ3 = aType(randn(Float32, nclasses, seqlen, batch))
+            ŷ3 = softmax(logŷ3; dims=1)
+            y3ls = Float32.(y3) .* (1 - 2sf) .+ 2sf / nclasses
+            expected = mean(-sum(y3ls .* log.(ŷ3); dims=1))
+
+            @test CrossEntropyLoss(; label_smoothing=2sf, epsilon=0)(ŷ3, y3) ≈ expected
+            @test CrossEntropyLoss(; label_smoothing=2sf, logits=Val(true))(logŷ3, y3) ≈
+                expected
+
+            # classes along `dims=2`
+            y2 = permutedims(Float32.(y3[:, :, 1]))
+            ŷ2 = permutedims(ŷ3[:, :, 1])
+            y2ls = y2 .* (1 - 2sf) .+ 2sf / nclasses
+            @test CrossEntropyLoss(; dims=2, label_smoothing=2sf, epsilon=0)(ŷ2, y2) ≈
+                mean(-sum(y2ls .* log.(ŷ2); dims=2))
+
+            # a single sample given as a vector
+            y1, ŷ1 = Float32.(y3[:, 1, 1]), ŷ3[:, 1, 1]
+            @test CrossEntropyLoss(; label_smoothing=2sf, epsilon=0)(ŷ1, y1) ≈
+                -sum((y1 .* (1 - 2sf) .+ 2sf / nclasses) .* log.(ŷ1))
+
+            # smoothed targets are still probability distributions over the classes
+            ỹ3 = Lux.LossFunctionImpl.label_smoothing(2sf, y3, Float32, 1)
+            @test all(x -> isapprox(x, 1; atol=1.0f-5), Array(sum(ỹ3; dims=1)))
+        end
+
         logŷ, y = aType(randn(3)), aType(rand(3))
         yls = y .* (1 - 2sf) .+ sf
 
