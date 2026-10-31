@@ -8,7 +8,6 @@ using Statistics: mean, var
 
 using LuxLib: LuxLib, Impl, Optional, Utils
 
-include("attention.jl")
 include("batched_mul.jl")
 include("batchnorm.jl")
 include("normalization.jl")
