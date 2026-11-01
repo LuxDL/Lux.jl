@@ -59,64 +59,16 @@ function batchnorm_cudnn!(
     rμ = safe_reshape(rμ′, dims...)
     rσ² = safe_reshape(rσ²′, dims...)
 
-    if rμ === nothing || rσ² === nothing
-        rμ !== rσ² && throw(ArgumentError("both or neither of rμ and rσ² must be nothing"))
-        rμ = CU_NULL
-        rσ² = CU_NULL
-    end
-
-    xd = cudnnTensorDescriptor(x)
-    yd = cudnnTensorDescriptor(y)
-    γβd = cudnnTensorDescriptor(
-        CUDNN_TENSOR_NCHW,
-        cudnnDataType(T),
-        Cint(length(dims)),
-        cuDNN.dim4(dims, Val(CUDNN_TENSOR_NCHW)),
-    )
+    (rμ === nothing) == (rσ² === nothing) ||
+        throw(ArgumentError("both or neither of rμ and rσ² must be nothing"))
 
     if unsafe_known(training)
-        μ = CUDA.zeros(T, dims)
-        σ⁻² = CUDA.ones(T, dims)
-
-        cudnnBatchNormalizationForwardTraining(
-            cuDNN.handle(),
-            CUDNN_BATCHNORM_SPATIAL,
-            cuDNN.scalingParameter(T, true),
-            cuDNN.scalingParameter(T, false),
-            xd,
-            x,
-            yd,
-            y,
-            γβd,
-            γ,
-            β,
-            m,
-            rμ,
-            rσ²,
-            ϵ,
-            μ,
-            σ⁻²,
+        return batchnorm_training!(
+            y, x, γ, β; running_mean=rμ, running_var=rσ², momentum=m, epsilon=ϵ
         )
-
-        return μ, σ⁻²
     else
-        cudnnBatchNormalizationForwardInference(
-            cuDNN.handle(),
-            CUDNN_BATCHNORM_SPATIAL,
-            cuDNN.scalingParameter(T, true),
-            cuDNN.scalingParameter(T, false),
-            xd,
-            x,
-            yd,
-            y,
-            γβd,
-            γ,
-            β,
-            rμ,
-            rσ²,
-            ϵ,
-        )
-
+        rμ === nothing && throw(ArgumentError("running statistics are required"))
+        batchnorm_inference!(y, x, γ, β, rμ, rσ²; epsilon=ϵ)
         return similar(x, zero.(dims)), similar(x, zero.(dims))
     end
 end
@@ -197,46 +149,16 @@ function ∇batchnorm_cudnn!(
     ∂γ = reshape(∂γ′, dims)
     γ = reshape(γ′, dims)
     ∂β = reshape(∂β′, dims)
-    rμ = safe_reshape(rμ′, dims...)
-    rσ² = safe_reshape(rσ²′, dims...)
 
-    if rμ === nothing && rσ² === nothing
-        rμ = CU_NULL
-        rσ² = CU_NULL
+    if xμ === nothing || xσ⁻² === nothing
+        xμ !== xσ⁻² &&
+            throw(ArgumentError("both or neither of xμ and xσ⁻² must be nothing"))
+        y = similar(x)
+        β = CUDA.zeros(T, dims)
+        xμ, xσ⁻² = batchnorm_training!(y, x, γ, β; epsilon=ϵ)
+        Utils.unsafe_free!(y)
+        Utils.unsafe_free!(β)
     end
 
-    xd = cudnnTensorDescriptor(x)
-    ∂yd = cudnnTensorDescriptor(∂y)
-    ∂xd = cudnnTensorDescriptor(∂x)
-    γd = cudnnTensorDescriptor(
-        CUDNN_TENSOR_NCHW,
-        cudnnDataType(T),
-        Cint(length(dims)),
-        cuDNN.dim4(dims, Val(CUDNN_TENSOR_NCHW)),
-    )
-
-    xμ = xμ === nothing ? CU_NULL : xμ
-    xσ⁻² = xσ⁻² === nothing ? CU_NULL : xσ⁻²
-
-    return cudnnBatchNormalizationBackward(
-        cuDNN.handle(),
-        CUDNN_BATCHNORM_SPATIAL,
-        cuDNN.scalingParameter(T, true),
-        cuDNN.scalingParameter(T, false),
-        cuDNN.scalingParameter(T, true),
-        cuDNN.scalingParameter(T, false),
-        xd,
-        x,
-        ∂yd,
-        ∂y,
-        ∂xd,
-        ∂x,
-        γd,
-        γ,
-        ∂γ,
-        ∂β,
-        ϵ,
-        xμ,
-        xσ⁻²,
-    )
+    return batchnorm_gradient!(∂x, ∂γ, ∂β, ∂y, x, γ, xμ, xσ⁻²; epsilon=ϵ)
 end
