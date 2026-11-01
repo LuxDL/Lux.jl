@@ -68,6 +68,7 @@ Scale
 
 ```@docs
 MultiHeadAttention
+GroupQueryAttention
 ```
 
 ## Embedding Layers
