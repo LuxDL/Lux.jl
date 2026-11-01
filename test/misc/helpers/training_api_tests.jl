@@ -93,15 +93,19 @@ include("../../shared_testsetup.jl")
             # Test the adjust API
             tstate = Optimisers.adjust(tstate, 0.1f0)
             @test tstate.optimizer_state.layer_1.weight.rule.eta ≈ 0.1f0
+            @test tstate.optimizer.eta ≈ 0.1f0
 
             tstate = Optimisers.adjust(tstate; eta=0.5f0)
             @test tstate.optimizer_state.layer_1.weight.rule.eta ≈ 0.5f0
+            @test tstate.optimizer.eta ≈ 0.5f0
 
             Optimisers.adjust!(tstate, 0.01f0)
             @test tstate.optimizer_state.layer_1.weight.rule.eta ≈ 0.01f0
+            @test tstate.optimizer.eta ≈ 0.01f0
 
             Optimisers.adjust!(tstate; eta=0.11f0)
             @test tstate.optimizer_state.layer_1.weight.rule.eta ≈ 0.11f0
+            @test tstate.optimizer.eta ≈ 0.11f0
         end
 
         struct AutoCustomAD <: ADTypes.AbstractADType end
