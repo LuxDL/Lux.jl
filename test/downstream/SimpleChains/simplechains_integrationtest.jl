@@ -242,6 +242,15 @@ end
         end
     end
 
+    @testset "Parameter count mismatch warns" begin
+        # `input_dims` doesn't match the Lux model: 26 Lux parameters vs 34 in SimpleChains
+        lux_model = Chain(Dense(3 => 4, tanh; init_bias=ones32), Dense(4 => 2))
+        smodel = ToSimpleChainsAdaptor((static(5),), true)(lux_model)
+
+        ps, _ = @test_logs (:warn, r"check `input_dims`") Lux.setup(StableRNG(0), smodel)
+        @test length(ps.params) == 34
+    end
+
     @testset "Dropout" begin
         lux_model = Chain(Dense(4 => 8, relu), Dropout(0.5), Dense(8 => 2))
         smodel = ToSimpleChainsAdaptor((static(4),), true)(lux_model)

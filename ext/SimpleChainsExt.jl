@@ -89,7 +89,11 @@ Lux.make_simplechain_network(layer) = throw(SimpleChainsModelConversionException
 
 function LuxCore.initialparameters(rng::AbstractRNG, layer::SimpleChainsLayer)
     θ = flatten_to_simplechains_params(rng, layer.lux_layer)
-    if θ === nothing || length(θ) != SimpleChains.numparam(layer.layer)
+    θ === nothing && return (; params=Array(SimpleChains.init_params(layer.layer; rng)))
+    n = Int(SimpleChains.numparam(layer.layer))
+    if length(θ) != n
+        @warn "`lux_layer` has $(length(θ)) parameters but the SimpleChains model has \
+               $(n); check `input_dims`. Falling back to `SimpleChains.init_params`."
         return (; params=Array(SimpleChains.init_params(layer.layer; rng)))
     end
     return (; params=θ)
