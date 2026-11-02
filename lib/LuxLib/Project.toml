@@ -69,7 +69,7 @@ cuDNNExt = ["CUDA", "cuDNN"]
 
 [compat]
 AMDGPU = "2.2"
-AppleAccelerate = "0.4, 0.5"
+AppleAccelerate = "0.4, 0.5, 0.7"
 ArrayInterface = "7.24"
 BLISBLAS = "0.1, 0.2"
 CPUSummary = "0.2.6"
