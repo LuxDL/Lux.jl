@@ -260,6 +260,17 @@ end
             @test BinaryFocalLoss()(ŷ1, y1) ≈ 0.05691642237852222
             @test BinaryFocalLoss(; gamma=0)(ŷ, y) ≈ Lux.CrossEntropyLoss()(ŷ, y)
 
+            # predictions of exactly 0 or 1, e.g. from a saturated sigmoid (#1810)
+            ŷ2 = aType(sigmoid.(Float32[20, -20, -3]))
+            y2 = aType(Float32[0, 1, 1])
+            @test ŷ2[1] == 1 && ŷ2[2] < eps(Float32)
+            @test isfinite(BinaryFocalLoss()(ŷ2, y2))
+            @test BinaryFocalLoss(; gamma=0)(ŷ2, y2) ≈ BinaryCrossEntropyLoss()(ŷ2, y2)
+            @test BinaryFocalLoss(; gamma=0)(aType([1.0, 0.0]), aType([0, 1])) ≈
+                BinaryCrossEntropyLoss()(aType([1.0, 0.0]), aType([0, 1]))
+            # FiniteDiff steps outside [0, 1]; just check Zygote grads stay finite
+            @test all(isfinite, only(Zygote.gradient(Base.Fix2(BinaryFocalLoss(), y2), ŷ2)))
+
             @jet BinaryFocalLoss()(ŷ, y)
 
             @test_gradients(Base.Fix2(BinaryFocalLoss(), y), ŷ; atol=1.0f-3, rtol=1.0f-3)

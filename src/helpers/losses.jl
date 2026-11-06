@@ -323,9 +323,9 @@ function unsafe_apply_loss(loss::BinaryFocalLoss, ŷ, y)
     T = promote_type(eltype(ŷ), eltype(y))
     γ = loss.gamma isa Integer ? loss.gamma : T(loss.gamma)
     ϵ = LossFunctionImpl.get_ϵ(T, loss.epsilon)
-    ŷϵ = ŷ .+ ϵ
-    p_t = y .* ŷϵ + (1 .- y) .* (1 .- ŷϵ)
-    return LossFunctionImpl.fused_agg(loss.agg, -, (1 .- p_t) .^ γ .* log.(p_t))
+    # Add ϵ inside log only; adding to ŷ first yields p_t = -ϵ when y = 0, ŷ = 1 (#1810)
+    p_t = y .* ŷ + (1 .- y) .* (1 .- ŷ)
+    return LossFunctionImpl.fused_agg(loss.agg, -, (1 .- p_t) .^ γ .* log.(p_t .+ ϵ))
 end
 
 @doc doc"""
