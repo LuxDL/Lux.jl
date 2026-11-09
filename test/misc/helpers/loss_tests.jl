@@ -216,6 +216,16 @@ end
             @test CrossEntropyLoss(; label_smoothing=2sf, epsilon=0)(ŷ1, y1) ≈
                 -sum((y1 .* (1 - 2sf) .+ 2sf / nclasses) .* log.(ŷ1))
 
+            # Repeated reduction dimensions count each class axis once.
+            y_repeat = Float32.(y3[:, 1, 1])
+            ŷ_repeat = ŷ3[:, 1, 1]
+            dims_repeat = (1, 1)
+            y_repeat_ls = Lux.LossFunctionImpl.label_smoothing(2sf, y_repeat, Float32, dims_repeat)
+            expected_repeat = mean(-sum(y_repeat_ls .* log.(ŷ_repeat); dims=dims_repeat))
+            loss_repeat = CrossEntropyLoss(; dims=dims_repeat, label_smoothing=2sf, epsilon=0)
+            @test loss_repeat(ŷ_repeat, y_repeat) ≈ expected_repeat
+            @test all(x -> isapprox(x, 1; atol=1.0f-5), sum(y_repeat_ls; dims=dims_repeat))
+
             # smoothed targets are still probability distributions over the classes
             ỹ3 = Lux.LossFunctionImpl.label_smoothing(2sf, y3, Float32, 1)
             @test all(x -> isapprox(x, 1; atol=1.0f-5), Array(sum(ỹ3; dims=1)))
