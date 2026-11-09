@@ -172,7 +172,7 @@ end
 # Number of classes, i.e. the size of `y` along the dimension(s) the loss reduces over
 num_classes(y, dims::Integer) = size(y, dims)
 num_classes(y, ::Colon) = length(y)
-num_classes(y, dims) = prod(Base.Fix1(size, y), dims)
+num_classes(y, dims) = prod(size(y, d) for d in unique(dims))
 
 label_smoothing(::Nothing, y, ::Type{T}, dims=1) where {T} = y
 function label_smoothing(label_smoothing, y, ::Type{T}, dims=1) where {T}
