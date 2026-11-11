@@ -116,10 +116,21 @@ end
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        rnn = RNNCell(3 => 5; init_state=Lux.zeros32)
-        x = randn(rng, Float32, 3, 2, 2)
-        @test Lux.Utils.init_rnn_hidden_state(rng, rnn, view(dev(x), :, 1, :)) ==
-            aType(zeros(Float32, 5, 2))
+        x = view(dev(randn(rng, Float32, 3, 2, 2)), :, 1, :)
+        for init_fn in (Lux.zeros32, Lux.zeros32(), Lux.zeros32(rng), Lux.zeros64)
+            rnn = RNNCell(3 => 5; init_state=init_fn)
+            @test Lux.Utils.init_rnn_hidden_state(rng, rnn, x) ==
+                aType(zeros(Float32, 5, 2))
+        end
+        for init_fn in (Lux.ones32, Lux.ones32(), Lux.ones32(rng), Lux.ones64)
+            rnn = RNNCell(3 => 5; init_state=init_fn)
+            @test Lux.Utils.init_rnn_hidden_state(rng, rnn, x) ==
+                aType(ones(Float32, 5, 2))
+        end
+        rnn_custom = RNNCell(3 => 5; init_state=Lux.glorot_uniform)
+        h_custom = Lux.Utils.init_rnn_hidden_state(rng, rnn_custom, x)
+        @test h_custom isa aType{Float32,2}
+        @test size(h_custom) == (5, 2)
     end
 end
 

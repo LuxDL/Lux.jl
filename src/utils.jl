@@ -15,6 +15,21 @@ using StaticArraysCore: SMatrix, SVector
 using LuxCore: LuxCore, AbstractLuxLayer
 using MLDataDevices: MLDataDevices
 using NNlib: NNlib
+using WeightInitializers:
+    WeightInitializers,
+    ones16,
+    ones32,
+    ones64,
+    onesC16,
+    onesC32,
+    onesC64,
+    zeros16,
+    zeros32,
+    zeros64,
+    zerosC16,
+    zerosC32,
+    zerosC64
+using WeightInitializers.PartialFunction: Partial
 
 const CRC = ChainRulesCore
 
@@ -167,9 +182,22 @@ end
 add!!(x::Number, y::Number) = x + y
 add!!(::Nothing, ::Nothing) = nothing
 
+_is_zero_init(f) = f in (zeros16, zeros32, zeros64, zerosC16, zerosC32, zerosC64)
+_is_zero_init(f::Partial) = isempty(f.kwargs) && _is_zero_init(f.f)
+
+_is_one_init(f) = f in (ones16, ones32, ones64, onesC16, onesC32, onesC64)
+_is_one_init(f::Partial) = isempty(f.kwargs) && _is_one_init(f.f)
+
 function init_rnn_hidden_state(rng::AbstractRNG, rnn, x::AbstractMatrix)
     y = similar(x, rnn.out_dims, Base.size(x, 2))
-    copyto!(y, rnn.init_state(rng, size(y)...))
+    init_state = rnn.init_state
+    if _is_zero_init(init_state)
+        fill!(y, false)
+    elseif _is_one_init(init_state)
+        fill!(y, true)
+    else
+        copyto!(y, init_state(rng, size(y)...))
+    end
     return ArrayInterface.aos_to_soa(y)
 end
 
