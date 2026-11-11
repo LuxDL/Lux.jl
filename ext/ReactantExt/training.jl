@@ -187,7 +187,7 @@ for inplace in ("!", "")
             hasfield(typeof(ts.cache.extras), :compiled_grad_and_step_function)
         )
             (; compiled_grad_and_step_function, is_sharded) = ts.cache.extras
-            ps = ts.parameters
+            $(ps_expr)
             dparameters = ts.cache.dparameters
         else
             device = get_device((ts.parameters, ts.states, ts.optimizer_state, data))
