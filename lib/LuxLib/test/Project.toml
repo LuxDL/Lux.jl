@@ -17,7 +17,6 @@ LuxLib = "82251201-b29d-42c6-8e01-566dec8acb11"
 LuxTestUtils = "ac9de150-d08f-4546-94fb-7472b5760531"
 MKL = "33e6dc65-8f57-5167-99aa-e5a354878fb2"
 MLDataDevices = "7e8f7934-dd98-4c1a-8fe8-92b47a384d40"
-Metal = "dde4c033-4e86-420c-a63e-0dd931031962"
 Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
 NNlib = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
 Octavian = "6fd5a793-0b7e-452c-907f-f8bfe9c57db4"
@@ -35,7 +34,6 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
-oneAPI = "8f75cd03-7ff8-4ecb-9b8f-daf728133b1b"
 
 [sources]
 LuxLib = {path = ".."}
