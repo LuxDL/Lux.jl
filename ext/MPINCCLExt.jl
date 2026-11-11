@@ -8,6 +8,8 @@ using MLDataDevices: AbstractDevice, CUDADevice
 
 Lux.is_extension_loaded(::Val{:MPINCCL}) = true
 
+const NCCL_BACKEND_CACHE = Ref{Union{Nothing,NCCLBackend}}(nothing)
+
 function DistributedUtils.force_initialize(
     ::Type{NCCLBackend}; cuda_devices=nothing, amdgpu_devices=missing
 )
@@ -16,12 +18,17 @@ function DistributedUtils.force_initialize(
         MPIBackend; cuda_devices, force_cuda=true, caller="NCCLBackend", amdgpu_devices
     )
     DistributedUtils.NCCL_Initialized[] = true
+    NCCL_BACKEND_CACHE[] = nothing
     return nothing
 end
 
 function DistributedUtils.unsafe_get_distributed_backend(::Type{NCCLBackend})
+    NCCL_BACKEND_CACHE[] !== nothing && return (NCCL_BACKEND_CACHE[])::NCCLBackend
+
     mpi_backend = DistributedUtils.unsafe_get_distributed_backend(MPIBackend)
-    return NCCLBackend(NCCL.Communicator(mpi_backend.comm), mpi_backend)
+    backend = NCCLBackend(NCCL.Communicator(mpi_backend.comm), mpi_backend)
+    NCCL_BACKEND_CACHE[] = backend
+    return backend
 end
 
 DistributedUtils.local_rank(backend::NCCLBackend) = NCCL.rank(backend.comm)
