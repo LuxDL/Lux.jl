@@ -17,6 +17,7 @@ ext_compat
 
 # PythonCall.jl
 .CondaPkg
+test/CondaPkg.toml
 
 .vitepress/dist
 .vitepress/cache
