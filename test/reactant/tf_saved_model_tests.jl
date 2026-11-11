@@ -93,5 +93,36 @@ using PythonCall
         end
 
         @test res_saved ≈ res_tf atol = 1e-2 rtol = 1e-2
+
+        @testset "Tied Parameters Export" begin
+            dev = reactant_device()
+            rng = Random.default_rng()
+            tied_model = Chain(
+                Dense(4 => 4, relu; use_bias=false), Dense(4 => 4, relu; use_bias=false)
+            )
+
+            w = rand(rng, Float32, 4, 4) |> dev
+            ps_tied = (layer_1=(; weight=w), layer_2=(; weight=w))
+            st_tied = (layer_1=(;), layer_2=(;))
+
+            x_tied = rand(Float32, 4, 2) |> dev
+            model_dir_tied = tempname()
+
+            Lux.Serialization.export_as_tf_saved_model(
+                model_dir_tied, tied_model, x_tied, ps_tied, st_tied
+            )
+
+            res_tied = Array(@jit(tied_model(x_tied, ps_tied, Lux.testmode(st_tied)))[1])
+            restored_model_tied = tf.saved_model.load(model_dir_tied)
+
+            x_tf_tied = tf.constant(
+                np.asarray(permutedims(Array(x_tied), (2, 1))); dtype=tf.float32
+            )
+            res_tf_tied = pywith(tf.device("/CPU:0")) do _
+                return permutedims(PyArray(restored_model_tied.f(x_tf_tied)[0]), (2, 1))
+            end
+
+            @test res_tied ≈ res_tf_tied atol = 1e-2 rtol = 1e-2
+        end
     end
 end
