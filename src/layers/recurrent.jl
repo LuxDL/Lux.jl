@@ -168,17 +168,80 @@ function (r::Recurrence{False})(x::Union{AbstractVector,NTuple}, ps, st::NamedTu
     return out, st
 end
 
+struct _RecurrenceNode{O}
+    prev::Union{Nothing,_RecurrenceNode{O}}
+    val::O
+end
+
+_RecurrenceNode(::Nothing, val::O) where {O} = _RecurrenceNode{O}(nothing, val)
+_RecurrenceNode(prev::_RecurrenceNode{O}, val::O) where {O} = _RecurrenceNode{O}(prev, val)
+
+function _widen_recurrence_node(::Type{P}, node::_RecurrenceNode) where {P}
+    prev = node.prev === nothing ? nothing : _widen_recurrence_node(P, node.prev)
+    val = node.val isa P ? node.val : convert(P, node.val)
+    return _RecurrenceNode{P}(prev, val)
+end
+
+function _RecurrenceNode(prev::_RecurrenceNode{O}, val::V) where {O,V}
+    P = promote_type(O, V)
+    val_p = val isa P ? val : convert(P, val)
+    return _RecurrenceNode{P}(_widen_recurrence_node(P, prev), val_p)
+end
+
+function _collect_recurrence_outputs(node::_RecurrenceNode{O}, len::Int) where {O}
+    res = Vector{O}(undef, len)
+    curr = node
+    for i in len:-1:1
+        res[i] = curr.val
+        curr = curr.prev
+    end
+    return res
+end
+
+_collect_recurrence_outputs(::Nothing, ::Int) = []
+
+function CRC.rrule(
+    ::typeof(_collect_recurrence_outputs), node::_RecurrenceNode{O}, len::Int
+) where {O}
+    y = _collect_recurrence_outputs(node, len)
+    ∇_collect_recurrence_outputs = @closure Δy -> begin
+        if Δy isa CRC.AbstractZero
+            return (CRC.NoTangent(), CRC.ZeroTangent(), CRC.NoTangent())
+        end
+        Δy_u = CRC.unthunk(Δy)
+        curr_tangent = CRC.NoTangent()
+        for Δᵢ in Δy_u
+            Δval = if Δᵢ === nothing
+                CRC.NoTangent()
+            elseif Δᵢ isa CRC.AbstractZero
+                CRC.ZeroTangent()
+            else
+                CRC.unthunk(Δᵢ)
+            end
+            curr_tangent = CRC.Tangent{_RecurrenceNode{O}}(; prev=curr_tangent, val=Δval)
+        end
+        return (CRC.NoTangent(), curr_tangent, CRC.NoTangent())
+    end
+    return y, ∇_collect_recurrence_outputs
+end
+
+function CRC.rrule(::typeof(_collect_recurrence_outputs), ::Nothing, len::Int)
+    return [], Returns((CRC.NoTangent(), CRC.ZeroTangent(), CRC.NoTangent()))
+end
+
 function (r::Recurrence{True})(x::AbstractVector, ps, st::NamedTuple)
+    isempty(x) && return similar(x, 0), st
     function recur_op(::Nothing, input)
         (out, carry), state = apply(r.cell, input, ps, st)
-        return [out], carry, state
+        return _RecurrenceNode(nothing, out), carry, state
     end
     function recur_op((outputs, carry, state), input)
         (out, carry), state = apply(r.cell, (input, carry), ps, state)
-        return vcat(outputs, [out]), carry, state
+        return _RecurrenceNode(outputs, out), carry, state
     end
     results = foldl_init(recur_op, x)
-    return first(results), last(results)
+    outputs = _collect_recurrence_outputs(first(results), length(x))
+    return outputs, last(results)
 end
 
 function (r::Recurrence{True})(x::NTuple, ps, st::NamedTuple)
