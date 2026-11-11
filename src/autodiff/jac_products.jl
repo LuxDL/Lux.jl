@@ -3,6 +3,17 @@ function vector_jacobian_product(f::F, backend::AbstractADType, x, u) where {F}
     return vector_jacobian_product_impl(f, backend, x, u)
 end
 
+for fType in AD_CONVERTIBLE_FUNCTIONS
+    @eval function vector_jacobian_product(f::$(fType), backend::AbstractADType, x, u)
+        f̂, y = rewrite_autodiff_call(f)
+        return vector_jacobian_product_impl(f̂, backend, x, u, y)
+    end
+end
+
+function vector_jacobian_product_impl(f::F, backend::AbstractADType, x, u, y) where {F}
+    return vector_jacobian_product_impl(Base.Fix2(f, y), backend, x, u)
+end
+
 # JVP Implementation
 function jacobian_vector_product(f::F, backend::AbstractADType, x, u) where {F}
     return jacobian_vector_product_impl(f, backend, x, u)
