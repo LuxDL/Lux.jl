@@ -36,8 +36,8 @@ function set_dispatch_doctor_preferences!(package, mode::String)
     @assert mode in ("disable", "warn", "error") "Invalid value for `mode`: $mode. Valid \
                                                   choices are: (\"disable\", \"warn\", \
                                                   \"error\")"
-    if has_preference(package, "dispatch_doctor")
-        orig_pref = load_preference(package, "dispatch_doctor")
+    if has_preference(package, "instability_check")
+        orig_pref = load_preference(package, "instability_check")
         if orig_pref == mode
             @info "Dispatch Doctor preference for $(package) is already set to $mode."
             return nothing
