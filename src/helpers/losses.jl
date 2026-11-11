@@ -145,7 +145,8 @@ function l1_hinge_loss(x::T1, y::T2) where {T1,T2}
 end
 has_custom_derivative(::typeof(l1_hinge_loss)) = true
 function derivative(::typeof(l1_hinge_loss), x::T1, y::T2) where {T1,T2}
-    return T1(ifelse(x * y ≥ 1, false, true))
+    agreement = x * y
+    return convert(T1, ifelse(agreement ≥ 1, false, -y))
 end
 
 function l2_hinge_loss(x::T1, y::T2) where {T1,T2}
@@ -155,7 +156,7 @@ end
 has_custom_derivative(::typeof(l2_hinge_loss)) = true
 function derivative(::typeof(l2_hinge_loss), x::T1, y::T2) where {T1,T2}
     agreement = x * y
-    return T1(ifelse(agreement ≥ 1, false, 2 * (agreement - true)))
+    return convert(T1, ifelse(agreement ≥ 1, false, 2 * y * (agreement - true)))
 end
 
 function siamese_contrastive_loss(x::T1, y::T2, margin=true) where {T1,T2}
