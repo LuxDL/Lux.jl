@@ -78,7 +78,6 @@ function CRC.rrule(
 
     # Without custom derivatives use ForwardDiff for the looped implementation
     if fast_scalar_indexing(x) && fast_scalar_indexing(y)
-        x_dual = Dual{Nothing,eltype(x),1}.(x, (Partials{1,eltype(x)}((one(eltype(x)),)),))
         x_partials = similar(x)
         T = eltype(x)
         res = Core.Compiler.return_type(op, Tuple{T,eltype(y)})(0)

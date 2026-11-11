@@ -101,5 +101,26 @@ include("../shared_testsetup.jl")
             @test_throws AssertionError batched_jacobian(fincorrect, AutoForwardDiff(), x)
             @test_throws AssertionError batched_jacobian(fincorrect, AutoZygote(), x)
         end
+
+        @testset "batched_row unit tests" begin
+            for (M, N) in ((2, 3), (3, 2))
+                # 2D array
+                x2d = dev(randn(Float32, M, N))
+                for idx in 1:M
+                    @test Array(Lux.AutoDiffInternalImpl.batched_row(x2d, idx)) ==
+                        Array(x2d[idx, :])
+                end
+
+                # 3D array for K = 1 and K = 3
+                for K in (1, 3)
+                    x3d = dev(randn(Float32, M, N, K))
+                    block_diag = cat([Array(x3d[:, :, k]) for k in 1:K]...; dims=(1, 2))
+                    for idx in 1:(M * K)
+                        @test Array(Lux.AutoDiffInternalImpl.batched_row(x3d, idx)) ≈
+                            block_diag[idx, :]
+                    end
+                end
+            end
+        end
     end
 end
