@@ -228,3 +228,30 @@ end
     @test !all(iszero, Array(grads1.layer_2.weight))
     @test !all(iszero, Array(grads1.layer_2.bias))
 end
+
+@testset "Reactant: Out-of-place single_train_step preserves parameters on cached step" begin
+    dev = reactant_device(; force=true)
+    rng = StableRNG(1234)
+
+    model = Dense(4 => 2)
+    ps, st = Lux.setup(rng, model) |> dev
+    x = dev(randn(rng, Float32, 4, 8))
+    y = dev(randn(rng, Float32, 2, 8))
+
+    ts = Training.TrainState(model, ps, st, Descent(0.1f0))
+
+    # Step 1: compiles and populates cache in ts1
+    grads1, loss1, stats1, ts1 = Training.single_train_step(
+        AutoEnzyme(), MSELoss(), (x, y), ts
+    )
+
+    ts1_weight_snapshot = Array(ts1.parameters.weight)
+
+    # Step 2: cached step executing with ts1
+    grads2, loss2, stats2, ts2 = Training.single_train_step(
+        AutoEnzyme(), MSELoss(), (x, y), ts1
+    )
+
+    @test Array(ts1.parameters.weight) == ts1_weight_snapshot
+    @test !(Array(ts2.parameters.weight) ≈ ts1_weight_snapshot)
+end
