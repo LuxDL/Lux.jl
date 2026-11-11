@@ -224,7 +224,7 @@ calculate_gain(_, __) = 1.0f0
 calculate_gain(::typeof(identity), _) = 1.0f0
 calculate_gain(::typeof(NNlib.sigmoid), _) = 1.0f0
 calculate_gain(::typeof(NNlib.sigmoid_fast), _) = 1.0f0
-calculate_gain(::typeof(NNlib.relu), _) = 2.0f0
+calculate_gain(::typeof(NNlib.relu), _) = √2.0f0
 calculate_gain(::typeof(tanh), _) = 5.0f0 / 3.0f0
 calculate_gain(::typeof(NNlib.tanh_fast), _) = 5.0f0 / 3.0f0
 function calculate_gain(::typeof(NNlib.leakyrelu), ::Nothing)

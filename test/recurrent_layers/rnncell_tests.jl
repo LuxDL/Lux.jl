@@ -14,6 +14,16 @@ end
 @testset "RNNCell" begin
     rng = StableRNG(12345)
 
+    @testset "Default Weight and Bias Initialization" begin
+        rnn = RNNCell(3 => 5)
+        ps, _ = Lux.setup(rng, rnn)
+        bound = inv(sqrt(5))
+        @test all(-bound .≤ ps.weight_ih .≤ bound)
+        @test all(-bound .≤ ps.weight_hh .≤ bound)
+        @test all(-bound .≤ ps.bias_ih .≤ bound)
+        @test all(-bound .≤ ps.bias_hh .≤ bound)
+    end
+
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset for act in (identity, tanh),
             use_bias in (true, false),
