@@ -13,11 +13,6 @@ function (rnn::AbstractRecurrentCell)((x, carry), ps, st::NamedTuple)
     return (vec(y), vec.(carry₂)), stₙ
 end
 
-abstract type AbstractTimeSeriesDataBatchOrdering end
-
-struct TimeLastIndex <: AbstractTimeSeriesDataBatchOrdering end
-struct BatchLastIndex <: AbstractTimeSeriesDataBatchOrdering end
-
 function time_dimension_size(x::AbstractArray, ::BatchLastIndex)
     ndims(x) == 2 && return size(x, ndims(x))
     return size(x, ndims(x) - 1)
@@ -954,6 +949,7 @@ function PrettyPrinting.printable_children(l::BidirectionalRNN)
 end
 
 (rnn::BidirectionalRNN)(x, ps, st::NamedTuple) = rnn.model(x, ps, st)
+(rnn::BidirectionalRNN)(x::Tuple, ps, st::NamedTuple) = rnn.model((x, x), ps, st)
 
 function BidirectionalRNN(
     cell::AbstractRecurrentCell,
@@ -973,7 +969,9 @@ function BidirectionalRNN(
             fuse_op;
             forward_rnn=layer,
             backward_rnn=Chain(;
-                rev1=ReverseSequence(), rnn=backward_rnn_layer, rev2=ReverseSequence()
+                rev1=ReverseSequence(ordering),
+                rnn=backward_rnn_layer,
+                rev2=ReverseSequence(),
             ),
         ),
     )
