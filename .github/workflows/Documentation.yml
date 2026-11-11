@@ -1,12 +1,7 @@
 name: Documentation
 
 permissions:
-  contents: write # contents permission to update benchmark contents in gh-pages branch
-  statuses: read
-  deployments: write # deployments permission to deploy GitHub pages website
-  pages: write
-  id-token: write
-  pull-requests: write
+  contents: read
 
 on:
   pull_request:
@@ -153,6 +148,11 @@ jobs:
   documentation:
     if: ${{ !contains(github.event.head_commit.message, '[skip docs]') }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      statuses: read
+      deployments: write
+      pull-requests: write
     # needs: [tutorial-cpu, tutorial-cuda]
     needs: [tutorial-cpu]
     steps:

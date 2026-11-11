@@ -1,5 +1,8 @@
 name: Doc Preview Cleanup
 
+permissions:
+  contents: write
+
 on:
   pull_request:
     types: [closed]
@@ -14,13 +17,13 @@ jobs:
           ref: gh-pages
       - name: Delete preview and history + push changes
         run: |
-            if [ -d "previews/PR$PRNUM" ]; then
-              git config user.name "avik-pal"
-              git config user.email "avikpal@mit.edu"
-              git rm -rf "previews/PR$PRNUM"
-              git commit -m "delete preview"
-              git branch gh-pages-new $(echo "delete history" | git commit-tree HEAD^{tree})
-              git push --force origin gh-pages-new:gh-pages
-            fi
+          if [ -d "previews/PR${PRNUM}" ]; then
+            git config user.name "avik-pal"
+            git config user.email "avikpal@mit.edu"
+            git rm -rf "previews/PR${PRNUM}"
+            git commit -m "delete preview"
+            git branch gh-pages-new "$(echo "delete history" | git commit-tree HEAD^{tree})"
+            git push --force origin gh-pages-new:gh-pages
+          fi
         env:
-            PRNUM: ${{ github.event.number }}
+          PRNUM: ${{ github.event.number }}
