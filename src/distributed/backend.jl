@@ -1,5 +1,7 @@
 abstract type AbstractLuxDistributedBackend end
 
+Functors.@leaf AbstractLuxDistributedBackend
+
 """
     MPIBackend(comm = nothing)
 
