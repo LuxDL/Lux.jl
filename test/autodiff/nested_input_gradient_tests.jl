@@ -100,7 +100,6 @@ const INPUT_ALL_TEST_CONFIGS = Iterators.product(
     @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
         @testset "$(summary(X)) $(loss_fn)" for ((X, model), loss_fn) in
                                                 INPUT_ALL_TEST_CONFIGS
-            model = maybe_rewrite_to_crosscor(mode, model)
             test_nested_ad_input_gradient_jacobian(aType, dev, ongpu, loss_fn, X, model)
         end
     end

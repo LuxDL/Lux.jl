@@ -11,9 +11,6 @@ const input_args = length(ARGS) == 2 ? ARGS : ("cpu", "mpi")
 if input_args[1] == "cuda"
     using LuxCUDA
 end
-if input_args[1] == "amdgpu"
-    using AMDGPU
-end
 
 const backend_type = input_args[2] == "nccl" ? NCCLBackend : MPIBackend
 
@@ -21,11 +18,7 @@ if input_args[2] == "nccl"
     using NCCL
 end
 
-const dev = if input_args[1] == "cpu"
-    CPUDevice()
-else
-    (input_args[1] == "cuda" ? CUDADevice() : AMDGPUDevice())
-end
+const dev = input_args[1] == "cpu" ? CPUDevice() : CUDADevice()
 
 rng = Xoshiro(1234)
 
