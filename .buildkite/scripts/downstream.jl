@@ -12,7 +12,7 @@ pkg_name = endswith(repo, ".jl") ? String(repo[1:(end - 3)]) : String(repo)
 
 lux_dir = normpath(joinpath(@__DIR__, "..", ".."))
 
-local_pkgs = Dict{String, String}("Lux" => lux_dir)
+local_pkgs = Dict{String,String}("Lux" => lux_dir)
 lib_dir = joinpath(lux_dir, "lib")
 if isdir(lib_dir)
     for d in readdir(lib_dir; join=true)
@@ -20,7 +20,7 @@ if isdir(lib_dir)
             proj = try
                 TOML.parsefile(joinpath(d, "Project.toml"))
             catch
-                Dict{String, Any}()
+                Dict{String,Any}()
             end
             if haskey(proj, "name")
                 local_pkgs[proj["name"]] = d
