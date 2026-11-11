@@ -1,7 +1,7 @@
 name = "Lux"
 uuid = "b2108857-7c20-44ae-9111-449ecde12c47"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "1.32.15"
+version = "1.32.16"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -10,7 +10,6 @@ ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 ConcreteStructs = "2569d6c7-a4a2-43d3-a901-331e8e4be471"
 DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
-DispatchDoctor = "8d63f2c5-f18a-4cf2-ba9d-b3f60fc568c8"
 EnzymeCore = "f151be2c-9106-41f4-ab19-57ee4f262869"
 FastClosures = "9aa1b823-49e4-5ca5-8b0f-3971ec8bab6a"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
@@ -72,28 +71,6 @@ MPIExt = "MPI"
 MPINCCLExt = ["CUDA", "MPI", "NCCL"]
 MooncakeExt = "Mooncake"
 ReactantExt = ["Enzyme", "Reactant"]
-# ReactantAttentionPrecompileExt = [
-#     "Enzyme",
-#     "Reactant",
-#     "Functors",
-#     "ReactantCore",
-#     "LuxLib",
-#     "MLDataDevices",
-#     "Optimisers",
-#     "NNlib",
-#     "Statistics",
-# ]
-# ReactantBasicLayersPrecompileExt = [
-#     "Enzyme",
-#     "Reactant",
-#     "Functors",
-#     "ReactantCore",
-#     "LuxLib",
-#     "MLDataDevices",
-#     "Optimisers",
-#     "NNlib",
-#     "Statistics",
-# ]
 ReverseDiffExt = ["FunctionWrappers", "ReverseDiff"]
 SimpleChainsExt = "SimpleChains"
 TrackerExt = "Tracker"
@@ -108,7 +85,6 @@ ChainRulesCore = "1.26"
 ComponentArrays = "0.15"
 ConcreteStructs = "0.2"
 DiffResults = "1.1"
-DispatchDoctor = "0.4"
 Enzyme = "0.13"
 EnzymeCore = "0.8"
 FastClosures = "0.3"
