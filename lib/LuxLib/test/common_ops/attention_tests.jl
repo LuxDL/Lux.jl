@@ -1,6 +1,6 @@
 include("../shared_testsetup.jl")
 
-using LuxLib, Reactant, NNlib, Random, MLDataDevices, Enzyme, Statistics, Test, Zygote
+using LuxLib, Reactant, Random, MLDataDevices, Enzyme, Statistics, Test, Zygote
 
 @testset "Scaled Dot Product Attention" begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES

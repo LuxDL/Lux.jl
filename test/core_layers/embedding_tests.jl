@@ -60,32 +60,14 @@ include("../shared_testsetup.jl")
             @test y isa aType{Float32}
             @test y == ps.weight[:, CartesianIndex.(x...)]
             @jet layer(x, ps, st)
-            @test_gradients(
-                sumabs2first,
-                layer,
-                x,
-                ps,
-                st;
-                atol=1.0f-3,
-                rtol=1.0f-3,
-                broken_backends=[AutoEnzyme()]
-            )
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             x = aType.((rand(1:vocab_size[1], 3, 4), rand(1:vocab_size[2], 3, 4)))
             y, st_ = layer(x, ps, st)
             @test y isa aType{Float32,3}
             @test size(y) == (embed_size, 3, 4)
             @jet layer(x, ps, st)
-            @test_gradients(
-                sumabs2first,
-                layer,
-                x,
-                ps,
-                st;
-                atol=1.0f-3,
-                rtol=1.0f-3,
-                broken_backends=[AutoEnzyme()]
-            )
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             x = aType.((rand(1:vocab_size[1], 3), rand(1:vocab_size[2], 4)))
             @test_throws DimensionMismatch layer(x, ps, st)
