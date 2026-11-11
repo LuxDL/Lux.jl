@@ -36,9 +36,13 @@ function xlogx(x::Number)
 end
 
 ∇xlogx(Δ::Number, logx::Number) = Δ * (logx + true)
+function ∇xlogx(Δ::Number, x::Number, logx::Number)
+    result = ∇xlogx(Δ, logx)
+    return ifelse(iszero(x), zero(result), result)
+end
 
 function CRC.rrule(::typeof(xlogx), x::Number)
-    iszero(x) && return x, Returns((NoTangent(), ZeroTangent()))
+    iszero(x) && return zero(x * log(x)), Returns((NoTangent(), ZeroTangent()))
     logx = log(x)
     ∇xlogx_internal = @closure Δ -> (NoTangent(), @thunk(∇xlogx(Δ, logx)))
     return x * logx, ∇xlogx_internal
@@ -48,8 +52,8 @@ function CRC.rrule(
     ::typeof(Broadcast.broadcasted), ::typeof(xlogx), x::AbstractArray{<:Number}
 )
     logx = log.(x)
-    ∇xlogx_internal = @closure Δ -> (NoTangent(), NoTangent(), @thunk(∇xlogx.(Δ, logx)))
-    return .*(x, logx), ∇xlogx_internal
+    ∇xlogx_internal = @closure Δ -> (NoTangent(), NoTangent(), @thunk(∇xlogx.(Δ, x, logx)))
+    return xlogx.(x), ∇xlogx_internal
 end
 
 """
@@ -63,10 +67,19 @@ function xlogy(x::Number, y::Number)
 end
 
 ∇₁xlogy(Δ::Number, logy::Number) = Δ * logy
-∇₂xlogy(Δ::Number, x::Number, y::Number) = Δ * x / y
+function ∇₁xlogy(Δ::Number, x::Number, logy::Number)
+    result = ∇₁xlogy(Δ, logy)
+    return ifelse(iszero(x), zero(result), result)
+end
+
+function ∇₂xlogy(Δ::Number, x::Number, y::Number)
+    result = Δ * x / y
+    return ifelse(iszero(x), zero(result), result)
+end
 
 function CRC.rrule(::typeof(xlogy), x::Number, y::Number)
-    iszero(x) && return x, Returns((NoTangent(), ZeroTangent()))
+    iszero(x) &&
+        return zero(x * log(y)), Returns((NoTangent(), ZeroTangent(), ZeroTangent()))
     logy = log(y)
     ∇xlogy_internal = @closure Δ ->
         (NoTangent(), @thunk(∇₁xlogy(Δ, logy)), @thunk(∇₂xlogy(Δ, x, y)))
@@ -81,8 +94,8 @@ function CRC.rrule(
 )
     logy = log.(y)
     ∇xlogy_internal = @closure Δ ->
-        (NoTangent(), NoTangent(), @thunk(∇₁xlogy.(Δ, logy)), @thunk(∇₂xlogy.(Δ, x, y)))
-    return .*(x, logy), ∇xlogy_internal
+        (NoTangent(), NoTangent(), @thunk(∇₁xlogy.(Δ, x, logy)), @thunk(∇₂xlogy.(Δ, x, y)))
+    return xlogy.(x, y), ∇xlogy_internal
 end
 
 """
