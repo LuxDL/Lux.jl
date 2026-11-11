@@ -2,7 +2,6 @@ module MPINCCLExt
 
 using MPI: MPI
 using NCCL: NCCL
-using Setfield: @set!
 
 using Lux: Lux, MPIBackend, NCCLBackend, DistributedUtils
 using MLDataDevices: AbstractDevice, CUDADevice
@@ -21,21 +20,13 @@ function DistributedUtils.force_initialize(
 end
 
 function DistributedUtils.unsafe_get_distributed_backend(::Type{NCCLBackend})
-    unique_id = NCCL.UniqueID()  # Generate on all ranks to know the type
     mpi_backend = DistributedUtils.unsafe_get_distributed_backend(MPIBackend)
-    buf = [unique_id.internal...]
-    DistributedUtils.bcast!(mpi_backend, buf; root=0)
-    @set! unique_id.internal = Tuple(buf)
-
-    nranks = DistributedUtils.total_workers(mpi_backend)
-    rank = DistributedUtils.local_rank(mpi_backend)
-
-    return NCCLBackend(NCCL.Communicator(nranks, rank; unique_id), mpi_backend)
+    return NCCLBackend(NCCL.Communicator(mpi_backend.comm), mpi_backend)
 end
 
 DistributedUtils.local_rank(backend::NCCLBackend) = NCCL.rank(backend.comm)
 
-DistributedUtils.total_workers(backend::NCCLBackend) = NCCL.size(backend.comm)
+DistributedUtils.total_workers(backend::NCCLBackend) = NCCL.nranks(backend.comm)
 
 # For non-CUDA Arrays, fallback to MPI
 # Broadcast
