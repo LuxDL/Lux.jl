@@ -487,18 +487,49 @@ end
         INJECTION = [Val(false), Val(true), Val(false), Val(true)]
 
         @testset "repeats = $(repeats); input_injection = $(input_injection)" for (
-            layer, repeats, input_injection
+            sublayer, repeats, input_injection
         ) in zip(
             LAYERS, REPEATS, INJECTION
         )
-            layer = RepeatedLayer(layer; repeats, input_injection)
+            layer = RepeatedLayer(sublayer; repeats, input_injection)
             display(layer)
             ps, st = dev(Lux.setup(rng, layer))
             x = aType(rand(rng, Float32, 2, 12))
 
-            @test size(layer(x, ps, st)[1]) == (2, 12)
+            y, st_out = layer(x, ps, st)
+            @test size(y) == (2, 12)
+
+            res = x
+            st_ref = st
+            if input_injection == Val(false)
+                for _ in 1:4
+                    res, st_ref = sublayer(res, ps, st_ref)
+                end
+            else
+                for _ in 1:4
+                    res, st_ref = sublayer((res, x), ps, st_ref)
+                end
+            end
+            @test y ≈ res
+            @test st_out == st_ref
+
             @jet layer(x, ps, st)
             @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+        end
+
+        @testset "repeats = Val(0) & invalid repeats" begin
+            sublayer = Dense(2 => 2)
+            ps, st = dev(Lux.setup(rng, sublayer))
+            x = aType(rand(rng, Float32, 2, 12))
+
+            for injection in (Val(false), Val(true))
+                layer0 = RepeatedLayer(sublayer; repeats=Val(0), input_injection=injection)
+                y0, st0 = layer0(x, ps, st)
+                @test y0 == x
+                @test st0 == st
+            end
+
+            @test_throws ArgumentError RepeatedLayer(sublayer; repeats=Val(-1))(x, ps, st)
         end
     end
 end

@@ -759,17 +759,18 @@ end
 (m::RepeatedLayer)(x, ps, st) = repeatedlayer(m, m.model, x, ps, st)
 
 @generated function repeatedlayer(::RepeatedLayer{N,IJ}, model, x, ps, st) where {N,IJ}
+    known(N) < 0 && return :(throw(ArgumentError("`repeats` must be non-negative.")))
+    known(N) == 0 && return :(return x, st)
     sts = ntuple(_ -> gensym("st"), known(N))
-    xs = ntuple(_ -> gensym("x"), known(N) + known(IJ))
-    calls = []
-    known(IJ) && push!(calls, :($(xs[1]) = x))
+    xs = ntuple(_ -> gensym("x"), known(N) + 1)
+    calls = [:($(xs[1]) = x)]
     for i in 1:known(N)
         push!(
             calls,
             :(
-                ($(xs[i + known(IJ)]), $(sts[i])) = @inline apply(
+                ($(xs[i + 1]), $(sts[i])) = @inline apply(
                     model,
-                    $(known(IJ) ? :(($(xs[i]), x)) : :x),
+                    $(known(IJ) ? :(($(xs[i]), x)) : xs[i]),
                     ps,
                     $(i == 1 ? :st : sts[i - 1]),
                 )
