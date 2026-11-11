@@ -16,6 +16,7 @@ Functors = "d9f16b24-f501-4c13-a1f2-28368ffc5196"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 LoopVectorization = "bdcacae8-1622-11e9-2a5c-532679323890"
+LossFunctions = "30fc2ffe-d236-52d8-8643-a9d8f7c094a7"
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
 LuxCUDA = "d0bbae9a-e099-4d5b-a835-1c6931763bda"
 LuxCore = "bb33d45b-7691-41d6-9220-0943567d0623"
@@ -40,6 +41,7 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
+WeightInitializers = "d49dbf32-c5c2-4618-8acc-27bb2598ef2d"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
 
@@ -50,6 +52,7 @@ LuxCore = {path = "../lib/LuxCore"}
 LuxLib = {path = "../lib/LuxLib"}
 LuxTestUtils = {path = "../lib/LuxTestUtils"}
 MLDataDevices = {path = "../lib/MLDataDevices"}
+WeightInitializers = {path = "../lib/WeightInitializers"}
 
 [compat]
 ADTypes = "1.24"
@@ -69,6 +72,7 @@ Functors = "0.5"
 LinearAlgebra = "1.10"
 Logging = "1.10"
 LoopVectorization = "0.12"
+LossFunctions = "1.2"
 Lux = "1.31"
 LuxCUDA = "0.3"
 LuxCore = "1.5"
@@ -93,5 +97,6 @@ StaticArrays = "1.9"
 Statistics = "1.10"
 Test = "1.10"
 Tracker = "0.2"
+WeightInitializers = "1.3"
 Zygote = "0.7"
 cuDNN = "6.4"
