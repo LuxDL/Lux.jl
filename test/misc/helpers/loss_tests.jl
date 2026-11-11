@@ -161,8 +161,68 @@ end
                 ŷ;
                 atol=1.0f-3,
                 rtol=1.0f-3,
-                skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : []
+                skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : [],
             )
+
+            # 1D vector inputs
+            y_1d = dev([0.0f0, 1.0f0])
+            ŷ_1d = dev([0.2f0, 0.8f0])
+            y_1d_smooth = dev(y_1d .* 0.9f0 .+ 0.1f0 / 2)
+            @test celoss_smooth(ŷ_1d, y_1d) ≈ celoss(ŷ_1d, y_1d_smooth)
+            @jet celoss_smooth(ŷ_1d, y_1d)
+            @test_gradients(
+                Base.Fix2(celoss_smooth, y_1d),
+                ŷ_1d;
+                atol=1.0f-3,
+                rtol=1.0f-3,
+                skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : [],
+            )
+
+            # 3D tensor inputs (C, W, B) with dims=1
+            y_3d = dev(reshape(Float32[1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0], 3, 2, 2))
+            ŷ_3d = dev(softmax(randn(Float32, 3, 2, 2); dims=1))
+            y_3d_smooth = dev(y_3d .* 0.9f0 .+ 0.1f0 / 3)
+            @test celoss_smooth(ŷ_3d, y_3d) ≈ celoss(ŷ_3d, y_3d_smooth)
+            @jet celoss_smooth(ŷ_3d, y_3d)
+            @test_gradients(
+                Base.Fix2(celoss_smooth, y_3d),
+                ŷ_3d;
+                atol=1.0f-3,
+                rtol=1.0f-3,
+                skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : [],
+            )
+
+            # 4D tensor inputs (C, H, W, B) with dims=1
+            y_4d = dev(softmax(randn(Float32, 3, 2, 2, 2); dims=1))
+            ŷ_4d = dev(softmax(randn(Float32, 3, 2, 2, 2); dims=1))
+            y_4d_smooth = dev(y_4d .* 0.9f0 .+ 0.1f0 / 3)
+            @test celoss_smooth(ŷ_4d, y_4d) ≈ celoss(ŷ_4d, y_4d_smooth)
+            @jet celoss_smooth(ŷ_4d, y_4d)
+            @test_gradients(
+                Base.Fix2(celoss_smooth, y_4d),
+                ŷ_4d;
+                atol=1.0f-3,
+                rtol=1.0f-3,
+                skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : [],
+            )
+
+            # dims=2 for (B, C)
+            celoss_smooth_dim2 = CrossEntropyLoss(; dims=2, label_smoothing=0.1)
+            y_bc = dev(Float32[1 0 0; 0 1 0; 0 0 1; 1 0 0])
+            ŷ_bc = dev(softmax(randn(Float32, 4, 3); dims=2))
+            y_bc_smooth = dev(y_bc .* 0.9f0 .+ 0.1f0 / 3)
+            @test celoss_smooth_dim2(ŷ_bc, y_bc) ≈
+                CrossEntropyLoss(; dims=2)(ŷ_bc, y_bc_smooth)
+            @jet celoss_smooth_dim2(ŷ_bc, y_bc)
+
+            # dims=(:)
+            celoss_smooth_colon = CrossEntropyLoss(; dims=(:), label_smoothing=0.1)
+            y_colon = dev(Float32[1, 0, 0, 0])
+            ŷ_colon = dev(softmax(randn(Float32, 4); dims=(:)))
+            y_colon_smooth = dev(y_colon .* 0.9f0 .+ 0.1f0 / 4)
+            @test celoss_smooth_colon(ŷ_colon, y_colon) ≈
+                CrossEntropyLoss(; dims=(:))(ŷ_colon, y_colon_smooth)
+            @jet celoss_smooth_colon(ŷ_colon, y_colon)
         end
 
         @testset "Logit CrossEntropyLoss" begin
@@ -187,8 +247,74 @@ end
                 logŷ;
                 atol=1.0f-3,
                 rtol=1.0f-3,
-                skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : []
+                skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : [],
             )
+
+            # 1D vector inputs
+            y_1d = dev([0.0f0, 1.0f0])
+            logŷ_1d = dev([0.2f0, 0.8f0])
+            y_1d_smooth = dev(y_1d .* 0.9f0 .+ 0.1f0 / 2)
+            @test logitceloss_smooth(logŷ_1d, y_1d) ≈ logitceloss(logŷ_1d, y_1d_smooth)
+            @jet logitceloss_smooth(logŷ_1d, y_1d)
+            @test_gradients(
+                Base.Fix2(logitceloss_smooth, y_1d),
+                logŷ_1d;
+                atol=1.0f-3,
+                rtol=1.0f-3,
+                skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : [],
+            )
+
+            # 3D tensor inputs (C, W, B) with dims=1
+            y_3d = dev(reshape(Float32[1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0], 3, 2, 2))
+            logŷ_3d = dev(randn(Float32, 3, 2, 2))
+            y_3d_smooth = dev(y_3d .* 0.9f0 .+ 0.1f0 / 3)
+            @test logitceloss_smooth(logŷ_3d, y_3d) ≈ logitceloss(logŷ_3d, y_3d_smooth)
+            @jet logitceloss_smooth(logŷ_3d, y_3d)
+            @test_gradients(
+                Base.Fix2(logitceloss_smooth, y_3d),
+                logŷ_3d;
+                atol=1.0f-3,
+                rtol=1.0f-3,
+                skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : [],
+            )
+
+            # 4D tensor inputs (C, H, W, B) with dims=1
+            y_4d = dev(softmax(randn(Float32, 3, 2, 2, 2); dims=1))
+            logŷ_4d = dev(randn(Float32, 3, 2, 2, 2))
+            y_4d_smooth = dev(y_4d .* 0.9f0 .+ 0.1f0 / 3)
+            @test logitceloss_smooth(logŷ_4d, y_4d) ≈ logitceloss(logŷ_4d, y_4d_smooth)
+            @jet logitceloss_smooth(logŷ_4d, y_4d)
+            @test_gradients(
+                Base.Fix2(logitceloss_smooth, y_4d),
+                logŷ_4d;
+                atol=1.0f-3,
+                rtol=1.0f-3,
+                skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : [],
+            )
+
+            # dims=2 for (B, C)
+            logitceloss_smooth_dim2 = CrossEntropyLoss(;
+                logits=Val(true), dims=2, label_smoothing=0.1
+            )
+            y_bc = dev(Float32[1 0 0; 0 1 0; 0 0 1; 1 0 0])
+            logŷ_bc = dev(randn(Float32, 4, 3))
+            y_bc_smooth = dev(y_bc .* 0.9f0 .+ 0.1f0 / 3)
+            @test logitceloss_smooth_dim2(logŷ_bc, y_bc) ≈
+                CrossEntropyLoss(; logits=Val(true), dims=2)(logŷ_bc, y_bc_smooth)
+            @jet logitceloss_smooth_dim2(logŷ_bc, y_bc)
+
+            # dims=(:)
+            logitceloss_smooth_colon = CrossEntropyLoss(;
+                logits=Val(true), dims=(:), label_smoothing=0.1
+            )
+            y_colon = dev(Float32[1, 0, 0, 0])
+            logŷ_colon = dev(randn(Float32, 4))
+            y_colon_smooth = dev(y_colon .* 0.9f0 .+ 0.1f0 / 4)
+            @test logitceloss_smooth_colon(logŷ_colon, y_colon) ≈
+                CrossEntropyLoss(; logits=Val(true), dims=(:))(
+                logŷ_colon, y_colon_smooth
+            )
+            @jet logitceloss_smooth_colon(logŷ_colon, y_colon)
         end
 
         logŷ, y = aType(randn(3)), aType(rand(3))
