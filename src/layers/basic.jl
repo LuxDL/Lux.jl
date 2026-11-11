@@ -551,7 +551,7 @@ end
 function initialparameters(rng::AbstractRNG, b::Bilinear)
     weight = if b.init_weight === nothing
         bound = inv(sqrt(b.in1_dims))
-        y = randn32(rng, b.out_dims, b.in1_dims, b.in2_dims)
+        y = rand32(rng, b.out_dims, b.in1_dims, b.in2_dims)
         @. y = (y - 0.5f0) * 2 * bound
         y
     else

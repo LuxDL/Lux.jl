@@ -1,5 +1,6 @@
 using Static, ComponentArrays, Optimisers, Functors
 using Tracker, ReverseDiff, ForwardDiff
+using NNlib: NNlib
 
 include("../shared_testsetup.jl")
 
@@ -316,4 +317,12 @@ end
 
     y_t = first(nn(x_t, ps, st))
     @test y_t isa AbstractArray{<:ReverseDiff.TrackedReal}
+end
+
+@testset "Utils.calculate_gain" begin
+    @test Lux.Utils.calculate_gain(relu, nothing) ≈ √2.0f0
+    @test Lux.Utils.calculate_gain(NNlib.relu, nothing) ≈ √2.0f0
+    @test Lux.Utils.calculate_gain(identity, nothing) == 1.0f0
+    @test Lux.Utils.calculate_gain(tanh, nothing) == 5.0f0 / 3.0f0
+    @test Lux.Utils.calculate_gain(NNlib.leakyrelu, 0.0f0) ≈ √2.0f0
 end
