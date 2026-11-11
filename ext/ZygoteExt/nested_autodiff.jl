@@ -5,6 +5,12 @@ function Lux.AutoDiffInternalImpl.vector_jacobian_product_impl(
     return only(pb_f(u))
 end
 
+function Lux.AutoDiffInternalImpl.vector_jacobian_product_impl(
+    f::F, ::AutoZygote, x, u, y
+) where {F}
+    return Lux.AutoDiffInternalImpl.autodiff_pullback(Zygote.pullback, f, x, y, u)
+end
+
 # Nested AD Handling
 for fType in Lux.AutoDiffInternalImpl.AD_CONVERTIBLE_FUNCTIONS
     @eval begin

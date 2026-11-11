@@ -56,4 +56,53 @@ end
             end
         end
     end
+
+    @testset "StatefulLuxLayer with StatefulRecurrentCell" begin
+        @test !LuxCore.preserves_state_type(StatefulRecurrentCell(RNNCell(2 => 3)))
+        @test !LuxCore.preserves_state_type(
+            Chain(StatefulRecurrentCell(RNNCell(2 => 3)), Dense(3 => 2))
+        )
+
+        @testset for _cell in (RNNCell, LSTMCell, GRUCell)
+            cell = _cell(2 => 3)
+            rcell = StatefulRecurrentCell(cell)
+            @test !LuxCore.preserves_state_type(rcell)
+            @test !LuxCore.preserves_state_type(Chain(rcell, Dense(3 => 2)))
+
+            ps, st = Lux.setup(rng, rcell)
+            smodel = StatefulLuxLayer(rcell, ps, st)
+            @test smodel.fixed_state_type === Val(false)
+
+            x1 = randn(rng, Float32, 2, 4)
+            x2 = randn(rng, Float32, 2, 4)
+            st_init = smodel.st === nothing ? smodel.st_any : smodel.st
+            @test st_init.carry === nothing
+
+            y1 = smodel(x1)
+            st_step1 = smodel.st === nothing ? smodel.st_any : smodel.st
+            @test st_step1.carry !== nothing
+            c1 = deepcopy(st_step1.carry)
+
+            y2 = smodel(x2)
+            st_step2 = smodel.st === nothing ? smodel.st_any : smodel.st
+            @test st_step2.carry !== nothing
+            @test st_step2.carry != c1
+
+            # Test within a Chain
+            chain = Chain(rcell, Dense(3 => 2))
+            ps_c, st_c = Lux.setup(rng, chain)
+            schain = StatefulLuxLayer(chain, ps_c, st_c)
+            @test schain.fixed_state_type === Val(false)
+
+            y_c1 = schain(x1)
+            st_c1 = schain.st === nothing ? schain.st_any : schain.st
+            @test st_c1.layer_1.carry !== nothing
+            c_c1 = deepcopy(st_c1.layer_1.carry)
+
+            y_c2 = schain(x2)
+            st_c2 = schain.st === nothing ? schain.st_any : schain.st
+            @test st_c2.layer_1.carry !== nothing
+            @test st_c2.layer_1.carry != c_c1
+        end
+    end
 end
