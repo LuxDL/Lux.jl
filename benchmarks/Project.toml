@@ -44,6 +44,6 @@ Zygote = "0.7"
 julia = "1.10"
 
 [sources]
-MLDataDevices = { path = "../lib/MLDataDevices" }
 Lux = { path = ".." }
 LuxLib = { path = "../lib/LuxLib" }
+MLDataDevices = { path = "../lib/MLDataDevices" }
