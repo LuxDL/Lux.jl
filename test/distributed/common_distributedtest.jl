@@ -5,9 +5,6 @@ const input_args = length(ARGS) == 2 ? ARGS : ("cpu", "mpi")
 if input_args[1] == "cuda"
     using LuxCUDA
 end
-if input_args[1] == "amdgpu"
-    using AMDGPU
-end
 
 const backend_type = input_args[2] == "nccl" ? NCCLBackend : MPIBackend
 
@@ -15,13 +12,8 @@ if input_args[2] == "nccl"
     using NCCL
 end
 
-const dev = if input_args[1] == "cpu"
-    CPUDevice()
-else
-    (input_args[1] == "cuda" ? CUDADevice() : AMDGPUDevice())
-end
-const aType =
-    input_args[1] == "cpu" ? Array : (input_args[1] == "cuda" ? CuArray : ROCArray)
+const dev = input_args[1] == "cpu" ? CPUDevice() : CUDADevice()
+const aType = input_args[1] == "cpu" ? Array : CuArray
 
 DistributedUtils.initialize(backend_type)
 backend = DistributedUtils.get_distributed_backend(backend_type)

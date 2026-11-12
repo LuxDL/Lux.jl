@@ -51,21 +51,17 @@ function run_conv_testing(
 
     y = fused_conv_bias_activation(activation, weight, x, bias, cdims)
 
-    generic_testing = !(mode == "amdgpu" && (Tx == Float64 || Tw == Float64))
-
     atol = 1.0f-3
     rtol = 1.0f-3
 
-    if generic_testing
-        y_generic = LuxLib.Impl.conv(x, weight, cdims)
-        y_generic = if bias === nothing
-            activation.(y_generic)
-        else
-            activation.(y_generic .+ LuxLib.Impl.reshape_bias(y_generic, bias))
-        end
-        # Operation reordering has an effect on the accuracy of the results
-        @test y ≈ y_generic atol = atol rtol = rtol
+    y_generic = LuxLib.Impl.conv(x, weight, cdims)
+    y_generic = if bias === nothing
+        activation.(y_generic)
+    else
+        activation.(y_generic .+ LuxLib.Impl.reshape_bias(y_generic, bias))
     end
+    # Operation reordering has an effect on the accuracy of the results
+    @test y ≈ y_generic atol = atol rtol = rtol
 
     @test eltype(y) == promote_type(Tw, Tx)
 

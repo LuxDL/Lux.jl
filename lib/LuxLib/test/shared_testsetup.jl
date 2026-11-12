@@ -30,39 +30,15 @@ if LuxTestUtils.test_cuda(BACKEND_GROUP)
     using LuxCUDA
 end
 
-if LuxTestUtils.test_amdgpu(BACKEND_GROUP)
-    using AMDGPU
-end
-
-if LuxTestUtils.test_oneapi(BACKEND_GROUP)
-    using oneAPI
-end
-
-if LuxTestUtils.test_metal(BACKEND_GROUP)
-    using Metal
-end
-
 cpu_testing() = BACKEND_GROUP == "all" || BACKEND_GROUP == "cpu"
 function cuda_testing()
     return LuxTestUtils.test_cuda(BACKEND_GROUP) && MLDataDevices.functional(CUDADevice)
-end
-function amdgpu_testing()
-    return LuxTestUtils.test_amdgpu(BACKEND_GROUP) && MLDataDevices.functional(AMDGPUDevice)
-end
-function oneapi_testing()
-    return LuxTestUtils.test_oneapi(BACKEND_GROUP) && MLDataDevices.functional(oneAPIDevice)
-end
-function metal_testing()
-    return LuxTestUtils.test_metal(BACKEND_GROUP) && MLDataDevices.functional(MetalDevice)
 end
 
 const MODES = begin
     modes = []
     cpu_testing() && push!(modes, ("cpu", Array, false, true))
     cuda_testing() && push!(modes, ("cuda", CuArray, true, true))
-    amdgpu_testing() && push!(modes, ("amdgpu", ROCArray, true, true))
-    oneapi_testing() && push!(modes, ("oneapi", oneArray, true, false))
-    metal_testing() && push!(modes, ("metal", MtlArray, true, false))
     modes
 end
 

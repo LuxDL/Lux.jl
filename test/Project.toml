@@ -1,6 +1,5 @@
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
-AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 CPUSummary = "2a0fbf3d-bb9c-48f3-b0a9-814d99fd7ab9"
@@ -53,7 +52,6 @@ MLDataDevices = {path = "../lib/MLDataDevices"}
 
 [compat]
 ADTypes = "1.19"
-AMDGPU = "2.2"
 Adapt = "4"
 Aqua = "0.8.4"
 CPUSummary = "0.2.6"

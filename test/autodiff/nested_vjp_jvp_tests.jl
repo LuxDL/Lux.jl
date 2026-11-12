@@ -19,7 +19,6 @@ include("../shared_testsetup.jl")
         Xs = (aType(randn(rng, Float32, 3, 3, 2, 4)), aType(randn(rng, Float32, 2, 4)))
 
         for (model, X) in zip(models, Xs)
-            model = maybe_rewrite_to_crosscor(mode, model)
             ps, st = dev(Lux.setup(rng, model))
 
             vjp_input = first(model(X, ps, st))

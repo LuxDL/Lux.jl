@@ -1,5 +1,4 @@
 using Lux, Functors
-using Setfield: @set
 using DispatchDoctor: allow_unstable
 using ComponentArrays,
     LuxCore,
@@ -13,9 +12,8 @@ using ComponentArrays,
     Enzyme,
     LinearAlgebra,
     ForwardDiff
-using MLDataDevices: default_device_rng, CPUDevice, CUDADevice, AMDGPUDevice
+using MLDataDevices: default_device_rng, CPUDevice, CUDADevice
 using LuxTestUtils: LuxTestUtils, check_approx
-using Static: True
 
 using Octavian, LoopVectorization
 
@@ -30,24 +28,11 @@ function get_default_rng(mode::String)
         CPUDevice()
     elseif mode == "cuda"
         CUDADevice()
-    elseif mode == "amdgpu"
-        AMDGPUDevice()
     else
         nothing
     end
     rng = default_device_rng(dev)
     return rng isa TaskLocalRNG ? copy(rng) : deepcopy(rng)
-end
-
-maybe_rewrite_to_crosscor(layer) = layer
-function maybe_rewrite_to_crosscor(layer::Conv)
-    @set layer.cross_correlation = True()
-    return layer
-end
-
-function maybe_rewrite_to_crosscor(mode, model)
-    mode != "amdgpu" && return model
-    return fmap(maybe_rewrite_to_crosscor, model)
 end
 
 sumabs2first(layer, x, ps, st) = sum(abs2, first(layer(x, ps, st)))
