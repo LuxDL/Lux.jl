@@ -19,10 +19,12 @@ which makes it useful for sharing or deploying with [TFLite](https://tensorflow.
 or [TensorFlow Hub](https://tensorflow.org/hub). Refer to the
 [official documentation](https://www.tensorflow.org/guide/saved_model) for more details.
 
-!!! warning "Load `Reactant.jl` and `PythonCall.jl` before using this function"
+!!! warning "Load `Reactant.jl` before using this function"
 
-    This function requires the `Reactant` and `PythonCall` extensions to be loaded. If you
-    haven't done so, please load them before calling this function.
+    This function requires `Reactant.jl` to be loaded (`using Reactant`). Exporting is
+    implemented natively in Julia and does not require `PythonCall.jl` or Python
+    `tensorflow` (on `Reactant` versions prior to `v0.2.305`, `PythonCall.jl` with Python
+    `tensorflow` was also required).
 
 !!! note "All inputs must be on `reactant_device()`"
 
@@ -62,7 +64,7 @@ or [TensorFlow Hub](https://tensorflow.org/hub). Refer to the
 Export the model to a TensorFlow SavedModel format.
 
 ```julia
-using Lux, Reactant, PythonCall, Random
+using Lux, Reactant, Random
 
 dev = reactant_device()
 
