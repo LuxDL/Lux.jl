@@ -38,6 +38,10 @@ end
         broken_backends=[AutoForwardDiff()]
     )
 
+    @test_throws ArgumentError test_gradients(
+        f, 1.0, x, nothing; skip_backends=[AutoMooncake()]
+    )
+
     test_gradients(f, 1.0, x, nothing; soft_fail=true)
     @test_gradients(f, 1.0, x, nothing; soft_fail=true)
 

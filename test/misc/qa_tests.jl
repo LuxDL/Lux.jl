@@ -1,6 +1,6 @@
 using Aqua, ChainRulesCore, ForwardDiff, Test, ExplicitImports
 using Lux, LuxCore, LuxLib, MLDataDevices
-using ComponentArrays, ReverseDiff, Tracker, Zygote, Enzyme, Reactant, Mooncake
+using ComponentArrays, ReverseDiff, Tracker, Zygote, Enzyme, Reactant
 
 @testset "Aqua: Quality Assurance" begin
     Aqua.test_all(

@@ -107,7 +107,6 @@ truth gradients are computed using FiniteDiff.jl (unless specified otherwise) on
 | Backend        | ADType              | CPU  | GPU | Notes             |
 |:-------------- |:------------------- |:---  |:--- |:----------------- |
 | Zygote.jl      | `AutoZygote()`      | ✔   | ✔   |                   |
-| Mooncake.jl    | `AutoMooncake()`    | ✔   | ✖   |                   |
 | ForwardDiff.jl | `AutoForwardDiff()` | ✔   | ✖   | `len ≤ 32`        |
 | Enzyme.jl      | `AutoEnzyme()`      | ✔   | ✖   | Only Reverse Mode |
 
@@ -194,9 +193,6 @@ function test_gradients(
                 Enzyme.Reverse
             end
             push!(backends, AutoEnzyme(; mode))
-        end
-        if MOONCAKE_TESTING_ENABLED[]
-            push!(backends, AutoMooncake())
         end
     end
 
@@ -295,6 +291,7 @@ end
 
 removed_backend(::AutoTracker) = true
 removed_backend(::AutoReverseDiff) = true
+removed_backend(::AutoMooncake) = true
 removed_backend(_) = false
 
 """
