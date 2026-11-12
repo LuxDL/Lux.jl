@@ -287,8 +287,8 @@ using SparseArrays
             @test cuda_device.device.handle == (idx - 1)
 
             ps = cuda_device(ps_cpu)
-            @test ps.weight isa CUSPARSE.CuSparseMatrixCSC
-            @test ps.bias isa CUSPARSE.CuSparseVector
+            @test ps.weight isa CUDA.cuSPARSE.CuSparseMatrixCSC
+            @test ps.bias isa CUDA.cuSPARSE.CuSparseVector
             @test get_device(ps.weight).device.handle == idx - 1
             @test get_device(ps.bias).device.handle == idx - 1
             @test isequal(cdev(ps.weight), ps_cpu.weight)

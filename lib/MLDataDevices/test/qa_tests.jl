@@ -1,7 +1,7 @@
 using Aqua, ExplicitImports, MLDataDevices, Test
 
 @testset "Aqua Tests" begin
-    Aqua.test_all(MLDataDevices)
+    Aqua.test_all(MLDataDevices; persistent_tasks=false)
 end
 
 using FillArrays: FillArrays

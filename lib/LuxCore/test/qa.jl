@@ -1,7 +1,7 @@
 using LuxCore, Test, ExplicitImports, Aqua
 
 @testset "Quality Assurance" begin
-    Aqua.test_all(LuxCore)
+    Aqua.test_all(LuxCore; persistent_tasks=false)
     # The Functors extension intentionally reaches LuxCore's internal extension hooks.
     ExplicitImports.test_explicit_imports(
         LuxCore;

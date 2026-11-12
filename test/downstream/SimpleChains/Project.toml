@@ -11,10 +11,10 @@ Lux = {path = "../../.."}
 LuxTestUtils = {path = "../../../lib/LuxTestUtils"}
 
 [compat]
-Lux = "1.21"
+Lux = "1.31"
 LuxTestUtils = "3"
-SimpleChains = "0.4.7, 0.5"
-StableRNGs = "1"
+SimpleChains = "0.5"
+StableRNGs = "1.1"
 Test = "1.10"
 Zygote = "0.7"
 julia = "1.10"

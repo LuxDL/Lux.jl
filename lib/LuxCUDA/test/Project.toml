@@ -4,8 +4,10 @@ LuxCUDA = "d0bbae9a-e099-4d5b-a835-1c6931763bda"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
-Aqua = "0.8.4"
+Aqua = "0.8"
+LuxCUDA = "0.3"
 Test = "1.10"
+julia = "1.10"
 
 [sources]
 LuxCUDA = {path = ".."}

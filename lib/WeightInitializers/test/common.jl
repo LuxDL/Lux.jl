@@ -17,16 +17,11 @@ end
 if LuxTestUtils.test_cuda(BACKEND_GROUP)
     using CUDA
     if CUDA.functional()
-        gpuarrays_rng = if isdefined(GPUArrays, :default_rng)
-            GPUArrays.default_rng(CuArray)
-        else
-            GPUArrays.RNG{CuArray}()
-        end
         append!(
             RNGS_ARRTYPES,
             [
                 (CUDA.default_rng(), CuArray, true, "cuda"),
-                (gpuarrays_rng, CuArray, true, "cuda"),
+                (CUDA.cuRAND.native_rng(), CuArray, true, "cuda"),
             ],
         )
     else

@@ -6,7 +6,7 @@ using LuxTestUtils: check_approx
 
 @testset "Recurrent Layers" begin
     # StableRNG uses UInt128 for seed that is not supported by Reactant inside loops
-    rng = Random.default_rng()
+    rng = Random.Xoshiro(1234)
 
     @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
         if ongpu
@@ -23,9 +23,9 @@ using LuxTestUtils: check_approx
                 ps, st = Lux.setup(rng, model)
                 ps_ra, st_ra = dev((ps, st))
                 if ordering isa TimeLastIndex
-                    x = rand(Float32, 4, 12, 16)
+                    x = rand(rng, Float32, 4, 12, 16)
                 else
-                    x = rand(Float32, 4, 16, 12)
+                    x = rand(rng, Float32, 4, 16, 12)
                 end
                 x_ra = dev(x)
 

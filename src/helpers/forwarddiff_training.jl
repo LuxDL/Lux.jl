@@ -195,7 +195,5 @@ macro define_forwarddiff_gpu_overloads(ArrayType)
     end
 end
 
-@static if pkgversion(ForwardDiff) ≥ v"1.0.1"
-    # Apply overloads for GPU arrays
-    @define_forwarddiff_gpu_overloads AnyGPUArray
-end
+# Apply overloads for GPU arrays
+@define_forwarddiff_gpu_overloads AnyGPUArray

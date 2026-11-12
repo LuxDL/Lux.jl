@@ -12,9 +12,7 @@ function DistributedUtils.synchronize!!(
     return ComponentArray(ps_synced, ComponentArrays.getaxes(ps))
 end
 
-@static if pkgversion(ForwardDiff) ≥ v"1.0.1"
-    # Apply overloads for GPU arrays
-    Lux.@define_forwarddiff_gpu_overloads ComponentArray
-end
+# Apply overloads for GPU arrays
+Lux.@define_forwarddiff_gpu_overloads ComponentArray
 
 end

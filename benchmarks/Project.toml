@@ -20,7 +20,30 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 ThreadPinning = "811555cd-349b-4f26-b7bc-1f208b848042"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
+[compat]
+ADTypes = "1.24"
+Adapt = "4.8"
+AppleAccelerate = "0.7"
+BenchmarkTools = "1.8"
+Enzyme = "0.13"
+InteractiveUtils = "1.10"
+LinearAlgebra = "1.10"
+LoopVectorization = "0.12"
+Lux = "1.31"
+LuxLib = "1.15"
+MKL = "0.9"
+MLDataDevices = "1.18"
+NNlib = "0.9.55"
+Octavian = "0.3"
+Pkg = "1.10"
+Random = "1.10"
+StableRNGs = "1.1"
+Statistics = "1.10"
+ThreadPinning = "1.1"
+Zygote = "0.7"
+julia = "1.10"
+
 [sources]
 MLDataDevices = { path = "../lib/MLDataDevices" }
-Lux = { path = "../lib/Lux" }
+Lux = { path = ".." }
 LuxLib = { path = "../lib/LuxLib" }

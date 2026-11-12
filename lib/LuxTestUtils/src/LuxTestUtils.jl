@@ -48,6 +48,7 @@ const ZYGOTE_TESTING_ENABLED = Ref{Bool}(false)
 # Check if JET will work
 try
     using JET: JET, JETTestFailure, get_reports, report_call, report_opt
+    isdefined(JET, :has_problems) && @eval using JET: has_problems
     JET_TESTING_ENABLED[] = true
 catch err
     @error "`JET.jl` did not successfully precompile on $(VERSION). All `@jet` tests will \
