@@ -1,6 +1,6 @@
 name = "LuxTestUtils"
 uuid = "ac9de150-d08f-4546-94fb-7472b5760531"
-version = "2.3.2"
+version = "3.0.0"
 authors = ["Avik Pal <avikpal@mit.edu>"]
 
 [deps]
@@ -21,14 +21,8 @@ Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
-[weakdeps]
-Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
-
 [sources]
 MLDataDevices = {path = "../MLDataDevices"}
-
-[extensions]
-MooncakeExt = "Mooncake"
 
 [compat]
 ADTypes = "1.10"
@@ -43,7 +37,6 @@ ForwardDiff = "0.10.36, 1"
 Functors = "0.5"
 JET = "0.9.6, 0.10, 0.11, 0.12"
 MLDataDevices = "1.17"
-Mooncake = "0.5.24"
 Optimisers = "0.3.4, 0.4"
 Pkg = "1.10"
 Test = "1.10"

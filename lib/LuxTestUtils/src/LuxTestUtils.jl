@@ -44,7 +44,6 @@ const FD = FiniteDiff
 const JET_TESTING_ENABLED = Ref{Bool}(false)
 const ENZYME_TESTING_ENABLED = Ref{Bool}(false)
 const ZYGOTE_TESTING_ENABLED = Ref{Bool}(false)
-const MOONCAKE_TESTING_ENABLED = Ref{Bool}(false)
 
 # Check if JET will work
 try

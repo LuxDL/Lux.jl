@@ -35,9 +35,7 @@ import SimpleChains: static
     @test length(gs[2].params) == length(ps.params)
 
     # See https://github.com/LuxDL/Lux.jl/issues/644
-    @test_gradients(
-        __f, x, ps; atol=1.0f-3, rtol=1.0f-3, broken_backends=[AutoEnzyme(), AutoMooncake()]
-    )
+    @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3, broken_backends=[AutoEnzyme()])
 
     x = randn(Float32, 28, 28, 1, 15)
     @test size(first(simple_chains_model(x, ps, st))) == (10, 15)
@@ -49,9 +47,7 @@ import SimpleChains: static
     @test length(gs[2].params) == length(ps.params)
 
     # See https://github.com/LuxDL/Lux.jl/issues/644
-    @test_gradients(
-        __f, x, ps; atol=1.0f-3, rtol=1.0f-3, broken_backends=[AutoEnzyme(), AutoMooncake()]
-    )
+    @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3, broken_backends=[AutoEnzyme()])
 
     @testset "Array Output" begin
         adaptor = ToSimpleChainsAdaptor((static(28), static(28), static(1)), true)
@@ -120,7 +116,7 @@ import SimpleChains: static
                 ps;
                 atol=1.0f-3,
                 rtol=1.0f-3,
-                broken_backends=[AutoEnzyme(), AutoMooncake()],
+                broken_backends=[AutoEnzyme()],
                 soft_fail=[AutoForwardDiff(), AutoFiniteDiff()]
             )
         end

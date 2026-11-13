@@ -1,4 +1,4 @@
-using ADTypes, Optimisers, Tracker, ReverseDiff, Mooncake, ComponentArrays, Enzyme
+using ADTypes, Optimisers, Tracker, ReverseDiff, ComponentArrays, Enzyme
 
 include("../../shared_testsetup.jl")
 
@@ -23,15 +23,11 @@ include("../../shared_testsetup.jl")
         dataset_ = [dev((x, y)) for (x, y) in dataset]
         opt = Adam(0.001f0)
 
-        @testset "$(ad)" for ad in (
-            AutoZygote(), AutoTracker(), AutoReverseDiff(), AutoEnzyme(), AutoMooncake()
-        )
-            ongpu &&
-                (ad isa AutoReverseDiff || ad isa AutoEnzyme || ad isa AutoMooncake) &&
-                continue
+        @testset "$(ad)" for ad in
+                             (AutoZygote(), AutoTracker(), AutoReverseDiff(), AutoEnzyme())
+            ongpu && (ad isa AutoReverseDiff || ad isa AutoEnzyme) && continue
             !LuxTestUtils.ENZYME_TESTING_ENABLED[] && ad isa AutoEnzyme && continue
             !LuxTestUtils.ZYGOTE_TESTING_ENABLED[] && ad isa AutoZygote && continue
-            !LuxTestUtils.MOONCAKE_TESTING_ENABLED[] && ad isa AutoMooncake && continue
 
             function get_total_loss(model, tstate)
                 loss = 0.0f0
