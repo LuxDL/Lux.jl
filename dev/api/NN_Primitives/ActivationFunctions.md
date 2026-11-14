@@ -145,7 +145,7 @@ source
 sigmoid_fast(x)
 ```
 
-This is a faster, and very slightly less accurate, version of `sigmoid`. For `x::Float32`, perhaps 3 times faster, and maximum errors 2 eps instead of 1.
+This used to be a faster, and very slightly less accurate, version of `sigmoid`. For `Float32` and `Float64` the two are now computed in the same way, and differ only in that `sigmoid_fast(x)` is exactly zero for `x < -80`.
 
 See also [`tanh_fast`](/api/NN_Primitives/ActivationFunctions#NNlib.tanh_fast).
 
@@ -208,7 +208,7 @@ This is a faster but slighly less accurate version of `tanh`.
 
 Where Julia's `tanh` function has an error under 2 eps, this may be wrong by 5 eps, a reduction by less than one decimal digit.
 
-For `x::Float32` this is usually about 10 times faster, with a smaller speedup for `x::Float64`. For any other number types, it just calls `tanh`.
+For `x::Float32` this is usually about 10 times faster, with a smaller speedup for `x::Float64`. `Float16` and `BFloat16` are computed in `Float32`. For any other number types, it just calls `tanh`.
 
 See also [`sigmoid_fast`](/api/NN_Primitives/ActivationFunctions#NNlib.sigmoid_fast).
 
@@ -827,6 +827,8 @@ Alternative implementation of the GELU activation function using `sigmoid` inste
 
 The sigmoid-based implementation may prevent pattern matching and fusion in some optimizing  compilers. Use [`gelu_tanh`](/api/NN_Primitives/ActivationFunctions#NNlib.gelu_tanh) if you need better compiler optimization support.
 
+Not to be confused with [`quick_gelu`](/api/NN_Primitives/ActivationFunctions#NNlib.quick_gelu), the approximation `x * σ(1.702x)` used by CLIP.
+
 See ["Gaussian Error Linear Units"](https://arxiv.org/abs/1606.08415).
 
 source
@@ -836,5 +838,33 @@ gelu_erf(x) = xΦ(x) = 0.5x * (1 + erf(x/√2))
 ```
 
 Activation function from ["Gaussian Error Linear Units"](https://arxiv.org/abs/1606.08415) without approximation. The SpecialFunctions.jl package needs to be loaded to use this function.
+
+source
+
+```julia
+quick_gelu(x) = x * σ(1.702x)
+```
+
+Sigmoid approximation of GELU from ["Gaussian Error Linear Units"](https://arxiv.org/abs/1606.08415), called QuickGELU. It is the activation of OpenAI's [CLIP](https://arxiv.org/abs/2103.00020), and of the CLIP models trained with it: MetaCLIP, DFN, and those named `*quickgelu*` in open_clip and timm.
+
+This is a different function from [`gelu_sigmoid`](/api/NN_Primitives/ActivationFunctions#NNlib.gelu_sigmoid), which is the tanh approximation written with a sigmoid. The two differ by up to 0.021, near `x = -2.3`.
+
+```julia
+julia> lineplot(-2, 2, quick_gelu, height=7)
+           ┌────────────────────────────────────────┐              
+         2 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡠⠔⠊│ quick_gelu(x)
+           │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠤⠊⠁⠀⠀⠀│              
+           │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⣀⠤⠒⠉⠀⠀⠀⠀⠀⠀⠀│              
+   f(x)    │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⣀⡠⠔⠒⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│              
+           │⣤⣤⣤⣤⣤⣤⣤⣤⡤⠤⠤⠤⠤⠤⠤⢤⣤⣤⣤⡤⡧⠶⠶⠭⠥⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤⠤│              
+           │⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠉⠉⠉⠉⠉⠁⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│              
+        -1 │⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀│              
+           └────────────────────────────────────────┘              
+           ⠀-2⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀2⠀              
+           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀x⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀              
+
+julia> quick_gelu(1f0), gelu_sigmoid(1f0)
+(0.84579575f0, 0.841192f0)
+```
 
 source

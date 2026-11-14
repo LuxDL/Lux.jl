@@ -12,16 +12,18 @@ SimpleChains = "de6bee2f-e2f4-4ec7-b6ed-219cc6f6e9e5"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
-ADTypes = "1.10"
-Lux = "1"
-MLDatasets = "0.7.14"
+ADTypes = "1.24"
+Lux = "1.31"
+MLDatasets = "0.7"
 MLUtils = "0.4"
-OneHotArrays = "0.2.5"
-Optimisers = "0.4.6"
-Random = "1"
-Reactant = "0.2.170"
-SimpleChains = "0.4.6, 0.5"
+OneHotArrays = "0.2"
+Optimisers = "0.4"
+Printf = "1.10"
+Random = "1.10"
+Reactant = "0.2.306"
+SimpleChains = "0.5"
 Zygote = "0.7"
+julia = "1.10"
 
 [sources]
 Lux = {path = "../../"}

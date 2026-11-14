@@ -72,7 +72,6 @@ Test the gradients of `f` with respect to `args` using the specified backends. T
 | Backend        | ADType              | CPU | GPU | Notes             |
 |:-------------- |:------------------- |:--- |:--- |:----------------- |
 | Zygote.jl      | `AutoZygote()`      | ✔   | ✔   |                   |
-| Mooncake.jl    | `AutoMooncake()`    | ✔   | ✖   |                   |
 | ForwardDiff.jl | `AutoForwardDiff()` | ✔   | ✖   | `len ≤ 32`        |
 | Enzyme.jl      | `AutoEnzyme()`      | ✔   | ✖   | Only Reverse Mode |
 

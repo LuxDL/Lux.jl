@@ -15,39 +15,147 @@ Lux doesn't re-export all of `NNlib` for now. Directly loading `NNlib` is the re
 ## Attention {#Attention}
 
 ```julia
-dot_product_attention(query, key, value, [bias]; [fdrop, mask, nheads])
+scaled_dot_product_attention(query, key, value, [bias]; [fdrop, mask, scale, is_causal, window, q_offset, q_lengths, kv_lengths, q_segments, kv_segments, maxlen])
+sdpa(query, key, value, [bias]; kws...)
 ```
 
-Multihead dot product attention used in transformer architectures.
+Multihead dot product attention used in transformer architectures, with an explicit head axis.
 
-The input arrays must have the first two dimensions given by the number of features and the sequence length, then an arbitrary number of batch dimensions or none.
+The input arrays must have the shape `(head_dim, nheads, seq_len, batch_size...)`, that is a feature (head) dimension, a heads dimension, a sequence-length dimension, then an arbitrary number of batch dimensions or none. The number of heads is taken from the second dimension of each input, so no `nheads` keyword is needed.
 
-Returns the attention output array of size `(v_dim, q_len, batch_size...)` and the attention scores of size `(kv_len, q_len, nheads, batch_size...)`.
+This is the reverse of the `(batch_size, seq_len, nheads, head_dim)` layout of JAX and Flax. It is not the reverse of PyTorch's `(batch_size, nheads, seq_len, head_dim)`: an array ported from PyTorch by reversing its dimensions has size `(head_dim, seq_len, nheads, batch_size)` and still needs `permutedims(x, (1, 3, 2, 4))`. A missing permutation cannot be detected, since the array is a valid input whose heads are taken as the sequence.
 
-See also [`dot_product_attention_scores`](/api/NN_Primitives/NNlib#NNlib.dot_product_attention_scores) if you only need the attention scores.
+Grouped-query attention (GQA) is supported: if `key` and `value` have fewer heads than `query`, they are shared across query heads. The number of query heads must then be divisible by the number of key/value heads.
+
+Returns the attention output array of size `(v_head_dim, nheads, q_len, batch_size...)`.
+
+See also [`scaled_dot_product_attention_with_weights`](/api/NN_Primitives/NNlib#NNlib.scaled_dot_product_attention_with_weights) if you need the attention weights too.
 
 **Arguments**
 
-* `query`: Query array of size `(qk_dim, q_len, batch_size...)`.
+* `query`: Query array of size `(qk_head_dim, nheads, q_len, batch_size...)`.
 
-* `key`: Key array of size `(qk_dim, kv_len, batch_size...)`.
+* `key`: Key array of size `(qk_head_dim, nkvheads, kv_len, batch_size...)`.
 
-* `value`: Value array of size `(v_dim, kv_len, batch_size...)`.
+* `value`: Value array of size `(v_head_dim, nkvheads, kv_len, batch_size...)`.
 
-* `bias`: Either `nothing` or an array broadcastable to size `(kv_len, q_len, nheads, batch_size)`.         It will be added to the attention scores before applying the softmax. Default `nothing`.
+* `bias`: Either `nothing` or an array broadcastable to size `(kv_len, q_len, nheads, batch_size...)`.         It will be added to the attention logits before applying the softmax. Default `nothing`.
 
-* `fdrop`: A dropout function or layer to be applied on the attention scores right after the softmax.          Default `identity` (no dropout).
+* `fdrop`: A dropout function or layer to be applied on the attention weights right after the softmax.          Default `identity` (no dropout).
 
-* `mask`: Either `nothing` or a boolean array broadcastable to size `(kv_len, q_len, nheads, batch_size)`.         The mask is applied to the attention scores just before the softmax.         See [`make_causal_mask`](/api/NN_Primitives/NNlib#NNlib.make_causal_mask) fore creating causal masks. Default `nothing`.
+* `mask`: Either `nothing` or a boolean array broadcastable to size `(kv_len, q_len, nheads, batch_size...)`.         The mask is applied to the attention logits just before the softmax.         See [`make_causal_mask`](/api/NN_Primitives/NNlib#NNlib.make_causal_mask) for creating causal masks. Default `nothing`.
 
-* `nheads`: Number of heads to split the input arrays into. Default `1`.
+* `scale`: The multiplier used to scale the `queryᵀ * key` dot products before         the softmax. Default `nothing`, meaning `1 / √(qk_head_dim)`.
+
+* `is_causal`: If `true`, a causal mask is applied so that each query position can         only attend to key positions up to and including its own. Equivalent to         `mask = make_causal_mask(query; dims=3)` for equal query and key lengths, but         a fused implementation does not have to materialize the mask. If         `:bottom_right`, the mask is aligned with the last valid key instead of the         first: the queries are taken as the last positions of the keys, as when         decoding with a KV cache, and `q_offset` is `kv_lengths .- q_lengths`, these         being the sizes of the arrays where not given. This is the causal mask of         FlashAttention and PyTorch's `causal_lower_right`. Default `false`.
+
+* `window`: Either `nothing` or a positive integer, the size of a sliding window: the         query `i` attends only to the keys `j` with `|q_offset + i - j| < window`. With         `is_causal`, these are the last `window` keys up to its own position,         `q_offset + i - window < j ≤ q_offset + i`, as in the sliding-window layers of         Mistral, Gemma or gpt-oss. This is the `sliding_window` of transformers, and the         `window_size` of FlashAttention is `(window - 1, 0)` with `is_causal`,         `(window - 1, window - 1)` without. A fused implementation only goes through         the keys of the windows. Default `nothing`.
+
+* `q_offset`: With `is_causal=true`, the number of keys that precede the first query:         the query `i` attends to the keys `j ≤ q_offset + i`. An integer, or an integer         array with one entry for each batch element. It counts the keys given, which         with a sliding-window cache is not the absolute position. It has no effect         without `is_causal` or `window`, and is set by `is_causal=:bottom_right`.         Default `0`.
+
+* `q_lengths`, `kv_lengths`: Either `nothing` or the number of valid positions of each         query and of each key/value sequence in the batch, the following ones being         padding: an integer array with one entry for each batch element, or an         integer for all of them. The keys past `kv_lengths` are not attended to, and         the output is zero at the queries past `q_lengths`. Each can be given without         the other. Default `nothing`.
+
+* `q_segments`, `kv_segments`: Either `nothing` or the lengths of the sequences packed         one after the other along the sequence dimension of `query` and of `key` and         `value`, as an integer vector. See below. `kv_segments` defaults to `q_segments`.
+
+* `maxlen`: With `q_segments`, either `nothing` or an integer at least as large as every         segment. It saves reading the lengths of the segments on the host where they         are on a GPU, which waits for the device, and stands in for them where they         cannot be read, as the traced ones of Reactant. Default `nothing`.
+
+`mask`, `is_causal`, `window` and `kv_lengths` can be combined: a key is then attended to only where all of them allow it. A query that attends to no key, as a padding query past the window of every valid key, has a `NaN` output, unless `q_lengths` makes it zero.
+
+**Packed sequences**
+
+With `q_segments`, the inputs hold sequences of different lengths one after the other, without padding: they have size `(head_dim, nheads, total_len)`, without batch dimensions, and the output has the size of `query`. The `s`-th segment of `query` attends to the `s`-th segment of `key` and `value` only, as a batch element does in a padded batch: `is_causal` and `window` apply within each segment, and `q_offset`, `q_lengths` and `kv_lengths` take one entry for each segment. The lengths of the segments have to add up to the sequence lengths of the arrays. A `bias` or a `mask` is not supported.
+
+This is how documents packed in a sequence are kept from attending to each other, and how a batch of sequences of different lengths avoids padding: layers other than the attention act on the `(features, total_len)` array of all the positions.
+
+**Fused implementation**
+
+Without an `fdrop`, the output is computed tile by tile, with the softmax taken online over the tiles of keys: the attention weights are never materialized, so that memory grows linearly rather than quadratically with the sequence length. This is what `Array`s and GPU arrays of `Float16`, `Float32` and `Float64` take, and on the GPU those of `BFloat16`, with any of the arguments above. The `bias` and the `mask`, if any, have to be on the device of the inputs. On the GPU, a call with few queries per sequence, as in decoding with a key-value cache, splits the keys of each sequence over several blocks, and reads them once for all the query heads sharing them.
+
+Any other call takes the materialized implementation, which forms the weights. [`NNlib.is_fused_attention`](/api/NN_Primitives/NNlib#NNlib.is_fused_attention) tells which of the two a call takes. With a `window`, it forms them over the band of the window only, for blocks of queries with the keys of their windows, so that memory grows linearly with the sequence length there too. `fdrop` is then given these blocks of weights rather than the whole array.
+
+The fused implementation has a gradient with respect to `query`, `key`, `value` and `scale`, which recomputes the weights tile by tile and does not materialize them either. It is what automatic differentiation based on ChainRules (as that of Zygote) and the reverse mode of Enzyme use. Under them a call with a `bias` takes the materialized implementation, which gives the gradient with respect to the bias too, and so does every call under the other automatic differentiation packages. A query that attends to no key, whose output is `NaN`, takes no part in the fused gradient.
+
+With CUDA.jl and cuDNN.jl loaded, the `Float16` and `BFloat16` `CuArray`s that cuDNN's own fused kernel has an engine for are handed to it: it runs on tensor cores, and has a gradient. It supports `scale`, `is_causal`, `q_lengths`, `kv_lengths` and grouped-query attention. cuDNN.jl 6.5 also supports bottom-right causal masks, sliding windows and packed sequences. It requires:
+
+* no `bias`, `fdrop` or `mask` (that is `nothing`, `identity` and `nothing`);
+
+* with an active causal mask, top-left or bottom-right alignment; without one, a window must be top-left aligned;
+
+* a head dimension that is a multiple of 8 and at most 256;
+
+* a `value` with the same head dimension as `query`.
+
+Earlier cuDNN.jl versions require no window or packed sequences, and a top-left causal mask when it excludes any keys. Unsupported calls use NNlib's own implementation.
 
 **Examples**
 
 ```julia
-q, k, v = rand(10, 20, 2), rand(10, 30, 2), rand(20, 30, 2)
-y, α = dot_product_attention(q, k, v)
+# (head_dim, nheads, seq_len, batch)
+q = rand(Float32, 16, 8, 20, 4)
+k = v = rand(Float32, 16, 8, 30, 4)
+y = scaled_dot_product_attention(q, k, v)
+# size(y) == (16, 8, 20, 4)
+
+# grouped-query attention: 8 query heads sharing 2 key/value heads
+q = rand(Float32, 16, 8, 20, 4)
+k = v = rand(Float32, 16, 2, 30, 4)
+y = scaled_dot_product_attention(q, k, v)
+
+# a padded batch, whose first key/value sequence has 12 valid positions out of 30
+y = scaled_dot_product_attention(q, k, v; kv_lengths=[12, 30, 30, 30])
+
+# decoding with a KV cache of 64 positions: 3 new queries for each batch element,
+# appended to the 10, 20, 30 and 40 keys already cached
+q = rand(Float32, 16, 8, 3, 4)
+k = v = rand(Float32, 16, 8, 64, 4)
+y = scaled_dot_product_attention(q, k, v; is_causal=:bottom_right, kv_lengths=[13, 23, 33, 43])
+# the same, with the offsets of the queries
+y = scaled_dot_product_attention(q, k, v; is_causal=true, q_offset=[10, 20, 30, 40],
+                                 kv_lengths=[13, 23, 33, 43])
+
+# sliding-window attention: each query attends to its last 8 keys, its own included
+x = rand(Float32, 16, 8, 100, 4)
+y = scaled_dot_product_attention(x, x, x; is_causal=true, window=8)
+
+# three documents of 5, 12 and 3 positions packed in one sequence, each attending
+# causally to itself only
+x = rand(Float32, 16, 8, 20)
+y = scaled_dot_product_attention(x, x, x; is_causal=true, q_segments=[5, 12, 3])
+# size(y) == (16, 8, 20)
 ```
+
+source
+
+```julia
+scaled_dot_product_attention_with_weights(query, key, value, [bias]; kws...)
+sdpa_with_weights(query, key, value, [bias]; kws...)
+```
+
+Return the output of [`scaled_dot_product_attention`](/api/NN_Primitives/NNlib#NNlib.scaled_dot_product_attention) together with the attention weights it is computed from, in a single pass.
+
+The arguments are those of [`scaled_dot_product_attention`](/api/NN_Primitives/NNlib#NNlib.scaled_dot_product_attention). The weights have size `(kv_len, q_len, nheads, batch_size...)`, with `α[j, i, h, b]` the weight of the key `j` for the query `i` in the head `h`: the softmax over the keys of the attention logits, after `fdrop`. They are zero at the queries past `q_lengths`. With `q_segments` they have size `(kv_len, q_len, nheads)`, and are zero but for the keys of the segment of each query.
+
+Returning the weights means materializing them, so this function never takes a fused implementation: prefer [`scaled_dot_product_attention`](/api/NN_Primitives/NNlib#NNlib.scaled_dot_product_attention) when they are not needed.
+
+**Examples**
+
+```julia
+q = rand(Float32, 16, 8, 20, 4)
+k = v = rand(Float32, 16, 8, 30, 4)
+y, α = scaled_dot_product_attention_with_weights(q, k, v)
+# size(y) == (16, 8, 20, 4)
+# size(α) == (30, 20, 8, 4)
+```
+
+source
+
+```julia
+dot_product_attention(query, key, value, [bias]; [nheads, fdrop, mask])
+```
+
+Deprecated: use [`scaled_dot_product_attention`](/api/NN_Primitives/NNlib#NNlib.scaled_dot_product_attention), which takes inputs with an explicit head axis `(head_dim, nheads, seq_len, batch_size...)` and returns only the attention output, or [`scaled_dot_product_attention_with_weights`](/api/NN_Primitives/NNlib#NNlib.scaled_dot_product_attention_with_weights) for the attention weights too.
+
+Multihead dot product attention on inputs of size `(features, seq_len, batch_size...)`, whose heads are packed into the feature dimension and split according to `nheads`. Returns the attention output of size `(v_dim, q_len, batch_size...)` and the attention weights of size `(kv_len, q_len, nheads, batch_size...)`.
 
 source
 
@@ -55,19 +163,274 @@ source
 dot_product_attention_scores(query, key, [bias]; [fdrop, mask])
 ```
 
-Return the attention scores for the [`dot_product_attention`](/api/NN_Primitives/NNlib#NNlib.dot_product_attention). Input arrays must have dimensions `(num_features ÷ nheads, nheads, sequence_length, batch_size)`.
-
-See [`dot_product_attention`](/api/NN_Primitives/NNlib#NNlib.dot_product_attention) for more details.
+Deprecated: use [`scaled_dot_product_attention_with_weights`](/api/NN_Primitives/NNlib#NNlib.scaled_dot_product_attention_with_weights).
 
 source
 
 ```julia
-make_causal_mask(x, dims=2)
+make_causal_mask(x; dims)
 ```
 
 Return a boolean square matrix `m` of the same type as `x` and of side `size(x, dims)`. Its elements are set such that `m[i, j] == i ≤ j`.
 
-Can be used to mask the attention scores in [`dot_product_attention`](/api/NN_Primitives/NNlib#NNlib.dot_product_attention).
+Can be used as the `mask` of [`scaled_dot_product_attention`](/api/NN_Primitives/NNlib#NNlib.scaled_dot_product_attention), whose inputs have the sequence length along `dims=3`. For a plain causal mask, prefer the `is_causal=true` keyword there, which lets a fused implementation avoid materializing the mask.
+
+Calling `make_causal_mask(x)` without `dims` is deprecated. It keeps returning the mask for `dims=2`, the sequence dimension of the deprecated `dot_product_attention`.
+
+source
+
+```julia
+NNlib.is_fused_attention(query, key, value, [bias]; kws...)
+```
+
+Return `true` if [`scaled_dot_product_attention`](/api/NN_Primitives/NNlib#NNlib.scaled_dot_product_attention) called with the same arguments is computed by a fused implementation, which does not materialize the attention weights, and `false` if it takes the materialized one.
+
+This is about a call outside of automatic differentiation: under it, the materialized implementation is differentiated where the fused one has no gradient, as with a `bias`.
+
+source
+
+### Rotary Position Embedding {#Rotary-Position-Embedding}
+
+```julia
+NNlib.rotary_embedding_table(head_dim, maxlen, [T=Float32]; base=10_000)
+```
+
+Return the tables `(cos, sin)` of the rotary position embedding (RoPE) of [Su et al.](https://arxiv.org/abs/2104.09864) for the positions `1:maxlen`, to be passed to [`NNlib.apply_rotary_embedding`](/api/NN_Primitives/NNlib#NNlib.apply_rotary_embedding).
+
+Each is a `Matrix{T}` of size `(head_dim ÷ 2, maxlen)`: the cosine and the sine of the angle `θ[i] * (p - 1)` by which the `i`-th pair of features is rotated at the position `p`, with the frequencies `θ[i] = base^(-2(i - 1) / head_dim)`. The first position is not rotated, as the position zero of PyTorch and JAX.
+
+The tables are computed in `Float64` on the CPU: move them to the device of the inputs. Other frequencies, as those rescaled by Llama 3 or YaRN, give their own tables `cos.(θ .* (0:maxlen - 1)')` and `sin.(θ .* (0:maxlen - 1)')`.
+
+**Examples**
+
+```julia
+julia> cos_table, sin_table = NNlib.rotary_embedding_table(64, 4096);
+
+julia> size(cos_table), size(sin_table)
+((32, 4096), (32, 4096))
+```
+
+source
+
+```julia
+NNlib.apply_rotary_embedding(x, cos, sin; offset=0, positions=nothing, interleaved=false)
+```
+
+Apply the rotary position embedding (RoPE) of [Su et al.](https://arxiv.org/abs/2104.09864) to `x`, a query or a key of [`scaled_dot_product_attention`](/api/NN_Primitives/NNlib#NNlib.scaled_dot_product_attention) of size `(head_dim, nheads, seq_len, batch_size...)`: the features of each head are rotated pair by pair, by angles proportional to the position of the token. The dot product of a query and a key so rotated depends on their positions through their difference only. The values are not rotated.
+
+The tables `cos` and `sin` have size `(head_dim ÷ 2, maxlen)`, their column `p` holding the cosines and the sines of the angles of the position `p`, as those of [`NNlib.rotary_embedding_table`](/api/NN_Primitives/NNlib#NNlib.rotary_embedding_table). At the position `p`, the `k`-th pair of features `(a, b)` becomes `(a * cos[k, p] - b * sin[k, p], b * cos[k, p] + a * sin[k, p])`. The pairs are `(x[k], x[k + head_dim ÷ 2])`, from the two halves of the features (as in Llama, Hugging Face Transformers and Flax), or with `interleaved=true` the consecutive features `(x[2k - 1], x[2k])` (as in RoFormer, GPT-J and torchtune).
+
+Returns an array of the size of `x`.
+
+**Keywords**
+
+* `offset`: The token `i` is at the position `offset + i`. An integer, or an integer array         with one entry for each batch element. With a KV cache, the number of tokens         already in the cache, as the `q_offset` of [`scaled_dot_product_attention`](/api/NN_Primitives/NNlib#NNlib.scaled_dot_product_attention).         Default `0`.
+
+* `positions`: Either `nothing` or the positions of the tokens, in place of `offset`, as an         integer array of size `(seq_len, batch_size...)`, or `(seq_len,)` for all the         batch elements. They are the columns of the tables. Default `nothing`.
+
+* `interleaved`: If `true`, the pairs are the consecutive features, else the two halves.         Default `false`.
+
+The positions have to be within the columns of the tables. To rotate part of the features only (as GPT-NeoX and Phi), rotate the slice `x[1:d, :, :, :]` with tables of `d ÷ 2` rows and concatenate the rest.
+
+**Examples**
+
+The causal self-attention of a decoder, in which the queries and the keys are rotated but not the values, here with 8 heads of dimension 64 sharing 2 key/value heads:
+
+```julia
+using NNlib: apply_rotary_embedding, rotary_embedding_table
+
+cos_table, sin_table = rotary_embedding_table(64, 4096)
+q = rand(Float32, 64, 8, 100, 4)   # (head_dim, nheads, seq_len, batch_size)
+k = rand(Float32, 64, 2, 100, 4)
+v = rand(Float32, 64, 2, 100, 4)
+q = apply_rotary_embedding(q, cos_table, sin_table)
+k = apply_rotary_embedding(k, cos_table, sin_table)
+y = scaled_dot_product_attention(q, k, v; is_causal=true)
+```
+
+Decoding with a KV cache, which holds the keys already rotated: the new tokens are rotated with the number of cached tokens as offset, the `q_offset` of the attention.
+
+```julia
+kcache = apply_rotary_embedding(rand(Float32, 64, 2, 10, 4), cos_table, sin_table)
+vcache = rand(Float32, 64, 2, 10, 4)
+# 3 new tokens at the positions 11 to 13
+q = apply_rotary_embedding(rand(Float32, 64, 8, 3, 4), cos_table, sin_table; offset=10)
+knew = apply_rotary_embedding(rand(Float32, 64, 2, 3, 4), cos_table, sin_table; offset=10)
+k = cat(kcache, knew; dims=3)
+v = cat(vcache, rand(Float32, 64, 2, 3, 4); dims=3)
+y = scaled_dot_product_attention(q, k, v; is_causal=true, q_offset=10)
+```
+
+Documents packed in one sequence (see [`scaled_dot_product_attention`](/api/NN_Primitives/NNlib#NNlib.scaled_dot_product_attention)), whose positions start over at each document:
+
+```julia
+segments = [5, 12, 3]
+positions = reduce(vcat, [1:n for n in segments])   # [1:5; 1:12; 1:3]
+q = apply_rotary_embedding(rand(Float32, 64, 8, 20), cos_table, sin_table; positions)
+k = apply_rotary_embedding(rand(Float32, 64, 2, 20), cos_table, sin_table; positions)
+v = rand(Float32, 64, 2, 20)
+y = scaled_dot_product_attention(q, k, v; is_causal=true, q_segments=segments)
+```
+
+source
+
+## State-Space and Linear-Attention Layers {#State-Space-and-Linear-Attention-Layers}
+
+```julia
+NNlib.causal_conv1d(x, w; bias=nothing, state=nothing, lengths=nothing) -> (y, new_state)
+```
+
+The causal depthwise convolution of the sequences `x`, of size `(channels, seq_len, batch_size)`, with the filters `w`, of size `(kernel_size, channels)`: each channel has its own filter, and the output at a position depends on the inputs up to that position only,
+
+```julia
+y[c, t, b] = bias[c] + sum(w[j, c] * x[c, t - kernel_size + j, b] for j in 1:kernel_size)
+```
+
+This is the short convolution that Mamba-2, Gated DeltaNet and LFM2 apply before their sequence mixing (see [`NNlib.ssd_scan`](/api/NN_Primitives/NNlib#NNlib.ssd_scan) and [`NNlib.gated_delta_rule`](/api/NN_Primitives/NNlib#NNlib.gated_delta_rule)). As in PyTorch the filter is not flipped: `w[kernel_size, c]` multiplies the current input. The weight of PyTorch's `Conv1d(channels, channels, kernel_size; groups=channels)` has size `(channels, 1, kernel_size)`, which read in Julia's column-major order is `(kernel_size, 1, channels)`: drop the middle dimension.
+
+The `kernel_size - 1` inputs before the first position are the columns of `state`, of size `(channels, kernel_size - 1, batch_size)`, or zeros. The returned `new_state` holds the last `kernel_size - 1` inputs of `state` continued by `x`. Convolving a sequence in pieces, each starting from the `new_state` of the previous one, gives the convolution of the whole sequence: this is how a decoder passes its tokens one at a time. On the GPU backends, a single token outside of differentiation is one kernel.
+
+Returns `y`, of the size of `x`, and `new_state`.
+
+**Keywords**
+
+* `bias`: Either `nothing` or a vector of length `channels`. Default `nothing`.
+
+* `state`: Either `nothing`, meaning zeros, or the inputs before `x`, of size         `(channels, kernel_size - 1, batch_size)`. Default `nothing`.
+
+* `lengths`: Either `nothing` or the number of valid positions of each sequence of a batch         padded on the right: an integer, or an integer array with one entry for each         batch element. `new_state` then holds the last inputs before the end of each         sequence, and the outputs past it are not meaningful. Default `nothing`, meaning         all the positions.
+
+**Examples**
+
+The convolution of a prompt followed by the decoding of one token, with Mamba-2's `kernel_size = 4` and its SiLU:
+
+```julia
+w, bias = randn(Float32, 4, 64), randn(Float32, 64)
+x = randn(Float32, 64, 10, 2)                  # (channels, seq_len, batch_size)
+y, state = NNlib.causal_conv1d(x, w; bias)
+y = swish.(y)
+
+x1 = randn(Float32, 64, 1, 2)                  # the next token
+y1, state = NNlib.causal_conv1d(x1, w; bias, state)
+```
+
+source
+
+```julia
+NNlib.ssd_scan(x, dt, A, B, C; D=nothing, initial_state=nothing, lengths=nothing,
+               chunk_size=128) -> (y, final_state)
+```
+
+The selective scan of Mamba-2, in the state space duality (SSD) form of [Dao and Gu](https://arxiv.org/abs/2405.21060). Each head carries a state `S` of size `(head_dim, state_size)` along the sequence. At the token `t`, with the step `Δ = dt[h, t]` of the head `h`,
+
+```julia
+S = exp(Δ * A[h]) * S + Δ * x[:, h, t] * B[:, t]ᵀ
+y[:, h, t] = S * C[:, t] + D[h] * x[:, h, t]
+```
+
+The arrays have the layout of [`scaled_dot_product_attention`](/api/NN_Primitives/NNlib#NNlib.scaled_dot_product_attention), and the heads are in groups that share `B` and `C`, as the queries share keys and values there:
+
+* `x`: The inputs, of size `(head_dim, nheads, seq_len, batch_size)`.
+
+* `dt`: The positive steps, of size `(nheads, seq_len, batch_size)`. In Mamba-2, the       `softplus` of a projection of the input plus `dt_bias`, clamped.
+
+* `A`: The negative rates of decay of the heads, a vector of length `nheads`. In Mamba-2,       `-exp.(A_log)`.
+
+* `B`, `C`: The projections that write the input into the state and read the state into       the output, of size `(state_size, ngroups, seq_len, batch_size)`, with `nheads` a       multiple of `ngroups`. The heads `(i - 1) * r + 1` to `i * r`, with       `r = nheads ÷ ngroups`, use the group `i`.
+
+Returns `y`, of the size and element type of `x`, and the state after the last token, `final_state`, of size `(head_dim, state_size, nheads, batch_size)`. It is computed in at least `Float32`, as the outputs, and kept in that type.
+
+**Keywords**
+
+* `D`: Either `nothing` or the vector of the skip connections of the heads. Default      `nothing`.
+
+* `initial_state`: Either `nothing`, meaning zeros, or the states before the first token,      of size `(head_dim, state_size, nheads, batch_size)`, as the `final_state` of the      previous part of the sequences. Default `nothing`.
+
+* `lengths`: Either `nothing` or the number of valid positions of each sequence of a batch      padded on the right: an integer, or an integer array with one entry for each batch      element. `final_state` is then the state at the end of each sequence, and the      outputs past it are not meaningful. Default `nothing`, meaning all the positions.
+
+* `chunk_size`: The number of tokens of the chunks of the chunked algorithm. Default `128`.
+
+A sequence of a single token takes one step of the recurrence, as when decoding. Longer sequences are cut in chunks of `chunk_size` tokens, computed in parallel by matrix products, as `mamba_chunk_scan_combined` of [mamba_ssm](https://github.com/state-spaces/mamba) and its PyTorch version in Hugging Face Transformers: the states at the ends of the chunks are combined by a product with a matrix of their decays. The chunk size trades memory, `(chunk_size, chunk_size)` per head and chunk, against the `(head_dim, state_size)` state per head and chunk.
+
+On the GPU backends, the chunked algorithm runs as kernels, as those of mamba_ssm: they form `Cᵀ B` once for each group of heads and apply the decays as they read it, carry the states from chunk to chunk with one pass over them, and have a gradient that keeps only the states at the starts of the chunks. The kernels take chunks of at most 256 tokens. The gradient is that of the kernels under ChainRules (Zygote); other differentiation packages differentiate the generic implementation. Outside of differentiation, a single token is one kernel, which reads and writes the states once, for a `state_size` of at most 256.
+
+The state of Transformers' `ssm_state`, of size `(batch_size, nheads, head_dim, state_size)`, is `permutedims(final_state, (4, 3, 1, 2))`.
+
+**Examples**
+
+The scan of a prompt followed by the decoding of one token, with continuing states:
+
+```julia
+P, H, N, G = 64, 8, 128, 1       # head_dim, nheads, state_size, ngroups
+x = randn(Float32, P, H, 10, 2)  # (head_dim, nheads, seq_len, batch_size)
+dt = softplus.(randn(Float32, H, 10, 2))
+A = -exp.(randn(Float32, H))
+B, C = randn(Float32, N, G, 10, 2), randn(Float32, N, G, 10, 2)
+y, state = NNlib.ssd_scan(x, dt, A, B, C)
+
+x1, dt1 = randn(Float32, P, H, 1, 2), softplus.(randn(Float32, H, 1, 2))
+B1, C1 = randn(Float32, N, G, 1, 2), randn(Float32, N, G, 1, 2)
+y1, state = NNlib.ssd_scan(x1, dt1, A, B1, C1; initial_state=state)
+```
+
+source
+
+```julia
+NNlib.gated_delta_rule(q, k, v, g, beta; scale=nothing, initial_state=nothing,
+                       lengths=nothing, chunk_size=64) -> (o, final_state)
+```
+
+The gated delta rule of Gated DeltaNet ([Yang et al.](https://arxiv.org/abs/2412.06464)), the linear attention of Qwen3-Next and Qwen3.5. Each head carries a state `S` of size `(head_v_dim, head_k_dim)` along the sequence. At the token `t`, it decays by `exp(g)`, then its value at the key `k_t` moves toward `v_t` at the rate `beta`, and is read at `q_t`:
+
+```julia
+S = exp(g[h, t]) * S
+S = S + beta[h, t] * (v_t - S * k_t) * k_tᵀ
+o_t = S * (scale * q_t)
+```
+
+The arrays have the layout of [`scaled_dot_product_attention`](/api/NN_Primitives/NNlib#NNlib.scaled_dot_product_attention), and as there the queries and keys can have fewer heads than the values:
+
+* `q`, `k`: The queries and the keys, of size `(head_k_dim, nkheads, seq_len, batch_size)`.       The delta rule expects keys of unit norm: Qwen3-Next and Qwen3.5 normalise the       queries and the keys (Transformers' `use_qk_l2norm_in_kernel`).
+
+* `v`: The values, of size `(head_v_dim, nheads, seq_len, batch_size)`, with `nheads` a       multiple of `nkheads`. The heads `(i - 1) * r + 1` to `i * r`, with       `r = nheads ÷ nkheads`, use the query and key head `i`.
+
+* `g`: The logarithms of the decays, nonpositive, of size `(nheads, seq_len, batch_size)`.       In Gated DeltaNet, `-exp(A_log) * softplus(a + dt_bias)`.
+
+* `beta`: The rates of the writes, in `[0, 1]`, of size `(nheads, seq_len, batch_size)`.
+
+Returns the outputs `o`, of size `(head_v_dim, nheads, seq_len, batch_size)` and the element type of `v`, and the state after the last token, `final_state`, of size `(head_v_dim, head_k_dim, nheads, batch_size)`. It is computed in at least `Float32`, as the outputs, and kept in that type.
+
+**Keywords**
+
+* `scale`: The multiplier of the queries. Default `nothing`, meaning `1 / √head_k_dim`.
+
+* `initial_state`: Either `nothing`, meaning zeros, or the states before the first token,      of size `(head_v_dim, head_k_dim, nheads, batch_size)`, as the `final_state` of the      previous part of the sequences. Default `nothing`.
+
+* `lengths`: Either `nothing` or the number of valid positions of each sequence of a batch      padded on the right: an integer, or an integer array with one entry for each batch      element. `final_state` is then the state at the end of each sequence, and the      outputs past it are not meaningful. Default `nothing`, meaning all the positions.
+
+* `chunk_size`: The number of tokens of the chunks of the chunked algorithm, a power of 2.      Default `64`.
+
+A sequence of a single token takes one step of the recurrence, as when decoding, as `torch_recurrent_gated_delta_rule` of Transformers. Longer sequences are cut in chunks of up to `chunk_size` tokens, as in `torch_chunk_gated_delta_rule`: within a chunk, the writes are found by solving a unit triangular system, here by inverting its matrix by blocks, and the outputs are matrix products. The state is carried from one chunk to the next by a loop over the chunks.
+
+On the GPU backends, the chunked algorithm runs as kernels, as those of flash-linear-attention: the products of the queries and the keys are formed once for each head of keys, the triangular inverse of each chunk in shared memory, and the state is carried through the chunks by blocks of its rows. The gradient keeps the states at the starts of the chunks. The kernels take chunks of at most 64 tokens. The gradient is that of the kernels under ChainRules (Zygote); other differentiation packages differentiate the generic implementation. Outside of differentiation, a single token is one kernel, which reads and writes the states once, for a `head_k_dim` of at most 256.
+
+The state of Transformers' `recurrent_state`, of size `(batch_size, nheads, head_k_dim, head_v_dim)`, is `permutedims(final_state, (4, 3, 2, 1))`.
+
+**Examples**
+
+The gated delta rule of a prompt followed by the decoding of one token, with continuing states, here with 4 heads of values sharing 2 heads of queries and keys:
+
+```julia
+l2norm(x) = x ./ sqrt.(sum(abs2, x; dims=1) .+ 1f-6)
+q, k = l2norm(randn(Float32, 128, 2, 10, 3)), l2norm(randn(Float32, 128, 2, 10, 3))
+v = randn(Float32, 128, 4, 10, 3)           # (head_v_dim, nheads, seq_len, batch_size)
+g, beta = -rand(Float32, 4, 10, 3), rand(Float32, 4, 10, 3)
+o, state = NNlib.gated_delta_rule(q, k, v, g, beta)
+
+q1, k1 = l2norm(randn(Float32, 128, 2, 1, 3)), l2norm(randn(Float32, 128, 2, 1, 3))
+v1, g1, beta1 = randn(Float32, 128, 4, 1, 3), -rand(Float32, 4, 1, 3), rand(Float32, 4, 1, 3)
+o1, state = NNlib.gated_delta_rule(q1, k1, v1, g1, beta1; initial_state=state)
+```
 
 source
 
@@ -83,7 +446,7 @@ softmax(x; dims = 1)
 softmax(x; dims = 1) = exp.(x) ./ sum(exp.(x), dims = dims)
 ```
 
-with additional manipulations enhancing numerical stability.
+with additional manipulations enhancing numerical stability. For `Float16` and `BFloat16` inputs, the sums are computed in `Float32`.
 
 For a matrix input `x` it will by default (`dims = 1`) treat it as a batch of vectors, with each column independent. Keyword `dims = 2` will instead treat rows independently, and so on.
 
@@ -148,6 +511,8 @@ It is semantically equivalent to the following:
 logsoftmax(x; dims = 1) = x .- log.(sum(exp.(x), dims = dims))
 ```
 
+For `Float16` and `BFloat16` inputs, the sum is computed in `Float32`.
+
 See also [`softmax`](/api/NN_Primitives/NNlib#NNlib.softmax).
 
 source
@@ -196,16 +561,18 @@ source
 ## Pooling {#Pooling}
 
 ```julia
-PoolDims(x_size::NTuple{M}, k::Union{NTuple{L, Int}, Int};
-         stride=k, padding=0, dilation=1)  where {M, L}
+PoolDims(x_size::NTuple{M}, k::Union{NTuple{<:Any, Int}, Int};
+         stride=k, padding=0, dilation=1, ceil_mode=false)  where M
 ```
 
 Dimensions for a "pooling" operation that can have an arbitrary input size, kernel size, stride, dilation, and channel count.  Used to dispatch onto efficient implementations at compile-time.
 
+With `ceil_mode=true` the output size is rounded up instead of down, as with PyTorch's `ceil_mode=True`: a last window that runs past the padded input is kept, as long as it starts inside the input or the low padding. Its positions past the padded input count neither as input nor as padding: max pooling skips them, and mean pooling leaves them out of the divisor even with `count_include_pad=true`. `ceil_mode` is dropped when it doesn't change the output size.
+
 source
 
 ```julia
-maxpool(x, k::NTuple{N, Integer}; pad=0, stride=k)
+maxpool(x, k::NTuple{N, Integer}; pad=0, stride=k, ceil_mode=false)
 ```
 
 Perform max pool operation with window size `k` on input tensor `x`.
@@ -218,10 +585,12 @@ Arguments:
 
 * `stride`: Either a tuple with the same length as `k`, or one integer for all directions. Default is `k`.
 
+* `ceil_mode`: When `true`, round the output size up instead of down, as PyTorch's `ceil_mode=True`: a last window that runs past the padded input is kept if it starts inside the input or the low padding. See [`PoolDims`](/api/NN_Primitives/NNlib#NNlib.PoolDims).
+
 source
 
 ```julia
-meanpool(x, k::NTuple{N, Integer}; pad=0, stride=k, count_include_pad=true)
+meanpool(x, k::NTuple{N, Integer}; pad=0, stride=k, count_include_pad=true, ceil_mode=false)
 ```
 
 Perform mean pool operation with window size `k` on input tensor `x`.
@@ -236,10 +605,12 @@ Arguments:
 
 * `count_include_pad`: When `true` (the default), padding (zero) elements are included in the averaging denominator, so each output element divides by the full window size `prod(k)`. When `false`, only the in-bounds (non-padding) elements are counted, matching cuDNN's `CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING` and PyTorch's `count_include_pad=false`. Has no effect when `pad == 0`.
 
+* `ceil_mode`: When `true`, round the output size up instead of down, as PyTorch's `ceil_mode=True`: a last window that runs past the padded input is kept if it starts inside the input or the low padding. Its positions past the padded input are left out of the denominator also with `count_include_pad=true`, as in PyTorch. See [`PoolDims`](/api/NN_Primitives/NNlib#NNlib.PoolDims).
+
 source
 
 ```julia
-lpnormpool(x, p::Real, k::NTuple{N, Integer}; pad=0, stride=k)
+lpnormpool(x, p::Real, k::NTuple{N, Integer}; pad=0, stride=k, ceil_mode=false)
 ```
 
 Perform Lp pool operation with value of the Lp norm `p` and window size `k` on input tensor `x`, also known as LPPool in pytorch. This pooling operator from [Learned-Norm Pooling for Deep Feedforward and Recurrent Neural Networks](https://arxiv.org/abs/1311.1780).
@@ -254,9 +625,11 @@ Arguments:
 
 * `stride`: Either a tuple with the same length as `k`, or one integer for all directions. Default is `k`.
 
+* `ceil_mode`: When `true`, round the output size up instead of down: a last window that runs past the padded input is kept if it starts inside the input or the low padding. See [`PoolDims`](/api/NN_Primitives/NNlib#NNlib.PoolDims).
+
 For all elements `x` in a size `k` window, lpnormpool computes `(∑ᵢ xᵢ^p)^(1 / p)` as an element of the output.
 
-Thus `lpnormpool(x, 1, k) ./ prod(k) ≈ meanpool(x, k)` and `lpnormpool(x, 2, k).^2 ./ prod(k) ≈ meanpool(x.^2, k)`.
+Thus `lpnormpool(x, 1, k) ./ prod(k) ≈ meanpool(x, k)` and `lpnormpool(x, 2, k).^2 ./ prod(k) ≈ meanpool(x.^2, k)`. With `ceil_mode=true`, the sum of a last window that runs past the input is over its elements in the input; PyTorch's `LPPool` instead scales it by `prod(k)` over their number.
 
 source
 
@@ -755,13 +1128,15 @@ source
 source
 
 ```julia
-upsample_bilinear(x::AbstractArray{T,4}, scale::NTuple{2,Real}; align_corners::Bool = true)
-upsample_bilinear(x::AbstractArray{T,4}; size::NTuple{2,Integer}, align_corners::Bool = true)
+upsample_bilinear(x::AbstractArray{T,4}, scale::NTuple{2,Real}; align_corners::Bool = true, antialias::Bool = false)
+upsample_bilinear(x::AbstractArray{T,4}; size::NTuple{2,Integer}, align_corners::Bool = true, antialias::Bool = false)
 ```
 
 Upsamples the first 2 dimensions of the array `x` by the upsample factors stored in `scale`, using bilinear interpolation. As an alternative to using `scale`, the resulting image `size` can be directly specified with a keyword argument.
 
 The size of the output is equal to `(scale[1]*S1, scale[2]*S2, S3, S4)`, where `S1, S2, S3, S4 = size(x)`.
+
+With `antialias = true`, the output can also be smaller than the input: as in PyTorch's `F.interpolate(x, size, mode="bilinear", antialias=True)` and PIL, the triangle filter is then stretched by the downsampling factor and renormalised at the borders. Pass `align_corners = false` to match them. See also [`upsample_bicubic`](/api/NN_Primitives/NNlib#NNlib.upsample_bicubic).
 
 **Examples**
 
@@ -796,7 +1171,7 @@ julia> upsample_bilinear(x, (2.5, 3.5))  # non-integer scaling factors are allow
 source
 
 ```julia
-∇upsample_bilinear(Δ::AbstractArray{T,4}; size::NTuple{2,Integer}, align_corners::Bool = true) where T
+∇upsample_bilinear(Δ::AbstractArray{T,4}; size::NTuple{2,Integer}, align_corners::Bool = true, antialias::Bool = false) where T
 ```
 
 **Arguments**
@@ -808,6 +1183,60 @@ source
 **Outputs**
 
 * `dx`: Downsampled version of `Δ`
+
+source
+
+```julia
+upsample_bicubic(x::AbstractArray{T,4}, scale::NTuple{2,Real}; align_corners::Bool = false, antialias::Bool = false)
+upsample_bicubic(x::AbstractArray{T,4}; size::NTuple{2,Integer}, align_corners::Bool = false, antialias::Bool = false)
+```
+
+Resizes the first 2 dimensions of the array `x` with bicubic interpolation, to the image `size` given as a keyword argument, or to `floor.(Int, scale .* size(x)[1:2])`. The output can be smaller than the input.
+
+This is PyTorch's `F.interpolate(x, size, mode="bicubic", align_corners=..., antialias=...)` on the same data in the NCHW layout. Without `antialias`, each output pixel is a weighted sum of 4×4 input pixels (the cubic convolution kernel with `a = -0.75`, as in OpenCV), and the image is extended by repeating its border pixels. With `antialias = true`, the kernel is the one of PIL and torchvision's `Resize` (`a = -0.5`): when downsampling, it is stretched by the downsampling factor, so that each output pixel averages all the input pixels it covers, and at the borders the weights are renormalised over the pixels inside the image.
+
+Unlike [`upsample_bilinear`](/api/NN_Primitives/NNlib#NNlib.upsample_bilinear), `align_corners` defaults to `false`, as in PyTorch.
+
+**Examples**
+
+```julia
+julia> x = reshape(Float32[1 2; 3 4], (2, 2, 1, 1));
+
+julia> upsample_bicubic(x, (2, 2))  # overshoots the range of `x`
+4×4×1×1 Array{Float32, 4}:
+[:, :, 1, 1] =
+ 0.683594  1.01562  1.5625   1.89453
+ 1.34766   1.67969  2.22656  2.55859
+ 2.44141   2.77344  3.32031  3.65234
+ 3.10547   3.4375   3.98438  4.31641
+
+julia> ans == upsample_bicubic(x; size = (4, 4))
+true
+
+julia> x = reshape(Float32.(1:16), (4, 4, 1, 1));
+
+julia> upsample_bicubic(x; size = (2, 2), antialias = true)
+2×2×1×1 Array{Float32, 4}:
+[:, :, 1, 1] =
+ 3.93388  11.2397
+ 5.76033  13.0661
+```
+
+source
+
+```julia
+∇upsample_bicubic(Δ::AbstractArray{T,4}; size::NTuple{2,Integer}, align_corners::Bool = false, antialias::Bool = false)
+```
+
+**Arguments**
+
+* `Δ`: Incoming gradient array, backpropagated from downstream layers
+
+* `size`: Lateral (W,H) size of the image resized in the first place
+
+**Outputs**
+
+* `dx`: Gradient with respect to the input of [`upsample_bicubic`](/api/NN_Primitives/NNlib#NNlib.upsample_bicubic)
 
 source
 
@@ -1151,10 +1580,47 @@ julia> batched_vec(A4d, B3d) |> size
 
 source
 
+```julia
+grouped_mul(W::AbstractArray{<:Any,3}, X::AbstractMatrix, offsets) -> Y
+grouped_mul(A::AbstractMatrix, B::AbstractMatrix, offsets) -> C
+```
+
+Matrix multiplication over groups of different sizes. `offsets` is an integer vector of nondecreasing cumulative group ends, starting from an implicit zero. Repeated offsets represent empty groups.
+
+For `W` of size `(n, k, G)` and `X` of size `(k, total)`, return `Y` of size `(n, total)`, with `Y[:, r] = W[:, :, g] * X[:, r]` for each group `g`, where `r = (g == 1 ? 0 : offsets[g-1])+1:offsets[g]`. `length(offsets)` must equal `G`. `W` may be a [`batched_transpose`](/api/NN_Primitives/NNlib#NNlib.batched_transpose) or [`batched_adjoint`](/api/NN_Primitives/NNlib#NNlib.batched_adjoint).
+
+For `A` of size `(n, total)` and `B` of size `(total, k)`, return `C` of size `(n, k, length(offsets))`, with `C[:, :, g] = A[:, r] * B[r, :]`.
+
+Entries past the last offset are ignored. The corresponding columns of `Y`, and the matrices of `C` for empty groups, are zero. Both forms support differentiation.
+
+On CUDA 6.5+, supported strided arrays use a single cuBLAS grouped GEMM, with `Float32` accumulation for `Float16` and `BFloat16`. Device offsets are copied to the host once per call, since cuBLAS requires group sizes on the host. Other arrays use a loop of `mul!` calls, parallelized over groups on multithreaded CPUs.
+
+```julia
+julia> W = cat(ones(2, 3), fill(2.0, 2, 3); dims=3);
+
+julia> grouped_mul(W, ones(3, 4), [1, 3])
+2×4 Matrix{Float64}:
+ 3.0  6.0  6.0  0.0
+ 3.0  6.0  6.0  0.0
+
+julia> size(grouped_mul(ones(2, 4), ones(4, 3), [1, 3]))
+(2, 3, 2)
+```
+
+source
+
+```julia
+grouped_mul!(C, A, B, offsets, α=1, β=0) -> C
+```
+
+Compute `C = α * grouped_mul(A, B, offsets) + β * C` in place. The destination must have the shape returned by [`grouped_mul`](/api/NN_Primitives/NNlib#NNlib.grouped_mul) and must not alias either input. Entries outside the groups are scaled by `β`. `α` and `β` are converted to the element type of `C`.
+
+source
+
 ## Gather and Scatter {#Gather-and-Scatter}
 
 ```julia
-NNlib.gather(src, idx) -> dst
+NNlib.gather(src, idx; checkbounds = true) -> dst
 ```
 
 Reverse operation of [`scatter`](/api/NN_Primitives/NNlib#NNlib.scatter). Gathers data from source `src` and writes it in a destination `dst` according to the index array `idx`. For each `k` in `CartesianIndices(idx)`, assign values to `dst` according to
@@ -1172,6 +1638,8 @@ dst[:, k] .= src[:, idx[k]]
 and `k` will run over `1:length(idx)`.
 
 The elements of `idx` can be integers or integer tuples and may be repeated. A single `src` column can end up being copied into zero, one, or multiple `dst` columns.
+
+On a GPU, checking that the indices are in range synchronizes the host with the device. A caller that has checked them already can skip that with `checkbounds = false`: an index out of range then gives an undefined result, and may corrupt memory.
 
 See [`gather!`](/api/NN_Primitives/NNlib#NNlib.gather!) for an in-place version.
 
@@ -1193,7 +1661,7 @@ julia> NNlib.gather([1 2 3; 4 5 6], [1,3,1,3,1])
 source
 
 ```julia
-gather(src, IJK...)
+gather(src, IJK...; checkbounds = true)
 ```
 
 Convert the tuple of integer vectors `IJK` to a tuple of `CartesianIndex` and call `gather` on it: `gather(src, CartesianIndex.(IJK...))`.
@@ -1216,7 +1684,7 @@ julia> NNlib.gather(src, [1, 2], [2, 4])
 source
 
 ```julia
-NNlib.gather!(dst, src, idx)
+NNlib.gather!(dst, src, idx; checkbounds = true)
 ```
 
 Reverse operation of [`scatter!`](/api/NN_Primitives/NNlib#NNlib.scatter!). Gathers data from source `src` and writes it in destination `dst` according to the index array `idx`. For each `k` in `CartesianIndices(idx)`, assign values to `dst` according to
@@ -1235,12 +1703,14 @@ and `k` will run over `1:length(idx)`.
 
 The elements of `idx` can be integers or integer tuples and may be repeated. A single `src` column can end up being copied into zero, one, or multiple `dst` columns.
 
+With `checkbounds = false`, the GPU methods do not check that the indices are in range, see [`gather`](/api/NN_Primitives/NNlib#NNlib.gather).
+
 See [`gather`](/api/NN_Primitives/NNlib#NNlib.gather) for an allocating version.
 
 source
 
 ```julia
-gather!(dst, src, IJK...)
+gather!(dst, src, IJK...; checkbounds = true)
 ```
 
 Convert the tuple of integer vectors `IJK` to a tuple of `CartesianIndex` and call `gather!` on it: `gather!(dst, src, CartesianIndex.(IJK...))`.
@@ -1265,7 +1735,7 @@ julia> NNlib.gather!(dst, src, [1, 2], [2, 4])
 source
 
 ```julia
-NNlib.scatter(op, src, idx; [init, dstsize])
+NNlib.scatter(op, src, idx; [init, dstsize, checkbounds])
 ```
 
 Scatter operation allocating a destination array `dst` and calling `scatter!(op, dst, src, idx)` on it.
@@ -1273,6 +1743,8 @@ Scatter operation allocating a destination array `dst` and calling `scatter!(op,
 * If keyword `init` is provided, it is used to initialize the content of `dst`. Otherwise, the init values is inferred from the reduction operator `op` for some common operators (e.g. `init = 0` for `op = +`).
 
 * If `dstsize` is provided, it will be used to define the size of destination array, otherwise it will be inferred by `src` and `idx`.
+
+* `checkbounds = false` skips the check of the indices on a GPU, see [`scatter!`](/api/NN_Primitives/NNlib#NNlib.scatter!).
 
 See [`scatter!`](/api/NN_Primitives/NNlib#NNlib.scatter!) for full details on how `idx` works.
 
@@ -1303,7 +1775,7 @@ julia> NNlib.scatter(*, [10,200,3000], [1,4,2]; init = 10, dstsize = 6)
 source
 
 ```julia
-NNlib.scatter!(op, dst, src, idx)
+NNlib.scatter!(op, dst, src, idx; checkbounds = true)
 ```
 
 Scatter operation, which writes data in `src` into `dst` at locations `idx`. A binary reduction operator `op` is applied during the scatter. For each index `k` in `idx`, accumulates values in `dst` according to
@@ -1323,6 +1795,8 @@ See also [`scatter`](/api/NN_Primitives/NNlib#NNlib.scatter), [`gather`](/api/NN
 * `src`: The source data for aggregating.
 
 * `idx`: The mapping for aggregation from source (index) to destination (value).        The `idx` array can contain either integers or tuples.
+
+* `checkbounds`: On a GPU, checking that the indices are in range synchronizes the host        with the device. A caller that has checked them already can skip that with        `checkbounds = false`: an index out of range then gives an undefined result,        and may corrupt memory.
 
 **Examples**
 
@@ -1455,7 +1929,7 @@ source
 logsumexp(x; dims = :)
 ```
 
-Computes `log.(sum(exp.(x); dims))` in a numerically stable way. Without `dims` keyword this returns a scalar.
+Computes `log.(sum(exp.(x); dims))` in a numerically stable way. Without `dims` keyword this returns a scalar. For `Float16` and `BFloat16` inputs, it is computed and returned in `Float32`.
 
 See also [`logsoftmax`](/api/NN_Primitives/NNlib#NNlib.logsoftmax).
 
@@ -1468,6 +1942,26 @@ glu(x, dim = 1)
 The gated linear unit from the ["Language Modeling with Gated Convolutional Networks"](https://arxiv.org/abs/1612.08083) paper.
 
 Calculates `a .* sigmoid(b)`, where `x` is split in half along given dimension `dim` to form `a` and `b`.
+
+See also [`swiglu`](/api/NN_Primitives/NNlib#NNlib.swiglu).
+
+source
+
+```julia
+swiglu(x, dim = 1)
+```
+
+The swish-gated linear unit from the ["GLU Variants Improve Transformer"](https://arxiv.org/abs/2002.05202) paper, the feed-forward activation of Llama, PaLM and most language models since.
+
+Calculates `swish.(gate) .* up`, where `x` is split in half along given dimension `dim` to form `gate` (the first half) and `up` (the second half). This is the layout of the fused gate and up projections of Llama-style models, and the reverse of [`glu`](/api/NN_Primitives/NNlib#NNlib.glu), where the gate is the second half.
+
+See also [`swish`](/api/NN_Primitives/ActivationFunctions#NNlib.swish).
+
+**Examples**
+
+```julia
+ffn = Chain(Dense(d => 2h), NNlib.swiglu, Dense(h => d))
+```
 
 source
 
@@ -1491,7 +1985,7 @@ within_gradient(x) --> Bool
 
 Returns `false` except when used inside a `gradient` call, when it returns `true`. Useful for Flux regularisation layers which behave differently during training and inference.
 
-This should work with any ChainRules-based differentiation package, in which case `x` is ignored. But Tracker.jl overloads `with_gradient(x::TrackedArray)`, thus for widest use you should pass it an array whose gradient is of interest. There is also an overload for ForwardDiff.jl's `Dual` types (and arrays of them).
+This should work with any ChainRules-based differentiation package, in which case `x` is ignored. But Tracker.jl overloads `within_gradient(x::TrackedArray)`, thus for widest use you should pass it an array whose gradient is of interest. There is also an overload for ForwardDiff.jl's `Dual` types (and arrays of them). Enzyme.jl and Mooncake.jl are supported through package extensions, and ignore `x` too.
 
 **Examples**
 
@@ -1568,7 +2062,7 @@ Returns an array in which each element of `A` is either replaced with zero, with
 
 By default every element is treated independently. With keyword `dims=1`, a choice is made for every value of the 1st index i.e. each row of a matrix is either zero or not.
 
-Optional first argument is the random number generator used.
+Optional first argument is the random number generator used. Inside a Reactant-compiled function, pass one (e.g. a `Reactant.ReactantRNG`) to get a new mask on every call, since `default_rng()` there is seeded once at compile time.
 
 **Examples**
 
@@ -1613,7 +2107,7 @@ normalise(x; dims=ndims(x), eps=1f-5)
 
 Normalise `x` to zero mean and unit standard deviation across the dimension(s) given by `dims`. Per default, `dims` is the last dimension. `eps` is a small term added to the variance for numerical stability.
 
-This is the stateless building block behind [`layernorm`](/api/NN_Primitives/NNlib#NNlib.layernorm); it applies no learnable shift or scale.
+It is [`layernorm`](/api/NN_Primitives/NNlib#NNlib.layernorm) without scale and bias. For half-precision (`Float16`/`BFloat16`) inputs the statistics are computed in `Float32`.
 
 **Examples**
 
@@ -1643,7 +2137,7 @@ If `running_mean`/`running_var` are supplied:
 
 * with `training=false` they are used to normalise (inference / test mode).
 
-`eps` is added to the variance for numerical stability. On the GPU, 2D/4D/5D `CuArray`s are dispatched to the cuDNN implementation.
+`eps` is added to the variance for numerical stability. On the GPU, 3D/4D/5D `CuArray`s are dispatched to the cuDNN implementation.
 
 For half-precision (`Float16`/`BFloat16`) feature maps the statistics are computed in `Float32` and the result is cast back; `g`, `b`, `running_mean` and `running_var` must then be `Float32`.
 
@@ -1656,7 +2150,7 @@ source
            eps=1f-5, training=true)
 ```
 
-Gradient of [`batchnorm`](/api/NN_Primitives/NNlib#NNlib.batchnorm): given the upstream gradient `dy`, return `(dg, db, dx)`. On the GPU, 2D/4D/5D `CuArray`s are dispatched to the cuDNN implementation in `NNlibCUDACUDNNExt`; this generic method is the fallback used everywhere else and is itself differentiable (second-order).
+Gradient of [`batchnorm`](/api/NN_Primitives/NNlib#NNlib.batchnorm): given the upstream gradient `dy`, return `(dg, db, dx)`. On the GPU, 3D/4D/5D `CuArray`s are dispatched to the cuDNN implementation in `NNlibCUDACUDNNExt`; this generic method is the fallback used everywhere else and is itself differentiable (second-order).
 
 source
 
@@ -1667,7 +2161,7 @@ instancenorm(g, b, x, running_mean=nothing, running_var=nothing, momentum=0.1f0;
 
 Functional [instance normalization](https://arxiv.org/abs/1607.08022). Arguments match [`batchnorm`](/api/NN_Primitives/NNlib#NNlib.batchnorm), but for an input with `N > 2` dimensions statistics are computed over every `D_1×…×D_{N-2}×1×1` slice, so per channel **and** per sample in the batch. When tracked, the running statistics (length `size(x, N-1)`) accumulate the per-channel average across the batch.
 
-On the GPU (without running statistics) the standardisation is dispatched to the cuDNN `batchnorm` fast path; the running-statistics case uses the generic code.
+Normalising a dense CPU or GPU array with its own statistics, with `g` and `b` of length `size(x, N-1)`, runs fused kernels; other cases use the generic code.
 
 See also [`batchnorm`](/api/NN_Primitives/NNlib#NNlib.batchnorm), [`groupnorm`](/api/NN_Primitives/NNlib#NNlib.groupnorm), [`layernorm`](/api/NN_Primitives/NNlib#NNlib.layernorm).
 
@@ -1688,7 +2182,7 @@ groupnorm(g, b, x, G::Integer; eps=1f-5)
 
 Functional [group normalization](https://arxiv.org/abs/1803.08494). `g` and `b` are the per-channel scale and bias (either may be `nothing`); `x` are the feature maps. For an input with `N > 2` dimensions the `N-1`th is the channel dimension; its `C = size(x, N-1)` channels are split into `G` groups (`G` must divide `C`) and statistics are computed over each group together with the spatial dimensions, per sample. `eps` is added to the variance.
 
-On the GPU the standardisation is dispatched to the cuDNN `batchnorm` fast path.
+Normalising a dense CPU or GPU array, with `g` and `b` of length `C`, runs fused kernels; other cases use the generic code.
 
 See also [`batchnorm`](/api/NN_Primitives/NNlib#NNlib.batchnorm), [`instancenorm`](/api/NN_Primitives/NNlib#NNlib.instancenorm), [`layernorm`](/api/NN_Primitives/NNlib#NNlib.layernorm).
 
@@ -1710,7 +2204,7 @@ Functional [layer normalization](https://arxiv.org/abs/1607.06450). `g` and `b` 
 
 `g` and `b`, when given, must broadcast against the normalised region, e.g. have size `size(x)[dims]` with singleton trailing dimensions.
 
-On the GPU, normalising over leading `dims` (`1:k`) dispatches the standardisation to the cuDNN `batchnorm` fast path; other `dims` use the generic code.
+Normalising a dense CPU or GPU array over leading `dims` (`1:k`), with `g` and `b` of the shape of those dimensions, runs fused kernels; other cases use the generic code.
 
 See also [`normalise`](/api/NN_Primitives/NNlib#NNlib.normalise), [`batchnorm`](/api/NN_Primitives/NNlib#NNlib.batchnorm), [`instancenorm`](/api/NN_Primitives/NNlib#NNlib.instancenorm), [`groupnorm`](/api/NN_Primitives/NNlib#NNlib.groupnorm).
 
@@ -1721,6 +2215,46 @@ source
 ```
 
 Gradient of [`layernorm`](/api/NN_Primitives/NNlib#NNlib.layernorm), returning `(dg, db, dx)`.
+
+source
+
+```julia
+rmsnorm(g, x; dims=1, eps=1f-5)
+```
+
+Functional [root mean square normalization](https://arxiv.org/abs/1910.07467). `x` is divided by its root mean square over the dimensions `dims` (the leading dimension by default) and multiplied by the scale `g` (`nothing` for no scaling):
+
+```julia
+y = g .* x ./ sqrt.(mean(abs2, x; dims) .+ eps)
+```
+
+Unlike [`layernorm`](/api/NN_Primitives/NNlib#NNlib.layernorm), the mean is not subtracted and there is no bias.
+
+`g`, when given, must broadcast against the normalised region, e.g. have size `size(x)[dims]` with singleton trailing dimensions. `eps` is added to the mean square for numerical stability.
+
+For half-precision (`Float16`/`BFloat16`) inputs the mean square is computed in `Float32` and the result is cast back; `g` must then be `Float32`.
+
+See also [`layernorm`](/api/NN_Primitives/NNlib#NNlib.layernorm), [`normalise`](/api/NN_Primitives/NNlib#NNlib.normalise).
+
+**Examples**
+
+```julia
+julia> x = Float32[3 0; 4 2];
+
+julia> NNlib.rmsnorm(nothing, x) ≈ x ./ sqrt.(Float32[12.5 2])
+true
+
+julia> NNlib.rmsnorm(Float32[2, 1], x) ≈ Float32[2, 1] .* NNlib.rmsnorm(nothing, x)
+true
+```
+
+source
+
+```julia
+∇rmsnorm(g, x, dy; dims=1, eps=1f-5)
+```
+
+Gradient of [`rmsnorm`](/api/NN_Primitives/NNlib#NNlib.rmsnorm), returning `(dg, dx)`.
 
 source
 
@@ -1963,7 +2497,7 @@ istft(y;
 
 Inverse Short-time Fourier Transform.
 
-Return the least squares estimation of the original signal
+Return the least squares estimation of the original signal (D. Griffin and J. Lim, "Signal estimation from modified short-time Fourier transform", 1984): the inverse transforms of the frames are multiplied by the window, overlap-added, and divided by the overlap-added squared window. Samples where the latter vanishes (e.g. the first one for `center=false` and a `hann_window`) cannot be recovered and are set to zero.
 
 **Arguments:**
 
@@ -2026,10 +2560,10 @@ Convert a power spectrogram (amplitude squared) to decibel (dB) units.
 source
 
 ```julia
-col2im!(x, col, cdims, beta=0)
+col2im!(x, col, cdims, beta=0, rows=1:M)
 ```
 
-Does the inverse of `im2col!()`, converting `col` back into a 3d image, used for backward passes, transposed convolutions, etc...
+Does the inverse of `im2col!()`, converting `col` back into a 3d image, used for backward passes, transposed convolutions, etc...  `x` is first scaled by `beta`, then the output pixels `rows`, held in the first `length(rows)` rows of `col`, are added into it.
 
 Note that this method has not been optimized in the same way as `im2col()` has, because it is slightly more complicated due to the more chaotic data access patterns, and I'm not desperate enough yet.
 
@@ -2055,9 +2589,9 @@ source
 im2col_dims(c::ConvDims)
 ```
 
-im2col calculates, for each output pixel, the "convolution" of N kernels where N is the number of output channels, by doing a matrix multiply.  The dimensions of that matrix are given by this function.
+im2col calculates, for each output pixel, the "convolution" of N kernels where N is the number of output channels, by doing a matrix multiply.  This function gives the dimensions of that matrix, with one copy per thread along the third.
 
-Note that because im2col is multithreaded, we need to allocate a separate workspace of memory per-thread; hence the dimensions returned by this will depend on the number of threads Julia is currently running with.
+The im2col convolutions only hold a tile of this matrix per task, so an array of these dimensions is a valid, but oversized, `col` workspace for them.
 
 source
 
@@ -2074,8 +2608,7 @@ Return the reverse indices of `idx`. The indices of `idx` will be values, and va
 source
 
 ```julia
-∇conv_filter_im2col!(dw, x, dy, cdims, col=similar(dw, ∇filter_im2col_dims(cdims));
-                     alpha=1, beta=0)
+∇conv_filter_im2col!(dw, x, dy, cdims; col=nothing, alpha=1, beta=0, ntasks=nthreads())
 ```
 
 Conv backward pass onto the weights using im2col and GEMM; stores the result in `dw`. See [`conv_im2col!`](/api/NN_Primitives/NNlib#NNlib.conv_im2col!) for explanation of optional parameters.
@@ -2083,12 +2616,12 @@ Conv backward pass onto the weights using im2col and GEMM; stores the result in 
 source
 
 ```julia
-conv_im2col!(y, x, w, cdims, col=similar(x); alpha=1, beta=0)
+conv_im2col!(y, x, w, cdims; col=nothing, alpha=1, beta=0, ntasks=nthreads())
 ```
 
 Perform a convolution using im2col and GEMM, store the result in `y`.  The  kwargs `alpha` and `beta` control accumulation behavior; internally this operation is implemented as a matrix multiply that boils down to `y = alpha * x * w + beta * y`, thus by setting `beta` to a nonzero value, multiple results can be accumulated into `y`, or by setting `alpha` to a nonunitary value, various gain factors can be applied.
 
-Note for the particularly performance-minded, you can provide a pre-allocated `col`, which should eliminate any need for large allocations within this method.
+Note for the particularly performance-minded, you can provide a pre-allocated workspace `col` of size `(rows, K, ntasks)`, see `conv_im2col_dims`; each of up to `size(col, 3)` tasks processes the output positions `rows` at a time.
 
 source
 
@@ -2105,7 +2638,7 @@ Performs dimensional consistency checks and return the dimensionality of the sca
 source
 
 ```julia
-∇conv_data_im2col!(dx, w, dy, cdims, col=similar(dx); alpha=1, beta=0)
+∇conv_data_im2col!(dx, w, dy, cdims; col=nothing, alpha=1, beta=0, ntasks=nthreads())
 ```
 
 Conv2d backward pass onto the input using im2col and GEMM; stores the result in `dx`. See [`conv_im2col!`](/api/NN_Primitives/NNlib#NNlib.conv_im2col!) for explanation of optional parameters.
@@ -2143,7 +2676,7 @@ source
 ∇filter_im2col_dims(c::ConvDims)
 ```
 
-Like [`im2col_dims`](/api/NN_Primitives/NNlib#NNlib.im2col_dims), but saves some memory because multiple (Julia) threads are not required for the filter gradient calculation.
+Like [`im2col_dims`](/api/NN_Primitives/NNlib#NNlib.im2col_dims), for a single thread.
 
 Note: in the future, this may return `Dims{2}` instead of `Dims{3}`.
 
@@ -2392,10 +2925,10 @@ Adds log-space `a` and `b` such that the result equals `log(exp(a)+exp(b))`
 source
 
 ```julia
-im2col!(col, x, cdims)
+im2col!(col, x, cdims, rows=1:M)
 ```
 
-Converts a 3d image `x` into a matrix `col` for usage with GEMM-calculated convolution. Patches of `x` of size (kernel_w, kernel_h, kernel_d, C_in) will be extracted and laid out along the rows of `col`, one for each output pixel.  This routine is used by all im2col-based convolutions, just with extra singleton dimensions added in the case of `2d` or `1d` images.
+Converts a 3d image `x` into a matrix `col` for usage with GEMM-calculated convolution. Patches of `x` of size (kernel_w, kernel_h, kernel_d, C_in) will be extracted and laid out along the rows of `col`, one for each output pixel.  Only the output pixels `rows` (out of the `M` of the image, flattened) are extracted, into the first `length(rows)` rows of `col`.  This routine is used by all im2col-based convolutions, just with extra singleton dimensions added in the case of `2d` or `1d` images.
 
 source
 
@@ -2412,5 +2945,13 @@ safe_div(x, y)
 ```
 
 Returns `x/y` unless `y==0`, in which case it just returns `x`. (Used internally by `scatter`.)
+
+source
+
+```julia
+flipweight(w::AbstractArray)
+```
+
+Reorders the weight tensor for supporting both convolution and cross-correlation operations.
 
 source

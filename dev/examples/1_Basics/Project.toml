@@ -11,8 +11,11 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 Lux = {path = "../.."}
 
 [compat]
-ComponentArrays = "0.15.22"
-ForwardDiff = "0.10, 1"
-Lux = "1"
-Optimisers = "0.4.6"
+ComponentArrays = "0.15"
+ForwardDiff = "1.4"
+Lux = "1.31"
+Optimisers = "0.4"
+Printf = "1.10"
+Random = "1.10"
 Zygote = "0.7"
+julia = "1.10"

@@ -162,39 +162,36 @@ trained_model = train_model(dataloader)
 ```
 
 ```
-Iteration:     1, Loss: 4.216495e-02
-Iteration:    25, Loss: 3.229734e-02
-Iteration:    50, Loss: 1.087332e-02
-Iteration:    75, Loss: 8.937194e-02
-Iteration:   100, Loss: 1.307528e-01
-Iteration:   100, Loss: 9.166870e-03
-Iteration:     1, Loss: 3.890885e-01
-┌ Warning: Verbosity toggle: dt_epsilon 
-│  Initial timestep too small (near machine epsilon), using default: dt = -1.0e-6
-└ @ OrdinaryDiffEqCore ~/.julia/packages/OrdinaryDiffEqCore/rnOL4/src/initdt.jl:196
-Iteration:    25, Loss: 2.689430e-02
-Iteration:     1, Loss: 2.634015e-02
-Iteration:    25, Loss: 3.823892e-02
-Iteration:    50, Loss: 2.629666e-02
-Iteration:    75, Loss: 2.491908e-02
-Iteration:   100, Loss: 2.433581e-02
-Iteration:   125, Loss: 2.385265e-02
-Iteration:   150, Loss: 2.333843e-02
-Iteration:   175, Loss: 2.276438e-02
-Iteration:   200, Loss: 2.210616e-02
-Iteration:   225, Loss: 2.132468e-02
-Iteration:   250, Loss: 2.035642e-02
-Iteration:   275, Loss: 1.912553e-02
-Iteration:   300, Loss: 1.754508e-02
-Iteration:   325, Loss: 1.568406e-02
-Iteration:   350, Loss: 1.392563e-02
-Iteration:   375, Loss: 1.245343e-02
-Iteration:   400, Loss: 1.961776e-02
-Iteration:   425, Loss: 1.143463e-02
-Iteration:   450, Loss: 9.655834e-03
-Iteration:   475, Loss: 1.207781e-02
-Iteration:   500, Loss: 8.979554e-03
-Iteration:   500, Loss: 8.409429e-03
+Iteration:     1, Loss: 1.263977e-01
+Iteration:    25, Loss: 7.227352e-02
+Iteration:    50, Loss: 2.598650e-02
+Iteration:    75, Loss: 4.135345e-02
+Iteration:   100, Loss: 1.630205e-01
+Iteration:   100, Loss: 9.606197e-03
+Iteration:     1, Loss: 5.589554e-01
+Iteration:    25, Loss: 2.823040e-02
+Iteration:     1, Loss: 2.627247e-02
+Iteration:    25, Loss: 5.340696e-02
+Iteration:    50, Loss: 2.557104e-02
+Iteration:    75, Loss: 2.370120e-02
+Iteration:   100, Loss: 2.264978e-02
+Iteration:   125, Loss: 2.168536e-02
+Iteration:   150, Loss: 2.065968e-02
+Iteration:   175, Loss: 1.955649e-02
+Iteration:   200, Loss: 1.835715e-02
+Iteration:   225, Loss: 1.705296e-02
+Iteration:   250, Loss: 1.553971e-02
+Iteration:   275, Loss: 1.380863e-02
+Iteration:   300, Loss: 1.196710e-02
+Iteration:   325, Loss: 1.020933e-02
+Iteration:   350, Loss: 8.700535e-03
+Iteration:   375, Loss: 8.129505e-03
+Iteration:   400, Loss: 7.118785e-03
+Iteration:   425, Loss: 6.006670e-03
+Iteration:   450, Loss: 9.132028e-03
+Iteration:   475, Loss: 6.318894e-03
+Iteration:   500, Loss: 4.972718e-03
+Iteration:   500, Loss: 4.874542e-03
 
 ```
 

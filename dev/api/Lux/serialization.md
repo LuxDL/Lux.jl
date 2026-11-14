@@ -22,9 +22,9 @@ Serializes a Lux model to a TensorFlow SavedModel format.
 
 A SavedModel contains a complete TensorFlow program, including trained parameters (i.e, tf.Variables) and computation. It does not require the original model building code to run, which makes it useful for sharing or deploying with [TFLite](https://tensorflow.org/lite), [TensorFlow.js](https://js.tensorflow.org/), [TensorFlow Serving](https://www.tensorflow.org/tfx/serving/tutorials/Serving_REST_simple), or [TensorFlow Hub](https://tensorflow.org/hub). Refer to the [official documentation](https://www.tensorflow.org/guide/saved_model) for more details.
 
-::: warning Load `Reactant.jl` and `PythonCall.jl` before using this function
+::: warning Load `Reactant.jl` before using this function
 
-This function requires the `Reactant` and `PythonCall` extensions to be loaded. If you haven't done so, please load them before calling this function.
+This function requires `Reactant.jl` to be loaded (`using Reactant`). Exporting is implemented natively in Julia and does not require `PythonCall.jl` or Python `tensorflow` (on `Reactant` versions prior to `v0.2.305`, `PythonCall.jl` with Python `tensorflow` was also required).
 
 :::
 
@@ -69,7 +69,7 @@ When providing inputs to the loaded model, ensure that the input tensors are tra
 Export the model to a TensorFlow SavedModel format.
 
 ```julia
-using Lux, Reactant, PythonCall, Random
+using Lux, Reactant, Random
 
 dev = reactant_device()
 

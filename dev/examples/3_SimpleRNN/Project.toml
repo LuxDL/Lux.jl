@@ -12,9 +12,12 @@ Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
 Lux = {path = "../.."}
 
 [compat]
-ADTypes = "1.10"
-JLD2 = "0.5, 0.6"
-Lux = "1"
+ADTypes = "1.24"
+JLD2 = "0.6"
+Lux = "1.31"
 MLUtils = "0.4"
-Optimisers = "0.4.6"
-Reactant = "0.2.170"
+Optimisers = "0.4"
+Printf = "1.10"
+Random = "1.10"
+Reactant = "0.2.306"
+julia = "1.10"

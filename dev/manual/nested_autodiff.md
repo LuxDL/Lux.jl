@@ -91,7 +91,7 @@ loss_function1(model, x, ps, Lux.testmode(st), y)
 ```
 
 ```ansi
-11.380776f0
+11.380778f0
 ```
 
 So our loss function works, let's take the gradient (forward diff doesn't nest nicely here):
@@ -117,10 +117,10 @@ println("∞-norm(∂ps - ∂ps_fd): ", norm(ComponentArray(∂ps) .- ∂ps_fd, 
 
 ```ansi
 [33m[1m┌ [22m[39m[33m[1mWarning: [22m[39m`training` is set to `Val{true}()` but is not being used within an autodiff call (gradient, jacobian, etc...). This will be slow. If you are using a `Lux.jl` model, set it to inference (test) mode using `LuxCore.testmode`. Reliance on this behavior is discouraged, and is not guaranteed by Semantic Versioning, and might be removed without a deprecation cycle. It is recommended to fix this issue in your code.
-[33m[1m└ [22m[39m[90m@ LuxLib.Utils ~/work/Lux.jl/Lux.jl/lib/LuxLib/src/utils.jl:346[39m
+[33m[1m└ [22m[39m[90m@ LuxLib.Utils ~/work/Lux.jl/Lux.jl/lib/LuxLib/src/utils.jl:347[39m
 [33m[1m┌ [22m[39m[33m[1mWarning: [22m[39m`training` is set to `Val{true}()` but is not being used within an autodiff call (gradient, jacobian, etc...). This will be slow. If you are using a `Lux.jl` model, set it to inference (test) mode using `LuxCore.testmode`. Reliance on this behavior is discouraged, and is not guaranteed by Semantic Versioning, and might be removed without a deprecation cycle. It is recommended to fix this issue in your code.
-[33m[1m└ [22m[39m[90m@ LuxLib.Utils ~/work/Lux.jl/Lux.jl/lib/LuxLib/src/utils.jl:346[39m
-∞-norm(∂x - ∂x_fd): 0.00046014786
+[33m[1m└ [22m[39m[90m@ LuxLib.Utils ~/work/Lux.jl/Lux.jl/lib/LuxLib/src/utils.jl:347[39m
+∞-norm(∂x - ∂x_fd): 0.00044250488
 ∞-norm(∂ps - ∂ps_fd): 0.00068473816
 ```
 
@@ -167,8 +167,8 @@ println("∞-norm(∂ps_b - ∂ps_fd): ", norm(ComponentArray(∂ps_b) .- ∂ps_
 ```
 
 ```ansi
-∞-norm(∂x_b - ∂x_fd): 0.00020849705
-∞-norm(∂ps_b - ∂ps_fd): 0.00025326014
+∞-norm(∂x_b - ∂x_fd): 0.00015926361
+∞-norm(∂ps_b - ∂ps_fd): 0.0002542138
 ```
 
 In this example, it is important to remark that now `batched_jacobian` returns a 3D array with the Jacobian calculation for each independent input value in `x`.
@@ -202,7 +202,7 @@ _, ∂t, ∂ps, _ = Zygote.gradient(loss_function2, model, t, ps, st)
 ```
 
 ```ansi
-(nothing, Float32[-0.55306894 0.15707001 … -8.553633 0.07513529], (layer_1 = (weight = Float32[-1.3108878; -2.4101036; … ; 0.43676856; 1.9626999;;], bias = Float32[-1.77037, 1.7834253, -7.107933, -3.4437156, 3.2615936, -1.9511774, 11.527171, -1.8003641, 6.7513776, -4.77004, -3.183308, 6.587816]), layer_2 = (weight = Float32[-0.23921251 -0.20668766 … -0.6383875 -2.23242; -1.6666821 1.042543 … -1.640935 -3.4007297; … ; -0.36023283 -0.086430185 … -0.7054552 -2.1921258; 3.1173706 -1.9727281 … 3.0402095 6.11373], bias = Float32[0.3729237, -2.9340098, 3.6637254, -0.72471243, -0.7925039, -1.1245009, -0.89859, -0.03284671, -2.729647, -8.446214, 0.06208062, 5.5367613]), layer_3 = (weight = Float32[-0.7262076 1.0381727 … -1.5016018 -1.679885; 2.2896144 0.43350345 … -1.6663245 -1.8067697; … ; -2.1851237 -0.64241976 … 1.9577401 2.148901; 0.3654292 -0.09699093 … 0.025357665 0.028738922], bias = Float32[1.1350523, -2.1769388, 4.1149755, 3.2842, 0.35638645, 3.7911117, -0.007984848, -2.0338566, -1.1642132, -2.9500434, 2.0285957, -0.41238895]), layer_4 = (weight = Float32[15.794909 -20.65178 … -7.798029 -9.910249], bias = Float32[11.461399])), nothing)
+(nothing, Float32[-0.5530689 0.15707 … -8.553632 0.07513551], (layer_1 = (weight = Float32[-1.3108878; -2.4101036; … ; 0.4367684; 1.9626998;;], bias = Float32[-1.7703704, 1.7834241, -7.1079335, -3.443716, 3.261592, -1.951178, 11.527171, -1.8003646, 6.751378, -4.7700405, -3.1833086, 6.5878158]), layer_2 = (weight = Float32[-0.23921248 -0.20668772 … -0.6383877 -2.2324197; -1.666682 1.0425433 … -1.6409348 -3.4007294; … ; -0.3602325 -0.08643047 … -0.70545495 -2.1921256; 3.1173701 -1.9727281 … 3.040209 6.1137295], bias = Float32[0.3729239, -2.9340096, 3.6637256, -0.72471243, -0.7925037, -1.124501, -0.8985894, -0.032846197, -2.7296474, -8.446214, 0.06208141, 5.5367613]), layer_3 = (weight = Float32[-0.7262077 1.0381727 … -1.5016019 -1.679885; 2.289614 0.4335037 … -1.6663249 -1.8067697; … ; -2.1851234 -0.64241993 … 1.9577403 2.148901; 0.36542913 -0.096990906 … 0.025357626 0.028738886], bias = Float32[1.1350523, -2.1769378, 4.114977, 3.2841988, 0.3563864, 3.7911117, -0.00798486, -2.0338569, -1.1642125, -2.9500432, 2.0285954, -0.41238886]), layer_4 = (weight = Float32[15.794906 -20.65178 … -7.7980266 -9.910248], bias = Float32[11.461394])), nothing)
 ```
 
 Boom that worked! Let's verify the gradient using forward diff:
@@ -216,8 +216,8 @@ println("∞-norm(∂ps - ∂ps_fd): ", norm(ComponentArray(∂ps) .- ∂ps_fd, 
 ```
 
 ```ansi
-∞-norm(∂t - ∂t_fd): 5.722046e-6
-∞-norm(∂ps - ∂ps_fd): 2.861023e-6
+∞-norm(∂t - ∂t_fd): 1.9073486e-6
+∞-norm(∂ps - ∂ps_fd): 5.722046e-6
 ```
 
 ## Loss Function computing the Jacobian of the Parameters {#Loss-Function-computing-the-Jacobian-of-the-Parameters}
@@ -252,7 +252,7 @@ _, ∂x, ∂ps, _ = Zygote.gradient(loss_function3, model, x, ps, st)
 ```
 
 ```ansi
-(nothing, Float32[6.8464594 6.2111297 … 1.9693907 -1.959184], (layer_1 = (weight = Float32[-3.6867144; -1.68539; … ; 2.9501405; -6.637219;;], bias = Float32[-6.488623, -7.0661273, 1.3344336, 2.6049256, 0.7290931, -15.730944, -5.431456, 7.4604826, -1.186449, 15.522138, 0.44571495, -15.376386]), layer_2 = (weight = Float32[0.3980046 -4.3071294 … -1.0914631 -4.759412; 0.8852217 -2.2523668 … 0.3977316 0.1306752; … ; -2.2192001 0.88214755 … -0.55989707 1.3939897; -3.154516 4.594261 … -1.7649312 -0.38241944], bias = Float32[7.5247808, 4.2529244, -17.252981, 3.260692, -7.4066525, 1.1126353, 2.8471048, 6.7544622, -9.815336, 0.18652153, -4.5365167, -10.04811]), layer_3 = (weight = Float32[1.0462949 4.899997 … 1.1557573 -2.284967; -2.3719285 8.687264 … -3.1904757 -8.841231; … ; -10.298787 -2.9139607 … -9.754746 -4.0381317; 1.2221471 -0.46878588 … 1.0469304 0.9091032], bias = Float32[2.8379912, 8.345026, 2.9214194, -2.2415926, -11.139433, -3.834073, -2.845412, -7.9164896, 4.222528, -1.2864517, 6.9338737, -1.4144737]), layer_4 = (weight = Float32[-59.44397 -12.688665 … 99.77208 -3.339081], bias = Float32[0.0])), nothing)
+(nothing, Float32[6.8464594 6.2111297 … 1.96939 -1.9591827], (layer_1 = (weight = Float32[-3.6867151; -1.6853899; … ; 2.9501414; -6.63722;;], bias = Float32[-6.4886236, -7.0661273, 1.3344338, 2.6049256, 0.729094, -15.730942, -5.431456, 7.4604845, -1.1864486, 15.522138, 0.44571638, -15.376387]), layer_2 = (weight = Float32[0.3980046 -4.3071294 … -1.0914631 -4.759412; 0.8852218 -2.2523668 … 0.39773154 0.13067514; … ; -2.2192004 0.8821479 … -0.55989707 1.39399; -3.154516 4.5942607 … -1.764931 -0.38241917], bias = Float32[7.5247808, 4.252924, -17.252983, 3.260692, -7.4066525, 1.1126354, 2.8471043, 6.7544627, -9.815335, 0.18652129, -4.536517, -10.048109]), layer_3 = (weight = Float32[1.0462952 4.8999977 … 1.1557572 -2.284967; -2.3719277 8.687264 … -3.1904757 -8.841231; … ; -10.298788 -2.9139607 … -9.7547455 -4.0381327; 1.2221472 -0.46878597 … 1.0469307 0.9091032], bias = Float32[2.837991, 8.345025, 2.9214196, -2.2415924, -11.139433, -3.8340733, -2.8454118, -7.9164896, 4.222529, -1.2864516, 6.933874, -1.4144737]), layer_4 = (weight = Float32[-59.44397 -12.688665 … 99.77208 -3.3390806], bias = Float32[0.0])), nothing)
 ```
 
 Now let's verify the gradient using forward diff:
@@ -266,7 +266,7 @@ println("∞-norm(∂ps - ∂ps_fd): ", norm(ComponentArray(∂ps) .- ∂ps_fd, 
 ```
 
 ```ansi
-∞-norm(∂x - ∂x_fd): 1.9073486e-6
+∞-norm(∂x - ∂x_fd): 2.3841858e-6
 ∞-norm(∂ps - ∂ps_fd): 3.0517578e-5
 ```
 
@@ -357,8 +357,8 @@ println("Tr(J) using full jacobian: ", tr_full_jacobian)
 
 ```ansi
 Tr(J) using vjp: 4.9127817
-Tr(J) using jvp: 4.9127817
-Tr(J) using full jacobian: 4.912781
+Tr(J) using jvp: 4.912781
+Tr(J) using full jacobian: 4.912782
 ```
 
 Now that we have verified that the results are the same, let's try to differentiate the trace estimate. This often shows up as a regularization term in neural networks.
@@ -384,6 +384,6 @@ println("∞-norm(∂ps using full jacobian): ",
 ```ansi
 ∞-norm(∂x using vjp): 0.0
 ∞-norm(∂ps using vjp): 0.0
-∞-norm(∂x using full jacobian): 7.1525574e-7
-∞-norm(∂ps using full jacobian): 1.4305115e-6
+∞-norm(∂x using full jacobian): 1.0430813e-6
+∞-norm(∂ps using full jacobian): 9.536743e-7
 ```
