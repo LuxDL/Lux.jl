@@ -43,7 +43,7 @@ LuxOps.eachslice(x::AbstractMatrix, ::BatchLastIndex) = LuxOps.eachslice(x, Val(
 function init_rnn_weight(rng::AbstractRNG, init_weight, hidden_dims, dims)
     if init_weight === nothing
         bound = inv(sqrt(hidden_dims))
-        y = randn32(rng, dims...)
+        y = rand32(rng, dims...)
         @. y = (y - 0.5f0) * 2 * bound
         return y
     end

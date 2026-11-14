@@ -304,6 +304,14 @@ end
 
     skip_backends = VERSION < v"1.11-" ? [AutoEnzyme()] : []
 
+    @testset "Default Weight Initialization" begin
+        b = Bilinear((2, 4) => 3)
+        ps, _ = Lux.setup(rng, b)
+        bound = inv(sqrt(2))
+        @test all(-bound .≤ ps.weight .≤ bound)
+        @test all(-bound .≤ ps.bias .≤ bound)
+    end
+
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "SkipConnection recombinator" begin
             d = Dense(2 => 2)
