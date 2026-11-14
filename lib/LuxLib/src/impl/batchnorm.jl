@@ -360,9 +360,12 @@ end
     @Const(ϵ)
 )
     i, j, k = @index(Global, NTuple)
-    γ′[j] = inv(sqrt(σ²[j] + ϵ))
-    β′ = -μ[j] * γ′[j]
-    y[i, j, k] = f(muladd(x[i, j, k], γ′[j], β′))
+    γ′′ = inv(sqrt(σ²[j] + ϵ))
+    β′ = -μ[j] * γ′′
+    y[i, j, k] = f(muladd(x[i, j, k], γ′′, β′))
+    if i == 1 && k == 1
+        γ′[j] = γ′′
+    end
     return nothing
 end
 
@@ -396,9 +399,12 @@ end
     @Const(ϵ)
 )
     i, j, k = @index(Global, NTuple)
-    γ′[j] = γ[j] / sqrt(σ²[j] + ϵ)
-    β′ = muladd(-μ[j], γ′[j], β[j])
-    y[i, j, k] = f(muladd(x[i, j, k], γ′[j], β′))
+    γ′′ = γ[j] / sqrt(σ²[j] + ϵ)
+    β′ = muladd(-μ[j], γ′′, β[j])
+    y[i, j, k] = f(muladd(x[i, j, k], γ′′, β′))
+    if i == 1 && k == 1
+        γ′[j] = γ′′
+    end
     return nothing
 end
 
