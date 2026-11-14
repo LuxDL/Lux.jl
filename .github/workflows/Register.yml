@@ -1,0 +1,97 @@
+name: Register
+
+permissions:
+  contents: write
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "Project.toml"
+      - "lib/*/Project.toml"
+
+jobs:
+  register:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+
+      - name: Check version bumps and trigger JuliaRegistrator
+        shell: python3 {0}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+        run: |
+          import os
+          import subprocess
+          import time
+          import tomllib
+
+          def parse_semver(version: str):
+              version = version.split("+", 1)[0]
+              base, _, prerelease = version.partition("-")
+              parts = [int(x) for x in base.split(".")]
+              parts += [0] * (3 - len(parts))
+              return (*parts[:3], prerelease == ""), prerelease
+
+          def read_toml_at(revision: str, path: str):
+              result = subprocess.run(
+                  ["git", "show", f"{revision}:{path}"],
+                  capture_output=True,
+                  text=True,
+              )
+              if result.returncode != 0:
+                  return None
+              return tomllib.loads(result.stdout)
+
+          before = os.environ.get("BEFORE_SHA", "")
+          after = os.environ["AFTER_SHA"]
+          repo = os.environ["GH_REPO"]
+
+          if not before or set(before) == {"0"}:
+              before = f"{after}~1"
+          elif subprocess.run(["git", "cat-file", "-e", f"{before}^{{commit}}"]).returncode != 0:
+              subprocess.run(["git", "fetch", "--depth=1", "origin", before])
+              if subprocess.run(["git", "cat-file", "-e", f"{before}^{{commit}}"]).returncode != 0:
+                  before = f"{after}~1"
+
+          diff = subprocess.run(
+              ["git", "diff", "--name-only", before, after, "--", "Project.toml", ":(glob)lib/*/Project.toml"],
+              capture_output=True,
+              text=True,
+              check=True,
+          )
+          paths = sorted(diff.stdout.splitlines(), key=lambda p: (p == "Project.toml", p))
+          comments = []
+
+          for path in paths:
+              new_pkg = read_toml_at(after, path)
+              old_pkg = read_toml_at(before, path)
+              # shortcut: skips brand-new packages absent at BEFORE_SHA, register initial release manually
+              if not new_pkg or not old_pkg:
+                  continue
+              if not all(k in new_pkg for k in ("name", "uuid", "version")) or "version" not in old_pkg:
+                  continue
+
+              new_key, new_prerelease = parse_semver(new_pkg["version"])
+              old_key, _ = parse_semver(old_pkg["version"])
+              if new_prerelease or new_key[:3] == (0, 0, 0) or new_key <= old_key:
+                  continue
+
+              subdir = os.path.dirname(path)
+              body = f"@JuliaRegistrator register subdir={subdir}" if subdir else "@JuliaRegistrator register"
+              print(f"Bumped {new_pkg['name']}: {old_pkg['version']} -> {new_pkg['version']} ({body})")
+              comments.append(body)
+
+          for i, body in enumerate(comments):
+              if i > 0:
+                  time.sleep(2)
+              subprocess.run(
+                  ["gh", "api", f"repos/{repo}/commits/{after}/comments", "-f", f"body={body}"],
+                  check=True,
+              )
