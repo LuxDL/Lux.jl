@@ -438,7 +438,7 @@ using ConcreteStructs: @concrete
 using MacroTools: MacroTools, combinedef, splitdef
 using Functors: Functors
 using Random: AbstractRNG
-using Static: static
+using ..Utils: static
 
 using LuxCore: LuxCore, AbstractLuxLayer
 using ..Lux:

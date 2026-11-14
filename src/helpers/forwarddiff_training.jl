@@ -2,7 +2,7 @@ using ADTypes: AutoForwardDiff
 using DiffResults: DiffResults
 using ForwardDiff: ForwardDiff
 using Setfield: @set!
-using Static: True, False
+using .Utils: True, False
 
 function Training.compute_gradients_impl(
     ad::AutoForwardDiff, obj_fn::F, data, ts::Training.TrainState

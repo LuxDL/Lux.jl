@@ -15,7 +15,7 @@ using FastClosures: @closure
 using Functors: Functors, fmap
 using Optimisers: Optimisers
 using Setfield: @set!
-using Static: StaticBool, Static, False, True, static
+using ..Utils: StaticBool, False, True, static
 
 using ..Lux: Lux, Utils, ReactantCompatibleOptimisers
 using LuxCore: LuxCore, AbstractLuxLayer
@@ -361,20 +361,20 @@ maybe_wrap_adtype(ad::AbstractADType, ::Any; kwargs...) = ad
 function maybe_wrap_adtype(
     ad::AutoEnzyme,
     ::Type{ReactantDevice};
-    return_gradients::Utils.BoolType=True(),
+    return_gradients=True(),
     sync::Union{Missing,Bool}=missing,
     compile_options=nothing,
 )
-    return ReactantBackend(static(return_gradients), sync, compile_options, ad)
+    return ReactantBackend(static(return_gradients)::Utils.StaticBool, sync, compile_options, ad)
 end
 function maybe_wrap_adtype(
     ad::AutoReactant,
     ::Type{ReactantDevice};
-    return_gradients::Utils.BoolType=True(),
+    return_gradients=True(),
     sync::Union{Missing,Bool}=missing,
     compile_options=nothing,
 )
-    return ReactantBackend(static(return_gradients), sync, compile_options, ad.mode)
+    return ReactantBackend(static(return_gradients)::Utils.StaticBool, sync, compile_options, ad.mode)
 end
 function maybe_wrap_adtype(ad::AutoReactant, ::Type{T}; kwargs...) where {T}
     throw(ArgumentError("`AutoReactant` only supports ReactantDevice but got `$(T)`"))

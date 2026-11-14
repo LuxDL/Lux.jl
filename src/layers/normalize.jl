@@ -108,11 +108,11 @@ function BatchNorm(
     activation=identity;
     init_bias=zeros32,
     init_scale=ones32,
-    affine::BoolType=True(),
-    track_stats::BoolType=True(),
+    affine=True(),
+    track_stats=True(),
     epsilon=1.0f-5,
     momentum=0.1f0,
-    use_decomposed_implementation::BoolType=False(),
+    use_decomposed_implementation=False(),
 )
     return BatchNorm(
         activation,
@@ -293,7 +293,7 @@ function GroupNorm(
     activation=identity;
     init_bias=zeros32,
     init_scale=ones32,
-    affine::BoolType=True(),
+    affine=True(),
     epsilon=1.0f-5,
 )
     @assert chs % groups == 0 "The number of groups ($(groups)) must divide the number of channels ($chs)"
@@ -430,8 +430,8 @@ function InstanceNorm(
     activation=identity;
     init_bias=zeros32,
     init_scale=ones32,
-    affine::BoolType=False(),
-    track_stats::BoolType=False(),
+    affine=False(),
+    track_stats=False(),
     epsilon=1.0f-5,
     momentum=0.1f0,
 )
@@ -569,7 +569,7 @@ function LayerNorm(
     activation=identity;
     epsilon=1.0f-5,
     dims=Colon(),
-    affine::BoolType=True(),
+    affine=True(),
     init_bias=zeros32,
     init_scale=ones32,
 )

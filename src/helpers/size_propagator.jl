@@ -4,7 +4,7 @@ module NilSizePropagation
 using ArrayInterface: ArrayInterface
 using ForwardDiff: ForwardDiff
 using Random: Random
-using Static: Static, StaticBool
+using ..Utils: StaticBool
 
 # We need these to avoid ambiguities
 using StaticArraysCore: StaticArraysCore
@@ -25,6 +25,7 @@ Base.convert(::Type{Nil}, ::Nil) = nil
 Base.Bool(::Nil) = throw(ArgumentError("`Bool` is not defined for `Nil`."))
 
 const NIL_DUAL_ERROR_MSG = "`Nil` is incompatible with `Dual` numbers."
+const NIL_STATIC_ERROR_MSG = "`Nil` is incompatible with `Static` numbers."
 
 ForwardDiff.Dual(::Nil) = throw(ArgumentError(NIL_DUAL_ERROR_MSG))
 ForwardDiff.Dual{T}(::Nil) where {T} = throw(ArgumentError(NIL_DUAL_ERROR_MSG))
@@ -34,14 +35,6 @@ function ForwardDiff.Dual{T,V,Tag}(::Nil) where {T,V,Tag}
 end
 function Base.convert(::Type{ForwardDiff.Dual{T,V,Tag}}, ::Nil) where {T,V,Tag}
     throw(ArgumentError(NIL_DUAL_ERROR_MSG))
-end
-
-const NIL_STATIC_ERROR_MSG = "`Nil` is incompatible with `Static` numbers."
-
-function Base.convert(
-    ::Type{Nil}, ::Union{StaticBool{N},Static.StaticFloat64{N},Static.StaticInt{N}}
-) where {N}
-    throw(ArgumentError(NIL_STATIC_ERROR_MSG))
 end
 
 Base.float(::Type{Nil}) = Nil
