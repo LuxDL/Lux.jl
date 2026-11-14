@@ -1,4 +1,4 @@
-@doc doc"""
+@doc raw"""
     vector_jacobian_product(f, backend::AbstractADType, x, u)
 
 Compute the Vector-Jacobian Product ``\left(\frac{\partial f}{\partial x}\right)^T u``.
@@ -42,7 +42,7 @@ for implemented_backend in (:AutoZygote, :AutoEnzyme)
     end
 end
 
-@doc doc"""
+@doc raw"""
     jacobian_vector_product(f, backend::AbstractADType, x, u)
 
 Compute the Jacobian-Vector Product ``\left(\frac{\partial f}{\partial x}\right) u``.

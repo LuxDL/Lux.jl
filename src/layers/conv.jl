@@ -97,7 +97,7 @@ end
 construct_crosscor_convdims(::False, cdims::DenseConvDims) = cdims
 construct_crosscor_convdims(::True, cdims::DenseConvDims) = DenseConvDims(cdims; F=true)
 
-@doc doc"""
+@doc raw"""
     Conv(k::NTuple{N,Integer}, (in_chs => out_chs)::Pair{<:Integer,<:Integer},
          activation=identity; init_weight=nothing, init_bias=nothing, stride=1,
          pad=0, dilation=1, groups=1, use_bias=True(), cross_correlation=False())
@@ -273,7 +273,7 @@ function Base.show(io::IO, l::Conv)
     return print(io, ")")
 end
 
-@doc doc"""
+@doc raw"""
     ConvTranspose(k::NTuple{N,Integer}, (in_chs => out_chs)::Pair{<:Integer,<:Integer},
                   activation=identity; init_weight=glorot_uniform, init_bias=zeros32,
                   stride=1, pad=0, outpad=0, dilation=1, groups=1, use_bias=True(),

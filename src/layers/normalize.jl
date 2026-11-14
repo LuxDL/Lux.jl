@@ -1,4 +1,4 @@
-@doc doc"""
+@doc raw"""
     BatchNorm(chs::Integer, activation=identity; init_bias=zeros32, init_scale=ones32,
               affine=True(), track_stats=True(), epsilon=1f-5, momentum=0.1f0,
               use_decomposed_implementation=False())
@@ -333,7 +333,7 @@ function Base.show(io::IO, l::GroupNorm)
     return print(io, ")")
 end
 
-@doc doc"""
+@doc raw"""
     InstanceNorm(chs::Integer, activation=identity; init_bias=zeros32, init_scale=ones32,
                  affine=False(), track_stats=False(), epsilon=1f-5, momentum=0.1f0)
 
@@ -504,7 +504,7 @@ function Base.show(io::IO, l::InstanceNorm)
     return print(io, ")")
 end
 
-@doc doc"""
+@doc raw"""
     LayerNorm(shape::NTuple{N, Int}, activation=identity; epsilon=1f-5, dims=Colon(),
               affine=true, init_bias=zeros32, init_scale=ones32)
 
@@ -607,7 +607,7 @@ function Base.show(io::IO, l::LayerNorm)
     return print(io, ")")
 end
 
-@doc doc"""
+@doc raw"""
     WeightNorm(layer::AbstractLuxLayer, which_params::NTuple{N, Symbol},
                dims::Union{Tuple, Nothing}=nothing)
 
@@ -751,7 +751,7 @@ function Base.show(io::IO, ::MIME"text/plain", w::WeightNorm)
     )
 end
 
-@doc doc"""
+@doc raw"""
     RMSNorm(normalized_shape::Dims; epsilon=1.0f-5, affine=true)
     RMSNorm(dim::Integer...; kwargs...)
 

@@ -211,7 +211,7 @@ end
 
 function unsafe_apply_loss end
 
-@doc doc"""
+@doc raw"""
     BinaryCrossEntropyLoss(; agg = mean, epsilon = nothing,
         label_smoothing::Union{Nothing, Real}=nothing,
         logits::Union{Bool, Val}=Val(false))
@@ -303,7 +303,7 @@ function compute_binary_cross_entropy(::Val{false}, loss, ŷ, ỹ, ϵ)
     return loss.agg(-xlogy.(ỹ, ŷ .+ ϵ) .- xlogy.(1 .- ỹ, 1 .- ŷ .+ ϵ))
 end
 
-@doc doc"""
+@doc raw"""
     BinaryFocalLoss(; gamma = 2, agg = mean, epsilon = nothing)
 
 Return the binary focal loss [lin2017focal](@cite). The model input, $\hat{y}$, is expected
@@ -342,7 +342,7 @@ function unsafe_apply_loss(loss::BinaryFocalLoss, ŷ, y)
     return LossFunctionImpl.fused_agg(loss.agg, -, (1 .- p_t) .^ γ .* log.(p_t))
 end
 
-@doc doc"""
+@doc raw"""
     CrossEntropyLoss(;
         agg=mean, epsilon=nothing, dims=1, logits::Union{Bool, Val}=Val(false),
         label_smoothing::Union{Nothing, Real}=nothing
@@ -432,7 +432,7 @@ function compute_cross_entropy(::Val{false}, loss, ŷ, ỹ, ϵ)
     return LossFunctionImpl.fused_agg(loss.agg, -, sum(xlogy.(ỹ, ŷ .+ ϵ); loss.dims))
 end
 
-@doc doc"""
+@doc raw"""
     DiceCoeffLoss(; smooth = true, agg = mean)
 
 Return the Dice Coefficient loss [milletari2016v](@cite) which is used in segmentation
@@ -475,7 +475,7 @@ function unsafe_apply_loss(loss::DiceCoeffLoss, ŷ, y)
     return loss.agg(true .- num ./ den)
 end
 
-@doc doc"""
+@doc raw"""
     FocalLoss(; gamma = 2, dims = 1, agg = mean, epsilon = nothing)
 
 Return the focal loss [lin2017focal](@cite) which can be used in classification tasks with
@@ -521,7 +521,7 @@ function unsafe_apply_loss(loss::FocalLoss, ŷ, y)
     return loss.agg(sum(-y .* (1 .- ŷϵ) .^ γ .* log.(ŷϵ); loss.dims))
 end
 
-@doc doc"""
+@doc raw"""
     HingeLoss(; agg = mean)
 
 Return the hinge loss loss given the prediction `ŷ` and true labels `y` (containing
@@ -546,7 +546,7 @@ true
 """
 HingeLoss(; agg=mean) = GenericLossFunction(LossFunctionImpl.l1_hinge_loss; agg)
 
-@doc doc"""
+@doc raw"""
     HuberLoss(; delta = 1, agg = mean)
 
 Returns the Huber loss, calculated as:
@@ -576,7 +576,7 @@ function HuberLoss(; delta::Union{Nothing,AbstractFloat}=nothing, agg=mean)
     )
 end
 
-@doc doc"""
+@doc raw"""
     KLDivergenceLoss(; dims = 1, agg = mean, epsilon = nothing, label_smoothing = nothing)
 
 Return the Kullback-Leibler Divergence loss between the predicted distribution $\hat{y}$
@@ -631,7 +631,7 @@ function unsafe_apply_loss(loss::KLDivergenceLoss, ŷ, y)
     return entropy + cross_entropy
 end
 
-@doc doc"""
+@doc raw"""
     MAELoss(; agg = mean)
 
 Returns the loss corresponding to mean absolute error:
@@ -653,7 +653,7 @@ MAELoss(; agg=mean) = GenericLossFunction(LossFunctionImpl.l1_distance_loss; agg
 
 const L1Loss = MAELoss
 
-@doc doc"""
+@doc raw"""
     MSELoss(; agg = mean)
 
 Returns the loss corresponding to mean squared error:
@@ -675,7 +675,7 @@ MSELoss(; agg=mean) = GenericLossFunction(LossFunctionImpl.l2_distance_loss; agg
 
 const L2Loss = MSELoss
 
-@doc doc"""
+@doc raw"""
     MSLELoss(; agg = mean, epsilon = nothing)
 
 Returns the loss corresponding to mean squared logarithmic error:
@@ -701,7 +701,7 @@ function MSLELoss(; agg=mean, epsilon=nothing)
     return GenericLossFunction(Utils.Fix3(LossFunctionImpl.msle_loss, epsilon); agg)
 end
 
-@doc doc"""
+@doc raw"""
     PoissonLoss(; agg = mean, epsilon = nothing)
 
 Return how much the predicted distribution $\hat{y}$ diverges from the expected Poisson
@@ -722,7 +722,7 @@ function PoissonLoss(; agg=mean, epsilon=nothing)
     return GenericLossFunction(Utils.Fix3(LossFunctionImpl.poisson_loss, epsilon); agg)
 end
 
-@doc doc"""
+@doc raw"""
     SiameseContrastiveLoss(; margin = true, agg = mean)
 
 Return the contrastive loss [hadsell2006dimensionality](@cite) which can be useful for
@@ -751,7 +751,7 @@ function SiameseContrastiveLoss(; margin=true, agg=mean)
     )
 end
 
-@doc doc"""
+@doc raw"""
     SquaredHingeLoss(; agg = mean)
 
 Return the squared hinge loss loss given the prediction `ŷ` and true labels `y` (containing
@@ -776,7 +776,7 @@ true
 """
 SquaredHingeLoss(; agg=mean) = GenericLossFunction(LossFunctionImpl.l2_hinge_loss; agg)
 
-@doc doc"""
+@doc raw"""
     GenericLossFunction(loss_fn; agg = mean)
 
 Takes any function `loss_fn` that maps 2 number inputs to a single number output.
