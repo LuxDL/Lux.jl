@@ -12,8 +12,9 @@ using SciMLPublic: @public
 using EnzymeCore: EnzymeCore
 using FastClosures: @closure
 using MLDataDevices: get_device_type, AbstractGPUDevice, ReactantDevice, AbstractDevice
+using LuxLib.Utils: recursive_unthunk
 
-using ..Utils: Utils, recursive_unthunk, StaticBool, StaticSymbol, known
+using ..Utils: Utils, StaticBool, StaticSymbol, known
 
 const CRC = ChainRulesCore
 

@@ -6,7 +6,7 @@ using ChainRulesCore: ChainRulesCore, HasReverseMode, NoTangent, RuleConfig, Zer
 using FastClosures: @closure
 using ForwardDiff: ForwardDiff
 using Functors: fmap
-using MLDataDevices: get_device, get_device_type, CPUDevice
+using MLDataDevices: get_device, get_device_type, CPUDevice, isleaf
 
 using ..Lux: Lux, StatefulLuxLayer, Utils
 using ..LuxPreferences: AUTOMATIC_NESTED_AD_SWITCHING

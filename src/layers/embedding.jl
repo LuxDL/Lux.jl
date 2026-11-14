@@ -89,7 +89,7 @@ end
     throw(ArgumentError("Input tuple must contain at least one element"))
 end
 
-@doc doc"""
+@doc raw"""
     SinusoidalPositionalEmbedding(
         dims::IntegerType; min_freq=0.0001f0, max_freq=1.0f0,
         scale=nothing, full_turns::Bool=false

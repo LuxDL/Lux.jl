@@ -6,12 +6,13 @@ using ChainRulesCore: ChainRulesCore, @non_differentiable, @thunk, NoTangent
 using ConcreteStructs: @concrete
 using EnzymeCore: EnzymeRules
 using ForwardDiff: Dual
-using Functors: Functors, fmapstructure
+using Functors: fmapstructure
 using Random: AbstractRNG
 using Setfield: @set
 using StaticArraysCore: SMatrix, SVector
 
 using LuxCore: LuxCore, AbstractLuxLayer
+using LuxLib.Utils: recursive_unthunk
 using MLDataDevices: MLDataDevices
 using NNlib: NNlib
 using WeightInitializers:
@@ -135,10 +136,6 @@ end
 Broadcast.broadcastable(f::Fix3) = Ref(f)
 
 (f::Fix3)(a, b) = f.f(a, b, f.x)
-
-# Take a `Val` and return the value. Noop for other types
-unwrap_val(::Val{T}) where {T} = T
-unwrap_val(x) = x
 
 contiguous(x::AbstractArray) = x
 contiguous(x::SubArray) = copy(x)
@@ -279,8 +276,6 @@ function calculate_gain(::typeof(NNlib.leakyrelu), ::Nothing)
 end
 calculate_gain(::typeof(NNlib.leakyrelu), x) = typeof(x)(√(2 / (1 + x^2)))
 calculate_gain(::typeof(NNlib.selu), _) = 3.0f0 / 4
-
-recursive_unthunk(x) = Functors.fmap(CRC.unthunk, x; exclude=MLDataDevices.isleaf)
 
 convert_eltype(::Type{T}, x::Number) where {T<:Number} = convert(T, x)
 
