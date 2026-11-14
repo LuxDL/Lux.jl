@@ -37,15 +37,26 @@ CRC.@non_differentiable compute_layernorm_dims(::Any...)
 expand_layernorm_dims(::AbstractArray, ::Nothing, ::Nothing, _) = nothing, nothing
 
 function expand_layernorm_dims(
-    ::AbstractArray{xT,N}, γ::AbstractArray{γT,M}, β::AbstractArray{βT,M}, ::Nothing
+    ::AbstractArray{xT,N}, γ::AbstractArray{γT,M}, β::AbstractArray{βT,M}, _
 ) where {xT,γT,βT,N,M}
-    new_γ_size = (size(γ)..., ntuple(i -> 1, N - M)...)
-    new_β_size = (size(β)..., ntuple(i -> 1, N - M)...)
-    return Utils.safe_reshape(γ, new_γ_size...), Utils.safe_reshape(β, new_β_size...)
-end
-
-function expand_layernorm_dims(
-    ::AbstractArray{yT,N}, γ::AbstractArray{γT,N}, β::AbstractArray{βT,N}, dims
-) where {yT,γT,βT,N}
-    return γ, β
+    if N == M
+        return γ, β
+    elseif N > M
+        new_γ_size = (size(γ)..., ntuple(Returns(1), N - M)...)
+        new_β_size = (size(β)..., ntuple(Returns(1), N - M)...)
+        return Utils.safe_reshape(γ, new_γ_size...), Utils.safe_reshape(β, new_β_size...)
+    else
+        if all(==(1), size(γ)[(N + 1):M]) && all(==(1), size(β)[(N + 1):M])
+            new_γ_size = ntuple(i -> size(γ, i), N)
+            new_β_size = ntuple(i -> size(β, i), N)
+            return Utils.safe_reshape(γ, new_γ_size...),
+            Utils.safe_reshape(β, new_β_size...)
+        end
+        throw(
+            DimensionMismatch(
+                "Cannot reshape scale of size $(size(γ)) and bias of size $(size(β)) to " *
+                "match input of ndims $(N)",
+            ),
+        )
+    end
 end

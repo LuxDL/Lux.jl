@@ -111,3 +111,53 @@ end
         @test_throws AssertionError layernorm(x, sc, b, identity, nothing, 1.0e-5)
     end
 end
+
+@testset "Layer Norm: Dimension Expansion" begin
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
+        !fp64 && continue
+
+        # 1D scale/bias with 2D, 3D, 4D x and explicit dims=1 as well as default dims
+        for x_shape in ((3, 4), (3, 4, 2), (3, 4, 2, 2))
+            x = aType(randn(Float32, x_shape))
+            scale = aType(ones(Float32, 3))
+            bias = aType(zeros(Float32, 3))
+
+            # default dims
+            @test @inferred(layernorm(x, scale, bias)) isa aType{Float32,length(x_shape)}
+            @jet layernorm(x, scale, bias)
+            y = layernorm(x, scale, bias)
+            @test size(y) == x_shape
+
+            # dims = 1
+            @test @inferred(layernorm(x, scale, bias, identity, 1)) isa
+                aType{Float32,length(x_shape)}
+            @jet layernorm(x, scale, bias, identity, 1)
+            y_d1 = layernorm(x, scale, bias, identity, 1)
+            @test size(y_d1) == x_shape
+        end
+
+        # M > N with trailing 1s
+        x1 = aType(randn(Float32, 3))
+        scale2d = aType(ones(Float32, 3, 1))
+        bias2d = aType(zeros(Float32, 3, 1))
+        scale3d = aType(ones(Float32, 3, 1, 1))
+        bias3d = aType(zeros(Float32, 3, 1, 1))
+
+        @test @inferred(layernorm(x1, scale2d, bias2d, identity, Colon())) isa
+            aType{Float32,1}
+        @jet layernorm(x1, scale2d, bias2d, identity, Colon())
+        y1_2d = layernorm(x1, scale2d, bias2d, identity, Colon())
+        @test size(y1_2d) == (3,)
+
+        @test @inferred(layernorm(x1, scale3d, bias3d, identity, Colon())) isa
+            aType{Float32,1}
+        @jet layernorm(x1, scale3d, bias3d, identity, Colon())
+        y1_3d = layernorm(x1, scale3d, bias3d, identity, Colon())
+        @test size(y1_3d) == (3,)
+
+        # DimensionMismatch when trailing dim != 1
+        scale_bad = aType(ones(Float32, 3, 2))
+        bias_bad = aType(zeros(Float32, 3, 2))
+        @test_throws DimensionMismatch layernorm(x1, scale_bad, bias_bad, identity, Colon())
+    end
+end
