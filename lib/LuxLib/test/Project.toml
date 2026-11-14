@@ -13,6 +13,7 @@ ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 JLArrays = "27aeb0d3-9eb9-45fb-866b-73c2ecf80fcb"
 LoopVectorization = "bdcacae8-1622-11e9-2a5c-532679323890"
 LuxCUDA = "d0bbae9a-e099-4d5b-a835-1c6931763bda"
+LuxCore = "bb33d45b-7691-41d6-9220-0943567d0623"
 LuxLib = "82251201-b29d-42c6-8e01-566dec8acb11"
 LuxTestUtils = "ac9de150-d08f-4546-94fb-7472b5760531"
 MKL = "33e6dc65-8f57-5167-99aa-e5a354878fb2"
@@ -36,6 +37,7 @@ cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
 
 [sources]
 LuxCUDA = {path = "../../LuxCUDA"}
+LuxCore = {path = "../../LuxCore"}
 LuxLib = {path = ".."}
 LuxTestUtils = {path = "../../LuxTestUtils"}
 MLDataDevices = {path = "../../MLDataDevices"}
@@ -55,6 +57,7 @@ ForwardDiff = "1.4"
 JLArrays = "0.3, 0.4, 0.5"
 LoopVectorization = "0.12"
 LuxCUDA = "0.3"
+LuxCore = "1.5"
 LuxLib = "1.15"
 LuxTestUtils = "3"
 MKL = "0.9"

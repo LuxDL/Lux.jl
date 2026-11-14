@@ -442,3 +442,26 @@ end
             Lux.LossFunctionImpl.msle_loss(2.0, 0.0, nothing)
     end
 end
+
+@testset "LossFunctionsExt" begin
+    using LossFunctions: LossFunctions
+
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
+        y = aType([1.0, 1.0, 0.0, 0.0])
+        ŷ = aType([0.9, 0.1, 0.1, 0.9])
+
+        loss_sum = GenericLossFunction(LossFunctions.L2DistLoss(); agg=sum)
+        loss_mean = GenericLossFunction(LossFunctions.L2DistLoss(); agg=mean)
+
+        loss_res = (0.1^2 + 0.9^2) / 2
+
+        @test loss_mean(ŷ, y) ≈ loss_res
+        @test loss_sum(ŷ, y) ≈ loss_res * 4
+
+        @jet loss_sum(ŷ, y)
+        @jet loss_mean(ŷ, y)
+
+        @test_gradients(Base.Fix2(loss_sum, y), ŷ; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(Base.Fix2(loss_mean, y), ŷ; atol=1.0f-3, rtol=1.0f-3)
+    end
+end
