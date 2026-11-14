@@ -107,6 +107,22 @@ PartialsFn{T}(dual::ForwardDiff.Dual) where {T} = PartialsFn{T,typeof(dual)}(dua
 
 # Macro to define ForwardDiff overloads for array types that don't support scalar indexing
 macro define_forwarddiff_gpu_overloads(ArrayType)
+    seed_zero_expr = if isdefined(ForwardDiff, :_seed_zero_partials!)
+        quote
+            function ForwardDiff._seed_zero_partials!(
+                duals::$(esc(ArrayType)){ForwardDiff.Dual{T,V,N}}, x, idxs
+            ) where {T,V,N}
+                idxs_vec = collect(idxs)
+                seed = zero(ForwardDiff.Partials{N,V})
+                duals[idxs_vec] .=
+                    ForwardDiff.Dual{T,V,N}.(view(x, idxs_vec), Ref(seed))
+                return duals
+            end
+        end
+    else
+        nothing
+    end
+
     return quote
         # Overloaded seed! methods
         function ForwardDiff.seed!(
@@ -164,6 +180,9 @@ macro define_forwarddiff_gpu_overloads(ArrayType)
                 }.(view(x, idxs), getindex.(Ref(seeds), 1:length(idxs)))
             return duals
         end
+
+        # ForwardDiff >= 1.4.6 uses _seed_zero_partials! which performs scalar indexing
+        $(seed_zero_expr)
 
         # Overloaded extract_gradient! methods
         function ForwardDiff.extract_gradient!(
