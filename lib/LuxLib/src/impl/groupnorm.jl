@@ -309,7 +309,7 @@ function groupnorm_affine_normalize_internal!(
         β,
         ϵ,
     )
-    return KA.synchronize(backend)
+    return nothing
 end
 
 @kernel cpu = false inbounds = true function groupnorm_affine_normalize_kernel!(
@@ -560,7 +560,7 @@ function ∇groupnorm_affine_normalize!(
         ϵ,
         γ,
     )
-    return KA.synchronize(backend)
+    return nothing
 end
 
 @kernel cpu = false inbounds = true function ∇groupnorm_affine_normalize_kernel!(
