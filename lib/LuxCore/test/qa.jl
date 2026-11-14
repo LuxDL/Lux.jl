@@ -15,6 +15,7 @@ using LuxCore, Test, ExplicitImports, Aqua
                 :is_extension_loaded,
                 :isleaf_impl,
                 :setfield,
+                :typename,
             ),
         ),
     )

@@ -385,6 +385,25 @@ module Internal
 
     function setfield_impl end  # Defined in SetfieldExt
 
+    @generated function setfield_fallback(x::T, ::Val{prop}, val) where {T,prop}
+        fields = fieldnames(T)
+        prop in fields || return :(throw(
+            ArgumentError(
+                lazy"Type $(T) has no field $(prop); load `Setfield.jl` for custom `PropertyLens` support.",
+            ),
+        ))
+        C = Base.typename(T).wrapper
+        args = [f === prop ? :val : :(getfield(x, $(QuoteNode(f)))) for f in fields]
+        return :($C($(args...)))
+    end
+
+    function setfield(x, prop::Symbol, val)
+        is_extension_loaded(Val(:Setfield)) && return setfield_impl(x, prop, val)
+        return setfield_fallback(x, Val(prop), val)
+    end
+    function setfield(x, (prop, val)::Tuple{Symbol,Any})
+        return setfield(x, prop, val)
+    end
     function setfield(args...; kwargs...)
         is_extension_loaded(Val(:Setfield)) && return setfield_impl(args...; kwargs...)
         throw(ArgumentError("`setfield` requires `Setfield.jl` to be loaded."))
