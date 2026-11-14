@@ -1,4 +1,7 @@
 using ForwardDiff, Zygote, Enzyme, OneHotArrays
+using ChainRulesCore: ChainRulesCore, NoTangent, ZeroTangent
+
+const CRC = ChainRulesCore
 
 include("../../shared_testsetup.jl")
 
@@ -48,6 +51,36 @@ include("../../shared_testsetup.jl")
         @test_broken false
     end
 
+    ∂x_zero, ∂y_zero = Zygote.gradient(LuxOps.xlogy, 0.0, 0.5)
+    @test (∂x_zero === nothing || iszero(∂x_zero)) &&
+        (∂y_zero === nothing || iszero(∂y_zero))
+    @test something.(Zygote.gradient(LuxOps.xlogy, 0.0, 0.5), 0.0) == (0.0, 0.0)
+
+    ∂x_zero0, ∂y_zero0 = Zygote.gradient(LuxOps.xlogy, 0.0, 0.0)
+    @test (∂x_zero0 === nothing || iszero(∂x_zero0)) &&
+        (∂y_zero0 === nothing || iszero(∂y_zero0))
+    @test something.(Zygote.gradient(LuxOps.xlogy, 0.0, 0.0), 0.0) == (0.0, 0.0)
+
+    val_xy, pb_xy = CRC.rrule(LuxOps.xlogy, 0.0, 0.5)
+    @test iszero(val_xy) && val_xy isa Float64
+    @test pb_xy(1.0) == (NoTangent(), ZeroTangent(), ZeroTangent())
+
+    val_xy0, pb_xy0 = CRC.rrule(LuxOps.xlogy, 0.0, 0.0)
+    @test iszero(val_xy0) && val_xy0 isa Float64
+    @test pb_xy0(1.0) == (NoTangent(), ZeroTangent(), ZeroTangent())
+
+    val_xy_int, pb_xy_int = CRC.rrule(LuxOps.xlogy, 0, 2.0)
+    @test iszero(val_xy_int) && val_xy_int isa Float64
+    @test pb_xy_int(1.0) == (NoTangent(), ZeroTangent(), ZeroTangent())
+
+    val_xx, pb_xx = CRC.rrule(LuxOps.xlogx, 0.0)
+    @test iszero(val_xx) && val_xx isa Float64
+    @test pb_xx(1.0) == (NoTangent(), ZeroTangent())
+
+    val_xx_int, pb_xx_int = CRC.rrule(LuxOps.xlogx, 0)
+    @test iszero(val_xx_int) && val_xx_int isa Float64
+    @test pb_xx_int(1.0) == (NoTangent(), ZeroTangent())
+
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         x = aType(rand(10))
         @test_gradients(
@@ -67,6 +100,36 @@ include("../../shared_testsetup.jl")
             rtol=1.0f-3,
             soft_fail=[AutoFiniteDiff()]
         )
+
+        x_zeros = aType([0.0, 0.5, 1.0])
+        f_x = LuxOps.xlogx.(x_zeros)
+        @test all(!isnan, Array(f_x))
+        @test all(isfinite, Array(f_x))
+        @test Array(f_x) ≈ [LuxOps.xlogx(0.0), LuxOps.xlogx(0.5), LuxOps.xlogx(1.0)]
+
+        (dx,) = Zygote.gradient(x -> sum(LuxOps.xlogx.(x)), x_zeros)
+        @test all(!isnan, Array(dx))
+        @test all(isfinite, Array(dx))
+        @test Array(dx)[1] ≈ 0.0
+        @test Array(dx)[2] ≈ log(0.5) + 1.0
+        @test Array(dx)[3] ≈ log(1.0) + 1.0
+
+        x_zeros_y = aType([0.0, 0.5])
+        y_zeros = aType([0.0, 0.25])
+        f_xy = LuxOps.xlogy.(x_zeros_y, y_zeros)
+        @test all(!isnan, Array(f_xy))
+        @test all(isfinite, Array(f_xy))
+        @test Array(f_xy) ≈ [LuxOps.xlogy(0.0, 0.0), LuxOps.xlogy(0.5, 0.25)]
+
+        dx_y, dy_x = Zygote.gradient((x, y) -> sum(LuxOps.xlogy.(x, y)), x_zeros_y, y_zeros)
+        @test all(!isnan, Array(dx_y))
+        @test all(isfinite, Array(dx_y))
+        @test all(!isnan, Array(dy_x))
+        @test all(isfinite, Array(dy_x))
+        @test Array(dx_y)[1] ≈ 0.0
+        @test Array(dx_y)[2] ≈ log(0.25)
+        @test Array(dy_x)[1] ≈ 0.0
+        @test Array(dy_x)[2] ≈ 0.5 / 0.25
     end
 end
 
@@ -457,6 +520,15 @@ end
                 rtol=1.0f-3,
                 skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : []
             )
+
+            y_zeros = aType([0.1, 0.0, 0.9])
+            ŷ_zeros = aType([0.2, 0.1, 0.7])
+            (d_ŷ,) = Zygote.gradient(ŷ -> KLDivergenceLoss()(ŷ, y_zeros), ŷ_zeros)
+            @test all(!isnan, Array(d_ŷ))
+            @test all(isfinite, Array(d_ŷ))
+            (d_y,) = Zygote.gradient(y -> KLDivergenceLoss()(ŷ_zeros, y), y_zeros)
+            @test all(!isnan, Array(d_y))
+            @test all(isfinite, Array(d_y))
         end
 
         @testset "HingeLoss" begin
