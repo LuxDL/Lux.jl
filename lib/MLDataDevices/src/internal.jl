@@ -123,8 +123,6 @@ function get_gpu_device(; force::Bool)
     return CPUDevice
 end
 
-special_aos(::AbstractArray) = false
-
 combine_devices(::Nothing, ::Nothing) = nothing
 combine_devices(::Nothing, dev::AbstractDevice) = dev
 combine_devices(dev::AbstractDevice, ::Nothing) = dev
