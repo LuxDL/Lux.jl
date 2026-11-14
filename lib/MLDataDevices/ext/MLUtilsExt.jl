@@ -1,14 +1,20 @@
 module MLUtilsExt
 
 using Adapt: Adapt
-using MLDataDevices: MLDataDevices, AbstractDevice, DeviceIterator
+using MLDataDevices: MLDataDevices, AbstractDevice, CUDADevice, DeviceIterator
 using MLUtils: MLUtils, DataLoader
 
 MLDataDevices.isleaf(::DataLoader) = true
 
+function Adapt.adapt_structure(dev::CUDADevice, dataloader::DataLoader)
+    return DeviceIterator(dev, dataloader)
+end
+
 function Adapt.adapt_structure(dev::AbstractDevice, dataloader::DataLoader)
-    if dataloader.parallel
-        if dataloader.buffer
+    is_parallel =
+        dataloader.parallel isa Bool ? dataloader.parallel : dataloader.parallel > 0
+    if is_parallel
+        if dataloader.buffer !== false
             @warn "Using `buffer=true` for parallel DataLoader with automatic device \
                    transfer is currently not implemented. Ignoring `buffer=true`."
         end
@@ -32,7 +38,7 @@ end
 function eachobsparallel(dev::AbstractDevice, data)
     return MLUtils.Loader(1:MLUtils.numobs(data)) do ch, i
         obs = MLUtils.getobs(data, i)
-        put!(ch, dev(obs))
+        return put!(ch, dev(obs))
     end
 end
 
