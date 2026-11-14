@@ -56,7 +56,7 @@ else
         Current Julia version does not support `BFloat16`. Use julia 1.11 or newer.
     """
 
-    bf16(_) = error("`bf16` is not supported on Julia versions 1.11+")
+    bf16(_) = error("`bf16` is not supported on Julia versions prior to 1.11")
 end
 
 @doc (bf16_docs) bf16

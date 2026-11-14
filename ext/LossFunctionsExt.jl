@@ -42,12 +42,6 @@ function CRC.rrule(
     return LossFunctionImpl.fused_agg(sum, lfn, x, y), ∇fused_agg
 end
 
-# macro hygiene issues
-# EnzymeRules.@easy_rule(
-#     LossFunctionImpl.fused_agg(fn::typeof(sum), lfn::Traits.Loss, x, y),
-#     (@Constant, @Constant, deriv(lfn, x, y) .* Ω, @Constant)
-# )
-
 # COV_EXCL_START
 
 function EnzymeRules.augmented_primal(
