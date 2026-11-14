@@ -1,7 +1,7 @@
 name = "Lux"
 uuid = "b2108857-7c20-44ae-9111-449ecde12c47"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "1.33.0"
+version = "1.33.1"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -30,7 +30,6 @@ ReactantCore = "a3311ec8-5e00-46d5-b541-4f83e724a433"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 SciMLPublic = "431bcebd-1456-4ced-9d72-93c2757fff0b"
 Setfield = "efcf1570-3423-57d1-acb7-fd33fddbac46"
-Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
 StaticArraysCore = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
@@ -51,6 +50,7 @@ NCCL = "3fe64909-d7a1-4096-9b7d-7a0f12cf0f6b"
 Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
 ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
 SimpleChains = "de6bee2f-e2f4-4ec7-b6ed-219cc6f6e9e5"
+Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
@@ -73,6 +73,7 @@ MooncakeExt = "Mooncake"
 ReactantExt = ["Enzyme", "Reactant"]
 ReverseDiffExt = ["FunctionWrappers", "ReverseDiff"]
 SimpleChainsExt = "SimpleChains"
+StaticExt = "Static"
 TrackerExt = "Tracker"
 ZygoteExt = "Zygote"
 
@@ -97,7 +98,7 @@ GPUArraysCore = "0.2"
 LinearAlgebra = "1.10"
 LossFunctions = "1.2"
 LuxCore = "1.5"
-LuxLib = "1.15"
+LuxLib = "1.16.2"
 MLDataDevices = "1.18"
 MLUtils = "0.4"
 MPI = "0.20"

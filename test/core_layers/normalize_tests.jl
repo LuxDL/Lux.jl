@@ -322,6 +322,59 @@ end
                 end
             end
         end
+
+        @testset "Dimension Expansion: Transformer shape & 1D input" begin
+            # Transformer-shaped input: (features, seq_len, batch)
+            x_trans = aType(randn(rng, Float32, 3, 4, 2))
+            for affine in (true, false)
+                ln_trans = LayerNorm((3,); dims=1, affine)
+                display(ln_trans)
+                ps_t, st_t = dev(Lux.setup(rng, ln_trans))
+
+                y_t, st_t_ = ln_trans(x_trans, ps_t, Lux.testmode(st_t))
+                @test size(y_t) == (3, 4, 2)
+                @test mean(y_t; dims=1) ≈ zeros(Float32, 1, 4, 2) atol = 1.0f-3
+                @test std(y_t; dims=1, corrected=false) ≈ ones(Float32, 1, 4, 2) atol =
+                    1.0f-2
+
+                @jet ln_trans(x_trans, ps_t, Lux.testmode(st_t))
+                @test_gradients(
+                    sumabs2first,
+                    ln_trans,
+                    x_trans,
+                    ps_t,
+                    st_t;
+                    atol=1.0f-3,
+                    rtol=1.0f-3,
+                    skip_backends=[AutoFiniteDiff()]
+                )
+            end
+
+            # 1D vector input
+            x_1d = aType(randn(rng, Float32, 3))
+            for affine in (true, false)
+                ln_1d = LayerNorm((3,); affine)
+                display(ln_1d)
+                ps_1d, st_1d = dev(Lux.setup(rng, ln_1d))
+
+                y_1d, st_1d_ = ln_1d(x_1d, ps_1d, Lux.testmode(st_1d))
+                @test size(y_1d) == (3,)
+                @test mean(y_1d) ≈ 0.0f0 atol = 1.0f-3
+                @test std(y_1d; corrected=false) ≈ 1.0f0 atol = 1.0f-2
+
+                @jet ln_1d(x_1d, ps_1d, Lux.testmode(st_1d))
+                @test_gradients(
+                    sumabs2first,
+                    ln_1d,
+                    x_1d,
+                    ps_1d,
+                    st_1d;
+                    atol=1.0f-3,
+                    rtol=1.0f-3,
+                    skip_backends=[AutoFiniteDiff()]
+                )
+            end
+        end
     end
 end
 

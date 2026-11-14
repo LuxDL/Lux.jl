@@ -1,4 +1,4 @@
-using Static, ComponentArrays, Optimisers, Functors
+using ComponentArrays, Optimisers, Functors
 using Tracker, ReverseDiff, ForwardDiff
 using NNlib: NNlib
 
@@ -20,8 +20,8 @@ end
     @test !LuxOps.istraining((no_training=1,))
     @test LuxOps.istraining((training=true,))
     @test !LuxOps.istraining((training=false,))
-    @test LuxOps.istraining(static(true))
-    @test !LuxOps.istraining(static(false))
+    @test LuxOps.istraining(Val(true))
+    @test !LuxOps.istraining(Val(false))
 end
 
 @testset "ComponentArrays edge cases" begin
@@ -336,4 +336,35 @@ end
     @test Lux.Utils.calculate_gain(identity, nothing) == 1.0f0
     @test Lux.Utils.calculate_gain(tanh, nothing) == 5.0f0 / 3.0f0
     @test Lux.Utils.calculate_gain(NNlib.leakyrelu, 0.0f0) ≈ √2.0f0
+end
+
+@testset "StaticExt backwards compatibility" begin
+    using Static
+
+    @test Lux.Utils.static(Static.True()) === Val(true)
+    @test Lux.Utils.static(Static.False()) === Val(false)
+    @test Lux.Utils.static(Static.static(4)) === Val(4)
+    @test Lux.Utils.static(Static.static(:bilinear)) === Val(:bilinear)
+    @test Lux.Utils.known(Static.True()) === true
+    @test Lux.Utils.known(Static.static(4)) === 4
+    @test Lux.Utils.known(Static.static(:bilinear)) === :bilinear
+    @test Lux.Utils.known(typeof(Static.True())) === true
+    @test Lux.LuxOps.getproperty((a=10, b=20), Static.static(:b)) == 20
+    @test Lux.LuxOps.istraining(Static.True()) === true
+    @test Lux.LuxOps.istraining((training=Static.False(),)) === false
+    @test Lux.recursive_eltype(ones(Float32, 2), Static.True()) === Float32
+
+    d = Dense(4 => 2; use_bias=Static.False())
+    @test d.use_bias === Val(false)
+    bn = BatchNorm(4; affine=Static.True(), track_stats=Static.False())
+    @test bn.affine === Val(true)
+    @test bn.track_stats === Val(false)
+    up = Upsample(Static.static(:bilinear); scale=2)
+    @test up.upsample_mode === Val(:bilinear)
+    dbg = Lux.Experimental.DebugLayer(
+        d; nan_check=Static.static(:both), error_check=Static.False()
+    )
+    @test dbg.nan_check === Val(:both)
+    @test dbg.error_check === Val(false)
+    @test_throws ArgumentError convert(Lux.NilSizePropagation.Nil, Static.True())
 end

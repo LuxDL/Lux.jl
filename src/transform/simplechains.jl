@@ -52,7 +52,6 @@ struct ToSimpleChainsAdaptor{ID,AT} <: AbstractFromLuxAdaptor
 
     function ToSimpleChainsAdaptor(input_dims, convert_to_array::BoolType=False())
         input_dims isa Number && (input_dims = (input_dims,))
-        input_dims isa Tuple{Vararg{Integer}} && (input_dims = static(input_dims))
         return new{typeof(input_dims),typeof(convert_to_array)}(
             input_dims, convert_to_array
         )

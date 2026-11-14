@@ -23,7 +23,6 @@ using NNlib: NNlib
 using Optimisers: Optimisers
 using Random: Random, AbstractRNG
 using ReactantCore: @trace
-using Static: StaticBool, StaticInt, StaticSymbol, True, False, static, known, dynamic
 using Reexport: Reexport, @reexport
 using Statistics: mean
 
@@ -70,6 +69,18 @@ include("preferences.jl")
 # Utilities
 include("custom_errors.jl")
 include("utils.jl")
+using .Utils:
+    StaticBool,
+    StaticInt,
+    StaticSymbol,
+    True,
+    False,
+    static,
+    known,
+    dynamic,
+    BoolType,
+    IntegerType,
+    SymbolType
 include("extended_ops.jl")
 
 # Training Helpers

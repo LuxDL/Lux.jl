@@ -5,7 +5,7 @@ using Enzyme: Enzyme, Active, Const, Duplicated
 using EnzymeCore: EnzymeCore, Forward, Reverse
 using Functors: fmap
 using Setfield: @set!
-using Static: False, True
+using Lux.Utils: False, True
 
 using Lux: Lux, Utils, AutoDiffInternalImpl
 using Lux.Training: TrainingBackendCache, TrainState

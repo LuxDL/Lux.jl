@@ -13,7 +13,7 @@ using Reactant:
 using Reactant: @compile, @opcall
 using ReactantCore: ReactantCore, @trace
 using Setfield: @set!
-using Static: True, False
+using Lux.Utils: True, False
 
 using Lux: Lux, LuxOps, Training, Utils, StatefulLuxLayer
 using Lux.Training: TrainingBackendCache, ReactantBackend
