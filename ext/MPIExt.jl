@@ -20,13 +20,17 @@ function DistributedUtils.force_initialize(
     !MPI.Initialized() && MPI.Init()
     DistributedUtils.MPI_Initialized[] = true
 
-    local_rank = MPI.Comm_rank(MPI.COMM_WORLD)
+    shmcomm = MPI.Comm_split_type(
+        MPI.COMM_WORLD, MPI.COMM_TYPE_SHARED, MPI.Comm_rank(MPI.COMM_WORLD)
+    )
+    node_rank = MPI.Comm_rank(shmcomm)
+    MPI.free(shmcomm)
 
     if cuda_devices !== missing && functional(CUDADevice)
         if cuda_devices === nothing
-            set_device!(CUDADevice, nothing, local_rank + 1)
+            set_device!(CUDADevice, nothing, node_rank)
         else
-            set_device!(CUDADevice, cuda_devices[local_rank + 1])
+            set_device!(CUDADevice, cuda_devices[mod1(node_rank + 1, length(cuda_devices))])
         end
     elseif force_cuda
         error(
@@ -36,9 +40,11 @@ function DistributedUtils.force_initialize(
 
     if amdgpu_devices !== missing && functional(AMDGPUDevice)
         if amdgpu_devices === nothing
-            set_device!(AMDGPUDevice, nothing, local_rank + 1)
+            set_device!(AMDGPUDevice, nothing, node_rank)
         else
-            set_device!(AMDGPUDevice, amdgpu_devices[local_rank + 1])
+            set_device!(
+                AMDGPUDevice, amdgpu_devices[mod1(node_rank + 1, length(amdgpu_devices))]
+            )
         end
     elseif force_amdgpu
         error(
@@ -68,12 +74,10 @@ end
 function DistributedUtils.bcast_impl!(
     backend::MPIBackend, sendbuf, recvbuf, dev::AbstractDevice; root=0
 )
-    DistributedUtils.bcast_impl!(
-        backend,
-        ifelse(DistributedUtils.local_rank(backend) == root, sendbuf, recvbuf),
-        dev;
-        root,
-    )
+    if DistributedUtils.local_rank(backend) == root && sendbuf !== recvbuf
+        copyto!(recvbuf, sendbuf)
+    end
+    DistributedUtils.bcast_impl!(backend, recvbuf, dev; root)
     return nothing
 end
 
@@ -94,10 +98,11 @@ for (aware, dType) in ((MPI_CUDA_AWARE, CUDADevice), (MPI_ROCM_AWARE, AMDGPUDevi
                 backend::MPIBackend, sendbuf, recvbuf, ::$dType; root=0
             )
                 cdev = cpu_device()
-                sendbufₙ = cdev(sendbuf)
-                recvbufₙ = cdev(recvbuf)
-                DistributedUtils.bcast_impl!(backend, sendbufₙ, recvbufₙ, cdev; root)
-                copyto!(recvbuf, recvbufₙ)
+                bufₙ = cdev(
+                    DistributedUtils.local_rank(backend) == root ? sendbuf : recvbuf
+                )
+                DistributedUtils.bcast_impl!(backend, bufₙ, cdev; root)
+                copyto!(recvbuf, bufₙ)
                 return nothing
             end
         end

@@ -44,3 +44,19 @@ dsum = sum(Base.Fix1(MLUtils.getobs, dcontainer), 1:MLUtils.numobs(dcontainer))
 dsum_arr = [dsum]
 DistributedUtils.allreduce!(backend, dsum_arr, +)
 @test dsum_arr[1] ≈ sum(data)
+
+small_data = randn(rng, Float32, 1)
+dcontainer_small = DistributedUtils.DistributedDataContainer(backend, small_data)
+dsum_small = mapreduce(
+    Base.Fix1(MLUtils.getobs, dcontainer_small),
+    +,
+    1:MLUtils.numobs(dcontainer_small);
+    init=0.0f0,
+)
+dsum_small_arr = [dsum_small]
+DistributedUtils.allreduce!(backend, dsum_small_arr, +)
+@test dsum_small_arr[1] ≈ sum(small_data)
+
+empty_data = Float32[]
+dcontainer_empty = DistributedUtils.DistributedDataContainer(backend, empty_data)
+@test MLUtils.numobs(dcontainer_empty) == 0
