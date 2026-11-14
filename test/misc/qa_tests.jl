@@ -17,15 +17,16 @@ using ComponentArrays, ReverseDiff, Tracker, Zygote, Enzyme, Reactant
             Lux.AutoDiffInternalImpl.jacobian_vector_product_impl,
         ],
     )
-    Aqua.test_piracies(
-        Lux;
-        treat_as_own=[
-            Lux.outputsize,
-            ForwardDiff.extract_gradient_chunk!,
-            ForwardDiff.extract_gradient!,
-            ForwardDiff.seed!,
-        ],
-    )
+    treat_as_own = [
+        Lux.outputsize,
+        ForwardDiff.extract_gradient_chunk!,
+        ForwardDiff.extract_gradient!,
+        ForwardDiff.seed!,
+    ]
+    if isdefined(ForwardDiff, :_seed_zero_partials!)
+        push!(treat_as_own, ForwardDiff._seed_zero_partials!)
+    end
+    Aqua.test_piracies(Lux; treat_as_own)
     Aqua.test_unbound_args(Lux; broken=true)
 end
 
