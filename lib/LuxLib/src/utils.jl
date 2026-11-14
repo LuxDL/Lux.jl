@@ -118,11 +118,6 @@ unsafe_known(x) = Static.known(x)  # will drop gradients. needed for type stabil
 
 CRC.@non_differentiable unsafe_known(::Any)
 
-## depwarn but marked non-differentiable to prevent type instability
-depwarn(msg::String, f::Symbol) = Base.depwarn(msg, f)
-
-CRC.@non_differentiable depwarn(::Any...)
-
 safe_eltype(::AbstractArray{T}) where {T} = T
 safe_eltype(::T) where {T} = T
 safe_eltype(::Nothing) = Bool

@@ -1,7 +1,6 @@
 module API
 
 using ChainRulesCore: ChainRulesCore
-using Markdown: @doc_str
 using NNlib: NNlib, ConvDims
 using Random: Random, AbstractRNG
 using Static: Static, StaticBool, static
@@ -58,4 +57,32 @@ export scaled_dot_product_attention
 
 end
 
-@reexport using .API
+using .API:
+    alpha_dropout,
+    dropout,
+    bias_activation,
+    bias_activation!!,
+    batched_matmul,
+    batchnorm,
+    groupnorm,
+    instancenorm,
+    layernorm,
+    fast_activation,
+    fast_activation!!,
+    fused_conv_bias_activation,
+    fused_dense_bias_activation,
+    scaled_dot_product_attention
+export alpha_dropout,
+    dropout,
+    bias_activation,
+    bias_activation!!,
+    batched_matmul,
+    batchnorm,
+    groupnorm,
+    instancenorm,
+    layernorm,
+    fast_activation,
+    fast_activation!!,
+    fused_conv_bias_activation,
+    fused_dense_bias_activation,
+    scaled_dot_product_attention
