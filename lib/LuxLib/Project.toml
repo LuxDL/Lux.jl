@@ -1,6 +1,6 @@
 name = "LuxLib"
 uuid = "82251201-b29d-42c6-8e01-566dec8acb11"
-version = "1.16.0"
+version = "1.16.1"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
 
 [deps]
@@ -15,19 +15,15 @@ KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 LuxCore = "bb33d45b-7691-41d6-9220-0943567d0623"
 MLDataDevices = "7e8f7934-dd98-4c1a-8fe8-92b47a384d40"
-Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
 NNlib = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
 Preferences = "21216c6a-2e73-6563-6e65-726566657250"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 SciMLPublic = "431bcebd-1456-4ced-9d72-93c2757fff0b"
 Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
 StaticArraysCore = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
-UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 
 [weakdeps]
-AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
 AppleAccelerate = "13e28ba4-7ad8-5781-acae-3021b1ed3924"
 BLISBLAS = "6f275bd8-fec0-4d39-945b-7e95a765fa1e"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
@@ -63,12 +59,10 @@ OneHotArraysExt = ["OneHotArrays"]
 ReactantExt = ["Reactant", "ReactantCore"]
 ReverseDiffExt = "ReverseDiff"
 SLEEFPiratesExt = "SLEEFPirates"
-TrackerAMDGPUExt = ["AMDGPU", "Tracker"]
 TrackerExt = "Tracker"
 cuDNNExt = ["CUDA", "cuDNN"]
 
 [compat]
-AMDGPU = "2.11"
 AppleAccelerate = "0.7"
 ArrayInterface = "7.30"
 BLISBLAS = "0.2"
@@ -87,7 +81,6 @@ LoopVectorization = "0.12"
 LuxCore = "1.5"
 MKL = "0.9"
 MLDataDevices = "1.18"
-Markdown = "1.10"
 NNlib = "0.9.55"
 Octavian = "0.3"
 OneHotArrays = "0.2"
@@ -96,7 +89,6 @@ Preferences = "1.6"
 Random = "1.10"
 Reactant = "0.2.306"
 ReactantCore = "0.1"
-Reexport = "1.2"
 ReverseDiff = "1.18.4"
 SLEEFPirates = "0.6"
 SciMLPublic = "1.3"
@@ -104,7 +96,6 @@ Static = "1.4"
 StaticArraysCore = "1.4"
 Statistics = "1.10"
 Tracker = "0.2"
-UUIDs = "1.10"
 cuDNN = "6.4"
 julia = "1.10"
 

@@ -1,4 +1,4 @@
-@doc doc"""
+@doc raw"""
     groupnorm(x, scale, bias, groups::Int, σ::F=identity,
         epsilon=eps(eltype(x)) ^ (5 // 7))
 
