@@ -3,7 +3,6 @@ module ReactantExt
 using ADTypes: ADTypes, AutoEnzyme
 using Enzyme: Enzyme, Const, Duplicated
 using EnzymeCore: EnzymeCore
-using LinearAlgebra: LinearAlgebra
 using Functors: Functors
 using Preferences: load_preference
 using Random: Random

@@ -139,11 +139,12 @@ function CRC.rrule(
 
             # FIXME: threading on CUDA cause unexpected errors on the first run to CUDNN
             #        when doing a algorithm lookup
+            add_fn = (a, b) -> fmap(Utils.add!!, a, b; exclude=isleaf)
             ∂x, ∂y = if get_device_type(x) <: CPUDevice
                 tasks = map(i -> Threads.@spawn(map_fn(i)), 1:numrows(Δ))
-                mapreduce(fetch, Lux.recursive_add!!, tasks)
+                mapreduce(fetch, add_fn, tasks)
             else
-                mapreduce(map_fn, Lux.recursive_add!!, 1:numrows(Δ))
+                mapreduce(map_fn, add_fn, 1:numrows(Δ))
             end
 
             return NoTangent(), NoTangent(), NoTangent(), NoTangent(), ∂x, ∂y

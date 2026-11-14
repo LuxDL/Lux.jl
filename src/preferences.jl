@@ -1,11 +1,10 @@
 module LuxPreferences
 
 using Preferences: load_preference, has_preference, set_preferences!
-using UUIDs: UUID
 
 using ..Lux: Lux
 
-const LuxUUID = UUID("b2108857-7c20-44ae-9111-449ecde12c47")
+const LuxUUID = Base.UUID("b2108857-7c20-44ae-9111-449ecde12c47")
 
 # Nested AD
 const AUTOMATIC_NESTED_AD_SWITCHING = load_preference(

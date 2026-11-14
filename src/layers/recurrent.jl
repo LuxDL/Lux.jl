@@ -313,7 +313,7 @@ applyrecurrentcell(l::AbstractRecurrentCell, x, ps, st, ::Nothing) = apply(l, x,
 # Used to construct the initial state of the recurrent cell
 function init_recurrent_state end
 
-@doc doc"""
+@doc raw"""
     RNNCell(in_dims => out_dims, activation=tanh; use_bias=True(), train_state=False(),
         init_bias=nothing, init_weight=nothing, init_recurrent_weight=init_weight,
         init_state=zeros32)
@@ -465,7 +465,7 @@ function Base.show(io::IO, r::RNNCell)
     return print(io, ")")
 end
 
-@doc doc"""
+@doc raw"""
     LSTMCell(in_dims => out_dims; use_bias::Bool=true, train_state::Bool=false,
              train_memory::Bool=false, init_weight=nothing,
              init_recurrent_weight=init_weight,
@@ -695,7 +695,7 @@ function Base.show(io::IO, lstm::LSTMCell)
     return print(io, ")")
 end
 
-@doc doc"""
+@doc raw"""
     GRUCell((in_dims, out_dims)::Pair{<:Int,<:Int}; use_bias=true, train_state::Bool=false,
             init_weight=glorot_uniform, init_recurrent_weight=init_weight,
             init_bias=nothing, init_state=zeros32)
