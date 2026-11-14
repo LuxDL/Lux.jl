@@ -313,7 +313,6 @@ function unsafe_fallback_threaded_batched_matmul!(
 end
 
 use_threaded_batched_matmul(::Type) = false
-use_threaded_batched_matmul(::Type{CUDADevice}) = true
 use_threaded_batched_matmul(::Type{CPUDevice}) = true
 
 function CRC.rrule(
