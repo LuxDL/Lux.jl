@@ -11,7 +11,6 @@ on:
       - "Project.toml"
       - ".github/workflows/CI.yml"
       - "lib/LuxTestUtils/src/**"
-      - "lib/LuxTestUtils/ext/**"
       - "lib/LuxCore/src/**"
       - "lib/LuxCore/ext/**"
       - "lib/MLDataDevices/src/**"
