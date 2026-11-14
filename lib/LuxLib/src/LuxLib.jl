@@ -2,7 +2,6 @@ module LuxLib
 
 using SciMLPublic: @public
 using Preferences: load_preference
-using Static: Static, known
 
 using ChainRulesCore: ChainRulesCore, NoTangent
 
