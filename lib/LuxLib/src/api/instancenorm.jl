@@ -16,7 +16,7 @@ accordingly.
   - `bias`: Bias factor (``\beta``) (can be `nothing`)
   - `running_mean`: Running mean (can be `nothing`)
   - `running_var`: Running variance (can be `nothing`)
-  - `training`: Set to `Val(true)` or `True()` if running in training mode. Can be set to
+  - `training`: Set to `Val(true)` if running in training mode. Can be set to
     `nothing` to automatically determine if the function is being called within an autodiff
      context
   - `σ`: Activation function (default: `identity`)

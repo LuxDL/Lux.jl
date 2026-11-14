@@ -3,7 +3,7 @@ module TrackerExt
 using FastClosures: @closure
 using LuxLib: LuxLib, Utils, Impl, Traits, GenericBroadcastOp
 using NNlib: NNlib
-using Static: True, StaticBool
+using LuxLib.Utils: True, StaticBool
 using Tracker: Tracker, TrackedArray, TrackedReal, TrackedVector, TrackedMatrix
 
 tracker_data(x) = Tracker.data(x)

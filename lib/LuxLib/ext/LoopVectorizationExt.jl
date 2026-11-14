@@ -2,7 +2,7 @@ module LoopVectorizationExt
 
 using LoopVectorization: LoopVectorization, @tturbo, @turbo, indices
 using Polyester: @batch
-using Static: True
+using LuxLib.Utils: True
 
 using LuxLib: LuxLib, Utils
 

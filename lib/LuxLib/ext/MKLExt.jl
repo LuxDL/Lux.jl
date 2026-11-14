@@ -1,7 +1,6 @@
 module MKLExt
 
-using LuxLib: Utils
-using Static: True
+using LuxLib.Utils: Utils, True
 
 Utils.is_extension_loaded(::Val{:MKL}) = True()
 

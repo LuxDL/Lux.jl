@@ -8,7 +8,33 @@ using KernelAbstractions: KernelAbstractions
 using LinearAlgebra: LinearAlgebra, BLAS
 using MLDataDevices: MLDataDevices, get_device_type, CPUDevice
 using NNlib: NNlib
-using Static: Static, StaticBool, False, True, static
+const StaticBool = Union{Val{true},Val{false}}
+const True = Val{true}
+const False = Val{false}
+
+static(v::Val) = v
+static(b::Bool) = Val(b)
+static(n::Integer) = Val(Int(n))
+
+known(::Val{V}) where {V} = V
+known(t::Tuple) = map(known, t)
+known(x) = x
+
+static_or(x::Bool, y::Bool) = x | y
+static_or(::True, ::StaticBool) = True()
+static_or(::False, y::StaticBool) = y
+static_or(x, y, z, xs...) = static_or(static_or(x, y), z, xs...)
+
+static_and(x::Bool, y::Bool) = x & y
+static_and(::False, ::StaticBool) = False()
+static_and(::True, y::StaticBool) = y
+static_and(x, y, z, xs...) = static_and(static_and(x, y), z, xs...)
+
+static_not(x::Bool) = !x
+static_not(::True) = False()
+static_not(::False) = True()
+static_not(f::F) where {F<:Function} = static_not ∘ f
+
 using StaticArraysCore: SVector, SMatrix
 
 using ..LuxLib: Optional, ∂∅, DISABLE_LOOP_VECTORIZATION
@@ -114,7 +140,7 @@ unsafe_free!(x::AbstractArray) = KA.unsafe_free!(x)
 
 CRC.@non_differentiable unsafe_free!(::Any)
 
-unsafe_known(x) = Static.known(x)  # will drop gradients. needed for type stability in Zygote
+unsafe_known(x) = known(x)  # will drop gradients. needed for type stability in Zygote
 
 CRC.@non_differentiable unsafe_known(::Any)
 
@@ -161,8 +187,9 @@ inferred_length(::Type{<:NTuple{N,Any}}) where {N} = N
 
 @generated function unrolled_any(f::F, xs) where {F}
     L = inferred_length(xs)
+    L == 0 && return :(False())
     L == 1 && return :(f(xs[1]))
-    return Expr(:call, :|, (:(f(xs[$i])) for i in 1:L)...)
+    return Expr(:call, :static_or, (:(f(xs[$i])) for i in 1:L)...)
 end
 
 @generated function unrolled_map(f::F, xs) where {F}
@@ -315,9 +342,7 @@ end
 
 static_training_mode(::Nothing, args...) = within_autodiff_vararg(args...)
 
-function static_training_mode(
-    training::Union{Bool,Val{true},Val{false},StaticBool}, args...
-)
+function static_training_mode(training::Union{Bool,StaticBool}, args...)
     return static_training_mode_check(
         training, static(training), within_autodiff_vararg(args...)
     )
@@ -328,9 +353,7 @@ function CRC.rrule(::typeof(static_training_mode), ::Nothing, args...)
 end
 
 function CRC.rrule(
-    ::typeof(static_training_mode),
-    training::Union{Bool,Val{true},Val{false},StaticBool},
-    args...,
+    ::typeof(static_training_mode), training::Union{Bool,StaticBool}, args...
 )
     res = static_training_mode_check(training, static(training), True())
     return res, _ -> ntuple(Returns(∂∅), length(args) + 2)
