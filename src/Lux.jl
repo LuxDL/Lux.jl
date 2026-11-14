@@ -80,6 +80,12 @@ include("helpers/forwarddiff_training.jl")
 # Pretty Printing
 include("layers/display.jl")
 
+# Recurrence Ordering Types
+abstract type AbstractTimeSeriesDataBatchOrdering end
+
+struct TimeLastIndex <: AbstractTimeSeriesDataBatchOrdering end
+struct BatchLastIndex <: AbstractTimeSeriesDataBatchOrdering end
+
 # Layer Implementations
 include("layers/basic.jl")
 include("layers/attention.jl")

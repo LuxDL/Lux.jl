@@ -59,23 +59,25 @@ function Base.show(io::IO, r::ReshapeLayer)
 end
 
 """
-    ReverseSequence(dim = nothing)
+    ReverseSequence(dim = nothing; ordering = nothing)
 
-Reverse the specified dimension `dims` of the passed array
+Reverse the specified dimension of the passed array or sequence.
 
 ## Arguments
 
-  - `dim`: Dimension that need to be reversed. If `nothing`, for AbstractVector{T}
+  - `dim`: Dimension that need to be reversed. If `nothing`, for `AbstractVector`
     it reverses itself (dimension 1), for other arrays, reverse the dimension
-    `ndims(x) - 1`.
+    `ndims(x) - 1`. If an `AbstractTimeSeriesDataBatchOrdering` (e.g. `TimeLastIndex()`,
+    `BatchLastIndex()`), reverse the sequence along the time dimension.
+  - `ordering`: An `AbstractTimeSeriesDataBatchOrdering`. Can be specified instead of `dim`.
 
 ## Inputs
 
-  - `x`: AbstractArray.
+  - `x`: AbstractArray or Tuple.
 
 ## Returns
 
-  - AbstractArray with the same dimensions as the input
+  - Array or Tuple with the same dimensions / shape as the input
   - Empty `NamedTuple()`
 
 ## Example
@@ -94,14 +96,32 @@ julia> y, st_new = model(x, ps, st)
 ```
 """
 @concrete struct ReverseSequence <: AbstractLuxLayer
-    dim <: Union{Nothing,StaticInt}
+    dim <: Union{Nothing,StaticInt,AbstractTimeSeriesDataBatchOrdering}
 end
 
 ReverseSequence(dim) = ReverseSequence(static(dim))
-ReverseSequence(; dim=nothing) = ReverseSequence(static(dim))
+
+function ReverseSequence(; dim=nothing, ordering=nothing)
+    if ordering !== nothing
+        dim !== nothing && throw(ArgumentError("Cannot specify both `dim` and `ordering`"))
+        return ReverseSequence(ordering)
+    end
+    return ReverseSequence(dim)
+end
+
+@inline _time_dimension(::AbstractArray{T,N}, ::TimeLastIndex) where {T,N} = N
+@inline function _time_dimension(::AbstractArray{T,N}, ::BatchLastIndex) where {T,N}
+    return N ≤ 2 ? N : N - 1
+end
 
 @trace function (r::ReverseSequence{Nothing})(x::AbstractArray, _, st::NamedTuple)
     return safe_reverse(x; dims=max(ndims(x) - 1, 1)), st
+end
+
+@trace function (r::ReverseSequence{<:AbstractTimeSeriesDataBatchOrdering})(
+    x::AbstractArray, _, st::NamedTuple
+)
+    return safe_reverse(x; dims=_time_dimension(x, r.dim)), st
 end
 
 @trace function (r::ReverseSequence{StaticInt{1}})(x::AbstractVector, _, st::NamedTuple)
@@ -118,6 +138,18 @@ end
     x::AbstractArray, _, st::NamedTuple
 ) where {N}
     return safe_reverse(x; dims=N), st
+end
+
+const _TupleReverseSequence = ReverseSequence{
+    <:Union{Nothing,StaticInt{1},AbstractTimeSeriesDataBatchOrdering}
+}
+
+@trace function (r::_TupleReverseSequence)(x::Tuple, _, st::NamedTuple)
+    return safe_reverse(x), st
+end
+
+@trace function (r::ReverseSequence{StaticInt{N}})(::Tuple, _, st::NamedTuple) where {N}
+    throw(ArgumentError("Cannot specify a dimension ($(N) != 1) for Tuple"))
 end
 
 """
