@@ -50,5 +50,3 @@ jobs:
       project: "."
       test_args: "--BACKEND_GROUP=CPU ${{ matrix.test_group }}"
       os: ${{ matrix.os }}
-      local_dependencies: "lib/MLDataDevices,lib/WeightInitializers,lib/LuxLib,lib/LuxCore"
-      local_test_dependencies: "lib/MLDataDevices,lib/LuxTestUtils,lib/LuxLib,lib/LuxCore"
