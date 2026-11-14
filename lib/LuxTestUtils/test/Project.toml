@@ -9,13 +9,15 @@ ReTestItems = "817f1d60-ba6b-4fd5-9520-3cf149f6a823"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
-CPUSummary = "0.2.6"
-CUDA = "5.8, 6"
-ComponentArrays = "0.15.22"
-InteractiveUtils = "<0.0.1, 1"
+CPUSummary = "0.2"
+CUDA = "6.4"
+ComponentArrays = "0.15"
+InteractiveUtils = "1.10"
+LuxTestUtils = "3"
 MetaTesting = "0.1"
-ReTestItems = "1.25"
+ReTestItems = "1.35"
 Test = "1.10"
+julia = "1.10"
 
 [sources]
 LuxTestUtils = {path = ".."}

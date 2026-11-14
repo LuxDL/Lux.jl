@@ -1,6 +1,6 @@
 module CUDAExt
 
-using CUDA: CUDA, CUBLAS, CuMatrix, CuVector, CuPtr
+using CUDA: CUDA, CuMatrix, CuPtr, CuVector, cuBLAS
 using LinearAlgebra: LinearAlgebra, Transpose, Adjoint
 using LuxLib: LuxLib, Optional
 using LuxLib.Utils: ofeltype_array

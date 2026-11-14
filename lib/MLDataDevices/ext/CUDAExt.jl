@@ -35,10 +35,9 @@ Internal.get_device_type(::CUDA.AnyCuArray) = CUDADevice
 Internal.get_device_type(::Type{<:CUDA.AnyCuArray}) = CUDADevice
 Internal.get_device_type(::CUDA.RNG) = CUDADevice
 
-@static if isdefined(CUDA, :CURAND) && isdefined(CUDA.CURAND, :RNG)
-    Internal.get_device_type(::CUDA.CURAND.RNG) = CUDADevice
-    Internal.get_device(::CUDA.CURAND.RNG) = CUDADevice(CUDA.device())
-end
+const CURAND_RNG = Union{CUDA.cuRAND.LibraryRNG,CUDA.cuRAND.NativeRNG}
+Internal.get_device_type(::CURAND_RNG) = CUDADevice
+Internal.get_device(::CURAND_RNG) = CUDADevice(CUDA.device())
 
 # Set Device
 MLDataDevices.set_device!(::Type{CUDADevice}, dev::CUDA.CuDevice) = CUDA.device!(dev)

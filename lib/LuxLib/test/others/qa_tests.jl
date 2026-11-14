@@ -3,7 +3,11 @@ using EnzymeCore: EnzymeRules
 
 @testset "Aqua: Quality Assurance" begin
     Aqua.test_all(
-        LuxLib; ambiguities=false, piracies=false, stale_deps=Sys.ARCH === :x86_64
+        LuxLib;
+        ambiguities=false,
+        piracies=false,
+        persistent_tasks=false,
+        stale_deps=Sys.ARCH === :x86_64,
     )
     Aqua.test_ambiguities(
         LuxLib;

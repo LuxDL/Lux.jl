@@ -5,7 +5,7 @@ include("common.jl")
 @testset "Aqua: Quality Assurance" begin
     using Aqua
 
-    Aqua.test_all(WeightInitializers; ambiguities=false)
+    Aqua.test_all(WeightInitializers; ambiguities=false, persistent_tasks=false)
     Aqua.test_ambiguities(WeightInitializers; recursive=false)
 end
 

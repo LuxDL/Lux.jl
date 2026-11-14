@@ -50,7 +50,7 @@ function packages_to_install(backend_group::String="all")
         push!(pkgs, PackageSpec(; name="LuxCUDA"))
     end
     test_amdgpu(backend_group) && push!(pkgs, PackageSpec(; name="AMDGPU"))
-    test_metal(backend_group) && push!(pkgs, PackageSpec(; name="Metal", version="1.9"))
+    test_metal(backend_group) && push!(pkgs, PackageSpec(; name="Metal"))
     test_oneapi(backend_group) && push!(pkgs, PackageSpec(; name="oneAPI"))
     if test_opencl(backend_group)
         push!(pkgs, PackageSpec(; name="OpenCL"))

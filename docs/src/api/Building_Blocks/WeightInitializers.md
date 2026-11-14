@@ -13,7 +13,7 @@ learning models.
 | --------------------------------- | ----------------------- | ------------------------------------------------ |
 | `Random.jl`                       | `Array`                 |                                                  |
 | `StableRNGs.jl`                   | `Array`                 |                                                  |
-| `CUDA.CURAND.default_rng()`       | `CuArray`               |                                                  |
+| `CUDA.cuRAND.library_rng()`       | `CuArray`               |                                                  |
 | `CUDA.default_rng()`              | `CuArray`               |                                                  |
 | `GPUArrays.default_rng(CuArray)`  | `CuArray`               |                                                  |
 | `AMDGPU.rocrand_rng()`            | `ROCArray`              |                                                  |

@@ -2,15 +2,9 @@ const TransOrAdjOrRegCuMatrix{T} = Union{
     Transpose{T,<:CuMatrix{T}},Adjoint{T,<:CuMatrix{T}},CuMatrix{T}
 }
 
-@static if pkgversion(CUDA) ≥ v"6"
-    const cudaDataType = CUDA.CUDACore.cudaDataType
-    const active_state = CUDA.CUDACore.active_state
-    const HandleCache = CUDA.CUDACore.HandleCache
-else
-    const cudaDataType = CUDA.cudaDataType
-    const active_state = CUDA.active_state
-    const HandleCache = CUDA.APIUtils.HandleCache
-end
+const cudaDataType = CUDA.CUDACore.cudaDataType
+const active_state = CUDA.CUDACore.active_state
+const HandleCache = CUDA.CUDACore.HandleCache
 
 prepare_transposed(arr) = arr, false
 prepare_transposed(arr::Union{Transpose,Adjoint}) = parent(arr), true
@@ -65,52 +59,52 @@ end
 
 function lt_handle_ctor(ctx)
     CUDA.context!(ctx) do
-        handle = Ref{CUBLAS.cublasLtHandle_t}()
-        CUBLAS.cublasLtCreate(handle)
+        handle = Ref{cuBLAS.cublasLtHandle_t}()
+        cuBLAS.cublasLtCreate(handle)
         return handle[]
     end
 end
 
 function lt_handle_dtor(ctx, handle)
     CUDA.context!(ctx; skip_destroyed=true) do
-        CUBLAS.cublasLtDestroy(handle)
+        cuBLAS.cublasLtDestroy(handle)
     end
 end
 
-const idle_lt_handles = HandleCache{CUDA.CuContext,CUBLAS.cublasLtHandle_t}(
+const idle_lt_handles = HandleCache{CUDA.CuContext,cuBLAS.cublasLtHandle_t}(
     lt_handle_ctor, lt_handle_dtor
 )
 
 mutable struct CuBLASLtMatmulDesc
-    desc::CUBLAS.cublasLtMatmulDesc_t
+    desc::cuBLAS.cublasLtMatmulDesc_t
 
     function CuBLASLtMatmulDesc(args...)
-        desc_ref = Ref{CUBLAS.cublasLtMatmulDesc_t}()
-        CUBLAS.cublasLtMatmulDescCreate(desc_ref, args...)
+        desc_ref = Ref{cuBLAS.cublasLtMatmulDesc_t}()
+        cuBLAS.cublasLtMatmulDescCreate(desc_ref, args...)
         return finalizer(
-            CUBLAS.cublasLtMatmulDescDestroy ∘ Base.Fix2(getproperty, :desc),
+            cuBLAS.cublasLtMatmulDescDestroy ∘ Base.Fix2(getproperty, :desc),
             new(desc_ref[]),
         )
     end
 end
 Base.getindex(x::CuBLASLtMatmulDesc) = x.desc
-Base.unsafe_convert(::Type{CUBLAS.cublasLtMatmulDesc_t}, x::CuBLASLtMatmulDesc) = x.desc
+Base.unsafe_convert(::Type{cuBLAS.cublasLtMatmulDesc_t}, x::CuBLASLtMatmulDesc) = x.desc
 
 const _CUBLASLT_MATMUL_DESC_ATTRIBUTES = Dict(
-    :transa => (CUBLAS.CUBLASLT_MATMUL_DESC_TRANSA, CUBLAS.cublasOperation_t),
-    :transb => (CUBLAS.CUBLASLT_MATMUL_DESC_TRANSB, CUBLAS.cublasOperation_t),
-    :transc => (CUBLAS.CUBLASLT_MATMUL_DESC_TRANSC, CUBLAS.cublasOperation_t),
-    :epilogue => (CUBLAS.CUBLASLT_MATMUL_DESC_EPILOGUE, CUBLAS.cublasLtEpilogue_t),
-    :bias_pointer => (CUBLAS.CUBLASLT_MATMUL_DESC_BIAS_POINTER, CuPtr{Cvoid}),
+    :transa => (cuBLAS.CUBLASLT_MATMUL_DESC_TRANSA, cuBLAS.cublasOperation_t),
+    :transb => (cuBLAS.CUBLASLT_MATMUL_DESC_TRANSB, cuBLAS.cublasOperation_t),
+    :transc => (cuBLAS.CUBLASLT_MATMUL_DESC_TRANSC, cuBLAS.cublasOperation_t),
+    :epilogue => (cuBLAS.CUBLASLT_MATMUL_DESC_EPILOGUE, cuBLAS.cublasLtEpilogue_t),
+    :bias_pointer => (cuBLAS.CUBLASLT_MATMUL_DESC_BIAS_POINTER, CuPtr{Cvoid}),
     :epilogue_aux_pointer =>
-        (CUBLAS.CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_POINTER, CuPtr{Cvoid}),
-    :epilogue_aux_ld => (CUBLAS.CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_LD, Csize_t),
+        (cuBLAS.CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_POINTER, CuPtr{Cvoid}),
+    :epilogue_aux_ld => (cuBLAS.CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_LD, Csize_t),
 )
 
 function Base.setproperty!(desc::CuBLASLtMatmulDesc, name::Symbol, value)
     if haskey(_CUBLASLT_MATMUL_DESC_ATTRIBUTES, name)
         attr, T = _CUBLASLT_MATMUL_DESC_ATTRIBUTES[name]
-        CUBLAS.cublasLtMatmulDescSetAttribute(desc.desc, attr, Ref{T}(value), sizeof(T))
+        cuBLAS.cublasLtMatmulDescSetAttribute(desc.desc, attr, Ref{T}(value), sizeof(T))
         return value
     else
         return setfield!(desc, name, value)
@@ -118,37 +112,37 @@ function Base.setproperty!(desc::CuBLASLtMatmulDesc, name::Symbol, value)
 end
 
 mutable struct CuBLASLtMatrixLayout
-    layout::CUBLAS.cublasLtMatrixLayout_t
+    layout::cuBLAS.cublasLtMatrixLayout_t
 
     function CuBLASLtMatrixLayout(args...)
-        layout_ref = Ref{CUBLAS.cublasLtMatrixLayout_t}()
-        CUBLAS.cublasLtMatrixLayoutCreate(layout_ref, args...)
+        layout_ref = Ref{cuBLAS.cublasLtMatrixLayout_t}()
+        cuBLAS.cublasLtMatrixLayoutCreate(layout_ref, args...)
         return finalizer(
-            CUBLAS.cublasLtMatrixLayoutDestroy ∘ Base.Fix2(getproperty, :layout),
+            cuBLAS.cublasLtMatrixLayoutDestroy ∘ Base.Fix2(getproperty, :layout),
             new(layout_ref[]),
         )
     end
 end
 Base.getindex(x::CuBLASLtMatrixLayout) = x.layout
-function Base.unsafe_convert(::Type{CUBLAS.cublasLtMatrixLayout_t}, x::CuBLASLtMatrixLayout)
+function Base.unsafe_convert(::Type{cuBLAS.cublasLtMatrixLayout_t}, x::CuBLASLtMatrixLayout)
     return x.layout
 end
 
 mutable struct CuBLASLtMatmulPreference
-    pref::CUBLAS.cublasLtMatmulPreference_t
+    pref::cuBLAS.cublasLtMatmulPreference_t
 
     function CuBLASLtMatmulPreference()
-        pref_ref = Ref{CUBLAS.cublasLtMatmulPreference_t}()
-        CUBLAS.cublasLtMatmulPreferenceCreate(pref_ref)
+        pref_ref = Ref{cuBLAS.cublasLtMatmulPreference_t}()
+        cuBLAS.cublasLtMatmulPreferenceCreate(pref_ref)
         return finalizer(
-            CUBLAS.cublasLtMatmulPreferenceDestroy ∘ Base.Fix2(getproperty, :pref),
+            cuBLAS.cublasLtMatmulPreferenceDestroy ∘ Base.Fix2(getproperty, :pref),
             new(pref_ref[]),
         )
     end
 end
 Base.getindex(x::CuBLASLtMatmulPreference) = x.pref
 function Base.unsafe_convert(
-    ::Type{CUBLAS.cublasLtMatmulPreference_t}, x::CuBLASLtMatmulPreference
+    ::Type{cuBLAS.cublasLtMatmulPreference_t}, x::CuBLASLtMatmulPreference
 )
     return x.pref
 end
@@ -157,7 +151,7 @@ function get_cublaslt_handle()
     cuda = active_state()
 
     # every task maintains library state per set of devices
-    LibraryState = @NamedTuple{handle::CUBLAS.cublasLtHandle_t}
+    LibraryState = @NamedTuple{handle::cuBLAS.cublasLtHandle_t}
     states = get!(task_local_storage(), :CUBLASLt) do
         Dict{CUDA.CuContext,LibraryState}()
     end::Dict{CUDA.CuContext,LibraryState}
@@ -211,7 +205,7 @@ function cublaslt_matmul_fused!(
         throw(DimensionMismatch("size(x) = $(size(x)), size(w) = $(size(w))"))
 
     ## While querying the compute type, promote the types
-    computeType = CUBLAS.gemmExComputeType(wxT, wxT, yT, m, k, n)
+    computeType = cuBLAS.gemmExComputeType(wxT, wxT, yT, m, k, n)
     computeType === nothing && return -1
     dataType = convert(cudaDataType, yT)
 
@@ -219,9 +213,9 @@ function cublaslt_matmul_fused!(
     operationDesc = CuBLASLtMatmulDesc(computeType, dataType)
 
     # Set the matrix descriptors
-    operationDesc.transa = transw ? CUBLAS.CUBLAS_OP_T : CUBLAS.CUBLAS_OP_N
-    operationDesc.transb = transx ? CUBLAS.CUBLAS_OP_T : CUBLAS.CUBLAS_OP_N
-    operationDesc.transc = transy ? CUBLAS.CUBLAS_OP_T : CUBLAS.CUBLAS_OP_N
+    operationDesc.transa = transw ? cuBLAS.CUBLAS_OP_T : cuBLAS.CUBLAS_OP_N
+    operationDesc.transb = transx ? cuBLAS.CUBLAS_OP_T : cuBLAS.CUBLAS_OP_N
+    operationDesc.transc = transy ? cuBLAS.CUBLAS_OP_T : cuBLAS.CUBLAS_OP_N
 
     # Decide on the epilogue
     epilogue, activation_fused = epilogue_act(σ, b, aux)
@@ -251,9 +245,9 @@ function cublaslt_matmul_fused!(
     lthandle = get_cublaslt_handle()
 
     # Search for the best algorithm
-    heuristic = Ref{CUBLAS.cublasLtMatmulHeuristicResult_t}()
+    heuristic = Ref{cuBLAS.cublasLtMatmulHeuristicResult_t}()
     returnedResults = Ref{Cint}(0)
-    CUBLAS.cublasLtMatmulAlgoGetHeuristic(
+    cuBLAS.cublasLtMatmulAlgoGetHeuristic(
         lthandle,
         operationDesc,
         wdesc,
@@ -268,7 +262,7 @@ function cublaslt_matmul_fused!(
 
     returnedResults[] == 0 && return -1
 
-    CUBLAS.cublasLtMatmul(
+    cuBLAS.cublasLtMatmul(
         lthandle,
         operationDesc,
         Ref{wxT}(1),
@@ -295,28 +289,28 @@ end
 function epilogue_act(f::F, b, aux) where {F}
     if f === identity
         @assert aux === nothing "`aux` must be `nothing` for `identity` activation."
-        b === nothing && return CUBLAS.CUBLASLT_EPILOGUE_DEFAULT, true
-        return CUBLAS.CUBLASLT_EPILOGUE_BIAS, true
+        b === nothing && return cuBLAS.CUBLASLT_EPILOGUE_DEFAULT, true
+        return cuBLAS.CUBLASLT_EPILOGUE_BIAS, true
     elseif f === NNlib.relu
         if b === nothing
-            aux === nothing && return CUBLAS.CUBLASLT_EPILOGUE_RELU, true
-            return CUBLAS.CUBLASLT_EPILOGUE_RELU_AUX, true
+            aux === nothing && return cuBLAS.CUBLASLT_EPILOGUE_RELU, true
+            return cuBLAS.CUBLASLT_EPILOGUE_RELU_AUX, true
         else
-            aux === nothing && return CUBLAS.CUBLASLT_EPILOGUE_RELU_BIAS, true
-            return CUBLAS.CUBLASLT_EPILOGUE_RELU_AUX_BIAS, true
+            aux === nothing && return cuBLAS.CUBLASLT_EPILOGUE_RELU_BIAS, true
+            return cuBLAS.CUBLASLT_EPILOGUE_RELU_AUX_BIAS, true
         end
     elseif f === NNlib.gelu
         if b === nothing
-            aux === nothing && return CUBLAS.CUBLASLT_EPILOGUE_GELU, true
-            return CUBLAS.CUBLASLT_EPILOGUE_GELU_AUX, true
+            aux === nothing && return cuBLAS.CUBLASLT_EPILOGUE_GELU, true
+            return cuBLAS.CUBLASLT_EPILOGUE_GELU_AUX, true
         else
-            aux === nothing && return CUBLAS.CUBLASLT_EPILOGUE_GELU_BIAS, true
-            return CUBLAS.CUBLASLT_EPILOGUE_GELU_AUX_BIAS, true
+            aux === nothing && return cuBLAS.CUBLASLT_EPILOGUE_GELU_BIAS, true
+            return cuBLAS.CUBLASLT_EPILOGUE_GELU_AUX_BIAS, true
         end
     else
         @assert aux === nothing "`aux` must be `nothing` for `$(f)` activation."
-        b === nothing && return CUBLAS.CUBLASLT_EPILOGUE_DEFAULT, false
-        return CUBLAS.CUBLASLT_EPILOGUE_BIAS, false
+        b === nothing && return cuBLAS.CUBLASLT_EPILOGUE_DEFAULT, false
+        return cuBLAS.CUBLASLT_EPILOGUE_BIAS, false
     end
 end
 

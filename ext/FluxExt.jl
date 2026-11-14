@@ -151,7 +151,7 @@ function Lux.convert_flux_model(
     out_chs, in_chs = size(l.weight)[(end - 1):end]
     groups = l.groups
     pad = l.pad isa Flux.SamePad ? SamePad() : l.pad
-    outpad = hasfield(typeof(l), :outpad) ? l.outpad : 0
+    outpad = l.outpad
     if preserve_ps_st
         _bias = l.bias isa Bool ? nothing : vec(copy(l.bias))
         return Lux.ConvTranspose(

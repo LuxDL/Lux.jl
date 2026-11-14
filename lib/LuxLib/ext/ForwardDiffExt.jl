@@ -19,8 +19,10 @@ function Utils.ofeltype_array(
 end
 
 # remove_tracking for Dual types
-Utils.remove_tracking(x::ForwardDiff.Dual) = ForwardDiff.value(x)
-Utils.remove_tracking(x::AbstractArray{<:ForwardDiff.Dual}) = ForwardDiff.value.(x)
+Utils.remove_tracking(x::ForwardDiff.Dual) = Utils.remove_tracking(ForwardDiff.value(x))
+function Utils.remove_tracking(x::AbstractArray{<:ForwardDiff.Dual})
+    return Utils.remove_tracking(ForwardDiff.value.(x))
+end
 function Utils.remove_tracking(::Type{<:ForwardDiff.Dual{Tag,T}}) where {Tag,T}
     return Utils.remove_tracking(T)
 end

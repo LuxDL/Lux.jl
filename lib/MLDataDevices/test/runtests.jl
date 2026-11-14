@@ -23,7 +23,7 @@ for file in keys(testsuite)
     if file ∈ backend_test_files
         # Remove backend-specific tests unless that backend is being tested
         if BACKEND_GROUP == "all"
-            # Keep all
+            file == "amdgpu_tests" && !LuxTestUtils.has_amdgpu() && delete!(testsuite, file)
         elseif BACKEND_GROUP == "cpu"
             delete!(testsuite, file)
         elseif file == "$(BACKEND_GROUP)_tests"

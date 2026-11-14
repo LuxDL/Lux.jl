@@ -70,6 +70,7 @@ remove_tracking(x) = x
 remove_tracking(x::AbstractArray) = x
 remove_tracking(::Type{T}) where {T} = T
 remove_tracking(::Nothing) = nothing
+CRC.@non_differentiable remove_tracking(::Any)
 
 safe_vec(x) = x
 safe_vec(x::AbstractArray) = vec(x)
