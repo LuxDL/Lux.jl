@@ -68,11 +68,13 @@ for (T1, T2) in ((Float64, Float32), (ComplexF64, ComplexF32))
     @eval function Adapt.adapt_storage(
         ::OpenCLDevice{T}, x::AbstractArray{$(T1)}
     ) where {T<:AbstractFloat}
-        MLDataDevices.get_device_type(x) <: OpenCLDevice && eltype(x) == T && return x
+        if MLDataDevices.get_device_type(x) <: OpenCLDevice
+            Internal.return_without_conversion(T, x) && return x
+        end
         if T === Float64 && !SUPPORTS_FP64[cl.device()]
             throw(ArgumentError("FP64 is not supported on this device"))
         end
-        return CLArray{T}(x)
+        return $(T1 <: Complex ? :(CLArray{Complex{T}}(x)) : :(CLArray{T}(x)))
     end
 end
 
