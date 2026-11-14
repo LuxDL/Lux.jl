@@ -71,7 +71,6 @@ function update_running_statistics!(rμₙ, rσ²ₙ, ::GPUBroadcastOp, rμ, rσ
         m₂,
         m₃,
     )
-    KA.synchronize(backend)
     return nothing
 end
 
