@@ -2,12 +2,11 @@ module LuxTestUtils
 
 using Adapt: Adapt, adapt
 using ArrayInterface: ArrayInterface
-using ComponentArrays: ComponentArray, getdata, getaxes
+using ComponentArrays: ComponentArray
 using DispatchDoctor: allow_unstable
 using Functors: Functors, fmap
-using MLDataDevices: cpu_device, gpu_device, get_device, get_device_type, AbstractGPUDevice
+using MLDataDevices: cpu_device, get_device_type, AbstractGPUDevice
 using Optimisers: Optimisers
-using Pkg: PackageSpec
 using Test:
     Test,
     Error,
