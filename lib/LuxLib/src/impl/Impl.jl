@@ -4,7 +4,6 @@ using ArrayInterface: ArrayInterface, aos_to_soa
 using DispatchDoctor: @stable
 using FastClosures: @closure
 using StaticArraysCore: StaticVector, SArray
-using Static: StaticBool, True, False, static
 
 using ChainRulesCore: ChainRulesCore, NoTangent, HasReverseMode, RuleConfig
 using EnzymeCore: EnzymeCore, EnzymeRules, Annotation
@@ -58,6 +57,10 @@ using ..Utils:
     can_loopvec_args,
     is_extension_loaded,
     recursive_unthunk,
+    StaticBool,
+    True,
+    False,
+    static,
     @enzyme_alternative
 using ..Traits:
     activation_intermediate_not_needed,

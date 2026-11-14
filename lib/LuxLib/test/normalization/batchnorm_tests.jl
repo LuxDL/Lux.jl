@@ -1,6 +1,6 @@
 include("../shared_testsetup.jl")
 
-using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, Static
+using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib
 
 function setup_batchnorm(gen_f, aType, T, sz; affine::Bool=true, track_stats::Bool)
     x = aType(gen_f(T, sz))
@@ -35,7 +35,7 @@ function batchnorm_fallback(
         scale,
         bias,
         LuxLib.Impl.batchnorm_reduce_dims(x),
-        static(training),
+        training,
         momentum,
         epsilon,
         σ,

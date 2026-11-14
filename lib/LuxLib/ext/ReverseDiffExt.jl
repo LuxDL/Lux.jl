@@ -5,7 +5,7 @@ using LuxLib: LuxLib, Utils, Traits
 using NNlib: NNlib
 using ReverseDiff:
     ReverseDiff, TrackedArray, TrackedVector, TrackedReal, @grad_from_chainrules
-using Static: True
+using LuxLib.Utils: True
 
 const CRC = ChainRulesCore
 

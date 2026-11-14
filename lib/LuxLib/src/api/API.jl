@@ -3,15 +3,20 @@ module API
 using ChainRulesCore: ChainRulesCore
 using NNlib: NNlib, ConvDims
 using Random: Random, AbstractRNG
-using Static: Static, StaticBool, static
 
 using ..LuxLib: Optional
 using ..Impl: Impl, select_fastest_activation
-using ..Utils: default_epsilon, expand_batchdim, remove_tracking, static_training_mode
+using ..Utils:
+    StaticBool,
+    default_epsilon,
+    expand_batchdim,
+    remove_tracking,
+    static,
+    static_training_mode
 
 const CRC = ChainRulesCore
 
-const TrainingType = Union{Val{true},Val{false},StaticBool,Nothing}
+const TrainingType = Union{StaticBool,Nothing}
 
 # The names are aliased so we define constants for them
 for op in (
