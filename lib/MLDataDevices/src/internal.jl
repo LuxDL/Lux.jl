@@ -366,4 +366,21 @@ function return_without_conversion(
 end
 return_without_conversion(::Type{T}, ::AbstractArray) where {T} = false
 
+supports_prefetch(::D) where {D} = false
+init_prefetch_backend(::D, ::Int) where {D} = nothing
+with_prefetch_context(f, backend) = f()
+
+function prefetch_transfer!(dev::D, backend, batch) where {D}
+    return dev(batch), nothing
+end
+
+prefetch_consume!(backend, ready_token) = nothing
+
+function prefetch_retire!(backend, prev_batch)
+    unsafe_free!(prev_batch)
+    return nothing
+end
+
+cleanup_prefetch_backend!(backend) = nothing
+
 end
