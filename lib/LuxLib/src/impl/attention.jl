@@ -64,7 +64,6 @@ get_non_heads_dim(head_dim::Int, token_dim::Int) = only(setdiff(1:3, (head_dim, 
 
 CRC.@non_differentiable get_non_heads_dim(::Any...)
 
-make_causal_mask(x; dims::Int) = make_causal_mask(x, size(x, dims), size(x, dims))
 
 function make_causal_mask(x, x_len, y_len)
     mask = NNlib.trues_like(x, (x_len, y_len))

@@ -226,27 +226,12 @@ function bias_activation!(
     x::AbstractArray{xT,N},
     bias::AbstractVector,
 ) where {F,N,xT,yT}
-    bias_activation_cpu!(
+    bias_activation_simd_loop!(
         reshape(y, flattened_bias_dims(y), size(y, N - 1), size(y, N)),
-        fuse_cpu_activation(σ),
         σ,
         reshape(x, flattened_bias_dims(x), size(x, N - 1), size(x, N)),
         bias,
     )
-    return nothing
-end
-
-function bias_activation_cpu!(
-    y::AbstractArray{yT,3}, ::True, σ::F, x::AbstractArray{xT,3}, bias::AbstractVector
-) where {F,xT,yT}
-    bias_activation_simd_loop!(y, σ, x, bias)
-    return nothing
-end
-
-function bias_activation_cpu!(
-    y::AbstractArray{yT,3}, ::False, σ::F, x::AbstractArray{xT,3}, bias::AbstractVector
-) where {F,xT,yT}
-    bias_activation_simd_loop!(y, σ, x, bias)
     return nothing
 end
 

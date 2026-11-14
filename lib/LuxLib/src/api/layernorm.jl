@@ -1,4 +1,4 @@
-@doc doc"""
+@doc raw"""
     layernorm(x::AbstractArray{xT, N}, scale, bias, σ = identity, dims=1:(N - 1),
         epsilon = eps(eltype(x)) ^ (5 / 7)) where {xT, N}
 
