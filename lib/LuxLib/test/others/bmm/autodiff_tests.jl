@@ -121,4 +121,55 @@ include("bmm_testsetup.jl")
             )
         end
     end
+
+    @testset "EnzymeRules custom rules" begin
+        EC = LuxLib.Impl.EnzymeCore
+        ER = LuxLib.Impl.EnzymeRules
+        cfg_B_overwritten = ER.RevConfig{
+            true,false,1,(false, false, false, true),false,false
+        }()
+
+        A = randn(Float32, 2, 2, 2)
+        B = randn(Float32, 2, 2, 2)
+        C = zeros(Float32, 2, 2, 2)
+
+        dC = ones(Float32, 2, 2, 2)
+        dA = zeros(Float32, 2, 2, 2)
+        dB = zeros(Float32, 2, 2, 2)
+
+        C_anno = EC.Duplicated(C, dC)
+        A_anno = EC.Duplicated(A, dA)
+        B_anno = EC.Duplicated(B, dB)
+
+        for func in (NNlib.batched_mul!, LuxLib.Impl.batched_matmul_loopvec_impl!)
+            fill!(dC, 1.0f0)
+            fill!(dA, 0.0f0)
+            fill!(dB, 0.0f0)
+            B_orig = copy(B)
+
+            ret = ER.augmented_primal(
+                cfg_B_overwritten, EC.Const(func), Nothing, C_anno, A_anno, B_anno
+            )
+            cache_A, cache_B = ret.tape
+
+            @test cache_A === nothing
+            @test cache_B ≈ B_orig
+
+            # Overwrite B before reverse
+            B .= 999.0f0
+
+            ER.reverse(
+                cfg_B_overwritten, EC.Const(func), Nothing, ret.tape, C_anno, A_anno, B_anno
+            )
+
+            expected_dA = zeros(Float32, 2, 2, 2)
+            NNlib.batched_mul!(
+                expected_dA, ones(Float32, 2, 2, 2), NNlib.batched_adjoint(B_orig)
+            )
+            @test dA ≈ expected_dA
+
+            # Reset B
+            B .= B_orig
+        end
+    end
 end

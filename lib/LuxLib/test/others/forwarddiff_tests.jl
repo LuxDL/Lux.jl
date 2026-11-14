@@ -167,12 +167,41 @@ end
 
                     test_jvp_computation(x -> op(x, kernel_size; stride, pad), x, u, ongpu)
 
+                    # NNlib doesn't define ∇meanpool and ∇maxpool for AMDGPU properly
+                    mode == "amdgpu" && continue
+
                     test_jvp_computation(
                         x -> only(
                             Zygote.gradient(x -> sum(op(x, kernel_size; stride, pad)), x),
                         ),
                         x,
                         u,
+                        ongpu,
+                        true,
+                    )
+                    test_jvp_computation(
+                        x -> only(
+                            Zygote.gradient(
+                                x -> sum(abs2, op(x, kernel_size; stride, pad)), x
+                            ),
+                        ),
+                        x,
+                        u,
+                        ongpu,
+                        true,
+                    )
+
+                    y_size = size(op(x, kernel_size; stride, pad))
+                    v = aType(randn(Float32, y_size))
+                    uv = aType(randn(Float32, y_size))
+                    test_jvp_computation(
+                        v -> only(
+                            Zygote.gradient(
+                                x -> sum(v .* op(x, kernel_size; stride, pad)), x
+                            ),
+                        ),
+                        v,
+                        uv,
                         ongpu,
                         true,
                     )
