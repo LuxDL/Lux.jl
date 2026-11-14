@@ -15,9 +15,27 @@ Neural Network Primitives with custom bindings for different accelerator backend
 ## Attention
 
 ```@docs
+scaled_dot_product_attention
+scaled_dot_product_attention_with_weights
 dot_product_attention
 dot_product_attention_scores
 make_causal_mask
+NNlib.is_fused_attention
+```
+
+### Rotary Position Embedding
+
+```@docs
+NNlib.rotary_embedding_table
+NNlib.apply_rotary_embedding
+```
+
+## State-Space and Linear-Attention Layers
+
+```@docs
+NNlib.causal_conv1d
+NNlib.ssd_scan
+NNlib.gated_delta_rule
 ```
 
 ## Softmax
@@ -74,6 +92,8 @@ upsample_linear
 ∇upsample_linear
 upsample_bilinear
 ∇upsample_bilinear
+upsample_bicubic
+∇upsample_bicubic
 upsample_trilinear
 ∇upsample_trilinear
 pixel_shuffle
@@ -96,6 +116,8 @@ batched_mul!
 batched_adjoint
 batched_transpose
 batched_vec
+grouped_mul
+grouped_mul!
 ```
 
 ## Gather and Scatter
@@ -125,6 +147,7 @@ ctc_loss
 ```@docs
 logsumexp
 glu
+swiglu
 NNlib.@disallow_spawns
 ```
 
@@ -170,6 +193,8 @@ NNlib.groupnorm
 NNlib.∇groupnorm
 NNlib.layernorm
 NNlib.∇layernorm
+NNlib.rmsnorm
+NNlib.∇rmsnorm
 ```
 
 ## Internal NNlib Functions
@@ -221,4 +246,5 @@ NNlib.logaddexp
 NNlib.im2col!
 NNlib.predilate
 NNlib.safe_div
+NNlib.flipweight
 ```

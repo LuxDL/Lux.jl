@@ -40,4 +40,5 @@ trelu
 gelu_tanh
 gelu_sigmoid
 gelu_erf
+quick_gelu
 ```
