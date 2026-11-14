@@ -114,7 +114,7 @@ end
 
     @functor functorABC
 
-    function ftest(st)
+    function ftest_functor(st)
         return functorABC(st.functor.a .* st.functor.b, st.tup[1] .* st.tup[2])
     end
 
@@ -122,5 +122,5 @@ end
     nt = (functor=functorABC(rand(rng, 3), rand(rng, 3)), tup=(rand(rng, 3), rand(rng, 3)))
     u = (functor=functorABC(rand(rng, 3), rand(rng, 3)), tup=(rand(rng, 3), rand(rng, 3)))
 
-    @test jacobian_vector_product(ftest, AutoForwardDiff(), nt, u) isa Any
+    @test jacobian_vector_product(ftest_functor, AutoForwardDiff(), nt, u) isa Any
 end
