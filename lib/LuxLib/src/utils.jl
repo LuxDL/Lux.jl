@@ -36,7 +36,7 @@ safe_reshape_internal(x::AbstractArray, dims) = reshape(x, dims)
 
 # reshape sometimes causes trouble inside ReshapedArray for Enzyme. This is a workaround
 # for that.
-struct EnzymeRulesReshapeJacobian{T,N,D,A<:AbstractArray{T,N}} <: AbstractArray{T,2}
+struct EnzymeRulesReshapeJacobian{T,N,D,A<:AbstractArray{T,N}}
     x::A
     outsize::D
 end
@@ -48,6 +48,7 @@ function EnzymeRules.multiply_fwd_into(
 )
     reshaped_x = reshape(x, J.outsize...)
     previous === nothing && return reshaped_x
+    previous isa Type && return copy(reshaped_x)
     @. previous += reshaped_x
     return previous
 end
