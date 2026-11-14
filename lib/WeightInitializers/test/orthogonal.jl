@@ -25,6 +25,7 @@ include("common.jl")
 
         for mat in [(3, 4, 5), (2, 2, 5)]
             v = orthogonal(rng, mat...)
+            @test size(v) == mat
             cols = mat[end]
             rows = div(prod(mat), cols)
             v = reshape(v, (rows, cols))
@@ -32,6 +33,22 @@ include("common.jl")
                 (@test v * v' ≈ I(rows))
             else
                 (@test v' * v ≈ I(cols))
+            end
+        end
+
+        @testset "Orthogonal shape & semi-orthogonality (rows < cols): $T" for T in (
+            Float32, ComplexF32
+        )
+            for mat in ((2, 2, 8), (2, 2, 2, 16))
+                for gain in (1.0, 1.5)
+                    v = orthogonal(rng, T, mat...; gain=gain)
+                    @test size(v) == mat
+                    @test eltype(v) == T
+                    cols = mat[end]
+                    rows = div(prod(mat), cols)
+                    v_mat = reshape(v, (rows, cols))
+                    GPUArraysCore.@allowscalar @test v_mat * v_mat' ≈ (gain^2) * I(rows)
+                end
             end
         end
 

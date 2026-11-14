@@ -28,8 +28,10 @@ artificial intelligence and statistics_. 2010.
 function glorot_uniform(
     rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=1
 ) where {T<:Number}
-    scale = Utils.safe_type_conversion(T, gain * sqrt(24 / sum(Utils.nfan(dims...))))
-    half = Utils.safe_type_conversion(T, 0.5)
+    scale = Utils.safe_real_type(
+        T, gain * sqrt((T <: Complex ? 12 : 24) / sum(Utils.nfan(dims...)))
+    )
+    half = Utils.safe_half(T)
     x = DeviceAgnostic.rand(rng, T, dims...)
     @. x = (x - half) * scale
     return x
@@ -52,7 +54,7 @@ artificial intelligence and statistics_. 2010.
 function glorot_normal(
     rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=1
 ) where {T<:Number}
-    std = Utils.safe_type_conversion(T, gain * sqrt(2 / sum(Utils.nfan(dims...))))
+    std = Utils.safe_real_type(T, gain * sqrt(2 / sum(Utils.nfan(dims...))))
     x = DeviceAgnostic.randn(rng, T, dims...)
     x .*= std
     return x
@@ -60,7 +62,7 @@ end
 
 """
     kaiming_uniform([::AbstractRNG=Utils.default_rng()], [T=Float32], size...;
-        gain = √T(2)) -> AbstractArray{T, length(size)}
+        gain = √real(T)(2)) -> AbstractArray{T, length(size)}
 
 Return an `AbstractArray{T}` of the given `size` containing random numbers drawn from a
 uniform distribution on the interval `[-x, x]`, where `x = gain * sqrt(3/fan_in)`.
@@ -72,10 +74,12 @@ imagenet classification." _Proceedings of the IEEE international conference on c
 vision_. 2015.
 """
 function kaiming_uniform(
-    rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=√T(2)
+    rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=√real(T)(2)
 ) where {T<:Number}
-    bound = Utils.safe_type_conversion(T, √3 * gain / sqrt(first(Utils.nfan(dims...))))
-    half = Utils.safe_type_conversion(T, 0.5)
+    bound = Utils.safe_real_type(
+        T, (T <: Complex ? √(3 / 2) : √3) * gain / sqrt(first(Utils.nfan(dims...)))
+    )
+    half = Utils.safe_half(T)
     x = DeviceAgnostic.rand(rng, T, dims...)
     @. x = (x - half) * 2 * bound
     return x
@@ -83,7 +87,7 @@ end
 
 """
     kaiming_normal([::AbstractRNG=Utils.default_rng()], [T=Float32], size...;
-        gain = √T(2)) -> AbstractArray{T, length(size)}
+        gain = √real(T)(2)) -> AbstractArray{T, length(size)}
 
 Return an `AbstractArray{T}` of the given `size` containing random numbers taken from a
 normal distribution standard deviation `gain / sqrt(fan_in)`
@@ -95,9 +99,9 @@ imagenet classification." _Proceedings of the IEEE international conference on c
 vision_. 2015.
 """
 function kaiming_normal(
-    rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=√T(2)
+    rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=√real(T)(2)
 ) where {T<:Number}
-    std = Utils.safe_type_conversion(T, gain / sqrt(first(Utils.nfan(dims...))))
+    std = Utils.safe_real_type(T, gain / sqrt(first(Utils.nfan(dims...))))
     x = DeviceAgnostic.randn(rng, T, dims...)
     @. x *= std
     return x
@@ -146,7 +150,7 @@ Cannot construct a vector, i.e., `length(dims) == 1` is forbidden.
 # Arguments
 
   - `rng::AbstractRNG`: Random number generator.
-  - `T::Type{<:Real}`: The type of the elements in the array.
+  - `T::Type{<:Number}`: The type of the elements in the array.
   - `dims::Integer...`: The dimensions of the array.
   - `gain::Number`: Scaling factor for the elements of the orthogonal matrix.
 
@@ -161,7 +165,10 @@ function orthogonal(
     @assert length(dims) > 1 "Creating vectors (length(dims) == 1) is not allowed"
 
     rows, cols = length(dims) == 2 ? dims : (prod(dims[1:(end - 1)]), dims[end])
-    rows < cols && return permutedims(orthogonal(rng, T, cols, rows; gain=T(gain)))
+    if rows < cols
+        mat = permutedims(orthogonal(rng, T, cols, rows; gain=T(gain)))
+        return length(dims) > 2 ? reshape(mat, dims) : mat
+    end
 
     mat = DeviceAgnostic.randn(rng, T, rows, cols)
     Q, R = qr(mat)
