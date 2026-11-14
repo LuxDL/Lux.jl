@@ -130,7 +130,7 @@ make_causal_mask(x; dims::Int) = make_causal_mask(x, size(x, dims), size(x, dims
 
 function make_causal_mask(x, x_len, y_len)
     mask = NNlib.trues_like(x, (x_len, y_len))
-    triu!(mask)
+    triu!(mask, min(0, y_len - x_len))
     return mask
 end
 
