@@ -82,7 +82,7 @@ function EnzymeRules.reverse(
     EnzymeRules.overwritten(cfg)[5] || (cache_y = y.val)
 
     if !(typeof(x) <: EnzymeCore.Const)
-        @. x.dval = deriv(lfn.val, cache_x, cache_y) * dret.val
+        @. x.dval += deriv(lfn.val, cache_x, cache_y) * dret.val
     end
 
     return ntuple(Returns(nothing), 4)

@@ -670,4 +670,41 @@ end
         @test MSLELoss(; agg=sum)(2.0, 0.0) ≈
             Lux.LossFunctionImpl.msle_loss(2.0, 0.0, nothing)
     end
+
+    @testset "LossFunctionsExt Enzyme & AD" begin
+        if Base.find_package("LossFunctions") !== nothing
+            @eval using LossFunctions: LossFunctions
+            Base.invokelatest() do
+                lfn = LossFunctions.L2DistLoss()
+                loss_fn = GenericLossFunction(lfn; agg=sum)
+                x = [1.0, 2.0, 3.0]
+                y = [0.5, 1.5, 2.0]
+
+                @test loss_fn(x, y) ≈ sum((x .- y) .^ 2)
+
+                f = (x, y) -> loss_fn(x, y) + sum(2.0 .* x)
+                expected_g = 2.0 .* (x .- y) .+ 2.0
+                @test only(Zygote.gradient(x -> f(x, y), x)) ≈ expected_g
+
+                # Direct EnzymeRules.reverse cotangent accumulation check
+                cfg = Enzyme.EnzymeRules.RevConfig{
+                    false,false,1,(false, false, false, false, false),false,false
+                }()
+                dx_accum = [10.0, 10.0, 10.0]
+                Enzyme.EnzymeRules.reverse(
+                    cfg,
+                    Enzyme.Const(Lux.LossFunctionImpl.fused_agg),
+                    Enzyme.Active(1.0),
+                    (nothing, nothing),
+                    Enzyme.Const(sum),
+                    Enzyme.Const(lfn),
+                    Enzyme.Duplicated(copy(x), dx_accum),
+                    Enzyme.Const(y),
+                )
+                @test dx_accum ≈ 2.0 .* (x .- y) .+ 10.0
+            end
+        else
+            @test_skip false
+        end
+    end
 end
