@@ -15,6 +15,8 @@ using ComponentArrays, ReverseDiff, Tracker, Zygote, Enzyme, Reactant
             Lux.AutoDiffInternalImpl.batched_jacobian,
             Lux.AutoDiffInternalImpl.jacobian_vector_product,
             Lux.AutoDiffInternalImpl.jacobian_vector_product_impl,
+            Lux.AutoDiffInternalImpl.vector_jacobian_product,
+            Lux.AutoDiffInternalImpl.vector_jacobian_product_impl,
         ],
     )
     treat_as_own = [

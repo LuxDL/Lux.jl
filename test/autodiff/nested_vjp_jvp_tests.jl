@@ -1,4 +1,4 @@
-using StableRNGs, Lux, ForwardDiff, Zygote, ComponentArrays, Functors, ADTypes
+using StableRNGs, Lux, ForwardDiff, Zygote, Enzyme, ComponentArrays, Functors, ADTypes
 using LuxTestUtils, Test
 using DispatchDoctor: allow_unstable
 
@@ -123,4 +123,72 @@ end
     u = (functor=functorABC(rand(rng, 3), rand(rng, 3)), tup=(rand(rng, 3), rand(rng, 3)))
 
     @test jacobian_vector_product(ftest, AutoForwardDiff(), nt, u) isa Any
+end
+
+@testset "VJP on StatefulLuxLayer and ComposedFunction" begin
+    rng = StableRNG(1234)
+
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
+        model = Chain(Dense(2, 4, gelu), Dense(4, 3))
+        ps, st = dev(Lux.setup(rng, model))
+        smodel = StatefulLuxLayer(model, ps, st)
+        X = aType(randn(rng, Float32, 2, 4))
+        u = first(model(X, ps, st))
+
+        # StatefulLuxLayer VJP with AutoZygote and AutoEnzyme
+        vjp_z = vector_jacobian_product(smodel, AutoZygote(), X, u)
+        vjp_e = vector_jacobian_product(smodel, AutoEnzyme(), X, u)
+        @test vjp_z ≈ vjp_e rtol = 1.0e-3 atol = 1.0e-3
+
+        # Compare with Zygote Jacobian
+        J = only(Zygote.jacobian(smodel, X))
+        @test vec(vjp_z) ≈ vec(J' * vec(u)) rtol = 1.0e-3 atol = 1.0e-3
+
+        # ComposedFunction VJP
+        f_composed = (x -> x .* 2.0f0) ∘ smodel
+        u_c = f_composed(X)
+        vjp_c_z = vector_jacobian_product(f_composed, AutoZygote(), X, u_c)
+        vjp_c_e = vector_jacobian_product(
+            f_composed,
+            AutoEnzyme(; mode=Enzyme.set_runtime_activity(Enzyme.Reverse)),
+            X,
+            u_c,
+        )
+        @test vjp_c_z ≈ vjp_c_e rtol = 1.0e-3 atol = 1.0e-3
+
+        # Parameter VJP: Base.Fix1(smodel, X)
+        f_fix1 = Base.Fix1(smodel, X)
+        vjp_fix1_z = vector_jacobian_product(f_fix1, AutoZygote(), ps, u)
+        @test vjp_fix1_z isa NamedTuple
+        @test keys(vjp_fix1_z) == keys(ps)
+
+        # Nested AD through vector_jacobian_product with StatefulLuxLayer
+        function loss_vjp(model, X, ps, st, u)
+            return sum(
+                vector_jacobian_product(StatefulLuxLayer(model, ps, st), AutoZygote(), X, u)
+            )
+        end
+        _, ∇x, ∇ps, _, _ = allow_unstable() do
+            Zygote.gradient(loss_vjp, model, X, ps, st, u)
+        end
+        @test ∇x !== nothing
+        @test ∇ps !== nothing
+
+        # Nested AD through vector_jacobian_product with ComposedFunction
+        function loss_comp_vjp(model, X, ps, st, u_c)
+            return sum(
+                vector_jacobian_product(
+                    (x -> x .* 2.0f0) ∘ StatefulLuxLayer(model, ps, st),
+                    AutoZygote(),
+                    X,
+                    u_c,
+                ),
+            )
+        end
+        _, ∇x_c, ∇ps_c, _, _ = allow_unstable() do
+            Zygote.gradient(loss_comp_vjp, model, X, ps, st, u_c)
+        end
+        @test ∇x_c !== nothing
+        @test ∇ps_c !== nothing
+    end
 end

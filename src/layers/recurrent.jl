@@ -240,6 +240,8 @@ function initialstates(rng::AbstractRNG, r::StatefulRecurrentCell)
     return (cell=initialstates(rng, r.cell), carry=nothing)
 end
 
+preserves_state_type(::StatefulRecurrentCell) = false
+
 function (r::StatefulRecurrentCell)(x, ps, st::NamedTuple)
     (out, carry), stₙ = applyrecurrentcell(r.cell, x, ps, st.cell, st.carry)
     return out, (; cell=stₙ, carry)
