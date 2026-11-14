@@ -1,12 +1,17 @@
 module PartialFunction
 
-using ConcreteStructs: @concrete
 using Random: AbstractRNG
 
-@concrete struct Partial{T} <: Function
-    f <: Function
-    rng <: Union{Nothing,AbstractRNG}
-    kwargs
+struct Partial{T,F<:Function,R<:Union{Nothing,AbstractRNG},K} <: Function
+    f::F
+    rng::R
+    kwargs::K
+end
+
+function Partial{T}(
+    f::F, rng::R, kwargs::K
+) where {T,F<:Function,R<:Union{Nothing,AbstractRNG},K}
+    return Partial{T,F,R,K}(f, rng, kwargs)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", f::Partial{T}) where {T}
