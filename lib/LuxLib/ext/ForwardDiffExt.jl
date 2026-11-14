@@ -3,7 +3,7 @@ module ForwardDiffExt
 using ForwardDiff: ForwardDiff
 using LuxLib: LuxLib, Impl, Utils, Traits
 using NNlib: NNlib
-using Static: False, True
+using LuxLib.Utils: False, True
 
 # ================================ Utils Extensions ================================
 # ofeltype_array for Dual types

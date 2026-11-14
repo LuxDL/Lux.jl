@@ -3,11 +3,11 @@ module Traits
 using ArrayInterface: ArrayInterface, can_setindex
 using ChainRulesCore: ChainRulesCore
 using NNlib: NNlib
-using Static: True, False, static
 using StaticArraysCore: StaticArray
 
 using ..LuxLib: Numeric
-using ..Utils: NotaNumber, only_derivative, unrolled_any, unrolled_map
+using ..Utils:
+    NotaNumber, only_derivative, unrolled_any, unrolled_map, True, False, static, static_or
 
 function fast_scalar_indexing(::T) where {T<:AbstractArray}
     return static(ArrayInterface.fast_scalar_indexing(T))
@@ -41,7 +41,7 @@ has_complex(::Type{<:Complex}) = True()
 
 is_tracked(_) = False()
 
-has_autodiff_value(x) = is_tracked(x) | has_dual(x)
+has_autodiff_value(x) = static_or(is_tracked(x), has_dual(x))
 
 static_isa(::Type{T}) where {T} = Base.Fix2(static_isa, T)
 static_isa(x, ::Type{T}) where {T} = static(isa(x, T))
@@ -50,10 +50,12 @@ function use_generic_broadcasting(xs::Tuple)
     # Float16 is a bit iffy and reordering operations are not optimal for numerical
     # stability so we use the generic implementation for now.
     xs_unwrapped = unrolled_map(unwrap_array, xs)
-    return unrolled_any(has_autodiff_value, xs_unwrapped) |
-           unrolled_any(has_float16, xs_unwrapped) |
-           unrolled_any(has_complex, xs_unwrapped) |
-           unrolled_any(static_isa(StaticArray), xs_unwrapped)
+    return static_or(
+        unrolled_any(has_autodiff_value, xs_unwrapped),
+        unrolled_any(has_float16, xs_unwrapped),
+        unrolled_any(has_complex, xs_unwrapped),
+        unrolled_any(static_isa(StaticArray), xs_unwrapped),
+    )
 end
 
 activation_intermediate_not_needed(::typeof(identity), ::Type) = True()
@@ -81,10 +83,10 @@ module System
 using CPUSummary: CPUSummary
 using ChainRulesCore: ChainRulesCore
 using EnzymeCore: EnzymeCore
-using Static: static, False, True
 
 using ..LuxLib: DISABLE_LOOP_VECTORIZATION
-using ..Utils: is_extension_loaded, within_enzyme_autodiff
+using ..Utils:
+    is_extension_loaded, within_enzyme_autodiff, static, False, True, static_or, static_and
 
 const CRC = ChainRulesCore
 
@@ -106,9 +108,11 @@ end
 CRC.@non_differentiable is_x86_64()
 
 function explicit_blas_loaded()
-    return is_extension_loaded(Val(:MKL)) |
-           is_extension_loaded(Val(:AppleAccelerate)) |
-           is_extension_loaded(Val(:BLISBLAS))
+    return static_or(
+        is_extension_loaded(Val(:MKL)),
+        is_extension_loaded(Val(:AppleAccelerate)),
+        is_extension_loaded(Val(:BLISBLAS)),
+    )
 end
 
 CRC.@non_differentiable explicit_blas_loaded()
@@ -118,9 +122,11 @@ CRC.@non_differentiable explicit_blas_loaded()
 else
     function use_octavian()
         within_enzyme_autodiff() && return False()
-        return is_extension_loaded(Val(:Octavian)) &
-               is_x86_64() &
-               (INTEL_HARDWARE | AMD_RYZEN_HARDWARE)
+        return static_and(
+            is_extension_loaded(Val(:Octavian)),
+            is_x86_64(),
+            static_or(INTEL_HARDWARE, AMD_RYZEN_HARDWARE),
+        )
     end
 end
 
@@ -192,12 +198,12 @@ function internal_operation_mode(xs::Tuple)
     xs = filter(!isnothing, xs)
     dev = get_device_type(xs)
 
-    known(Traits.use_generic_broadcasting(xs)) && return GenericBroadcastOp{dev}()
+    Utils.known(Traits.use_generic_broadcasting(xs)) && return GenericBroadcastOp{dev}()
     dev <: AbstractGPUDevice && return GPUBroadcastOp{dev}()
     dev <: ReactantDevice && return GenericBroadcastOp{dev}()
 
     # This check needs to be done after the GPU Check
-    known(Utils.unrolled_any(!Traits.fast_scalar_indexing, xs)) &&
+    Utils.known(Utils.unrolled_any(Utils.static_not(Traits.fast_scalar_indexing), xs)) &&
         return GenericBroadcastOp{dev}()
     return LoopedArrayOp()
 end

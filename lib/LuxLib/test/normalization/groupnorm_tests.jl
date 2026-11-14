@@ -1,6 +1,6 @@
 include("../shared_testsetup.jl")
 
-using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, Static, StableRNGs
+using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, StableRNGs
 using LuxTestUtils: check_approx
 
 function setup_groupnorm(rng, aType, T, sz, affine)
@@ -31,7 +31,7 @@ function groupnorm_fallback(
         scale,
         bias,
         LuxLib.Impl.groupnorm_reduce_dims(x),
-        False(),
+        Val(false),
         nothing,
         epsilon,
         σ,
