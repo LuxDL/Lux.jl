@@ -9,10 +9,10 @@ using Markdown: @doc_str
 using Optimisers: Optimisers
 using Random: AbstractRNG, Random
 using Setfield: Setfield
-using Static: StaticSymbol, StaticBool, True, known, static, dynamic
 
 using ..Lux: Lux, Optional, CompactLuxLayer
-using ..Utils: Utils, BoolType, SymbolType
+using ..Utils:
+    Utils, StaticSymbol, StaticBool, True, known, static, dynamic
 using LuxCore:
     LuxCore, AbstractLuxLayer, AbstractLuxWrapperLayer, AbstractLuxContainerLayer, apply
 

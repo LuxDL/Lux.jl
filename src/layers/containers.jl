@@ -750,8 +750,8 @@ end
 
 function RepeatedLayer(
     model::AbstractLuxLayer;
-    repeats::Union{StaticInt,Integer,Val}=Val(10),
-    input_injection::Union{StaticBool,Bool,Val{true},Val{false}}=Val(false),
+    repeats::IntegerType=Val(10),
+    input_injection=Val(false),
 )
     return RepeatedLayer(static(repeats), static(input_injection), model)
 end
