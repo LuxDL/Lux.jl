@@ -35,9 +35,10 @@ Internal.get_device_type(::CUDA.AnyCuArray) = CUDADevice
 Internal.get_device_type(::Type{<:CUDA.AnyCuArray}) = CUDADevice
 Internal.get_device_type(::CUDA.RNG) = CUDADevice
 
-const CURAND_RNG = Union{CUDA.cuRAND.LibraryRNG,CUDA.cuRAND.NativeRNG}
-Internal.get_device_type(::CURAND_RNG) = CUDADevice
-Internal.get_device(::CURAND_RNG) = CUDADevice(CUDA.device())
+@static if isdefined(CUDA, :CURAND) && isdefined(CUDA.CURAND, :RNG)
+    Internal.get_device_type(::CUDA.CURAND.RNG) = CUDADevice
+    Internal.get_device(::CUDA.CURAND.RNG) = CUDADevice(CUDA.device())
+end
 
 # Set Device
 MLDataDevices.set_device!(::Type{CUDADevice}, dev::CUDA.CuDevice) = CUDA.device!(dev)
@@ -73,10 +74,18 @@ function Adapt.adapt_storage(to::CUDADevice{D,E}, x::AbstractArray) where {D,E}
         to.device !== nothing && CUDA.device!(old_dev)
         return x_new
     elseif dev.device === nothing || to.device === nothing || dev.device == to.device
-        return x
+        Internal.return_without_conversion(E, x) && return x
+        to.device !== nothing && CUDA.device!(to.device)
+        x_new = cuda_array_adapt(to, x)
+        to.device !== nothing && CUDA.device!(old_dev)
+        return x_new
     else
         to.device !== nothing && CUDA.device!(to.device)
-        x_new = copy(x)
+        x_new = if Internal.return_without_conversion(E, x)
+            copy(x)
+        else
+            cuda_array_adapt(to, copy(x))
+        end
         to.device !== nothing && CUDA.device!(old_dev)
         return x_new
     end

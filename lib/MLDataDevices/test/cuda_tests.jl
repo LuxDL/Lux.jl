@@ -217,6 +217,31 @@ using FillArrays, Zygote  # Extensions
     end
 end
 
+@testset "CUDA Device Eltype Conversion" begin
+    if MLDataDevices.functional(CUDADevice)
+        cuda_dev_f32 = gpu_device(Float32)
+        cuda_dev_f64 = gpu_device(Float64)
+
+        x_f64 = CuArray(Float64[1.0, 2.0, 3.0])
+        x_to_f32 = cuda_dev_f32(x_f64)
+        @test eltype(x_to_f32) === Float32
+        @test x_to_f32 isa CuArray{Float32}
+        @test Array(x_to_f32) ≈ [1.0f0, 2.0f0, 3.0f0]
+
+        x_to_f64 = cuda_dev_f64(x_to_f32)
+        @test eltype(x_to_f64) === Float64
+        @test x_to_f64 isa CuArray{Float64}
+        @test Array(x_to_f64) ≈ [1.0, 2.0, 3.0]
+
+        @test cuda_dev_f32(x_to_f32) === x_to_f32
+        @test cuda_dev_f64(x_to_f64) === x_to_f64
+
+        cuda_dev_preserve = gpu_device(nothing)
+        @test eltype(cuda_dev_preserve(x_f64)) === Float64
+        @test eltype(cuda_dev_preserve(x_to_f32)) === Float32
+    end
+end
+
 @testset "Functions" begin
     if MLDataDevices.functional(CUDADevice)
         @test get_device(tanh) isa MLDataDevices.UnknownDevice
@@ -287,8 +312,8 @@ using SparseArrays
             @test cuda_device.device.handle == (idx - 1)
 
             ps = cuda_device(ps_cpu)
-            @test ps.weight isa CUDA.cuSPARSE.CuSparseMatrixCSC
-            @test ps.bias isa CUDA.cuSPARSE.CuSparseVector
+            @test ps.weight isa CUSPARSE.CuSparseMatrixCSC
+            @test ps.bias isa CUSPARSE.CuSparseVector
             @test get_device(ps.weight).device.handle == idx - 1
             @test get_device(ps.bias).device.handle == idx - 1
             @test isequal(cdev(ps.weight), ps_cpu.weight)

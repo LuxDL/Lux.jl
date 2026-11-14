@@ -97,10 +97,18 @@ function Adapt.adapt_storage(to::AMDGPUDevice{D,E}, x::AbstractArray) where {D,E
         to.device === nothing ||
         AMDGPU.device_id(dev.device) == AMDGPU.device_id(to.device)
     )
-        return x
+        Internal.return_without_conversion(E, x) && return x
+        to.device !== nothing && AMDGPU.device!(to.device)
+        x_new = amdgpu_array_adapt(to, x)
+        to.device !== nothing && AMDGPU.device!(old_dev)
+        return x_new
     else
         to.device !== nothing && AMDGPU.device!(to.device)
-        x_new = copy(x)
+        x_new = if Internal.return_without_conversion(E, x)
+            copy(x)
+        else
+            amdgpu_array_adapt(to, copy(x))
+        end
         to.device !== nothing && AMDGPU.device!(old_dev)
         return x_new
     end
