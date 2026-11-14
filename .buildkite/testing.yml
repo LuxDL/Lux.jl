@@ -31,8 +31,6 @@ steps:
               - "1.12"
             group:
               - "autodiff"
-              - "contrib"
-              - "helpers"
               - "core_layers"
               - "recurrent_layers"
               - "misc"
