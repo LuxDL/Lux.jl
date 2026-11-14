@@ -9,7 +9,6 @@ using ForwardDiff: Dual
 using Functors: Functors, fmapstructure
 using Random: AbstractRNG
 using Setfield: @set
-using Static: Static, StaticBool, StaticInteger, StaticSymbol
 using StaticArraysCore: SMatrix, SVector
 
 using LuxCore: LuxCore, AbstractLuxLayer
@@ -33,9 +32,31 @@ using WeightInitializers.PartialFunction: Partial
 
 const CRC = ChainRulesCore
 
-const BoolType = Union{StaticBool,Bool,Val{true},Val{false}}
-const IntegerType = Union{Integer,StaticInteger}
-const SymbolType = Union{Symbol,StaticSymbol,Val}
+const StaticBool = Union{Val{true},Val{false}}
+const True = Val{true}
+const False = Val{false}
+const StaticInt{N} = Val{N}
+const StaticSymbol{S} = Val{S}
+
+static(v::Val) = v
+static(x::Union{Bool,Int,Symbol}) = Val(x)
+static(x::Integer) = Val(Int(x))
+static(::Nothing) = nothing
+static(t::Tuple) = map(static, t)
+
+known(::Val{V}) where {V} = V
+known(::Type{Val{V}}) where {V} = V
+known(t::Tuple) = map(known, t)
+@generated function known(::Type{T}) where {T<:Tuple}
+    return Tuple(known(fieldtype(T, i)) for i in 1:fieldcount(T))
+end
+known(x) = x
+
+dynamic(x) = known(x)
+
+const BoolType = Union{Bool,StaticBool}
+const IntegerType = Union{Integer,Val}
+const SymbolType = Union{Symbol,Val}
 
 # Aliased `size` from Base
 size(x::AbstractArray) = Base.size(x)
@@ -273,9 +294,6 @@ end
 
 using .Utils:
     Utils,
-    BoolType,
-    IntegerType,
-    SymbolType,
     make_abstract_matrix,
     matrix_to_array,
     init_trainable_rnn_hidden_state,

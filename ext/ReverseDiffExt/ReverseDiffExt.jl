@@ -12,7 +12,7 @@ using ReverseDiff:
     TrackedReal,
     @grad_from_chainrules
 using Setfield: @set!
-using Static: False, True
+using Lux.Utils: False, True
 
 using Lux: Lux, Utils
 using Lux.Training: Training, TrainingBackendCache, TrainState
