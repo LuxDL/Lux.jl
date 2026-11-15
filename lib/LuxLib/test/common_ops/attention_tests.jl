@@ -212,6 +212,8 @@ using LuxLib, Reactant, Random, MLDataDevices, Enzyme, Statistics, Test, Zygote
 
                     @test y ≈ y_ra atol = 1e-5 rtol = 1e-5
                     @test α ≈ α_ra atol = 1e-5 rtol = 1e-5
+                    @test all((α[:, :, 1, 1] .> 0) .== Array(mask))
+                    @test all((α[:, :, 2, 1] .> 0) .== Array(mask))
 
                     y2, α2 =
                         scaled_dot_product_attention(q, k, v; is_causal=true) |>
@@ -231,6 +233,58 @@ using LuxLib, Reactant, Random, MLDataDevices, Enzyme, Statistics, Test, Zygote
                     @test_throws AssertionError scaled_dot_product_attention(
                         q, k, v; mask, is_causal=true
                     )
+
+                    # KV-cache causal decoding equivalence:
+                    q_full = aType(rand(Float32, 4, 2, 5, 1))
+                    q_full_ra = Reactant.to_rarray(q_full)
+
+                    y_full, α_full =
+                        scaled_dot_product_attention(q_full, k, v; is_causal=true) |>
+                        cpu_device()
+                    y_full_ra, α_full_ra = @jit scaled_dot_product_attention(
+                        q_full_ra, k_ra, v_ra; is_causal=true
+                    )
+
+                    @test y_full ≈ y_full_ra atol = 1e-5 rtol = 1e-5
+                    @test α_full ≈ α_full_ra atol = 1e-5 rtol = 1e-5
+
+                    # Single-step KV-cache causal decoding (lenq = 1, lenkv = 5)
+                    q_single = q_full[:, :, 5:5, :]
+                    q_single_ra = Reactant.to_rarray(q_single)
+                    y_single, α_single =
+                        scaled_dot_product_attention(q_single, k, v; is_causal=true) |>
+                        cpu_device()
+                    y_single_ra, α_single_ra = @jit scaled_dot_product_attention(
+                        q_single_ra, k_ra, v_ra; is_causal=true
+                    )
+                    y_unmasked, α_unmasked =
+                        scaled_dot_product_attention(q_single, k, v; is_causal=false) |>
+                        cpu_device()
+
+                    # Verify α[:, 1, :, :] has non-zero attention weights across all 5 keys
+                    @test all(α_single[:, 1, :, :] .> 0)
+                    @test y_single ≈ y_unmasked atol = 1e-5 rtol = 1e-5
+                    @test α_single ≈ α_unmasked atol = 1e-5 rtol = 1e-5
+                    # Verify last query token matches full causal forward pass
+                    @test y_single ≈ y_full[:, :, 5:5, :] atol = 1e-5 rtol = 1e-5
+                    @test α_single[:, 1, :, :] ≈ α_full[:, 5, :, :] atol = 1e-5 rtol = 1e-5
+                    @test y_single ≈ y_single_ra atol = 1e-5 rtol = 1e-5
+                    @test α_single ≈ α_single_ra atol = 1e-5 rtol = 1e-5
+
+                    # Multi-token chunked KV-cache causal decoding (lenq = 3, lenkv = 5)
+                    q_chunk = q_full[:, :, 3:5, :]
+                    q_chunk_ra = Reactant.to_rarray(q_chunk)
+                    y_chunk, α_chunk =
+                        scaled_dot_product_attention(q_chunk, k, v; is_causal=true) |>
+                        cpu_device()
+                    y_chunk_ra, α_chunk_ra = @jit scaled_dot_product_attention(
+                        q_chunk_ra, k_ra, v_ra; is_causal=true
+                    )
+
+                    @test y_chunk ≈ y_full[:, :, 3:5, :] atol = 1e-5 rtol = 1e-5
+                    @test α_chunk ≈ α_full[:, 3:5, :, :] atol = 1e-5 rtol = 1e-5
+                    @test y_chunk ≈ y_chunk_ra atol = 1e-5 rtol = 1e-5
+                    @test α_chunk ≈ α_chunk_ra atol = 1e-5 rtol = 1e-5
                 end
             end
 
