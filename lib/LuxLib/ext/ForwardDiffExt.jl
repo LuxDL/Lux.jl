@@ -19,8 +19,10 @@ function Utils.ofeltype_array(
 end
 
 # remove_tracking for Dual types
-Utils.remove_tracking(x::ForwardDiff.Dual) = ForwardDiff.value(x)
-Utils.remove_tracking(x::AbstractArray{<:ForwardDiff.Dual}) = ForwardDiff.value.(x)
+Utils.remove_tracking(x::ForwardDiff.Dual) = Utils.remove_tracking(ForwardDiff.value(x))
+function Utils.remove_tracking(x::AbstractArray{<:ForwardDiff.Dual})
+    return Utils.remove_tracking(ForwardDiff.value.(x))
+end
 function Utils.remove_tracking(::Type{<:ForwardDiff.Dual{Tag,T}}) where {Tag,T}
     return Utils.remove_tracking(T)
 end
@@ -236,9 +238,7 @@ function NNlib.∇meanpool(
     dy_data, x_data = value_fn.(dy), ForwardDiff.value.(x)
 
     dx = NNlib.∇meanpool(dy_data, y, x_data, pdims; kwargs...)
-    dysᵢ = ntuple(
-        i -> NNlib.∇meanpool(partial_fn.(dy, i), y, x_data, pdims; kwargs...), P1
-    )
+    dysᵢ = ntuple(i -> NNlib.∇meanpool(partial_fn.(dy, i), y, x_data, pdims; kwargs...), P1)
 
     partials = ForwardDiff.Partials.(tuple.(dysᵢ...))
     return ForwardDiff.Dual{Tag1,eltype(dx),P1}.(dx, partials)
@@ -257,9 +257,7 @@ function NNlib.∇meanpool(
     dy_data, y_data = value_fn.(dy), ForwardDiff.value.(y)
 
     dx = NNlib.∇meanpool(dy_data, y_data, x, pdims; kwargs...)
-    dysᵢ = ntuple(
-        i -> NNlib.∇meanpool(partial_fn.(dy, i), y_data, x, pdims; kwargs...), P1
-    )
+    dysᵢ = ntuple(i -> NNlib.∇meanpool(partial_fn.(dy, i), y_data, x, pdims; kwargs...), P1)
 
     partials = ForwardDiff.Partials.(tuple.(dysᵢ...))
     return ForwardDiff.Dual{Tag1,eltype(dx),P1}.(dx, partials)

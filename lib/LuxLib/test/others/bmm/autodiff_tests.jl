@@ -141,7 +141,13 @@ include("bmm_testsetup.jl")
         A_anno = EC.Duplicated(A, dA)
         B_anno = EC.Duplicated(B, dB)
 
-        for func in (NNlib.batched_mul!, LuxLib.Impl.batched_matmul_loopvec_impl!)
+        funcs = if Bool(LuxLib.Utils.is_extension_loaded(Val(:LoopVectorization)))
+            (NNlib.batched_mul!, LuxLib.Impl.batched_matmul_loopvec_impl!)
+        else
+            (NNlib.batched_mul!,)
+        end
+
+        for func in funcs
             fill!(dC, 1.0f0)
             fill!(dA, 0.0f0)
             fill!(dB, 0.0f0)
