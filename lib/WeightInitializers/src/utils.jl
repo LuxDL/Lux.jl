@@ -14,6 +14,12 @@ norm_cdf(x::T) where {T} = T(0.5) * (1 + T(erf(x / √2))) # erf often doesn't r
 safe_type_conversion(::Type{T}, x) where {T} = T(x)
 safe_type_conversion(::Type{Complex{T}}, x) where {T} = complex(T(x), T(x))
 
+safe_half(::Type{T}) where {T} = T(0.5)
+safe_half(::Type{Complex{T}}) where {T} = complex(T(0.5), T(0.5))
+
+safe_real_type(::Type{T}, x::Real) where {T} = real(T)(x)
+safe_real_type(::Type{T}, x::Number) where {T} = real(T)(abs(x))
+
 default_rng() = Xoshiro(1234)
 
 #! format: off
@@ -77,13 +83,17 @@ end
 
 ## Certain backends don't support sampling Complex numbers, so we avoid hitting those
 ## dispatches
-for f in (:rand, :randn)
-    f! = Symbol(f, "!")
-    @eval function $(f)(rng::AbstractRNG, ::Type{Complex{T}}, args::Integer...) where {T}
-        x = get_backend_array(rng, Complex{T}, args...)
-        $(f!)(rng, reinterpret(T, x))
-        return x
-    end
+function rand(rng::AbstractRNG, ::Type{Complex{T}}, args::Integer...) where {T}
+    x = get_backend_array(rng, Complex{T}, args...)
+    rand!(rng, reinterpret(T, x))
+    return x
+end
+
+function randn(rng::AbstractRNG, ::Type{Complex{T}}, args::Integer...) where {T}
+    x = get_backend_array(rng, Complex{T}, args...)
+    randn!(rng, reinterpret(T, x))
+    x .*= inv(√T(2))
+    return x
 end
 
 end
