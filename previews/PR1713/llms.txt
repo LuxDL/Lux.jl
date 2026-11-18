@@ -1,0 +1,120 @@
+# LuxDL Docs
+
+> Elegant & Performant Deep Learning in JuliaLang
+
+Model with the elegance of Julia, and the performance of XLA.
+
+## Table of Contents
+
+### Getting Started
+
+- [Introduction {#getting-started}](/previews/PR1713/introduction.md)
+- [Why we wrote Lux? {#Why-we-wrote-Lux?}](/previews/PR1713/introduction/overview.md)
+- [Resources to Get Started {#Resources-to-Get-Started}](/previews/PR1713/introduction/resources.md)
+- [Updating to Lux v1 {#updating-to-v1}](/previews/PR1713/introduction/updating_to_v1.md)
+- [Citation {#Citation}](/previews/PR1713/introduction/citation.md)
+
+### Tutorials
+
+- [Tutorials](/previews/PR1713/tutorials.md)
+
+#### Beginner
+
+- [Julia & Lux for the Uninitiated {#Julia-and-Lux-for-the-Uninitiated}](/tutorials/beginner/1_Basics.md)
+- [Fitting a Polynomial using MLP {#Fitting-a-Polynomial-using-MLP}](/tutorials/beginner/2_PolynomialFitting.md)
+- [Training a Simple LSTM {#Training-a-Simple-LSTM}](/tutorials/beginner/3_SimpleRNN.md)
+- [MNIST Classification with SimpleChains {#MNIST-Classification-with-SimpleChains}](/tutorials/beginner/4_SimpleChains.md)
+- [Fitting with Optimization.jl {#Optimization-Lux-Tutorial}](/tutorials/beginner/5_OptimizationIntegration.md)
+
+#### Intermediate
+
+- [MNIST Classification using Neural ODEs {#MNIST-Classification-using-Neural-ODEs}](/tutorials/intermediate/1_NeuralODE.md)
+- [Training a HyperNetwork on MNIST and FashionMNIST {#Training-a-HyperNetwork-on-MNIST-and-FashionMNIST}](/tutorials/intermediate/3_HyperNet.md)
+- [Training a PINN on 2D PDE {#Training-a-PINN-on-2D-PDE}](/tutorials/intermediate/4_PINN2DPDE.md)
+- [Convolutional VAE for MNIST {#Convolutional-VAE-Tutorial}](/tutorials/intermediate/5_ConvolutionalVAE.md)
+- [Graph Convolutional Networks on Cora {#GCN-Tutorial-Cora}](/tutorials/intermediate/6_GCN_Cora.md)
+- [Normalizing Flows for Density Estimation {#Normalizing-Flows-for-Density-Estimation}](/tutorials/intermediate/7_RealNVP.md)
+- [Building a LSTM Encoder-Decoder model using Lux.jl {#Building-a-LSTM-Encoder-Decoder-model-using-Lux.jl}](/tutorials/intermediate/8_LSTMEncoderDecoder.md)
+- [ConvMixer on CIFAR-10 {#ConvMixer-on-CIFAR-10}](/tutorials/intermediate/9_CIFAR10_conv_mixer.md)
+- [Convolutional Neural Network on CIFAR-10 {#Convolutional-Neural-Network-on-CIFAR-10}](/tutorials/intermediate/10_CIFAR10_simple_cnn.md)
+- [ResNet20 on CIFAR-10 {#ResNet20-on-CIFAR-10}](/tutorials/intermediate/11_CIFAR10_resnet20.md)
+
+#### Advanced
+
+- [Training a Neural ODE to Model Gravitational Waveforms {#Training-a-Neural-ODE-to-Model-Gravitational-Waveforms}](/tutorials/advanced/1_GravitationalWaveForm.md)
+- [Denoising Diffusion Implicit Model (DDIM) {#Denoising-Diffusion-Implicit-Model-DDIM}](/tutorials/advanced/2_DDIM.md)
+- [ImageNet Classification using Distributed Data Parallel Training {#ImageNet-Classification-using-Distributed-Data-Parallel-Training}](/tutorials/advanced/3_ImageNet.md)
+- [Qwen3 Implementation from Scratch {#Qwen3-Implementation-from-Scratch}](/tutorials/advanced/4_Qwen3.md)
+
+### Manual
+
+#### Basics
+
+- [Lux Interface {#lux-interface}](/manual/interface.md)
+- [Freezing Model Parameters {#freezing-model-parameters}](/manual/freezing_model_parameters.md)
+- [GPU Management {#GPU-Management}](/manual/gpu_management.md)
+- [Initializing Weights {#Initializing-Weights}](/manual/weight_initializers.md)
+- [Visualizing Lux Models using Model Explorer {#Visualizing-Lux-Models-using-Model-Explorer}](/manual/visualize_lux_models.md)
+
+#### Reactant Compilation
+
+- [Compiling Lux Models using `Reactant.jl` {#reactant-compilation}](/manual/compiling_lux_models.md)
+- [Exporting Lux Models to Jax (via EnzymeJAX & Reactant) {#exporting\_to\_stablehlo}](/manual/exporting_to_jax.md)
+- [Profiling Lux Training Loops {#profiling-training-loop-reactant}](/manual/profiling_training_loop.md)
+
+#### Automatic Differentiation
+
+- [Automatic Differentiation {#autodiff-lux}](/manual/autodiff.md)
+- [Nested Automatic Differentiation {#nested\_autodiff}](/manual/nested_autodiff.md)
+
+#### Debugging / Performance Enhancement Tools
+
+- [Debugging Lux Models {#debug-lux-layers}](/manual/debugging.md)
+- [Performance Pitfalls & How to Catch Them {#Performance-Pitfalls-and-How-to-Catch-Them}](/manual/performance_pitfalls.md)
+
+#### Migration Guides
+
+- [Migrating from Flux to Lux {#migrate-from-flux}](/manual/migrate_from_flux.md)
+- [Supporting Both Flux and Lux {#flux-lux-interop}](/manual/flux_lux_interop.md)
+
+#### Advanced Usage
+
+- [Dispatching on Custom Input Types {#Dispatching-on-Custom-Input-Types}](/manual/dispatch_custom_input.md)
+- [Preferences for Lux.jl {#Preferences-for-Lux.jl}](/manual/preferences.md)
+- [Distributed Data Parallel Training {#Distributed-Data-Parallel-Training}](/manual/distributed_utils.md)
+
+### API Reference
+
+#### Lux
+
+- [Built-In Layers {#Built-In-Layers}](/api/Lux/layers.md)
+- [Automatic Differentiation Helpers {#autodiff-lux-helpers}](/api/Lux/autodiff.md)
+- [Utilities {#Utilities}](/api/Lux/utilities.md)
+- [Experimental Features {#Experimental-Features}](/api/Lux/contrib.md)
+- [Interoperability between Lux and other packages {#Interoperability-between-Lux-and-other-packages}](/api/Lux/interop.md)
+- [Distributed Utils {#Distributed-Utils}](/api/Lux/distributed_utils.md)
+- [Serialization {#Serialization}](/api/Lux/serialization.md)
+
+#### Accelerator Support
+
+- [MLDataDevices {#MLDataDevices-API}](/api/Accelerator_Support/MLDataDevices.md)
+
+#### NN Primitives
+
+- [LuxLib {#LuxLib-API}](/api/NN_Primitives/LuxLib.md)
+- [NNlib {#NNlib-API}](/api/NN_Primitives/NNlib.md)
+- [Activation Functions {#NNlib-ActivationFunctions-API}](/api/NN_Primitives/ActivationFunctions.md)
+
+#### Building Blocks
+
+- [LuxCore {#LuxCore}](/api/Building_Blocks/LuxCore.md)
+- [WeightInitializers {#WeightInitializers-API}](/api/Building_Blocks/WeightInitializers.md)
+
+#### Testing Functionality
+
+- [LuxTestUtils {#LuxTestUtils}](/api/Testing_Functionality/LuxTestUtils.md)
+
+### Other
+
+- [Bayesian Neural Network {#Bayesian-Neural-Network}](/previews/PR1713/tutorials/intermediate/2_BayesianNN.md)
+- [References {#References}](/previews/PR1713/references.md)
