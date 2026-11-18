@@ -367,7 +367,7 @@ for func in (NNlib.batched_mul!, batched_matmul_loopvec_impl!)
                 end
             cache_B =
                 if (
-                    EnzymeRules.overwritten(cfg)[3] &&
+                    EnzymeRules.overwritten(cfg)[4] &&
                     !(typeof(C) <: EnzymeCore.Const) &&
                     !(typeof(A) <: EnzymeCore.Const)
                 )
@@ -397,7 +397,7 @@ for func in (NNlib.batched_mul!, batched_matmul_loopvec_impl!)
             end
 
             if !(typeof(A) <: EnzymeCore.Const) && !(typeof(C) <: EnzymeCore.Const)
-                if !EnzymeRules.overwritten(cfg)[3]
+                if !EnzymeRules.overwritten(cfg)[4]
                     cache_B = B.val
                 end
             end
@@ -418,26 +418,26 @@ for func in (NNlib.batched_mul!, batched_matmul_loopvec_impl!)
             for (dC, dA, dB) in zip(dCs, dAs, dBs)
                 if !(typeof(C) <: EnzymeCore.Const) && dC !== C.val
                     if !(typeof(A) <: EnzymeCore.Const) && dA !== A.val
-                        if size(dA, 3) == 1 && size(B.val, 3) != 1
-                            B′ = NNlib.batched_adjoint(B.val)
+                        if size(dA, 3) == 1 && size(cache_B, 3) != 1
+                            B′ = NNlib.batched_adjoint(cache_B)
                             dA′ = batchview(dA, 1)
                             for L in axes(B′, 3)
                                 mul!(dA′, batchview(dC, L), batchview(B′, L), true, true)
                             end
                         else
-                            $(func)(dA, dC, NNlib.batched_adjoint(B.val), true, true)
+                            $(func)(dA, dC, NNlib.batched_adjoint(cache_B), true, true)
                         end
                     end
 
                     if !(typeof(B) <: EnzymeCore.Const) && dB !== B.val
-                        if size(dB, 3) == 1 && size(A.val, 3) != 1
-                            A′ = NNlib.batched_adjoint(A.val)
+                        if size(dB, 3) == 1 && size(cache_A, 3) != 1
+                            A′ = NNlib.batched_adjoint(cache_A)
                             dB′ = batchview(dB, 1)
                             for L in axes(A′, 3)
                                 mul!(dB′, batchview(A′, L), batchview(dC, L), true, true)
                             end
                         else
-                            $(func)(dB, NNlib.batched_adjoint(A.val), dC, true, true)
+                            $(func)(dB, NNlib.batched_adjoint(cache_A), dC, true, true)
                         end
                     end
 

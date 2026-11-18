@@ -176,6 +176,32 @@ end
                         ongpu,
                         true,
                     )
+                    test_jvp_computation(
+                        x -> only(
+                            Zygote.gradient(
+                                x -> sum(abs2, op(x, kernel_size; stride, pad)), x
+                            ),
+                        ),
+                        x,
+                        u,
+                        ongpu,
+                        true,
+                    )
+
+                    y_size = size(op(x, kernel_size; stride, pad))
+                    v = aType(randn(Float32, y_size))
+                    uv = aType(randn(Float32, y_size))
+                    test_jvp_computation(
+                        v -> only(
+                            Zygote.gradient(
+                                x -> sum(v .* op(x, kernel_size; stride, pad)), x
+                            ),
+                        ),
+                        v,
+                        uv,
+                        ongpu,
+                        true,
+                    )
                 end
             end
         end
