@@ -331,6 +331,15 @@ end
 
             __f = Base.Fix2(Lux.HingeLoss(), y)
             @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
+
+            y_bin = aType([1, -1, 1, -1])
+            ŷ_bin = aType([0.2, 0.3, -0.4, -1.5])
+
+            @test Lux.HingeLoss()(ŷ_bin, y_bin) ≈ 0.875
+            @jet Lux.HingeLoss()(ŷ_bin, y_bin)
+
+            __f_bin = Base.Fix2(Lux.HingeLoss(), y_bin)
+            @test_gradients(__f_bin, ŷ_bin; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "SquaredHingeLoss" begin
@@ -344,6 +353,15 @@ end
 
             __f = Base.Fix2(SquaredHingeLoss(), y)
             @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
+
+            y_bin = aType([1, -1, 1, -1])
+            ŷ_bin = aType([0.2, 0.3, -0.4, -1.5])
+
+            @test SquaredHingeLoss()(ŷ_bin, y_bin) ≈ 1.0725
+            @jet SquaredHingeLoss()(ŷ_bin, y_bin)
+
+            __f_bin = Base.Fix2(SquaredHingeLoss(), y_bin)
+            @test_gradients(__f_bin, ŷ_bin; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "PoissonLoss" begin
