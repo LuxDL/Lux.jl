@@ -78,8 +78,6 @@ for (T1, T2) in ((Float64, Float32), (ComplexF64, ComplexF32))
     end
 end
 
-opencl_array_adapt(::Type{T}, x) where {T} = Internal.array_adapt(CLArray, CLArray, T, x)
-
 function Adapt.adapt_storage(::OpenCLDevice{T}, x::AbstractArray) where {T}
     if MLDataDevices.get_device_type(x) <: OpenCLDevice
         Internal.return_without_conversion(T, x) && return x
