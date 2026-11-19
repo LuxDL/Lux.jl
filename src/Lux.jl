@@ -18,8 +18,6 @@ using EnzymeCore: EnzymeRules
 using FastClosures: @closure
 using Functors: Functors, fmap
 using GPUArraysCore: @allowscalar
-using Markdown: @doc_str
-using NNlib: NNlib
 using Optimisers: Optimisers
 using Random: Random, AbstractRNG
 using ReactantCore: @trace
