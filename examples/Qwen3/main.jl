@@ -122,7 +122,7 @@ function Qwen3Config(version::String; kwargs...)
         )
     end
 
-    throw(ArgumentError("Unknown Qwen3 version $version"))
+    return throw(ArgumentError("Unknown Qwen3 version $version"))
 end
 
 fn_to_dtype(::Type{T}) where {T} = T
@@ -215,7 +215,13 @@ function (attn::GroupedQueryAttention)((x, cos_cache, sin_cache), ps, st::NamedT
     ## attention
     context = reshape(
         scaled_dot_product_attention(
-            queries, keys, values; head_dim=1, token_dim=3, is_causal=true
+            queries,
+            keys,
+            values;
+            head_dim=1,
+            token_dim=3,
+            is_causal=true,
+            return_attention_weights=false,
         )[1],
         attn.head_dim * attn.num_heads,
         num_tokens,
