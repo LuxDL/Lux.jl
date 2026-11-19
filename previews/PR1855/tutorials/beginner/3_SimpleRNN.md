@@ -213,56 +213,56 @@ ps_trained, st_trained = main(SpiralClassifier)
 ```
 ┌ Warning: `replicate` doesn't work for `TaskLocalRNG`. Returning the same `TaskLocalRNG`.
 └ @ LuxCore ~/work/Lux.jl/Lux.jl/lib/LuxCore/src/LuxCore.jl:18
-Epoch [  1]: Loss 0.58794
-Validation:	Loss 0.51485	Accuracy 1.00000
-Epoch [  2]: Loss 0.48700
-Validation:	Loss 0.42605	Accuracy 1.00000
-Epoch [  3]: Loss 0.39916
-Validation:	Loss 0.34466	Accuracy 1.00000
-Epoch [  4]: Loss 0.32016
-Validation:	Loss 0.27400	Accuracy 1.00000
-Epoch [  5]: Loss 0.25359
-Validation:	Loss 0.21726	Accuracy 1.00000
-Epoch [  6]: Loss 0.20182
-Validation:	Loss 0.17313	Accuracy 1.00000
-Epoch [  7]: Loss 0.16289
-Validation:	Loss 0.13944	Accuracy 1.00000
-Epoch [  8]: Loss 0.13118
-Validation:	Loss 0.11310	Accuracy 1.00000
-Epoch [  9]: Loss 0.10678
-Validation:	Loss 0.09235	Accuracy 1.00000
-Epoch [ 10]: Loss 0.08778
-Validation:	Loss 0.07645	Accuracy 1.00000
-Epoch [ 11]: Loss 0.07264
-Validation:	Loss 0.06445	Accuracy 1.00000
-Epoch [ 12]: Loss 0.06177
-Validation:	Loss 0.05509	Accuracy 1.00000
-Epoch [ 13]: Loss 0.05264
-Validation:	Loss 0.04699	Accuracy 1.00000
-Epoch [ 14]: Loss 0.04434
-Validation:	Loss 0.03897	Accuracy 1.00000
-Epoch [ 15]: Loss 0.03598
-Validation:	Loss 0.03132	Accuracy 1.00000
-Epoch [ 16]: Loss 0.02871
-Validation:	Loss 0.02560	Accuracy 1.00000
-Epoch [ 17]: Loss 0.02380
-Validation:	Loss 0.02185	Accuracy 1.00000
-Epoch [ 18]: Loss 0.02043
-Validation:	Loss 0.01914	Accuracy 1.00000
-Epoch [ 19]: Loss 0.01794
-Validation:	Loss 0.01693	Accuracy 1.00000
-Epoch [ 20]: Loss 0.01580
-Validation:	Loss 0.01504	Accuracy 1.00000
-Epoch [ 21]: Loss 0.01407
-Validation:	Loss 0.01329	Accuracy 1.00000
-Epoch [ 22]: Loss 0.01225
-Validation:	Loss 0.01172	Accuracy 1.00000
-Epoch [ 23]: Loss 0.01098
-Validation:	Loss 0.01076	Accuracy 1.00000
-Epoch [ 24]: Loss 0.01010
-Validation:	Loss 0.01000	Accuracy 1.00000
-Epoch [ 25]: Loss 0.00935
-Validation:	Loss 0.00935	Accuracy 1.00000
+Epoch [  1]: Loss 0.76455
+Validation:	Loss 0.68055	Accuracy 0.89844
+Epoch [  2]: Loss 0.63856
+Validation:	Loss 0.58874	Accuracy 1.00000
+Epoch [  3]: Loss 0.55634
+Validation:	Loss 0.51765	Accuracy 1.00000
+Epoch [  4]: Loss 0.48744
+Validation:	Loss 0.45308	Accuracy 1.00000
+Epoch [  5]: Loss 0.42297
+Validation:	Loss 0.39017	Accuracy 1.00000
+Epoch [  6]: Loss 0.36194
+Validation:	Loss 0.32857	Accuracy 1.00000
+Epoch [  7]: Loss 0.30077
+Validation:	Loss 0.27026	Accuracy 1.00000
+Epoch [  8]: Loss 0.24537
+Validation:	Loss 0.21573	Accuracy 1.00000
+Epoch [  9]: Loss 0.19140
+Validation:	Loss 0.16294	Accuracy 1.00000
+Epoch [ 10]: Loss 0.14402
+Validation:	Loss 0.12738	Accuracy 1.00000
+Epoch [ 11]: Loss 0.11500
+Validation:	Loss 0.10345	Accuracy 1.00000
+Epoch [ 12]: Loss 0.09440
+Validation:	Loss 0.08570	Accuracy 1.00000
+Epoch [ 13]: Loss 0.07862
+Validation:	Loss 0.07123	Accuracy 1.00000
+Epoch [ 14]: Loss 0.06491
+Validation:	Loss 0.05935	Accuracy 1.00000
+Epoch [ 15]: Loss 0.05438
+Validation:	Loss 0.05064	Accuracy 1.00000
+Epoch [ 16]: Loss 0.04730
+Validation:	Loss 0.04439	Accuracy 1.00000
+Epoch [ 17]: Loss 0.04137
+Validation:	Loss 0.03966	Accuracy 1.00000
+Epoch [ 18]: Loss 0.03758
+Validation:	Loss 0.03578	Accuracy 1.00000
+Epoch [ 19]: Loss 0.03361
+Validation:	Loss 0.03256	Accuracy 1.00000
+Epoch [ 20]: Loss 0.03089
+Validation:	Loss 0.02976	Accuracy 1.00000
+Epoch [ 21]: Loss 0.02817
+Validation:	Loss 0.02721	Accuracy 1.00000
+Epoch [ 22]: Loss 0.02562
+Validation:	Loss 0.02460	Accuracy 1.00000
+Epoch [ 23]: Loss 0.02306
+Validation:	Loss 0.02174	Accuracy 1.00000
+Epoch [ 24]: Loss 0.02025
+Validation:	Loss 0.01845	Accuracy 1.00000
+Epoch [ 25]: Loss 0.01653
+Validation:	Loss 0.01449	Accuracy 1.00000
 
 ```
 
@@ -275,56 +275,56 @@ ps_trained2, st_trained2 = main(SpiralClassifierCompact)
 ```
 ┌ Warning: `replicate` doesn't work for `TaskLocalRNG`. Returning the same `TaskLocalRNG`.
 └ @ LuxCore ~/work/Lux.jl/Lux.jl/lib/LuxCore/src/LuxCore.jl:18
-Epoch [  1]: Loss 0.56199
-Validation:	Loss 0.46733	Accuracy 1.00000
-Epoch [  2]: Loss 0.44543
-Validation:	Loss 0.37880	Accuracy 1.00000
-Epoch [  3]: Loss 0.37793
-Validation:	Loss 0.31803	Accuracy 1.00000
-Epoch [  4]: Loss 0.32268
-Validation:	Loss 0.27004	Accuracy 1.00000
-Epoch [  5]: Loss 0.27742
-Validation:	Loss 0.22631	Accuracy 1.00000
-Epoch [  6]: Loss 0.22789
-Validation:	Loss 0.17738	Accuracy 1.00000
-Epoch [  7]: Loss 0.16765
-Validation:	Loss 0.11405	Accuracy 1.00000
-Epoch [  8]: Loss 0.09634
-Validation:	Loss 0.06432	Accuracy 1.00000
-Epoch [  9]: Loss 0.05566
-Validation:	Loss 0.04236	Accuracy 1.00000
-Epoch [ 10]: Loss 0.03770
-Validation:	Loss 0.03194	Accuracy 1.00000
-Epoch [ 11]: Loss 0.02894
-Validation:	Loss 0.02573	Accuracy 1.00000
-Epoch [ 12]: Loss 0.02351
-Validation:	Loss 0.02123	Accuracy 1.00000
-Epoch [ 13]: Loss 0.01955
-Validation:	Loss 0.01781	Accuracy 1.00000
-Epoch [ 14]: Loss 0.01650
-Validation:	Loss 0.01514	Accuracy 1.00000
-Epoch [ 15]: Loss 0.01405
-Validation:	Loss 0.01295	Accuracy 1.00000
-Epoch [ 16]: Loss 0.01207
-Validation:	Loss 0.01131	Accuracy 1.00000
-Epoch [ 17]: Loss 0.01069
-Validation:	Loss 0.01017	Accuracy 1.00000
-Epoch [ 18]: Loss 0.00964
-Validation:	Loss 0.00920	Accuracy 1.00000
-Epoch [ 19]: Loss 0.00873
-Validation:	Loss 0.00833	Accuracy 1.00000
-Epoch [ 20]: Loss 0.00788
-Validation:	Loss 0.00751	Accuracy 1.00000
-Epoch [ 21]: Loss 0.00702
-Validation:	Loss 0.00662	Accuracy 1.00000
-Epoch [ 22]: Loss 0.00603
-Validation:	Loss 0.00575	Accuracy 1.00000
-Epoch [ 23]: Loss 0.00528
-Validation:	Loss 0.00526	Accuracy 1.00000
-Epoch [ 24]: Loss 0.00487
-Validation:	Loss 0.00490	Accuracy 1.00000
-Epoch [ 25]: Loss 0.00453
-Validation:	Loss 0.00455	Accuracy 1.00000
+Epoch [  1]: Loss 0.62385
+Validation:	Loss 0.58013	Accuracy 0.50781
+Epoch [  2]: Loss 0.56228
+Validation:	Loss 0.52782	Accuracy 0.50781
+Epoch [  3]: Loss 0.51540
+Validation:	Loss 0.48315	Accuracy 0.50781
+Epoch [  4]: Loss 0.47150
+Validation:	Loss 0.43906	Accuracy 1.00000
+Epoch [  5]: Loss 0.42430
+Validation:	Loss 0.38806	Accuracy 1.00000
+Epoch [  6]: Loss 0.36309
+Validation:	Loss 0.30507	Accuracy 1.00000
+Epoch [  7]: Loss 0.23909
+Validation:	Loss 0.16186	Accuracy 1.00000
+Epoch [  8]: Loss 0.13195
+Validation:	Loss 0.09952	Accuracy 1.00000
+Epoch [  9]: Loss 0.08442
+Validation:	Loss 0.06740	Accuracy 1.00000
+Epoch [ 10]: Loss 0.05921
+Validation:	Loss 0.05015	Accuracy 1.00000
+Epoch [ 11]: Loss 0.04504
+Validation:	Loss 0.03943	Accuracy 1.00000
+Epoch [ 12]: Loss 0.03570
+Validation:	Loss 0.03198	Accuracy 1.00000
+Epoch [ 13]: Loss 0.02948
+Validation:	Loss 0.02673	Accuracy 1.00000
+Epoch [ 14]: Loss 0.02497
+Validation:	Loss 0.02298	Accuracy 1.00000
+Epoch [ 15]: Loss 0.02170
+Validation:	Loss 0.02022	Accuracy 1.00000
+Epoch [ 16]: Loss 0.01912
+Validation:	Loss 0.01810	Accuracy 1.00000
+Epoch [ 17]: Loss 0.01726
+Validation:	Loss 0.01641	Accuracy 1.00000
+Epoch [ 18]: Loss 0.01567
+Validation:	Loss 0.01502	Accuracy 1.00000
+Epoch [ 19]: Loss 0.01434
+Validation:	Loss 0.01385	Accuracy 1.00000
+Epoch [ 20]: Loss 0.01328
+Validation:	Loss 0.01285	Accuracy 1.00000
+Epoch [ 21]: Loss 0.01242
+Validation:	Loss 0.01199	Accuracy 1.00000
+Epoch [ 22]: Loss 0.01155
+Validation:	Loss 0.01122	Accuracy 1.00000
+Epoch [ 23]: Loss 0.01088
+Validation:	Loss 0.01054	Accuracy 1.00000
+Epoch [ 24]: Loss 0.01019
+Validation:	Loss 0.00993	Accuracy 1.00000
+Epoch [ 25]: Loss 0.00964
+Validation:	Loss 0.00937	Accuracy 1.00000
 
 ```
 
@@ -375,9 +375,9 @@ Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 4 × AMD EPYC 7763 64-Core Processor
+  CPU: 4 × AMD EPYC 9V74 80-Core Processor
   WORD_SIZE: 64
-  LLVM: libLLVM-18.1.7 (ORCJIT, znver3)
+  LLVM: libLLVM-18.1.7 (ORCJIT, znver4)
   GC: Built with stock GC
 Threads: 4 default, 1 interactive, 4 GC (on 4 virtual cores)
 Environment:

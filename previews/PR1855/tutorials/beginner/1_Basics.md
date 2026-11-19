@@ -20,8 +20,8 @@ using Lux, Random
 
 ```
 Precompiling packages...
-    477.8 ms  ✓ StructUtilsStaticArraysCoreExt (serial)
-  1 dependency successfully precompiled in 1 seconds
+    426.8 ms  ✓ StructUtilsStaticArraysCoreExt (serial)
+  1 dependency successfully precompiled in 0 seconds
 
 ```
 
@@ -385,10 +385,10 @@ using ComponentArrays, ForwardDiff, Zygote
 
 ```
 Precompiling packages...
-    572.6 ms  ✓ JSONSerializationExt (serial)
+    511.4 ms  ✓ JSONSerializationExt (serial)
   1 dependency successfully precompiled in 1 seconds
 Precompiling packages...
-    485.1 ms  ✓ StructUtilsTablesExt (serial)
+    450.0 ms  ✓ StructUtilsTablesExt (serial)
   1 dependency successfully precompiled in 0 seconds
 
 ```
