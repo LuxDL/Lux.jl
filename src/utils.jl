@@ -223,9 +223,6 @@ expand(N, i::Integer) = ntuple(Returns(i), N)
 
 @non_differentiable expand(::Any...)
 
-stack1(xs) = mapfoldl(expanddims1, vcat, xs)
-expanddims1(x) = reshape(x, 1, size(x)...)
-
 set_refval!(x, y) = (x[] = y)
 
 @non_differentiable set_refval!(::Any...)
