@@ -16,7 +16,7 @@ function Lux.Serialization.export_as_tf_saved_model_internal(
     state_dict = Dict()
     Reactant.make_tracer(cache, (ps, st), (), Reactant.ConcreteToTraced)
     for (key, value) in cache
-        path = only(value.paths)
+        path = first(value.paths)
         if path[1] == 1
             path_str = __pretty_name(ps, path[2:end])
             path_str = "ps$(path_str)"
