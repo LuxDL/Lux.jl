@@ -347,106 +347,106 @@ img = main()
 
 ```
 Total Trainable Parameters: 0.1493 M
-Epoch 1, Iter 39, Loss: 23455.9765625, Throughput: 21.525024 im/s
-Epoch 1, Train Loss: 39788.3789062, Time: 232.1182s, Throughput: 21.506283 im/s
-Epoch 2, Iter 39, Loss: 17263.2363281, Throughput: 205.820616 im/s
-Epoch 2, Train Loss: 20247.5292969, Time: 24.2543s, Throughput: 205.819274 im/s
-Epoch 3, Iter 39, Loss: 15962.8886719, Throughput: 206.249159 im/s
-Epoch 3, Train Loss: 16558.0312500, Time: 24.2039s, Throughput: 206.247736 im/s
-Epoch 4, Iter 39, Loss: 14212.5000000, Throughput: 205.752913 im/s
-Epoch 4, Train Loss: 15106.2929688, Time: 24.2623s, Throughput: 205.751684 im/s
-Epoch 5, Iter 39, Loss: 13787.4550781, Throughput: 206.151669 im/s
-Epoch 5, Train Loss: 14275.9746094, Time: 24.2153s, Throughput: 206.150376 im/s
-Epoch 6, Iter 39, Loss: 13496.8505859, Throughput: 205.216832 im/s
-Epoch 6, Train Loss: 13455.8300781, Time: 24.3256s, Throughput: 205.215609 im/s
-Epoch 7, Iter 39, Loss: 12412.1943359, Throughput: 206.075846 im/s
-Epoch 7, Train Loss: 12994.4589844, Time: 24.2243s, Throughput: 206.074314 im/s
-Epoch 8, Iter 39, Loss: 13085.2187500, Throughput: 205.891218 im/s
-Epoch 8, Train Loss: 12620.1083984, Time: 24.2460s, Throughput: 205.890046 im/s
-Epoch 9, Iter 39, Loss: 12101.9873047, Throughput: 205.961480 im/s
-Epoch 9, Train Loss: 12336.7070312, Time: 24.2377s, Throughput: 205.960094 im/s
-Epoch 10, Iter 39, Loss: 11266.4277344, Throughput: 206.100023 im/s
-Epoch 10, Train Loss: 12055.5810547, Time: 24.2214s, Throughput: 206.098739 im/s
-Epoch 11, Iter 39, Loss: 11057.7373047, Throughput: 206.263954 im/s
-Epoch 11, Train Loss: 11831.1669922, Time: 24.2022s, Throughput: 206.262471 im/s
-Epoch 12, Iter 39, Loss: 12498.8291016, Throughput: 205.935565 im/s
-Epoch 12, Train Loss: 11646.4091797, Time: 24.2407s, Throughput: 205.934376 im/s
-Epoch 13, Iter 39, Loss: 11787.9150391, Throughput: 205.850459 im/s
-Epoch 13, Train Loss: 11524.2919922, Time: 24.2508s, Throughput: 205.849074 im/s
-Epoch 14, Iter 39, Loss: 12176.1875000, Throughput: 205.594137 im/s
-Epoch 14, Train Loss: 11392.5869141, Time: 24.2810s, Throughput: 205.592884 im/s
-Epoch 15, Iter 39, Loss: 11162.6113281, Throughput: 206.434871 im/s
-Epoch 15, Train Loss: 11328.4902344, Time: 24.1821s, Throughput: 206.433454 im/s
-Epoch 16, Iter 39, Loss: 11025.4775391, Throughput: 205.267429 im/s
-Epoch 16, Train Loss: 11134.3144531, Time: 24.3196s, Throughput: 205.266163 im/s
-Epoch 17, Iter 39, Loss: 10624.2294922, Throughput: 206.428921 im/s
-Epoch 17, Train Loss: 10997.7255859, Time: 24.1828s, Throughput: 206.427436 im/s
-Epoch 18, Iter 39, Loss: 11594.1748047, Throughput: 206.192150 im/s
-Epoch 18, Train Loss: 10860.8818359, Time: 24.2106s, Throughput: 206.190881 im/s
-Epoch 19, Iter 39, Loss: 10790.4687500, Throughput: 205.341724 im/s
-Epoch 19, Train Loss: 10832.6474609, Time: 24.3108s, Throughput: 205.340439 im/s
-Epoch 20, Iter 39, Loss: 11516.3906250, Throughput: 206.155834 im/s
-Epoch 20, Train Loss: 10756.9179688, Time: 24.2148s, Throughput: 206.154651 im/s
-Epoch 21, Iter 39, Loss: 11108.5400391, Throughput: 206.462219 im/s
-Epoch 21, Train Loss: 10648.1210938, Time: 24.1789s, Throughput: 206.460877 im/s
-Epoch 22, Iter 39, Loss: 10418.7392578, Throughput: 203.553152 im/s
-Epoch 22, Train Loss: 10656.8642578, Time: 24.5245s, Throughput: 203.551832 im/s
-Epoch 23, Iter 39, Loss: 10652.8515625, Throughput: 206.144129 im/s
-Epoch 23, Train Loss: 10483.6123047, Time: 24.2162s, Throughput: 206.142885 im/s
-Epoch 24, Iter 39, Loss: 10570.5390625, Throughput: 206.294009 im/s
-Epoch 24, Train Loss: 10417.2519531, Time: 24.1987s, Throughput: 206.292499 im/s
-Epoch 25, Iter 39, Loss: 10562.4550781, Throughput: 206.297231 im/s
-Epoch 25, Train Loss: 10375.7822266, Time: 24.1982s, Throughput: 206.295917 im/s
-Epoch 26, Iter 39, Loss: 10109.0830078, Throughput: 205.334814 im/s
-Epoch 26, Train Loss: 10322.6181641, Time: 24.3117s, Throughput: 205.333522 im/s
-Epoch 27, Iter 39, Loss: 9949.6894531, Throughput: 205.918803 im/s
-Epoch 27, Train Loss: 10287.9814453, Time: 24.2427s, Throughput: 205.917394 im/s
-Epoch 28, Iter 39, Loss: 9983.3417969, Throughput: 205.873846 im/s
-Epoch 28, Train Loss: 10169.8828125, Time: 24.2480s, Throughput: 205.872547 im/s
-Epoch 29, Iter 39, Loss: 10591.7773438, Throughput: 206.154795 im/s
-Epoch 29, Train Loss: 10113.6884766, Time: 24.2150s, Throughput: 206.153510 im/s
-Epoch 30, Iter 39, Loss: 10380.9570312, Throughput: 206.320021 im/s
-Epoch 30, Train Loss: 10050.9804688, Time: 24.1956s, Throughput: 206.318683 im/s
-Epoch 31, Iter 39, Loss: 10861.0712891, Throughput: 206.069276 im/s
-Epoch 31, Train Loss: 10055.1074219, Time: 24.2250s, Throughput: 206.068043 im/s
-Epoch 32, Iter 39, Loss: 9927.2060547, Throughput: 206.662037 im/s
-Epoch 32, Train Loss: 9983.9912109, Time: 24.1555s, Throughput: 206.660805 im/s
-Epoch 33, Iter 39, Loss: 10369.6796875, Throughput: 205.955394 im/s
-Epoch 33, Train Loss: 9931.8437500, Time: 24.2384s, Throughput: 205.954264 im/s
-Epoch 34, Iter 39, Loss: 10329.8007812, Throughput: 206.408283 im/s
-Epoch 34, Train Loss: 9887.7011719, Time: 24.1852s, Throughput: 206.406925 im/s
-Epoch 35, Iter 39, Loss: 9951.3525391, Throughput: 205.919119 im/s
-Epoch 35, Train Loss: 9830.4531250, Time: 24.2427s, Throughput: 205.917837 im/s
-Epoch 36, Iter 39, Loss: 10407.7939453, Throughput: 206.249900 im/s
-Epoch 36, Train Loss: 9824.3359375, Time: 24.2038s, Throughput: 206.248553 im/s
-Epoch 37, Iter 39, Loss: 9814.4902344, Throughput: 205.869423 im/s
-Epoch 37, Train Loss: 9844.2509766, Time: 24.2486s, Throughput: 205.867946 im/s
-Epoch 38, Iter 39, Loss: 9910.0263672, Throughput: 205.026938 im/s
-Epoch 38, Train Loss: 9812.1318359, Time: 24.3482s, Throughput: 205.025675 im/s
-Epoch 39, Iter 39, Loss: 9882.9101562, Throughput: 205.119540 im/s
-Epoch 39, Train Loss: 9836.7265625, Time: 24.3372s, Throughput: 205.118015 im/s
-Epoch 40, Iter 39, Loss: 9236.8457031, Throughput: 206.475976 im/s
-Epoch 40, Train Loss: 9666.7392578, Time: 24.1774s, Throughput: 206.473848 im/s
-Epoch 41, Iter 39, Loss: 9499.5615234, Throughput: 206.187953 im/s
-Epoch 41, Train Loss: 9603.3906250, Time: 24.2111s, Throughput: 206.186751 im/s
-Epoch 42, Iter 39, Loss: 10086.7929688, Throughput: 205.562897 im/s
-Epoch 42, Train Loss: 9557.2451172, Time: 24.2847s, Throughput: 205.561660 im/s
-Epoch 43, Iter 39, Loss: 9824.2753906, Throughput: 203.265134 im/s
-Epoch 43, Train Loss: 9555.3037109, Time: 24.5592s, Throughput: 203.263890 im/s
-Epoch 44, Iter 39, Loss: 9405.8378906, Throughput: 205.183244 im/s
-Epoch 44, Train Loss: 9556.1396484, Time: 24.3296s, Throughput: 205.181887 im/s
-Epoch 45, Iter 39, Loss: 10266.5000000, Throughput: 205.673643 im/s
-Epoch 45, Train Loss: 9534.2451172, Time: 24.2716s, Throughput: 205.672303 im/s
-Epoch 46, Iter 39, Loss: 9606.7695312, Throughput: 205.049972 im/s
-Epoch 46, Train Loss: 9485.1142578, Time: 24.3454s, Throughput: 205.048649 im/s
-Epoch 47, Iter 39, Loss: 9110.7871094, Throughput: 205.964114 im/s
-Epoch 47, Train Loss: 9510.9863281, Time: 24.2374s, Throughput: 205.962932 im/s
-Epoch 48, Iter 39, Loss: 10219.0595703, Throughput: 205.017693 im/s
-Epoch 48, Train Loss: 9469.3017578, Time: 24.3493s, Throughput: 205.015925 im/s
-Epoch 49, Iter 39, Loss: 9548.3593750, Throughput: 205.348412 im/s
-Epoch 49, Train Loss: 9432.9921875, Time: 24.3100s, Throughput: 205.347256 im/s
-Epoch 50, Iter 39, Loss: 9900.3320312, Throughput: 206.562729 im/s
-Epoch 50, Train Loss: 9384.2275391, Time: 24.1671s, Throughput: 206.561437 im/s
+Epoch 1, Iter 39, Loss: 24076.0585938, Throughput: 15.902953 im/s
+Epoch 1, Train Loss: 39548.4843750, Time: 314.1723s, Throughput: 15.889372 im/s
+Epoch 2, Iter 39, Loss: 16691.0703125, Throughput: 172.047707 im/s
+Epoch 2, Train Loss: 20114.2343750, Time: 29.0154s, Throughput: 172.046645 im/s
+Epoch 3, Iter 39, Loss: 15854.7695312, Throughput: 172.796703 im/s
+Epoch 3, Train Loss: 16479.8320312, Time: 28.8896s, Throughput: 172.795758 im/s
+Epoch 4, Iter 39, Loss: 14080.3642578, Throughput: 172.370644 im/s
+Epoch 4, Train Loss: 15038.9394531, Time: 28.9610s, Throughput: 172.369632 im/s
+Epoch 5, Iter 39, Loss: 13828.3183594, Throughput: 173.104252 im/s
+Epoch 5, Train Loss: 13989.1044922, Time: 28.8383s, Throughput: 173.103311 im/s
+Epoch 6, Iter 39, Loss: 12925.4863281, Throughput: 172.645419 im/s
+Epoch 6, Train Loss: 13219.6923828, Time: 28.9150s, Throughput: 172.644248 im/s
+Epoch 7, Iter 39, Loss: 13405.1542969, Throughput: 173.665232 im/s
+Epoch 7, Train Loss: 12719.1611328, Time: 28.7451s, Throughput: 173.664254 im/s
+Epoch 8, Iter 39, Loss: 11982.5458984, Throughput: 173.667759 im/s
+Epoch 8, Train Loss: 12429.0351562, Time: 28.7447s, Throughput: 173.666671 im/s
+Epoch 9, Iter 39, Loss: 12557.9814453, Throughput: 173.530586 im/s
+Epoch 9, Train Loss: 12091.6943359, Time: 28.7674s, Throughput: 173.529663 im/s
+Epoch 10, Iter 39, Loss: 12032.6425781, Throughput: 172.909799 im/s
+Epoch 10, Train Loss: 11842.4189453, Time: 28.8707s, Throughput: 172.908937 im/s
+Epoch 11, Iter 39, Loss: 11233.8808594, Throughput: 172.680027 im/s
+Epoch 11, Train Loss: 11881.8203125, Time: 28.9093s, Throughput: 172.678068 im/s
+Epoch 12, Iter 39, Loss: 11767.1806641, Throughput: 173.064369 im/s
+Epoch 12, Train Loss: 11480.3769531, Time: 28.8449s, Throughput: 173.063366 im/s
+Epoch 13, Iter 39, Loss: 10965.8017578, Throughput: 173.035795 im/s
+Epoch 13, Train Loss: 11359.2998047, Time: 28.8497s, Throughput: 173.034896 im/s
+Epoch 14, Iter 39, Loss: 11361.6689453, Throughput: 172.802171 im/s
+Epoch 14, Train Loss: 11267.4931641, Time: 28.8887s, Throughput: 172.801237 im/s
+Epoch 15, Iter 39, Loss: 11840.8662109, Throughput: 172.553666 im/s
+Epoch 15, Train Loss: 11086.5234375, Time: 28.9303s, Throughput: 172.552766 im/s
+Epoch 16, Iter 39, Loss: 11108.9365234, Throughput: 171.833307 im/s
+Epoch 16, Train Loss: 11022.2568359, Time: 29.0516s, Throughput: 171.832325 im/s
+Epoch 17, Iter 39, Loss: 11076.4492188, Throughput: 172.857322 im/s
+Epoch 17, Train Loss: 10826.5615234, Time: 28.8795s, Throughput: 172.856340 im/s
+Epoch 18, Iter 39, Loss: 10288.5136719, Throughput: 169.878512 im/s
+Epoch 18, Train Loss: 10797.3017578, Time: 29.3859s, Throughput: 169.877546 im/s
+Epoch 19, Iter 39, Loss: 10829.6015625, Throughput: 171.793148 im/s
+Epoch 19, Train Loss: 10646.8417969, Time: 29.0584s, Throughput: 171.792130 im/s
+Epoch 20, Iter 39, Loss: 11023.6376953, Throughput: 172.272649 im/s
+Epoch 20, Train Loss: 10687.5175781, Time: 28.9775s, Throughput: 172.271602 im/s
+Epoch 21, Iter 39, Loss: 10095.2744141, Throughput: 172.394906 im/s
+Epoch 21, Train Loss: 10527.9931641, Time: 28.9570s, Throughput: 172.393787 im/s
+Epoch 22, Iter 39, Loss: 11408.2861328, Throughput: 170.962089 im/s
+Epoch 22, Train Loss: 10448.0849609, Time: 29.1996s, Throughput: 170.961153 im/s
+Epoch 23, Iter 39, Loss: 10491.8730469, Throughput: 172.048021 im/s
+Epoch 23, Train Loss: 10381.9531250, Time: 29.0153s, Throughput: 172.046936 im/s
+Epoch 24, Iter 39, Loss: 9887.3007812, Throughput: 171.535699 im/s
+Epoch 24, Train Loss: 10269.2919922, Time: 29.1020s, Throughput: 171.534497 im/s
+Epoch 25, Iter 39, Loss: 11027.6318359, Throughput: 172.428377 im/s
+Epoch 25, Train Loss: 10305.6542969, Time: 28.9513s, Throughput: 172.427532 im/s
+Epoch 26, Iter 39, Loss: 10163.6777344, Throughput: 171.008426 im/s
+Epoch 26, Train Loss: 10131.0634766, Time: 29.1917s, Throughput: 171.007430 im/s
+Epoch 27, Iter 39, Loss: 9590.3720703, Throughput: 172.175649 im/s
+Epoch 27, Train Loss: 10125.3925781, Time: 28.9938s, Throughput: 172.174663 im/s
+Epoch 28, Iter 39, Loss: 10130.7792969, Throughput: 172.546110 im/s
+Epoch 28, Train Loss: 10118.1240234, Time: 28.9316s, Throughput: 172.544833 im/s
+Epoch 29, Iter 39, Loss: 10186.9042969, Throughput: 172.184130 im/s
+Epoch 29, Train Loss: 9964.9580078, Time: 28.9924s, Throughput: 172.183048 im/s
+Epoch 30, Iter 39, Loss: 9643.0410156, Throughput: 173.311579 im/s
+Epoch 30, Train Loss: 9969.3544922, Time: 28.8038s, Throughput: 173.310736 im/s
+Epoch 31, Iter 39, Loss: 10081.8691406, Throughput: 173.845599 im/s
+Epoch 31, Train Loss: 9996.8525391, Time: 28.7153s, Throughput: 173.844720 im/s
+Epoch 32, Iter 39, Loss: 10309.7558594, Throughput: 173.815017 im/s
+Epoch 32, Train Loss: 9813.7402344, Time: 28.7203s, Throughput: 173.814129 im/s
+Epoch 33, Iter 39, Loss: 9901.4648438, Throughput: 173.285830 im/s
+Epoch 33, Train Loss: 9810.7802734, Time: 28.8080s, Throughput: 173.284976 im/s
+Epoch 34, Iter 39, Loss: 10107.9677734, Throughput: 173.537734 im/s
+Epoch 34, Train Loss: 9781.9140625, Time: 28.7662s, Throughput: 173.536884 im/s
+Epoch 35, Iter 39, Loss: 10401.5917969, Throughput: 172.588107 im/s
+Epoch 35, Train Loss: 9789.4794922, Time: 28.9245s, Throughput: 172.587206 im/s
+Epoch 36, Iter 39, Loss: 10096.9746094, Throughput: 172.922150 im/s
+Epoch 36, Train Loss: 9761.7148438, Time: 28.8686s, Throughput: 172.921295 im/s
+Epoch 37, Iter 39, Loss: 10288.2373047, Throughput: 173.108785 im/s
+Epoch 37, Train Loss: 9705.8417969, Time: 28.8375s, Throughput: 173.107807 im/s
+Epoch 38, Iter 39, Loss: 10162.2167969, Throughput: 173.144203 im/s
+Epoch 38, Train Loss: 9606.4326172, Time: 28.8316s, Throughput: 173.143218 im/s
+Epoch 39, Iter 39, Loss: 9504.4726562, Throughput: 172.186547 im/s
+Epoch 39, Train Loss: 9607.6220703, Time: 28.9920s, Throughput: 172.185554 im/s
+Epoch 40, Iter 39, Loss: 9152.0625000, Throughput: 173.111186 im/s
+Epoch 40, Train Loss: 9518.9287109, Time: 28.8371s, Throughput: 173.110243 im/s
+Epoch 41, Iter 39, Loss: 9542.3378906, Throughput: 173.016605 im/s
+Epoch 41, Train Loss: 9553.4091797, Time: 28.8529s, Throughput: 173.015693 im/s
+Epoch 42, Iter 39, Loss: 9555.3320312, Throughput: 173.440391 im/s
+Epoch 42, Train Loss: 9501.6220703, Time: 28.7824s, Throughput: 173.439517 im/s
+Epoch 43, Iter 39, Loss: 9566.7080078, Throughput: 172.908189 im/s
+Epoch 43, Train Loss: 9492.0742188, Time: 28.8709s, Throughput: 172.907375 im/s
+Epoch 44, Iter 39, Loss: 9910.8242188, Throughput: 173.361764 im/s
+Epoch 44, Train Loss: 9477.9804688, Time: 28.7955s, Throughput: 173.360609 im/s
+Epoch 45, Iter 39, Loss: 9965.0136719, Throughput: 172.765331 im/s
+Epoch 45, Train Loss: 9454.9365234, Time: 28.8949s, Throughput: 172.764249 im/s
+Epoch 46, Iter 39, Loss: 9559.8457031, Throughput: 171.469861 im/s
+Epoch 46, Train Loss: 9425.6992188, Time: 29.1132s, Throughput: 171.468841 im/s
+Epoch 47, Iter 39, Loss: 9505.5488281, Throughput: 173.025859 im/s
+Epoch 47, Train Loss: 9359.9355469, Time: 28.8513s, Throughput: 173.024899 im/s
+Epoch 48, Iter 39, Loss: 9101.6132812, Throughput: 173.726027 im/s
+Epoch 48, Train Loss: 9353.9443359, Time: 28.7351s, Throughput: 173.724770 im/s
+Epoch 49, Iter 39, Loss: 9033.0312500, Throughput: 173.359427 im/s
+Epoch 49, Train Loss: 9278.9765625, Time: 28.7958s, Throughput: 173.358596 im/s
+Epoch 50, Iter 39, Loss: 9301.8046875, Throughput: 173.917842 im/s
+Epoch 50, Train Loss: 9300.5673828, Time: 28.7034s, Throughput: 173.916661 im/s
 
 ```
 
@@ -479,9 +479,9 @@ Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 4 × AMD EPYC 9V74 80-Core Processor
+  CPU: 4 × AMD EPYC 7763 64-Core Processor
   WORD_SIZE: 64
-  LLVM: libLLVM-18.1.7 (ORCJIT, znver4)
+  LLVM: libLLVM-18.1.7 (ORCJIT, znver3)
   GC: Built with stock GC
 Threads: 4 default, 1 interactive, 4 GC (on 4 virtual cores)
 Environment:
