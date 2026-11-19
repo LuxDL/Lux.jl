@@ -127,6 +127,7 @@ gate(x::AbstractVector, h::Int, n::Int) = view(x, gate(h, n))
 gate(x::AbstractMatrix, h::Int, n::Int) = view(x, gate(h, n), :)
 
 reverse(x::AbstractArray; dims=:) = Base.reverse(x; dims)
+reverse(x::Tuple) = Base.reverse(x)
 
 vec(x::AbstractArray) = Base.vec(x)
 vec(::Nothing) = nothing
