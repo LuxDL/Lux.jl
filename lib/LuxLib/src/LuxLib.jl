@@ -2,9 +2,7 @@ module LuxLib
 
 using SciMLPublic: @public
 using Preferences: load_preference
-using Reexport: @reexport
 using Static: Static, known
-using UUIDs: UUID
 
 using ChainRulesCore: ChainRulesCore, NoTangent
 
@@ -17,7 +15,7 @@ const Numeric = Union{AbstractArray{<:T},T} where {T<:Number}
 const ∂∅ = NoTangent()
 const CRC = ChainRulesCore
 
-const LuxLibUUID = UUID("82251201-b29d-42c6-8e01-566dec8acb11")
+const LuxLibUUID = Base.UUID("82251201-b29d-42c6-8e01-566dec8acb11")
 
 const DISABLE_LOOP_VECTORIZATION = load_preference(
     LuxLibUUID, "disable_loop_vectorization", false

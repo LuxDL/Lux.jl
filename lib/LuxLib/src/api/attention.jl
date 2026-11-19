@@ -1,4 +1,4 @@
-@doc doc"""
+@doc raw"""
     scaled_dot_product_attention(
         query, key, value; head_dim=1, token_dim=3,
         scale=nothing, mask=nothing, is_causal=nothing, bias=nothing,
