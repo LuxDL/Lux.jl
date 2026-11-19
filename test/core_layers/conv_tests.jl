@@ -275,6 +275,84 @@ end
                 @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,)
             end
         end
+
+        @testset "align_corners" begin
+            # Bilinear
+            x_bi = aType(randn(rng, Float32, 4, 4, 2, 2))
+            for (layer_t, layer_f, nnlib_t, nnlib_f) in (
+                (
+                    Upsample(:bilinear; scale=2, align_corners=true),
+                    Upsample(:bilinear; scale=2, align_corners=false),
+                    NNlib.upsample_bilinear(x_bi, 2; align_corners=true),
+                    NNlib.upsample_bilinear(x_bi, 2; align_corners=false),
+                ),
+                (
+                    Upsample(:bilinear; size=(8, 8), align_corners=true),
+                    Upsample(:bilinear; size=(8, 8), align_corners=false),
+                    NNlib.upsample_bilinear(x_bi; size=(8, 8), align_corners=true),
+                    NNlib.upsample_bilinear(x_bi; size=(8, 8), align_corners=false),
+                ),
+            )
+                ps_t, st_t = dev(Lux.setup(rng, layer_t))
+                ps_f, st_f = dev(Lux.setup(rng, layer_f))
+                y_t, _ = layer_t(x_bi, ps_t, st_t)
+                y_f, _ = layer_f(x_bi, ps_f, st_f)
+
+                @test y_t == nnlib_t
+                @test y_f == nnlib_f
+                @test y_t != y_f
+
+                @jet layer_t(x_bi, ps_t, st_t)
+                @test_gradients(
+                    sumabs2first,
+                    layer_t,
+                    x_bi,
+                    ps_t,
+                    st_t;
+                    atol=1.0f-3,
+                    rtol=1.0f-3,
+                    ground_truth_eltype=Nothing,
+                )
+            end
+
+            # Trilinear
+            x_tri = aType(randn(rng, Float32, 4, 4, 4, 2, 2))
+            for (layer_t, layer_f, nnlib_t, nnlib_f) in (
+                (
+                    Upsample(:trilinear; scale=2, align_corners=true),
+                    Upsample(:trilinear; scale=2, align_corners=false),
+                    NNlib.upsample_trilinear(x_tri, 2; align_corners=true),
+                    NNlib.upsample_trilinear(x_tri, 2; align_corners=false),
+                ),
+                (
+                    Upsample(:trilinear; size=(8, 8, 8), align_corners=true),
+                    Upsample(:trilinear; size=(8, 8, 8), align_corners=false),
+                    NNlib.upsample_trilinear(x_tri; size=(8, 8, 8), align_corners=true),
+                    NNlib.upsample_trilinear(x_tri; size=(8, 8, 8), align_corners=false),
+                ),
+            )
+                ps_t, st_t = dev(Lux.setup(rng, layer_t))
+                ps_f, st_f = dev(Lux.setup(rng, layer_f))
+                y_t, _ = layer_t(x_tri, ps_t, st_t)
+                y_f, _ = layer_f(x_tri, ps_f, st_f)
+
+                @test y_t == nnlib_t
+                @test y_f == nnlib_f
+                @test y_t != y_f
+
+                @jet layer_t(x_tri, ps_t, st_t)
+                @test_gradients(
+                    sumabs2first,
+                    layer_t,
+                    x_tri,
+                    ps_t,
+                    st_t;
+                    atol=1.0f-3,
+                    rtol=1.0f-3,
+                    ground_truth_eltype=Nothing,
+                )
+            end
+        end
     end
 end
 
