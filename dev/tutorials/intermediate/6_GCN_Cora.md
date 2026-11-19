@@ -207,11 +207,11 @@ Epoch   1	Train Loss: 15.483308	Train Acc: 22.1429%	Val Loss: 7.571783	Val Acc: 
 Epoch   2	Train Loss: 10.125029	Train Acc: 22.1429%	Val Loss: 3.797886	Val Acc: 29.4000%
 Epoch   3	Train Loss: 4.467242	Train Acc: 37.8571%	Val Loss: 2.431701	Val Acc: 32.0000%
 Epoch   4	Train Loss: 2.424877	Train Acc: 51.4286%	Val Loss: 2.113642	Val Acc: 37.8000%
-Epoch   5	Train Loss: 1.761382	Train Acc: 58.5714%	Val Loss: 1.889251	Val Acc: 45.0000%
+Epoch   5	Train Loss: 1.761382	Train Acc: 58.5714%	Val Loss: 1.889250	Val Acc: 45.0000%
 Epoch   6	Train Loss: 1.484981	Train Acc: 67.8571%	Val Loss: 1.611183	Val Acc: 51.6000%
 Epoch   7	Train Loss: 1.267712	Train Acc: 71.4286%	Val Loss: 1.504884	Val Acc: 58.4000%
-Epoch   8	Train Loss: 1.319321	Train Acc: 72.1429%	Val Loss: 1.505576	Val Acc: 59.8000%
-Epoch   9	Train Loss: 1.617087	Train Acc: 73.5714%	Val Loss: 1.520861	Val Acc: 61.2000%
+Epoch   8	Train Loss: 1.319321	Train Acc: 72.1429%	Val Loss: 1.505575	Val Acc: 59.8000%
+Epoch   9	Train Loss: 1.617086	Train Acc: 73.5714%	Val Loss: 1.520861	Val Acc: 61.2000%
 Epoch  10	Train Loss: 1.249781	Train Acc: 74.2857%	Val Loss: 1.519172	Val Acc: 62.0000%
 Epoch  11	Train Loss: 1.187690	Train Acc: 78.5714%	Val Loss: 1.504537	Val Acc: 62.0000%
 Epoch  12	Train Loss: 1.179360	Train Acc: 78.5714%	Val Loss: 1.547555	Val Acc: 61.8000%
@@ -221,12 +221,12 @@ Epoch  15	Train Loss: 1.425960	Train Acc: 80.7143%	Val Loss: 1.633293	Val Acc: 6
 Epoch  16	Train Loss: 0.875585	Train Acc: 82.1429%	Val Loss: 1.616586	Val Acc: 66.6000%
 Epoch  17	Train Loss: 0.810615	Train Acc: 81.4286%	Val Loss: 1.592887	Val Acc: 67.0000%
 Epoch  18	Train Loss: 0.763062	Train Acc: 80.7143%	Val Loss: 1.569996	Val Acc: 67.4000%
-Epoch  19	Train Loss: 0.881349	Train Acc: 82.1429%	Val Loss: 1.543069	Val Acc: 67.2000%
+Epoch  19	Train Loss: 0.881348	Train Acc: 82.1429%	Val Loss: 1.543069	Val Acc: 67.2000%
 Epoch  20	Train Loss: 0.750949	Train Acc: 82.8571%	Val Loss: 1.520200	Val Acc: 66.8000%
-Epoch  21	Train Loss: 0.685395	Train Acc: 83.5714%	Val Loss: 1.504100	Val Acc: 66.6000%
-Epoch  22	Train Loss: 0.611383	Train Acc: 85.0000%	Val Loss: 1.500499	Val Acc: 66.0000%
+Epoch  21	Train Loss: 0.685394	Train Acc: 83.5714%	Val Loss: 1.504100	Val Acc: 66.6000%
+Epoch  22	Train Loss: 0.611382	Train Acc: 85.0000%	Val Loss: 1.500499	Val Acc: 66.0000%
 Epoch  23	Train Loss: 0.603166	Train Acc: 84.2857%	Val Loss: 1.511355	Val Acc: 66.2000%
-Epoch  24	Train Loss: 1.565989	Train Acc: 85.7143%	Val Loss: 1.550029	Val Acc: 66.0000%
+Epoch  24	Train Loss: 1.565990	Train Acc: 85.7143%	Val Loss: 1.550029	Val Acc: 66.0000%
 Epoch  25	Train Loss: 0.564261	Train Acc: 88.5714%	Val Loss: 1.616223	Val Acc: 64.6000%
 Epoch  26	Train Loss: 0.524013	Train Acc: 87.8571%	Val Loss: 1.695767	Val Acc: 64.0000%
 Epoch  27	Train Loss: 0.508034	Train Acc: 88.5714%	Val Loss: 1.788847	Val Acc: 64.0000%
@@ -246,7 +246,7 @@ Epoch  40	Train Loss: 0.802923	Train Acc: 95.7143%	Val Loss: 1.677369	Val Acc: 6
 Epoch  41	Train Loss: 0.378652	Train Acc: 95.7143%	Val Loss: 1.707681	Val Acc: 68.0000%
 Epoch  42	Train Loss: 0.366849	Train Acc: 95.0000%	Val Loss: 1.735516	Val Acc: 68.2000%
 Early Stopping at Epoch 42
-Test Loss: 1.518862	Test Acc: 68.8000%
+Test Loss: 1.518861	Test Acc: 68.8000%
 
 ```
 
@@ -277,9 +277,9 @@ Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 4 × AMD EPYC 7763 64-Core Processor
+  CPU: 4 × AMD EPYC 9V45 96-Core Processor
   WORD_SIZE: 64
-  LLVM: libLLVM-18.1.7 (ORCJIT, znver3)
+  LLVM: libLLVM-18.1.7 (ORCJIT, znver5)
   GC: Built with stock GC
 Threads: 4 default, 1 interactive, 4 GC (on 4 virtual cores)
 Environment:

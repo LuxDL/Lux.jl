@@ -91,7 +91,7 @@ loss_function1(model, x, ps, Lux.testmode(st), y)
 ```
 
 ```ansi
-11.380776f0
+11.380778f0
 ```
 
 So our loss function works, let's take the gradient (forward diff doesn't nest nicely here):
@@ -120,7 +120,7 @@ println("∞-norm(∂ps - ∂ps_fd): ", norm(ComponentArray(∂ps) .- ∂ps_fd, 
 [33m[1m└ [22m[39m[90m@ LuxLib.Utils ~/work/Lux.jl/Lux.jl/lib/LuxLib/src/utils.jl:347[39m
 [33m[1m┌ [22m[39m[33m[1mWarning: [22m[39m`training` is set to `Val{true}()` but is not being used within an autodiff call (gradient, jacobian, etc...). This will be slow. If you are using a `Lux.jl` model, set it to inference (test) mode using `LuxCore.testmode`. Reliance on this behavior is discouraged, and is not guaranteed by Semantic Versioning, and might be removed without a deprecation cycle. It is recommended to fix this issue in your code.
 [33m[1m└ [22m[39m[90m@ LuxLib.Utils ~/work/Lux.jl/Lux.jl/lib/LuxLib/src/utils.jl:347[39m
-∞-norm(∂x - ∂x_fd): 0.00043416023
+∞-norm(∂x - ∂x_fd): 0.00044250488
 ∞-norm(∂ps - ∂ps_fd): 0.00068473816
 ```
 
@@ -167,8 +167,8 @@ println("∞-norm(∂ps_b - ∂ps_fd): ", norm(ComponentArray(∂ps_b) .- ∂ps_
 ```
 
 ```ansi
-∞-norm(∂x_b - ∂x_fd): 0.00020849705
-∞-norm(∂ps_b - ∂ps_fd): 0.00025326014
+∞-norm(∂x_b - ∂x_fd): 0.00015926361
+∞-norm(∂ps_b - ∂ps_fd): 0.0002542138
 ```
 
 In this example, it is important to remark that now `batched_jacobian` returns a 3D array with the Jacobian calculation for each independent input value in `x`.
