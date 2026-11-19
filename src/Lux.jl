@@ -164,8 +164,7 @@ export AutoEnzyme,
     AutoReactant,
     AutoReverseDiff,
     AutoTracker,
-    AutoZygote,
-    AutoForwardDiff
+    AutoZygote
 
 export BinaryCrossEntropyLoss,
     BinaryFocalLoss,
