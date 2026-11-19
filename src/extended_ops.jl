@@ -11,15 +11,13 @@ using ChainRulesCore: ChainRulesCore, NoTangent, ZeroTangent, @thunk
 using SciMLPublic: @public
 using EnzymeCore: EnzymeCore
 using FastClosures: @closure
-using Static: StaticBool, StaticSymbol, known
-
 using MLDataDevices: get_device_type, AbstractGPUDevice, ReactantDevice, AbstractDevice
 
-using ..Utils: Utils, recursive_unthunk
+using ..Utils: Utils, recursive_unthunk, StaticBool, StaticSymbol, known
 
 const CRC = ChainRulesCore
 
-const KnownSymbolType{v} = Union{Val{v},StaticSymbol{v}}
+const KnownSymbolType{v} = StaticSymbol{v}
 
 # `xlogx` and `xlogy`
 ## We don't use `LogExpFunctions` since they don't support GPU broadcasting. See
@@ -102,7 +100,7 @@ end
     getproperty(x, ::Val{v})
     getproperty(x, ::StaticSymbol{v})
 
-Similar to `Base.getproperty` but requires a `Val` (or `Static.StaticSymbol`). Additionally,
+Similar to `Base.getproperty` but requires a `Val` (or `StaticSymbol`). Additionally,
 if `v` is not present in `x`, then `nothing` is returned.
 """
 function getproperty(x, ::KnownSymbolType{v}) where {v}

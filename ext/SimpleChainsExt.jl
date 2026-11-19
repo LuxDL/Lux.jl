@@ -23,7 +23,8 @@ Lux.is_extension_loaded(::Val{:SimpleChains}) = true
 
 function Lux.fix_simplechain_input_dims(layers::Vector, input_dims)
     L = Tuple(layers)
-    return SimpleChains.SimpleChain{typeof(input_dims),typeof(L)}(input_dims, L)
+    sdims = map(SimpleChains.static, input_dims)
+    return SimpleChains.SimpleChain{typeof(sdims),typeof(L)}(sdims, L)
 end
 
 function Lux.fix_simplechain_input_dims(layers, input_dims)
@@ -72,7 +73,7 @@ function Lux.make_simplechain_network(layer::FlattenLayer)
                                                   use `FlattenLayer(N::Int)`")
         )
     end
-    return SimpleChains.Flatten(layer.N)
+    return SimpleChains.Flatten(Lux.Utils.known(layer.N))
 end
 
 function Lux.make_simplechain_network(layer::MaxPool)

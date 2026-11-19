@@ -1,7 +1,7 @@
 """
     DebugLayer(layer::AbstractLuxLayer;
-        nan_check::Union{Symbol, StaticSymbol, Val}=static(:both),
-        error_check::Union{StaticBool, Bool, Val{true}, Val{false}}=True(),
+        nan_check::SymbolType=static(:both),
+        error_check::BoolType=True(),
         location::KeyPath=KeyPath())
 
 A wrapper over Lux layers that adds checks for NaNs and errors. This is useful for
@@ -52,8 +52,8 @@ end
 
 function DebugLayer(
     layer::AbstractLuxLayer;
-    nan_check::SymbolType=static(:both),
-    error_check::BoolType=True(),
+    nan_check=static(:both),
+    error_check=True(),
     location::KeyPath=KeyPath(),
 )
     @assert dynamic(nan_check) in (:both, :forward, :backward, :none)

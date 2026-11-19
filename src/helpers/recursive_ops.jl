@@ -33,7 +33,7 @@ ADs (ForwardDiff, ReverseDiff, Tracker), this function will return the eltype of
 unwrapped value.
 """
 recursive_eltype(x) = recursive_eltype(x, Val(false))
-recursive_eltype(x, val::Val) = recursive_eltype(x, static(val))
+recursive_eltype(x, val::Bool) = recursive_eltype(x, Val(val))
 
 recursive_eltype(x::AbstractArray, ::False) = eltype(x)
 recursive_eltype(x::AbstractArray, ::True) = Utils.eltype(x)
