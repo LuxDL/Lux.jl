@@ -230,11 +230,15 @@ function test_gradients(
                     ∂args = allow_unstable() do
                         return gradient(f, backend, args...)
                     end
-                    matched = check_approx(∂args, ∂args_gt; kwargs...)
-                    if matched
-                        Pass(:test, local_test_expr, nothing, nothing, source)
+                    if _is_skipped(∂args) || _is_skipped(∂args_gt)
+                        Broken(:skipped, local_test_expr)
                     else
-                        Broken(:test, local_test_expr)
+                        matched = check_approx(∂args, ∂args_gt; kwargs...)
+                        if matched
+                            Pass(:test, local_test_expr, nothing, nothing, source)
+                        else
+                            Broken(:test, local_test_expr)
+                        end
                     end
                 catch
                     Broken(:test, local_test_expr)
@@ -244,11 +248,15 @@ function test_gradients(
                     ∂args = allow_unstable() do
                         return gradient(f, backend, args...)
                     end
-                    matched = check_approx(∂args, ∂args_gt; kwargs...)
-                    if matched
-                        Error(:test_unbroken, local_test_expr, matched, nothing, source)
+                    if _is_skipped(∂args) || _is_skipped(∂args_gt)
+                        Broken(:skipped, local_test_expr)
                     else
-                        Broken(:test, local_test_expr)
+                        matched = check_approx(∂args, ∂args_gt; kwargs...)
+                        if matched
+                            Error(:test_unbroken, local_test_expr, matched, nothing, source)
+                        else
+                            Broken(:test, local_test_expr)
+                        end
                     end
                 catch
                     Broken(:test, local_test_expr)
@@ -258,20 +266,24 @@ function test_gradients(
                     ∂args = allow_unstable() do
                         return gradient(f, backend, args...)
                     end
-                    matched = check_approx(∂args, ∂args_gt; kwargs...)
-                    if matched
-                        Pass(:test, local_test_expr, nothing, nothing, source)
+                    if _is_skipped(∂args) || _is_skipped(∂args_gt)
+                        Broken(:skipped, local_test_expr)
                     else
-                        context = "\n   ∂args: $(∂args)\n∂args_gt: $(∂args_gt)"
-                        Fail(
-                            :test,
-                            local_test_expr,
-                            matched,
-                            nothing,
-                            context,
-                            source,
-                            false,
-                        )
+                        matched = check_approx(∂args, ∂args_gt; kwargs...)
+                        if matched
+                            Pass(:test, local_test_expr, nothing, nothing, source)
+                        else
+                            context = "\n   ∂args: $(∂args)\n∂args_gt: $(∂args_gt)"
+                            Fail(
+                                :test,
+                                local_test_expr,
+                                matched,
+                                nothing,
+                                context,
+                                source,
+                                false,
+                            )
+                        end
                     end
                 catch err
                     err isa InterruptException && rethrow()

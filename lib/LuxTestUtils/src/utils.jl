@@ -66,11 +66,15 @@ function flatten_gradient_computable(f, nt)
     return nothing, nothing, nothing
 end
 
+_is_grad_leaf(x) = x isa AbstractArray{<:AbstractFloat}
+_is_allowed_non_grad_leaf(x) = x === nothing
+
 needs_gradient(::Constant) = false
 function needs_gradient(y)
     leaves = Functors.fleaves(y)
     isempty(leaves) && return false
-    return all(Fix{2}(isa, AbstractArray{<:AbstractFloat}), leaves)
+    return any(_is_grad_leaf, leaves) &&
+           all(x -> _is_grad_leaf(x) || _is_allowed_non_grad_leaf(x), leaves)
 end
 
 __length(x) = 0
@@ -80,9 +84,12 @@ __length(::Number) = 1
 # Equality Checks
 struct GradientComputationSkipped end
 
+_is_skipped(x) = x isa GradientComputationSkipped
+_is_skipped(x::Tuple) = !isempty(x) && all(_is_skipped, x)
+
 @generated function check_approx(x::X, y::Y; kwargs...) where {X,Y}
     device = cpu_device()
-    (X == GradientComputationSkipped || Y == GradientComputationSkipped) && return :(true)
+    (X == GradientComputationSkipped || Y == GradientComputationSkipped) && return :(false)
     hasmethod(isapprox, (X, Y)) && return :(isapprox($(device)(x), $(device)(y); kwargs...))
     return :($(device)(x) == $(device)(y))
 end
