@@ -161,7 +161,6 @@ end
                 ŷ;
                 atol=1.0f-3,
                 rtol=1.0f-3,
-                skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : []
             )
         end
 
@@ -187,7 +186,6 @@ end
                 logŷ;
                 atol=1.0f-3,
                 rtol=1.0f-3,
-                skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : []
             )
         end
 
@@ -291,7 +289,7 @@ end
 
             __f = Base.Fix2(FocalLoss(), y)
             # FD will lead to out of domain errors
-            skip_backends = VERSION ≥ v"1.11-" ? Any[AutoEnzyme()] : []
+            skip_backends = []
             push!(skip_backends, AutoFiniteDiff())
             @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3, skip_backends)
         end
@@ -316,7 +314,6 @@ end
                 ŷ;
                 atol=1.0f-3,
                 rtol=1.0f-3,
-                skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : []
             )
         end
 
