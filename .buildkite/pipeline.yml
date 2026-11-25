@@ -9,13 +9,19 @@ steps:
   - label: "Triggering Pipelines (Pull Request)"
     if: build.branch != "main" && build.tag == null
     command: ".buildkite/scripts/upload_pipelines.sh"
+    agents:
+      queue: "upload"
 
   - label: "Triggering Downstream Pipelines (Pull Request)"
     if: build.branch != "main" && build.tag == null && build.pull_request.labels includes "run downstream test"
     command: ".buildkite/scripts/upload_pipelines.sh --downstream"
+    agents:
+      queue: "upload"
 
   - label: "Triggering Pipelines (Main Branch)"
     if: build.branch == "main"
+    agents:
+      queue: "upload"
     command: |
       # Core Lux Testing
       buildkite-agent pipeline upload .buildkite/testing.yml
