@@ -40,12 +40,17 @@ function scaled_dot_product_attention(
     if is_causal isa Bool
         @assert mask === nothing "`mask` and `is_causal` cannot both be specified"
     end
-    is_causal = is_causal === true
 
     # NNlib uses (features, heads, tokens, batch...) and a multiplicative scale.
     perm = (head_dim, num_heads_dim, token_dim, 4:N...)
     if perm != ntuple(identity, Val(N))
         q, k, v = permutedims(q, perm), permutedims(k, perm), permutedims(v, perm)
+    end
+    is_causal = if is_causal === true
+        q_len, kv_len = size(q, 3), size(k, 3)
+        q_len == 1 ? false : (q_len < kv_len ? :bottom_right : true)
+    else
+        false
     end
     scale = scale === nothing ? nothing : inv(TQ(scale))
 
