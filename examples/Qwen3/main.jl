@@ -322,7 +322,7 @@ function LuxCore.initialstates(rng::AbstractRNG, m::Qwen3)
     )
 end
 
-function (qwen3::Qwen3)(in_idx, ps, st::NamedTuple)
+function _forward_transformer(qwen3::Qwen3, in_idx, ps, st::NamedTuple)
     x, st_embed_tokens = qwen3.embed_tokens(in_idx, ps.embed_tokens, st.embed_tokens)
 
     st_blocks = ()
@@ -330,6 +330,10 @@ function (qwen3::Qwen3)(in_idx, ps, st::NamedTuple)
         x, st_block_new = block((x, st.cos_cache, st.sin_cache), ps.blocks[i], st.blocks[i])
         st_blocks = (st_blocks..., st_block_new)
     end
+    return x, st_embed_tokens, st_blocks
+end
+
+function _apply_head(qwen3::Qwen3, x, ps, st::NamedTuple, st_embed_tokens, st_blocks)
     x, st_norm = qwen3.norm(x, ps.norm, st.norm)
     logits, st_lm_head = qwen3.lm_head(
         fn_to_dtype(qwen3.cfg.dtype).(x), ps.lm_head, st.lm_head
@@ -346,6 +350,19 @@ function (qwen3::Qwen3)(in_idx, ps, st::NamedTuple)
             lm_head=st_lm_head,
         ),
     )
+end
+
+function (qwen3::Qwen3)(in_idx::AbstractArray, ps, st::NamedTuple)
+    x, st_embed_tokens, st_blocks = _forward_transformer(qwen3, in_idx, ps, st)
+    return _apply_head(qwen3, x, ps, st, st_embed_tokens, st_blocks)
+end
+
+function (qwen3::Qwen3)(
+    (in_idx, token_idx)::Tuple{<:AbstractArray,Any}, ps, st::NamedTuple
+)
+    x, st_embed_tokens, st_blocks = _forward_transformer(qwen3, in_idx, ps, st)
+    x_last = x[:, token_idx, :]
+    return _apply_head(qwen3, x_last, ps, st, st_embed_tokens, st_blocks)
 end
 
 # ## Model Weights and Tokenizer from HuggingFace
@@ -635,10 +652,11 @@ end
 # ## Helpers to generate text
 
 function predict_next_token(
-    model, token_ids::AbstractMatrix{T}, input_mask_len, ps, st
+    model, padded_token_ids::AbstractMatrix{T}, input_mask_len, ps, st
 ) where {T}
-    logits, stₙ = model(token_ids, ps, st)
-    predictions = T.(argmax(logits[:, end - input_mask_len, :]; dims=1))
+    last_token_idx = size(padded_token_ids, 1) - input_mask_len
+    logits, stₙ = model((padded_token_ids, last_token_idx), ps, st)
+    predictions = T.(argmax(logits; dims=1))
     predictions = mod1.(predictions, T(size(logits, 1)))
     return predictions, stₙ
 end
