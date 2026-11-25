@@ -1,97 +1,27 @@
+# Use sparse checkout (which enables `--filter=blob:none` in buildkite-agent)
+# so upload/trigger steps avoid downloading the ~500 MB `gh-pages` branch blobs.
+checkout:
+  sparse:
+    paths:
+      - ".buildkite/"
+
 steps:
   - label: "Triggering Pipelines (Pull Request)"
     if: build.branch != "main" && build.tag == null
-    plugins:
-      - monebag/monorepo-diff#v2.5.9:
-          diff: ".buildkite/scripts/diff.sh $BUILDKITE_COMMIT"
-          interpolation: false
-          watch:
-            - label: "Lux"
-              path:
-                - "src/"
-                - "ext/"
-                - "test/"
-                - "Project.toml"
-                - ".buildkite/testing.yml"
-                - "lib/LuxTestUtils/src/"
-                - "lib/LuxTestUtils/ext/"
-                - "lib/LuxCore/src/"
-                - "lib/LuxCore/ext/"
-                - "lib/MLDataDevices/src/"
-                - "lib/MLDataDevices/ext/"
-                - "lib/WeightInitializers/src/"
-                - "lib/WeightInitializers/ext/"
-                - "lib/LuxLib/src/"
-                - "lib/LuxLib/ext/"
-              config:
-                command: "buildkite-agent pipeline upload .buildkite/testing.yml"
+    command: ".buildkite/scripts/upload_pipelines.sh"
+    agents:
+      queue: "upload"
 
-            - label: "LuxCUDA"
-              path:
-                - "lib/LuxCUDA/"
-                - ".buildkite/testing_luxcuda.yml"
-              config:
-                command: "buildkite-agent pipeline upload .buildkite/testing_luxcuda.yml"
-
-            - label: "WeightInitializers"
-              path:
-                - "lib/WeightInitializers/"
-                - ".buildkite/testing_weightinitializers.yml"
-              config:
-                command: "buildkite-agent pipeline upload .buildkite/testing_weightinitializers.yml"
-
-            - label: "MLDataDevices"
-              path:
-                - "lib/MLDataDevices/"
-                - ".buildkite/testing_mldatadevices.yml"
-              config:
-                command: "buildkite-agent pipeline upload .buildkite/testing_mldatadevices.yml"
-
-            - label: "LuxLib"
-              path:
-                - "lib/LuxLib/"
-                - ".buildkite/testing_luxlib.yml"
-                - "lib/LuxTestUtils/src/"
-                - "lib/LuxTestUtils/ext/"
-                - "lib/LuxCore/src/"
-                - "lib/LuxCore/ext/"
-                - "lib/MLDataDevices/src/"
-                - "lib/MLDataDevices/ext/"
-              config:
-                command: "buildkite-agent pipeline upload .buildkite/testing_luxlib.yml"
-
-            - label: "LuxTestUtils"
-              path:
-                - "lib/LuxTestUtils/"
-                - ".buildkite/testing_luxtestutils.yml"
-              config:
-                command: "buildkite-agent pipeline upload .buildkite/testing_luxtestutils.yml"
-
-            # - label: "Benchmarks"
-            #   path:
-            #     - "src/"
-            #     - "ext/"
-            #     - "test/"
-            #     - "Project.toml"
-            #     - ".buildkite/"
-            #     - "benchmarks/"
-            #   if: build.pull_request.labels includes "run benchmarks"
-            #   config:
-            #     command: "buildkite-agent pipeline upload .buildkite/benchmarks.yml"
-
-            - label: "Downstream"
-              path:
-                - "src/"
-                - "ext/"
-                - "lib/"
-                - "Project.toml"
-                - ".buildkite/downstream.yml"
-              if: build.pull_request.labels includes "run downstream test"
-              config:
-                command: "buildkite-agent pipeline upload .buildkite/downstream.yml"
+  - label: "Triggering Downstream Pipelines (Pull Request)"
+    if: build.branch != "main" && build.tag == null && build.pull_request.labels includes "run downstream test"
+    command: ".buildkite/scripts/upload_pipelines.sh --downstream"
+    agents:
+      queue: "upload"
 
   - label: "Triggering Pipelines (Main Branch)"
     if: build.branch == "main"
+    agents:
+      queue: "upload"
     command: |
       # Core Lux Testing
       buildkite-agent pipeline upload .buildkite/testing.yml
