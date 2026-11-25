@@ -37,24 +37,3 @@ for backend_group in ("cuda", "amdgpu", "metal", "oneapi", "opencl")
         return false
     end
 end
-
-function packages_to_install(backend_group::String="all")
-    backend_group = lowercase(backend_group)
-    @assert backend_group in
-        ("all", "cpu", "cuda", "amdgpu", "metal", "oneapi", "opencl", "reactant")
-
-    pkgs = PackageSpec[]
-    if test_cuda(backend_group)
-        push!(pkgs, PackageSpec(; name="CUDA"))
-        push!(pkgs, PackageSpec(; name="cuDNN"))
-        push!(pkgs, PackageSpec(; name="LuxCUDA"))
-    end
-    test_amdgpu(backend_group) && push!(pkgs, PackageSpec(; name="AMDGPU"))
-    test_metal(backend_group) && push!(pkgs, PackageSpec(; name="Metal"))
-    test_oneapi(backend_group) && push!(pkgs, PackageSpec(; name="oneAPI"))
-    if test_opencl(backend_group)
-        push!(pkgs, PackageSpec(; name="OpenCL"))
-        push!(pkgs, PackageSpec(; name="pocl_jll"))
-    end
-    return pkgs
-end
