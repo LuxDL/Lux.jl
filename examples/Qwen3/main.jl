@@ -890,71 +890,120 @@ end
 
 safe_increment(x) = x + one(x)
 
+function generate_tokens_compiled(
+    model::Qwen3,
+    padded_prompt::AbstractMatrix,
+    prompt_len,
+    max_new_tokens,
+    eos_ids::AbstractVector,
+    ::Val{max_cache_len},
+    ps,
+    st,
+) where {max_cache_len}
+    B = size(padded_prompt, 2)
+    dtype = fn_to_dtype(model.cfg.dtype)
+    kv_cache = ntuple(
+        _ -> (
+            Reactant.@opcall(
+                fill(
+                    zero(dtype),
+                    (model.cfg.head_dim, model.cfg.n_kv_groups, max_cache_len, B),
+                )
+            ),
+            Reactant.@opcall(
+                fill(
+                    zero(dtype),
+                    (model.cfg.head_dim, model.cfg.n_kv_groups, max_cache_len, B),
+                )
+            ),
+        ),
+        model.cfg.n_layers,
+    )
+    cache_positions = Reactant.promote_to(
+        Reactant.TracedRArray{Int32,1}, Int32(1):Int32(max_cache_len)
+    )
+    output_tokens = Reactant.@opcall fill(Int32(0), (max_cache_len, B))
+
+    logits, st_cur = model((padded_prompt, prompt_len, kv_cache), ps, st)
+    next_token = _logits_to_tokens(logits, eltype(padded_prompt))
+
+    step = Int32(1)
+    output_tokens[step, :] = next_token[1, :]
+    eos_ids_col = Reactant.@opcall reshape(eos_ids, length(eos_ids), 1)
+    hit_eos = all(any(eos_ids_col .== next_token; dims=1))
+
+    Reactant.@trace while (step < max_new_tokens) & (!hit_eos)
+        pos = prompt_len + step
+        logits, st_cur = model((next_token, pos, kv_cache, cache_positions), ps, st_cur)
+        next_token = _logits_to_tokens(logits, eltype(padded_prompt))
+        step = step + Int32(1)
+        output_tokens[step, :] = next_token[1, :]
+        hit_eos = all(any(eos_ids_col .== next_token; dims=1))
+    end
+
+    return output_tokens, step
+end
+
 mutable struct CachedReactantThunks
-    prefill_cache::Dict{Tuple{Qwen3Config,Int,Int},Reactant.Compiler.Thunk}
-    decode_cache::Dict{Tuple{Qwen3Config,Int},Reactant.Compiler.Thunk}
-    increment_fn::Union{Nothing,Reactant.Compiler.Thunk}
+    generation_cache::Dict{Tuple{Qwen3Config,Int,Int},Reactant.Compiler.Thunk}
 end
 
 function CachedReactantThunks()
     return CachedReactantThunks(
-        Dict{Tuple{Qwen3Config,Int,Int},Reactant.Compiler.Thunk}(),
-        Dict{Tuple{Qwen3Config,Int},Reactant.Compiler.Thunk}(),
-        nothing,
+        Dict{Tuple{Qwen3Config,Int,Int},Reactant.Compiler.Thunk}()
     )
 end
 
-function cache_and_retrieve_prefill!(
+function cache_and_retrieve_generation!(
     cache::CachedReactantThunks,
     prefill_len::Integer,
     max_cache_len::Integer,
     model::Qwen3,
-    padded_token_ids,
+    padded_prompt,
     prompt_len_traced,
+    max_new_tokens_traced,
+    eos_ids,
     ps,
     st,
-    kv_cache,
 )
     key = (model.cfg, Int(prefill_len), Int(max_cache_len))
-    haskey(cache.prefill_cache, key) && return cache.prefill_cache[key]
+    haskey(cache.generation_cache, key) && return cache.generation_cache[key]
 
     println()
-    @warn "Compiling Qwen3 prefill for $(model.cfg.version) with prefill_len=$(prefill_len), \
-           max_cache_len=$(max_cache_len). This might take a while... \
-           (However this is only done once per model per bucket)"
+    @warn "Compiling Qwen3 generation loop for $(model.cfg.version) with \
+           prefill_len=$(prefill_len), max_cache_len=$(max_cache_len). This might take a \
+           while... (However this is only done once per model per bucket)"
 
-    return cache.prefill_cache[key] = @compile prefill_next_token!(
-        model, padded_token_ids, prompt_len_traced, ps, st, kv_cache
-    )
-end
-
-function cache_and_retrieve_decode!(
-    cache::CachedReactantThunks,
-    max_cache_len::Integer,
-    model::Qwen3,
-    token_id,
-    pos_traced,
-    ps,
-    st,
-    kv_cache,
-    cache_positions,
-)
-    key = (model.cfg, Int(max_cache_len))
-    haskey(cache.decode_cache, key) && return cache.decode_cache[key]
-
-    println()
-    @warn "Compiling Qwen3 single-token decode for $(model.cfg.version) with \
-           max_cache_len=$(max_cache_len). This might take a while... \
-           (However this is only done once per model per cache length)"
-
-    return cache.decode_cache[key] = @compile decode_next_token!(
-        model, token_id, pos_traced, ps, st, kv_cache, cache_positions
+    return cache.generation_cache[key] = @compile generate_tokens_compiled(
+        model,
+        padded_prompt,
+        prompt_len_traced,
+        max_new_tokens_traced,
+        eos_ids,
+        Val(Int(max_cache_len)),
+        ps,
+        st,
     )
 end
 
 const CACHED_THUNKS = CachedReactantThunks()
 
 generate_text(args...; kwargs...) = generate_text!(CACHED_THUNKS, args...; kwargs...)
+
+function _prepare_eos_ids(eos_token_id, dev)
+    if eos_token_id === nothing
+        return dev(Int32[-1])
+    elseif eos_token_id isa Integer
+        return dev(Int32[Int32(eos_token_id)])
+    else
+        ids = collect(Int32, eos_token_id)
+        return isempty(ids) ? dev(Int32[-1]) : dev(ids)
+    end
+end
+
+_matches_eos(tok_id::Integer, eos::Integer) = tok_id == eos
+_matches_eos(tok_id::Integer, eos) = tok_id in eos
+_matches_eos(::Integer, ::Nothing) = false
 
 function generate_text!(
     compile_cache::CachedReactantThunks,
@@ -975,91 +1024,54 @@ function generate_text!(
     max_new_tokens <= 0 && return 0.0
 
     dev = get_device(ps)
-    token_ids = Reactant.to_rarray(reshape(raw_ids, :, 1))
-    batch_size = size(token_ids, 2)
-
-    ## TODO: compile the generation loop with Reactant
     max_cache_len = get_max_cache_len(prompt_len + max_new_tokens, max_context_length)
     prefill_len = get_prefill_size(prompt_len, max_cache_len)
 
-    padded_token_ids, _ = @jit padded_input_and_mask_len(
-        token_ids, nothing, prefill_len, tokenizer.pad_token_id
-    )
+    padded_ids = fill(Int32(tokenizer.pad_token_id), prefill_len, 1)
+    padded_ids[1:prompt_len, 1] .= Int32.(raw_ids)
+    padded_token_ids = dev(padded_ids)
+
     prompt_len_traced = ConcreteRNumber{Int32}(prompt_len)
+    max_new_tokens_traced = ConcreteRNumber{Int32}(max_new_tokens)
+    eos_ids = _prepare_eos_ids(tokenizer.eos_token_id, dev)
 
-    kv_cache = init_kv_cache(model.cfg, max_cache_len, batch_size, dev)
-    cache_positions = dev(Int32.(1:max_cache_len))
-    dummy_token = dev(ones(eltype(token_ids), 1, batch_size))
-    pos_traced = ConcreteRNumber{Int32}(prompt_len + 1)
-
-    prefill_fn = cache_and_retrieve_prefill!(
+    gen_fn = cache_and_retrieve_generation!(
         compile_cache,
         prefill_len,
         max_cache_len,
         model,
         padded_token_ids,
         prompt_len_traced,
+        max_new_tokens_traced,
+        eos_ids,
         ps,
         st,
-        kv_cache,
     )
-    decode_fn = if max_new_tokens > 1
-        cache_and_retrieve_decode!(
-            compile_cache,
-            max_cache_len,
-            model,
-            dummy_token,
-            pos_traced,
-            ps,
-            st,
-            kv_cache,
-            cache_positions,
-        )
-    else
-        nothing
-    end
-
-    if max_new_tokens > 1 && compile_cache.increment_fn === nothing
-        compile_cache.increment_fn = @compile safe_increment(pos_traced)
-    end
 
     start_time = time()
-    ntokens_generated = 0
-
-    next_token, st = prefill_fn(
-        model, padded_token_ids, prompt_len_traced, ps, st, kv_cache
+    output_tokens, num_generated_dev = gen_fn(
+        model,
+        padded_token_ids,
+        prompt_len_traced,
+        max_new_tokens_traced,
+        eos_ids,
+        Val(max_cache_len),
+        ps,
+        st,
     )
-    ntokens_generated += 1
-
-    next_token_jl = vec(Array(next_token))
-    if tokenizer.eos_token_id !== nothing &&
-        all(next_token_jl .== tokenizer.eos_token_id)
-        println()
-        return ntokens_generated / (time() - start_time)
-    end
-    print(decode(tokenizer, next_token_jl))
-
-    for step in 2:max_new_tokens
-        next_token, st = decode_fn(
-            model, next_token, pos_traced, ps, st, kv_cache, cache_positions
-        )
-        ntokens_generated += 1
-
-        next_token_jl = vec(Array(next_token))
-        if tokenizer.eos_token_id !== nothing &&
-            all(next_token_jl .== tokenizer.eos_token_id)
-            break
-        end
-
-        print(decode(tokenizer, next_token_jl))
-        if step < max_new_tokens
-            pos_traced = compile_cache.increment_fn(pos_traced)
-        end
-    end
+    output_host = Array(output_tokens)
+    num_generated = Int(num_generated_dev)
     total_time = time() - start_time
 
+    generated_tokens = output_host[1:num_generated, 1]
+    tokens_to_decode = if _matches_eos(generated_tokens[end], tokenizer.eos_token_id)
+        generated_tokens[1:(end - 1)]
+    else
+        generated_tokens
+    end
+    print(decode(tokenizer, tokens_to_decode))
     println()
-    return ntokens_generated / total_time
+    return num_generated / total_time
 end
 
 # ## Entry Point
