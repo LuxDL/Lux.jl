@@ -104,6 +104,19 @@ end
 
             @test_gradients(Base.Fix2(MSLELoss(), y), ŷ; atol=1.0f-3, rtol=1.0f-3)
         end
+
+        @testset "GenericLossFunction (looped rrule)" begin
+            custom_op = (ŷ, y) -> abs2(ŷ - y)
+            @test !Lux.LossFunctionImpl.has_custom_derivative(custom_op)
+
+            loss_fn = GenericLossFunction(custom_op; agg=sum)
+            y = aType([1.0f0, 2.0f0, 3.0f0])
+            ŷ = aType([2.0f0, 1.0f0, 4.0f0])
+
+            @test loss_fn(ŷ, y) ≈ 3.0f0
+            @jet loss_fn(ŷ, y)
+            @test_gradients(Base.Fix2(loss_fn, y), ŷ; atol=1.0f-3, rtol=1.0f-3)
+        end
     end
 end
 
