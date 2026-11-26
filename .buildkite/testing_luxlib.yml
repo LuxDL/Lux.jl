@@ -25,7 +25,7 @@ steps:
         matrix:
           setup:
             julia:
-              - "1.12"
+              - "1"
             group:
               - "common_ops"
               - "normalization"

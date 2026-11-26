@@ -58,7 +58,7 @@ jobs:
     steps:
       - uses: MilesCranmer/AirspeedVelocity.jl@f39cf180e62b34e52ed4d12ccf982d70b118a143 # action-v1
         with:
-          julia-version: "1.12"
+          julia-version: "1"
           job-summary: "false"
           script: "benchmarks/asv.jl"
           exeflags: "--threads=auto"

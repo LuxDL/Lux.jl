@@ -18,7 +18,7 @@ steps:
               - "8"
         plugins:
           - JuliaCI/julia#v1:
-              version: "1.12"
+              version: "1"
         command: |
           julia --project=benchmarks -e 'println("--- :julia: Instantiating project")
               using Pkg

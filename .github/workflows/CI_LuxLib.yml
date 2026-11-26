@@ -43,6 +43,6 @@ jobs:
             loopvec: "false"
     uses: ./.github/workflows/CommonCI.yml
     with:
-      julia_version: "1.12"
+      julia_version: "1"
       project: "lib/LuxLib"
       test_args: "--BACKEND_GROUP=cpu --BLAS_BACKEND=${{ matrix.blas_backend }} --LOOP_VECTORIZATION=${{ matrix.loopvec }} ${{ matrix.test_group }}"
