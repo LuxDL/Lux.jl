@@ -18,7 +18,7 @@ delete!(testsuite, "eltype_matching")
 delete!(testsuite, "reactant_testsetup")
 delete!(testsuite, "recurrent_layers/recurrence_testsetup")
 for k in keys(testsuite)
-    if startswith(k, "distributed") || startswith(k, "downstream")
+    if startswith(k, "distributed")
         delete!(testsuite, k)
     end
 end
@@ -54,60 +54,6 @@ if isempty(parsed_args.positionals) || "others" ∈ parsed_args.positionals
         end
     end
     set_preferences!(Lux, "eltype_mismatch_handling" => "none"; force=true)
-end
-
-# Various Downstream Integration Tests
-# We only run these on 1.11+ due to nicer handling of [sources]
-if (
-    (isempty(parsed_args.positionals) || "others" ∈ parsed_args.positionals) &&
-    VERSION ≥ v"1.11-"
-)
-    testdir = @__DIR__
-    isintegrationtest(f) = endswith(f, "_integrationtest.jl")
-    integrationtestfiles = String[]
-    for (root, dirs, files) in walkdir(testdir)
-        for file in files
-            if isintegrationtest(file)
-                fullpath = joinpath(root, file)
-                if VERSION >= v"1.12-" &&
-                    (occursin("SimpleChains", fullpath) || occursin("Flux", fullpath))
-                    continue
-                end
-                push!(integrationtestfiles, fullpath)
-            end
-        end
-    end
-
-    test_groups = Dict{String,Vector{String}}()
-    for file in integrationtestfiles
-        dir = dirname(file)
-        if !haskey(test_groups, dir)
-            test_groups[dir] = String[file]
-        else
-            push!(test_groups[dir], file)
-        end
-    end
-
-    @testset "Downstream Integration Tests" begin
-        withenv("BACKEND_GROUP" => BACKEND_GROUP) do
-            @testset "$(basename(dir))" for (dir, files) in test_groups
-                run(`$(Base.julia_cmd()) --color=yes --project=$(dir) \
-                     --startup-file=no -e \
-                     'using Pkg; Pkg.update(); Pkg.precompile()'`)
-
-                @testset "$(basename(file))" for file in files
-                    try
-                        run(`$(Base.julia_cmd()) --code-coverage=user --color=yes \
-                             --project=$(dir) --startup-file=no $(file)`)
-                        @test true
-                    catch err
-                        @error "Error while running $(file)" exception = err
-                        @test false
-                    end
-                end
-            end
-        end
-    end
 end
 
 # Distributed Tests
