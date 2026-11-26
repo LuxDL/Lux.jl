@@ -8,7 +8,7 @@
 # ## Package Imports
 
 using BFloat16s, ConcreteStructs, LinearAlgebra, Lux, Random, Reactant
-using HuggingFaceTokenizers, PythonCall, SafeTensors, Scratch, JSON3
+using HuggingFaceTokenizers, PythonCall, SafeTensors, Scratch, JSON
 
 const huggingface_hub = pyimport("huggingface_hub")
 
@@ -557,7 +557,7 @@ function download_qwen3_weights_from_huggingface(use_reasoning_model::Bool, vers
         repo_dir = huggingface_hub.snapshot_download(; repo_id=repo_id, local_dir=local_dir)
         index_path = joinpath(string(repo_dir), "model.safetensors.index.json")
 
-        index = JSON3.read(index_path)
+        index = JSON.parsefile(index_path)
 
         weights_dict = Dict()
         for filename in Set(values(index["weight_map"]))
