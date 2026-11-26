@@ -4,6 +4,7 @@ import footnote from "markdown-it-footnote";
 import { transformerMetaWordHighlight } from "@shikijs/transformers";
 import { mathjaxPlugin } from "./mathjax-plugin";
 import path from "path";
+import { execFileSync } from "child_process";
 import { copyOrDownloadAsMarkdownButtons } from 'vitepress-plugin-llms';
 import llmstxt from 'vitepress-plugin-llms';
 
@@ -13,13 +14,61 @@ const baseTemp = {
   base: 'REPLACE_ME_DOCUMENTER_VITEPRESS', // TODO: replace this in makedocs!
 };
 
+const repoRoot = (() => {
+  try {
+    return execFileSync("git", ["rev-parse", "--show-toplevel"], {
+      cwd: __dirname,
+      encoding: "utf-8",
+    }).trim();
+  } catch {
+    return undefined;
+  }
+})();
+
+const gitTimestampCache = new Map<string, number | undefined>();
+
+function getGitLastUpdated(sourcePath: string): number | undefined {
+  if (!repoRoot) return undefined;
+  if (gitTimestampCache.has(sourcePath)) {
+    return gitTimestampCache.get(sourcePath);
+  }
+  let timestamp: number | undefined;
+  try {
+    const out = execFileSync(
+      "git",
+      ["log", "-1", "--format=%ct", "--", sourcePath],
+      { cwd: repoRoot, encoding: "utf-8" },
+    ).trim();
+    const secs = Number(out);
+    if (Number.isFinite(secs) && secs > 0) {
+      timestamp = secs * 1000;
+    }
+  } catch {
+    timestamp = undefined;
+  }
+  gitTimestampCache.set(sourcePath, timestamp);
+  return timestamp;
+}
+
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   base: 'REPLACE_ME_DOCUMENTER_VITEPRESS',
   title: 'REPLACE_ME_DOCUMENTER_VITEPRESS',
   description: "Documentation for LuxDL Repositories",
   cleanUrls: true,
+  lastUpdated: true,
   outDir: 'REPLACE_ME_DOCUMENTER_VITEPRESS', // This is required for MarkdownVitepress to work correctly...
+
+  transformPageData(pageData) {
+    const sourcePath =
+      typeof pageData.frontmatter?.sourcePath === "string"
+        ? pageData.frontmatter.sourcePath
+        : path.posix.join("docs/src", pageData.relativePath);
+    const timestamp = getGitLastUpdated(sourcePath);
+    if (timestamp !== undefined) {
+      pageData.lastUpdated = timestamp;
+    }
+  },
 
   markdown: {
     config(md) {
@@ -85,32 +134,11 @@ export default defineConfig({
     [
       "link",
       {
-        rel: "apple-touch-icon",
-        sizes: "180x180",
-        href: "/apple-touch-icon.png",
-      },
-    ],
-    [
-      "link",
-      {
         rel: "icon",
-        type: "image/png",
-        sizes: "32x32",
-        href: "/favicon-32x32.png",
+        type: "image/svg+xml",
+        href: `${baseTemp.base}lux-logo.svg`,
       },
     ],
-    [
-      "link",
-      {
-        rel: "icon",
-        type: "image/png",
-        sizes: "16x16",
-        href: "/favicon-16x16.png",
-      },
-    ],
-    ["link", { rel: "icon", href: "/favicon.ico" }],
-    ["link", { rel: "manifest", href: "/site.webmanifest" }],
-    ["link", { rel: "icon", href: "REPLACE_ME_DOCUMENTER_VITEPRESS_FAVICON" }],
     ["script", { src: `/versions.js` }],
     ["script", { src: `${baseTemp.base}siteinfo.js` }],
   ],
@@ -126,6 +154,27 @@ export default defineConfig({
       provider: "local",
       options: {
         detailedView: true,
+        miniSearch: {
+          options: {
+            tokenize: (text) => text.split(/[\s\-.]+/),
+            processTerm: (term) => {
+              const word = term
+                .replace(/^[^a-zA-Z0-9@!_]+/, "")
+                .replace(/[^a-zA-Z0-9@!_]+$/, "")
+                .toLowerCase();
+              return word || null;
+            },
+          },
+          searchOptions: {
+            fuzzy: 0.2,
+            prefix: true,
+            boost: {
+              title: 4,
+              text: 2,
+              titles: 1,
+            },
+          },
+        },
       },
     },
     nav: [
@@ -489,7 +538,13 @@ export default defineConfig({
       },
     },
     editLink: {
-      pattern: "https://github.com/LuxDL/Lux.jl/edit/main/docs/src/:path",
+      pattern: ({ filePath, frontmatter }) => {
+        const targetPath =
+          typeof frontmatter?.sourcePath === "string"
+            ? frontmatter.sourcePath
+            : `docs/src/${filePath}`;
+        return `https://github.com/LuxDL/Lux.jl/edit/main/${targetPath}`;
+      },
       text: "Edit this page on GitHub",
     },
     socialLinks: [

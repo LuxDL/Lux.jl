@@ -152,7 +152,9 @@ end
 
 # For displaying generated Latex
 function postprocess(path, str)
-    return replace(
+    rel_source = replace(relpath(path, dirname(@__DIR__)), "\\" => "/")
+    frontmatter = "```@raw html\n---\nsourcePath: $(rel_source)\n---\n```\n\n"
+    return frontmatter * replace(
         str, "````\n__REPLACEME__\$" => "\$\$", "\$__REPLACEME__\n````" => "\$\$"
     )
 end
