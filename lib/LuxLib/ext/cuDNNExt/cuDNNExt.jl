@@ -1,7 +1,8 @@
 module cuDNNExt
 
 using LuxLib: LuxLib, Optional, ∂∅, Impl
-using LuxLib.Utils: Utils, safe_reshape, safe_vec, unsafe_known, recursive_unthunk
+using LuxLib.Utils:
+    Utils, safe_reshape, safe_vec, unsafe_known, recursive_unthunk, StaticBool, False, True
 using CUDA: CUDA, CuArray, CuVector, DenseCuArray, DenseCuVector
 using ChainRulesCore: ChainRulesCore
 using cuDNN:
@@ -12,7 +13,6 @@ using cuDNN:
     batchnorm_training!,
     batchnorm_training_supported
 using FastClosures: @closure
-using Static: StaticBool, False, True
 
 const CRC = ChainRulesCore
 

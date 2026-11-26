@@ -1,6 +1,6 @@
 """
     dropout(rng::AbstractRNG, x, p, training, invp, dims)
-    dropout(rng::AbstractRNG, x, mask, p, training, update_mask::Union{Val, StaticBool},
+    dropout(rng::AbstractRNG, x, mask, p, training, update_mask::Val{true},
         invp, dims)
 
 Dropout: Simple Way to prevent Neural Networks for Overfitting. For details see [srivastava2014dropout](@citet).
@@ -11,10 +11,10 @@ Dropout: Simple Way to prevent Neural Networks for Overfitting. For details see 
   - `x`: Input Array
   - `mask`: Dropout Mask. If not used then it is constructed automatically
   - `p`: Probability of an element to be dropped out
-  - `training`: Set to `Val(true)` or `True()` if running in training mode. Can be set to
+  - `training`: Set to `Val(true)` if running in training mode. Can be set to
     `nothing` to automatically determine if the function is being called within an autodiff
     context
-  - `update_mask`: If `Val(true)` or `True()` then the mask is generated and used. Else, the
+  - `update_mask`: If `Val(true)` then the mask is generated and used. Else, the
     `mask` provided is directly used
   - `invp`: Inverse multiplied to the mask. Calculated as `invp = 1 / (1 - p)`.
 
@@ -58,7 +58,7 @@ recomputing the constants for a fixed dropout probability.
   - `rng`: Random number generator
   - `x`: Input Array
   - `p`: Probability of an element to be dropped out
-  - `training`: Set to `Val(true)` or `True()` if running in training mode. Can be set to
+  - `training`: Set to `Val(true)` if running in training mode. Can be set to
     `nothing` to automatically determine if the function is being called within an autodiff
     context`
   - `α`: `-1.7580993408473766`. Computed at limit x tends to infinity, `selu(x) = -λβ = α`
