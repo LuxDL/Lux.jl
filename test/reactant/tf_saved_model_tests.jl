@@ -1,6 +1,6 @@
 include("../shared_testsetup.jl")
 
-using CondaPkg, Lux, Random, Reactant, Test
+using Lux, Random, Reactant, Test
 
 model_dir, x_saved, res_saved = let
     dev = reactant_device()
@@ -38,60 +38,66 @@ end
     @test filesize(joinpath(model_dir, "variables", "variables.data-00000-of-00001")) > 0
 end
 
-if CondaPkg.backend() !== :Null
-    env_dir = joinpath(dirname(CondaPkg.cur_deps_file()), ".CondaPkg")
-    if isdir(env_dir)
-        py_path = try
-            CondaPkg.which("python")
-        catch
-            nothing
-        end
-        installed_py = if py_path === nothing
-            nothing
-        else
-            try
-                v_match = match(r"(\d+(?:\.\d+)+)", readchomp(`$py_path --version`))
-                v_match === nothing ? nothing : VersionNumber(v_match[1])
+# Set LUX_TEST_TF_SAVED_MODEL=true to install Python/TensorFlow via CondaPkg and
+# validate the exported SavedModel against TensorFlow via PythonCall.
+if get(ENV, "LUX_TEST_TF_SAVED_MODEL", "false") == "true"
+    using CondaPkg
+
+    if CondaPkg.backend() !== :Null
+        env_dir = joinpath(dirname(CondaPkg.cur_deps_file()), ".CondaPkg")
+        if isdir(env_dir)
+            py_path = try
+                CondaPkg.which("python")
             catch
                 nothing
             end
+            installed_py = if py_path === nothing
+                nothing
+            else
+                try
+                    v_match = match(r"(\d+(?:\.\d+)+)", readchomp(`$py_path --version`))
+                    v_match === nothing ? nothing : VersionNumber(v_match[1])
+                catch
+                    nothing
+                end
+            end
+            if installed_py === nothing || installed_py >= v"3.14"
+                rm(env_dir; recursive=true, force=true)
+            end
         end
-        if installed_py === nothing || installed_py >= v"3.14"
-            rm(env_dir; recursive=true, force=true)
-        end
+        CondaPkg.add("python"; version="<3.14,>=3.9,<4", resolve=false)
+        CondaPkg.add_pip("tensorflow"; version=">=2.17", resolve=false)
+        CondaPkg.add_pip("numpy"; version=">=1", resolve=false)
+        CondaPkg.resolve(; force=true)
     end
-    CondaPkg.add("python"; version="<3.14,>=3.9,<4", resolve=false)
-    CondaPkg.add_pip("tensorflow"; version=">=2.17", resolve=false)
-    CondaPkg.add_pip("numpy"; version=">=1", resolve=false)
-    CondaPkg.resolve(; force=true)
-end
 
-using PythonCall
+    using PythonCall
 
-@testset "TensorFlow SavedModel Validation" begin
-    tf = if CondaPkg.backend() === :Null && get(ENV, "CI", "false") != "true"
-        try
+    @testset "TensorFlow SavedModel Validation" begin
+        tf = if CondaPkg.backend() === :Null && get(ENV, "CI", "false") != "true"
+            try
+                pyimport("tensorflow")
+            catch err
+                @warn "Failed to import `tensorflow` with `CondaPkg.backend() === :Null`: $err"
+                nothing
+            end
+        else
             pyimport("tensorflow")
-        catch err
-            @warn "Failed to import `tensorflow` with `CondaPkg.backend() === :Null`: $err"
-            nothing
-        end
-    else
-        pyimport("tensorflow")
-    end
-
-    if tf === nothing
-        @test_skip false
-    else
-        np = pyimport("numpy")
-
-        restored_model = tf.saved_model.load(model_dir)
-
-        x_tf = tf.constant(np.asarray(permutedims(x_saved, (4, 3, 2, 1))); dtype=tf.float32)
-        res_tf = pywith(tf.device("/CPU:0")) do _
-            return permutedims(PyArray(restored_model.f(x_tf)[0]), (2, 1))
         end
 
-        @test res_saved ≈ res_tf atol = 1e-2 rtol = 1e-2
+        if tf === nothing
+            @test_skip false
+        else
+            np = pyimport("numpy")
+
+            restored_model = tf.saved_model.load(model_dir)
+
+            x_tf = tf.constant(np.asarray(permutedims(x_saved, (4, 3, 2, 1))); dtype=tf.float32)
+            res_tf = pywith(tf.device("/CPU:0")) do _
+                return permutedims(PyArray(restored_model.f(x_tf)[0]), (2, 1))
+            end
+
+            @test res_saved ≈ res_tf atol = 1e-2 rtol = 1e-2
+        end
     end
 end
