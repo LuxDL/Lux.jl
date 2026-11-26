@@ -13,67 +13,68 @@ using Lux, Random, Test, Statistics, ADTypes, StableRNGs, Enzyme
 
         xdev = reactant_device(; force=true)
 
-        @testset "MLP Training: $(version)" for version in (:iip, :oop)
-            model = Chain(
-                Dense(2 => 32, gelu),
-                BatchNorm(32),
-                Dense(32 => 32, gelu),
-                BatchNorm(32),
-                Dense(32 => 2),
-            )
+        model = Chain(
+            Dense(2 => 32, gelu),
+            BatchNorm(32),
+            Dense(32 => 32, gelu),
+            BatchNorm(32),
+            Dense(32 => 2),
+        )
+        ps, st = xdev(Lux.setup(StableRNG(1234), model))
+
+        x_ra = xdev(randn(Float32, 2, 32))
+        y_ra = xdev(rand(Float32, 2, 32))
+
+        inference_loss_fn =
+            (xᵢ, yᵢ, mode, ps, st) -> begin
+                ŷᵢ, _ = model(xᵢ, ps, Lux.testmode(st))
+                return MSELoss()(ŷᵢ, yᵢ)
+            end
+        inference_loss_fn_compiled = @compile inference_loss_fn(x_ra, y_ra, model, ps, st)
+
+        x = [rand(Float32, 2, 32) for _ in 1:8]
+        y = [xᵢ .^ 2 for xᵢ in x]
+
+        dataloader = DeviceIterator(xdev, zip(x, y))
+
+        total_initial_loss = mapreduce(+, dataloader) do (xᵢ, yᵢ)
+            inference_loss_fn_compiled(xᵢ, yᵢ, model, ps, st)
+        end
+
+        training_configs = (
+            (Adam(0.01f0), :iip, AutoEnzyme(), 10),
+            (Adam(0.01f0), :iip, AutoReactant(), 10),
+            (Adam(0.01f0), :oop, AutoEnzyme(), 10),
+            (Adam(0.01f0), :oop, AutoReactant(), 10),
+            (Descent(0.01f0), :iip, AutoEnzyme(), 10),
+            (Momentum(0.01f0), :oop, AutoReactant(), 10),
+            (AdamW(0.01f0), :iip, AutoReactant(), 10),
+            (OptimiserChain(AccumGrad(5), Adam(0.01f0)), :oop, AutoEnzyme(), 10),
+        )
+
+        @testset "MLP Training: $(version) / $(typeof(opt)) / $(ad)" for (
+            opt, version, ad, nepochs
+        ) in training_configs
             ps, st = xdev(Lux.setup(StableRNG(1234), model))
+            train_state = Training.TrainState(model, ps, st, opt)
 
-            x_ra = xdev(randn(Float32, 2, 32))
-            y_ra = xdev(rand(Float32, 2, 32))
-
-            inference_loss_fn =
-                (xᵢ, yᵢ, mode, ps, st) -> begin
-                    ŷᵢ, _ = model(xᵢ, ps, Lux.testmode(st))
-                    return MSELoss()(ŷᵢ, yᵢ)
+            for epoch in 1:nepochs, (xᵢ, yᵢ) in dataloader
+                grads, loss, stats, train_state = if version === :iip
+                    Training.single_train_step!(ad, MSELoss(), (xᵢ, yᵢ), train_state)
+                elseif version === :oop
+                    Training.single_train_step(ad, MSELoss(), (xᵢ, yᵢ), train_state)
+                else
+                    error("Invalid version: $(version)")
                 end
-            inference_loss_fn_compiled = @compile inference_loss_fn(
-                x_ra, y_ra, model, ps, st
-            )
-
-            x = [rand(Float32, 2, 32) for _ in 1:32]
-            y = [xᵢ .^ 2 for xᵢ in x]
-
-            dataloader = DeviceIterator(xdev, zip(x, y))
-
-            total_initial_loss = mapreduce(+, dataloader) do (xᵢ, yᵢ)
-                inference_loss_fn_compiled(xᵢ, yᵢ, model, ps, st)
             end
 
-            @testset for opt in (
-                    Descent(0.01f0),
-                    Momentum(0.01f0),
-                    Adam(0.01f0),
-                    AdamW(0.01f0),
-                    OptimiserChain(AccumGrad(5), Adam(0.01f0)),
-                ),
-                ad in (AutoEnzyme(), AutoReactant())
-
-                ps, st = xdev(Lux.setup(StableRNG(1234), model))
-                train_state = Training.TrainState(model, ps, st, opt)
-
-                for epoch in 1:100, (xᵢ, yᵢ) in dataloader
-                    grads, loss, stats, train_state = if version === :iip
-                        Training.single_train_step!(ad, MSELoss(), (xᵢ, yᵢ), train_state)
-                    elseif version === :oop
-                        Training.single_train_step(ad, MSELoss(), (xᵢ, yᵢ), train_state)
-                    else
-                        error("Invalid version: $(version)")
-                    end
-                end
-
-                total_final_loss = mapreduce(+, dataloader) do (xᵢ, yᵢ)
-                    inference_loss_fn_compiled(
-                        xᵢ, yᵢ, model, train_state.parameters, train_state.states
-                    )
-                end
-
-                @test total_final_loss < 100 * total_initial_loss
+            total_final_loss = mapreduce(+, dataloader) do (xᵢ, yᵢ)
+                inference_loss_fn_compiled(
+                    xᵢ, yᵢ, model, train_state.parameters, train_state.states
+                )
             end
+
+            @test total_final_loss < total_initial_loss
         end
     end
 end

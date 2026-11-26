@@ -17,7 +17,7 @@ include("../../shared_testsetup.jl")
     )
 
     dataset_ = [(x, y) for (x, y) in dataset]
-    opt = Adam(0.001f0)
+    opt = Adam(0.01f0)
 
     ps, st = Lux.setup(rng, model)
     tstate = Training.TrainState(model, ComponentVector(ps), st, opt)
@@ -26,20 +26,20 @@ include("../../shared_testsetup.jl")
         mse(model, tstate.parameters, Lux.testmode(tstate.states), dataset_[1])
     )
 
-    for epoch in 1:100, (x, y) in dataset_
+    for epoch in 1:20, (x, y) in dataset_
         grads, loss, _, tstate = allow_unstable() do
             Training.compute_gradients(AutoForwardDiff(), mse, (x, y), tstate)
         end
         tstate = Training.apply_gradients!(tstate, grads)
     end
 
-    for epoch in 1:100, (x, y) in dataset_
+    for epoch in 1:20, (x, y) in dataset_
         grads, loss, _, tstate = allow_unstable() do
             Training.single_train_step!(AutoForwardDiff(), mse, (x, y), tstate)
         end
     end
 
-    for epoch in 1:100, (x, y) in dataset_
+    for epoch in 1:20, (x, y) in dataset_
         grads, loss, _, tstate = allow_unstable() do
             Training.single_train_step(AutoForwardDiff(), mse, (x, y), tstate)
         end

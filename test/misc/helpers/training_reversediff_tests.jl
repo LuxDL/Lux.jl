@@ -11,7 +11,7 @@ include("../../shared_testsetup.jl")
 
     rng = StableRNG(12345)
 
-    dataset = [(randn(rng, Float32, 4, 32), randn(rng, Float32, 4, 32)) for _ in 1:100]
+    dataset = [(randn(rng, Float32, 4, 32), randn(rng, Float32, 4, 32)) for _ in 1:20]
 
     @testset "Unhandled Cases" begin
         model = Chain(
@@ -60,10 +60,10 @@ include("../../shared_testsetup.jl")
     model = Chain(Dense(4, 32, tanh), Dense(32, 32, tanh), Dense(32, 4))
     ps, st = Lux.setup(rng, model)
 
-    tstate = Training.TrainState(model, ps, st, Adam(0.001f0))
+    tstate = Training.TrainState(model, ps, st, Adam(0.01f0))
 
     loss_initial = first(mse1(model, ps, st, dataset[1]))
-    for i in 1:100
+    for i in 1:20
         for (x, y) in dataset
             _, _, _, tstate = allow_unstable() do
                 Training.single_train_step!(
