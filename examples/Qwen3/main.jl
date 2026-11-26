@@ -245,8 +245,9 @@ end
 
 function (attn::GroupedQueryAttention)((x, cos_cache, sin_cache), ps, st::NamedTuple)
     _, num_tokens, B = size(x)
-    queries, keys, values, st_q_proj, st_k_proj, st_v_proj, st_q_norm, st_k_norm =
-        _gqa_qkv_norm_rope(attn, x, cos_cache, sin_cache, ps, st)
+    queries, keys, values, st_q_proj, st_k_proj, st_v_proj, st_q_norm, st_k_norm = _gqa_qkv_norm_rope(
+        attn, x, cos_cache, sin_cache, ps, st
+    )
 
     context = scaled_dot_product_attention(
         queries,
@@ -277,8 +278,9 @@ function (attn::GroupedQueryAttention)(
     (x, cos_cache, sin_cache, kv_cache)::Tuple{Any,Any,Any,Tuple}, ps, st::NamedTuple
 )
     _, num_tokens, B = size(x)
-    queries, keys, values, st_q_proj, st_k_proj, st_v_proj, st_q_norm, st_k_norm =
-        _gqa_qkv_norm_rope(attn, x, cos_cache, sin_cache, ps, st)
+    queries, keys, values, st_q_proj, st_k_proj, st_v_proj, st_q_norm, st_k_norm = _gqa_qkv_norm_rope(
+        attn, x, cos_cache, sin_cache, ps, st
+    )
 
     k_cache, v_cache = kv_cache
     k_cache[:, :, 1:num_tokens, :] = keys
@@ -310,13 +312,12 @@ function (attn::GroupedQueryAttention)(
 end
 
 function (attn::GroupedQueryAttention)(
-    (x, cos_pos, sin_pos, pos, kv_cache)::Tuple{Any,Any,Any,Any,Tuple},
-    ps,
-    st::NamedTuple,
+    (x, cos_pos, sin_pos, pos, kv_cache)::Tuple{Any,Any,Any,Any,Tuple}, ps, st::NamedTuple
 )
     _, num_tokens, B = size(x)
-    queries, keys, values, st_q_proj, st_k_proj, st_v_proj, st_q_norm, st_k_norm =
-        _gqa_qkv_norm_rope(attn, x, cos_pos, sin_pos, ps, st)
+    queries, keys, values, st_q_proj, st_k_proj, st_v_proj, st_q_norm, st_k_norm = _gqa_qkv_norm_rope(
+        attn, x, cos_pos, sin_pos, ps, st
+    )
 
     k_cache, v_cache = kv_cache
     k_cache[:, :, pos, :] = reshape(keys, attn.head_dim, attn.num_kv_groups, B)
@@ -402,9 +403,7 @@ function (block::Qwen3Attention)(
 end
 
 function (block::Qwen3Attention)(
-    (x, cos_pos, sin_pos, pos, kv_cache)::Tuple{Any,Any,Any,Any,Tuple},
-    ps,
-    st::NamedTuple,
+    (x, cos_pos, sin_pos, pos, kv_cache)::Tuple{Any,Any,Any,Any,Tuple}, ps, st::NamedTuple
 )
     return _block_forward(block, x, (cos_pos, sin_pos, pos, kv_cache), ps, st)
 end
@@ -429,10 +428,7 @@ function Qwen3(cfg::Qwen3Config)
 end
 
 function init_kv_cache(
-    cfg::Qwen3Config,
-    max_cache_len::Int,
-    batch_size::Int,
-    dev=reactant_device(; force=true),
+    cfg::Qwen3Config, max_cache_len::Int, batch_size::Int, dev=reactant_device(; force=true)
 )
     dtype = fn_to_dtype(cfg.dtype)
     z = zeros(dtype, cfg.head_dim, cfg.n_kv_groups, max_cache_len, batch_size)
@@ -502,18 +498,14 @@ function (qwen3::Qwen3)(in_idx::AbstractArray, ps, st::NamedTuple)
     return _apply_head(qwen3, x, ps, st, st_embed_tokens, st_blocks)
 end
 
-function (qwen3::Qwen3)(
-    (in_idx, token_idx)::Tuple{<:AbstractArray,Any}, ps, st::NamedTuple
-)
+function (qwen3::Qwen3)((in_idx, token_idx)::Tuple{<:AbstractArray,Any}, ps, st::NamedTuple)
     x, st_embed_tokens, st_blocks = _forward_transformer(qwen3, in_idx, ps, st)
     x_last = x[:, token_idx, :]
     return _apply_head(qwen3, x_last, ps, st, st_embed_tokens, st_blocks)
 end
 
 function (qwen3::Qwen3)(
-    (in_idx, token_idx, kv_cache)::Tuple{<:AbstractArray,Any,Tuple},
-    ps,
-    st::NamedTuple,
+    (in_idx, token_idx, kv_cache)::Tuple{<:AbstractArray,Any,Tuple}, ps, st::NamedTuple
 )
     x, st_embed_tokens, st_blocks = _forward_transformer(qwen3, in_idx, ps, st, kv_cache)
     x_last = reshape(x[:, token_idx, :], size(x, 1), size(x, 3))
@@ -935,9 +927,7 @@ mutable struct CachedReactantThunks
 end
 
 function CachedReactantThunks()
-    return CachedReactantThunks(
-        Dict{Tuple{Qwen3Config,Int,Int},Reactant.Compiler.Thunk}()
-    )
+    return CachedReactantThunks(Dict{Tuple{Qwen3Config,Int,Int},Reactant.Compiler.Thunk}())
 end
 
 function cache_and_retrieve_generation!(
