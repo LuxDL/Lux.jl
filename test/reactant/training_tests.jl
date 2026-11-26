@@ -228,3 +228,101 @@ end
     @test !all(iszero, Array(grads1.layer_2.weight))
     @test !all(iszero, Array(grads1.layer_2.bias))
 end
+
+@testset "Reactant: TrainState Cache Invalidation (Issue #1838)" begin
+    dev = reactant_device(; force=true)
+    rng = StableRNG(1234)
+    model = Dense(2 => 1)
+    x, y = dev((randn(rng, Float32, 2, 4), randn(rng, Float32, 1, 4)))
+
+    mod = Module()
+    mse = MSELoss()
+
+    function loss2(m, ps, st, data)
+        ŷ, stₙ = m(data[1], ps, st)
+        return 2.0f0 * mse(ŷ, data[2]), stₙ, (;)
+    end
+
+    @testset "$(nameof(step_fn))" for step_fn in (
+        Training.single_train_step, Training.single_train_step!
+    )
+        Core.eval(mod, :(function lossfn(m, ps, st, data)
+            ŷ, stₙ = m(data[1], ps, st)
+            return ($mse)(ŷ, data[2]), stₙ, (;)
+        end))
+        ps_init, st_init = dev(Lux.setup(StableRNG(1234), model))
+        ts = Training.TrainState(model, ps_init, st_init, Adam(0.01f0))
+
+        _, loss1, _, ts = Base.invokelatest(step_fn, AutoReactant(), mod.lossfn, (x, y), ts)
+        @test Float32(loss1) > 0.0f0
+        thunk1 = ts.cache.extras.compiled_grad_and_step_function
+
+        # Steady state: repeated step does not recompile
+        _, _, _, ts = Base.invokelatest(step_fn, AutoReactant(), mod.lossfn, (x, y), ts)
+        @test ts.cache.extras.compiled_grad_and_step_function === thunk1
+
+        # Redefine lossfn -> world age changes -> must recompile
+        Core.eval(mod, :(function lossfn(m, ps, st, data)
+            ŷ, stₙ = m(data[1], ps, st)
+            return 0.0f0 * ($mse)(ŷ, data[2]), stₙ, (;)
+        end))
+        _, loss_redef, _, ts = Base.invokelatest(
+            step_fn, AutoReactant(), mod.lossfn, (x, y), ts
+        )
+        @test Float32(loss_redef) ≈ 0.0f0
+        thunk2 = ts.cache.extras.compiled_grad_and_step_function
+        @test thunk2 !== thunk1
+
+        # Passing a different objective function must recompile without error
+        _, loss_other, _, ts = Base.invokelatest(step_fn, AutoReactant(), loss2, (x, y), ts)
+        @test Float32(loss_other) > 0.0f0
+        thunk3 = ts.cache.extras.compiled_grad_and_step_function
+        @test thunk3 !== thunk2
+
+        _, _, _, ts = Base.invokelatest(step_fn, AutoReactant(), loss2, (x, y), ts)
+        @test ts.cache.extras.compiled_grad_and_step_function === thunk3
+    end
+
+    @testset "compute_gradients" begin
+        Core.eval(mod, :(function lossfn_cg(m, ps, st, data)
+            ŷ, stₙ = m(data[1], ps, st)
+            return ($mse)(ŷ, data[2]), stₙ, (;)
+        end))
+        ps_init, st_init = dev(Lux.setup(StableRNG(1234), model))
+        ts = Training.TrainState(model, ps_init, st_init, Adam(0.01f0))
+
+        _, loss1, _, ts = Base.invokelatest(
+            Training.compute_gradients, AutoReactant(), mod.lossfn_cg, (x, y), ts
+        )
+        @test Float32(loss1) > 0.0f0
+        thunk1 = ts.cache.extras.compiled_gradient_function
+
+        _, _, _, ts = Base.invokelatest(
+            Training.compute_gradients, AutoReactant(), mod.lossfn_cg, (x, y), ts
+        )
+        @test ts.cache.extras.compiled_gradient_function === thunk1
+
+        Core.eval(mod, :(function lossfn_cg(m, ps, st, data)
+            ŷ, stₙ = m(data[1], ps, st)
+            return 0.0f0 * ($mse)(ŷ, data[2]), stₙ, (;)
+        end))
+        _, loss_redef, _, ts = Base.invokelatest(
+            Training.compute_gradients, AutoReactant(), mod.lossfn_cg, (x, y), ts
+        )
+        @test Float32(loss_redef) ≈ 0.0f0
+        thunk2 = ts.cache.extras.compiled_gradient_function
+        @test thunk2 !== thunk1
+
+        _, loss_other, _, ts = Base.invokelatest(
+            Training.compute_gradients, AutoReactant(), loss2, (x, y), ts
+        )
+        @test Float32(loss_other) > 0.0f0
+        thunk3 = ts.cache.extras.compiled_gradient_function
+        @test thunk3 !== thunk2
+
+        _, _, _, ts = Base.invokelatest(
+            Training.compute_gradients, AutoReactant(), loss2, (x, y), ts
+        )
+        @test ts.cache.extras.compiled_gradient_function === thunk3
+    end
+end

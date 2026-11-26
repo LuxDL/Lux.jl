@@ -101,9 +101,14 @@ end
 function Lux.Training.compute_gradients_impl(
     backend::ReactantBackend, objective_function::F, data, ts::Training.TrainState
 ) where {F}
+    # Reactant thunks don't retrace on method redefinition, so invalidate on world-age change
+    world_age = Base.get_world_counter()
     if (
         ts.cache isa TrainingBackendCache &&
-        hasfield(typeof(ts.cache.extras), :compiled_gradient_function)
+        hasfield(typeof(ts.cache.extras), :compiled_gradient_function) &&
+        hasfield(typeof(ts.cache.extras), :compiled_gradient_function_world) &&
+        typeof(ts.objective_function) == F &&
+        ts.cache.extras.compiled_gradient_function_world == world_age
     )
         compiled_gradient_function = ts.cache.extras.compiled_gradient_function
     else
@@ -114,12 +119,19 @@ function Lux.Training.compute_gradients_impl(
                 )
             end
         end
+        compiled_gradient_function_world = Base.get_world_counter()
 
         if ts.cache isa TrainingBackendCache
-            @set! ts.cache.extras = merge(ts.cache.extras, (; compiled_gradient_function))
+            @set! ts.cache.extras = merge(
+                ts.cache.extras,
+                (; compiled_gradient_function, compiled_gradient_function_world),
+            )
         else
             cache = TrainingBackendCache(
-                backend, False(), nothing, (; compiled_gradient_function)
+                backend,
+                False(),
+                nothing,
+                (; compiled_gradient_function, compiled_gradient_function_world),
             )
             @set! ts.cache = cache
         end
@@ -182,9 +194,14 @@ for inplace in ("!", "")
     @eval function Lux.Training.$(fname)(
         backend::ReactantBackend, objective_function::F, data, ts::Training.TrainState
     ) where {F}
+        # Reactant thunks don't retrace on method redefinition, so invalidate on world-age change
+        world_age = Base.get_world_counter()
         if (
             ts.cache isa TrainingBackendCache &&
-            hasfield(typeof(ts.cache.extras), :compiled_grad_and_step_function)
+            hasfield(typeof(ts.cache.extras), :compiled_grad_and_step_function) &&
+            hasfield(typeof(ts.cache.extras), :compiled_grad_and_step_function_world) &&
+            typeof(ts.objective_function) == F &&
+            ts.cache.extras.compiled_grad_and_step_function_world == world_age
         )
             (; compiled_grad_and_step_function, is_sharded) = ts.cache.extras
             ps = ts.parameters
@@ -216,18 +233,28 @@ for inplace in ("!", "")
                     )
                 end
             end
+            compiled_grad_and_step_function_world = Base.get_world_counter()
 
             if ts.cache isa TrainingBackendCache
                 @set! ts.cache.dparameters = dparameters
                 @set! ts.cache.extras = merge(
-                    ts.cache.extras, (; compiled_grad_and_step_function, is_sharded)
+                    ts.cache.extras,
+                    (;
+                        compiled_grad_and_step_function,
+                        compiled_grad_and_step_function_world,
+                        is_sharded,
+                    ),
                 )
             else
                 cache = TrainingBackendCache(
                     backend,
                     False(),
                     dparameters,
-                    (; compiled_grad_and_step_function, is_sharded),
+                    (;
+                        compiled_grad_and_step_function,
+                        compiled_grad_and_step_function_world,
+                        is_sharded,
+                    ),
                 )
                 @set! ts.cache = cache
             end
