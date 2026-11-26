@@ -310,7 +310,7 @@ function (attn::GroupedQueryAttention)(
 end
 
 function (attn::GroupedQueryAttention)(
-    (x, cos_pos, sin_pos, pos, attn_mask, kv_cache)::Tuple{Any,Any,Any,Any,Any,Tuple},
+    (x, cos_pos, sin_pos, pos, kv_cache)::Tuple{Any,Any,Any,Any,Tuple},
     ps,
     st::NamedTuple,
 )
@@ -328,7 +328,7 @@ function (attn::GroupedQueryAttention)(
         v_cache;
         head_dim=1,
         token_dim=3,
-        mask=attn_mask,
+        kv_lengths=pos,
         return_attention_weights=false,
     )[1]
 
@@ -402,11 +402,11 @@ function (block::Qwen3Attention)(
 end
 
 function (block::Qwen3Attention)(
-    (x, cos_pos, sin_pos, pos, attn_mask, kv_cache)::Tuple{Any,Any,Any,Any,Any,Tuple},
+    (x, cos_pos, sin_pos, pos, kv_cache)::Tuple{Any,Any,Any,Any,Tuple},
     ps,
     st::NamedTuple,
 )
-    return _block_forward(block, x, (cos_pos, sin_pos, pos, attn_mask, kv_cache), ps, st)
+    return _block_forward(block, x, (cos_pos, sin_pos, pos, kv_cache), ps, st)
 end
 
 @concrete struct Qwen3 <:
@@ -521,9 +521,7 @@ function (qwen3::Qwen3)(
 end
 
 function (qwen3::Qwen3)(
-    (token_id, pos, kv_cache, cache_positions)::Tuple{
-        <:AbstractArray,Any,Tuple,<:AbstractVector
-    },
+    (token_id, pos, kv_cache, _)::Tuple{<:AbstractArray,Any,Tuple,Val{:decode}},
     ps,
     st::NamedTuple,
 )
@@ -531,14 +529,11 @@ function (qwen3::Qwen3)(
 
     cos_pos = reshape(st.cos_cache[:, pos], :, 1)
     sin_pos = reshape(st.sin_cache[:, pos], :, 1)
-    attn_mask = reshape(cache_positions .<= pos, :, 1)
 
     st_blocks = ()
     for (i, block) in enumerate(qwen3.blocks)
         x, st_block_new = block(
-            (x, cos_pos, sin_pos, pos, attn_mask, kv_cache[i]),
-            ps.blocks[i],
-            st.blocks[i],
+            (x, cos_pos, sin_pos, pos, kv_cache[i]), ps.blocks[i], st.blocks[i]
         )
         st_blocks = (st_blocks..., st_block_new)
     end
@@ -862,15 +857,9 @@ function prefill_next_token!(
 end
 
 function decode_next_token!(
-    model::Qwen3,
-    token_id::AbstractMatrix{T},
-    pos,
-    ps,
-    st,
-    kv_cache,
-    cache_positions,
+    model::Qwen3, token_id::AbstractMatrix{T}, pos, ps, st, kv_cache
 ) where {T}
-    logits, stₙ = model((token_id, pos, kv_cache, cache_positions), ps, st)
+    logits, stₙ = model((token_id, pos, kv_cache, Val(:decode)), ps, st)
     return _logits_to_tokens(logits, T), stₙ
 end
 
@@ -919,9 +908,6 @@ function generate_tokens_compiled(
         ),
         model.cfg.n_layers,
     )
-    cache_positions = Reactant.promote_to(
-        Reactant.TracedRArray{Int32,1}, Int32(1):Int32(max_cache_len)
-    )
     output_tokens = Reactant.@opcall fill(Int32(0), (max_cache_len, B))
 
     logits, st_cur = model((padded_prompt, prompt_len, kv_cache), ps, st)
@@ -934,7 +920,7 @@ function generate_tokens_compiled(
 
     Reactant.@trace while (step < max_new_tokens) & (!hit_eos)
         pos = prompt_len + step
-        logits, st_cur = model((next_token, pos, kv_cache, cache_positions), ps, st_cur)
+        logits, st_cur = model((next_token, pos, kv_cache, Val(:decode)), ps, st_cur)
         next_token = _logits_to_tokens(logits, eltype(padded_prompt))
         step = step + Int32(1)
         output_tokens[step, :] = next_token[1, :]

@@ -2,7 +2,8 @@
     scaled_dot_product_attention(
         query, key, value; head_dim=1, token_dim=3,
         scale=nothing, mask=nothing, is_causal=nothing, bias=nothing,
-        fdrop=identity, return_attention_weights=true
+        fdrop=identity, return_attention_weights=true,
+        q_lengths=nothing, kv_lengths=nothing
     )
 
 Compute scaled dot-product attention for general tensors.
@@ -42,6 +43,10 @@ attention weights.
 - `fdrop=identity`: Function applied to the attention probabilities (e.g.
   a dropout function). It is applied after softmax and after mask/bias are
   applied.
+- `q_lengths=nothing`: Optional valid sequence lengths for `query` per batch
+  element (a scalar or array of length matching the batch size), forwarded to NNlib.
+- `kv_lengths=nothing`: Optional valid sequence lengths for `key`/`value` per
+  batch element (a scalar or array of length matching the batch size), forwarded to NNlib.
 
 # Extended Help
 
