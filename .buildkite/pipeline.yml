@@ -7,13 +7,16 @@ checkout:
 
 steps:
   - label: "Triggering Pipelines (Pull Request)"
-    if: build.branch != "main" && build.tag == null
+    # Skip non-PR branch builds and PRs not targeting main (e.g. stacked PRs);
+    # tests will run once the PR is retargeted to main (push a new commit / rebuild).
+    if: build.branch != "main" && build.tag == null && build.pull_request.id != null && build.pull_request.base_branch == "main"
     command: ".buildkite/scripts/upload_pipelines.sh"
     agents:
       queue: "upload"
 
   - label: "Triggering Downstream Pipelines (Pull Request)"
-    if: build.branch != "main" && build.tag == null && build.pull_request.labels includes "run downstream test"
+    # Skip non-PR branch builds and PRs not targeting main (e.g. stacked PRs).
+    if: build.branch != "main" && build.tag == null && build.pull_request.id != null && build.pull_request.base_branch == "main" && build.pull_request.labels includes "run downstream test"
     command: ".buildkite/scripts/upload_pipelines.sh --downstream"
     agents:
       queue: "upload"
