@@ -8,6 +8,10 @@ const BACKEND_GROUP = lowercase(
 
 testsuite = find_tests(@__DIR__)
 delete!(testsuite, "common")
+# Static/QA checks are backend-agnostic; only run them on CPU (or full local) runs
+if BACKEND_GROUP ∉ ("all", "cpu")
+    delete!(testsuite, "qa")
+end
 
 total_jobs = min(
     something(parsed_args.jobs, ParallelTestRunner.default_njobs()), length(keys(testsuite))

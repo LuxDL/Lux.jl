@@ -23,6 +23,10 @@ const LOOP_VECTORIZATION = parse(
 
 testsuite = find_tests(@__DIR__)
 delete!(testsuite, "shared_testsetup")
+# Static/QA checks are backend-agnostic; only run them on CPU (or full local) runs
+if BACKEND_GROUP ∉ ("all", "cpu") || !LOOP_VECTORIZATION
+    delete!(testsuite, "others/qa_tests")
+end
 
 total_jobs = min(
     something(parsed_args.jobs, ParallelTestRunner.default_njobs()), length(keys(testsuite))

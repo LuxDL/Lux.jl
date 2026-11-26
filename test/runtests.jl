@@ -22,6 +22,11 @@ for k in keys(testsuite)
         delete!(testsuite, k)
     end
 end
+# Static/QA checks are backend-agnostic; only run them on CPU (or full local) runs
+if BACKEND_GROUP ∉ ("all", "cpu")
+    delete!(testsuite, "misc/qa_tests")
+    delete!(testsuite, "misc/doctests")
+end
 
 total_jobs = min(
     something(parsed_args.jobs, ParallelTestRunner.default_njobs()), length(keys(testsuite))
