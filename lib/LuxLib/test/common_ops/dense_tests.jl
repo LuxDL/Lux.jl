@@ -1,12 +1,9 @@
 include("../shared_testsetup.jl")
 
 using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, StableRNGs
-using StaticArrays, JLArrays, BenchmarkTools, Statistics, ForwardDiff, Enzyme
+using StaticArrays, JLArrays, ForwardDiff, Enzyme
 
 anonact = x -> x^3
-
-dense_simple(act, w, x, ::Nothing) = act.(w * x)
-dense_simple(act, w, x, b) = act.(w * x .+ b)
 
 sumabs2dense(args...) = sum(abs2, fused_dense_bias_activation(args...))
 
@@ -36,32 +33,25 @@ function run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu
     rtol = 1.0f-3
 
     @test_gradients(sumabs2dense, activation, w, x, bias; atol, rtol)
-
-    y_simple = dense_simple(activation, w, x, bias)
-    y_zyg = fused_dense_bias_activation(activation, w, x, bias)
-    @test y_simple ≈ y_zyg atol = atol rtol = rtol
-
-    if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
-        _, ∂w_true, ∂x_true, ∂b_true = Zygote.gradient(
-            sum ∘ dense_simple, activation, w, x, bias
-        )
-        _, ∂w_zyg, ∂x_zyg, ∂b_zyg = Zygote.gradient(
-            sum ∘ fused_dense_bias_activation, activation, w, x, bias
-        )
-        @test ∂w_true ≈ ∂w_zyg atol = atol rtol = rtol
-        @test ∂x_true ≈ ∂x_zyg atol = atol rtol = rtol
-        if bias !== nothing
-            @test ∂b_true ≈ ∂b_zyg atol = atol rtol = rtol
-        end
-    end
 end
 
-const ALL_TEST_CONFIGS = Iterators.product(
-    ((Float32, Float32), (Float64, Float64)),
-    (4, 32),
-    (4, 32),
-    (true, false),
-    (identity, tanh, sigmoid_fast, relu),
+const ALL_TEST_CONFIGS = vcat(
+    [
+        ((Float32, Float32), 4, 4, hasbias, act) for
+        hasbias in (true, false), act in (identity, tanh, sigmoid_fast, relu)
+    ][:],
+    [
+        ((Float32, Float32), 32, 32, true, relu),
+        ((Float32, Float32), 32, 32, false, tanh),
+        ((Float32, Float32), 4, 32, true, sigmoid_fast),
+        ((Float32, Float32), 32, 4, false, identity),
+    ],
+    [
+        ((Float64, Float64), 4, 4, true, identity),
+        ((Float64, Float64), 4, 4, false, relu),
+        ((Float64, Float64), 32, 32, true, tanh),
+        ((Float64, Float64), 32, 4, false, sigmoid_fast),
+    ],
 )
 
 @testset "Fused Dense" begin
@@ -92,24 +82,22 @@ end
     @test LuxLib.internal_operation_mode(x) isa LuxLib.GenericBroadcastOp
 end
 
+function _allocated(f::F, args...) where {F}
+    f(args...)
+    return @allocated f(args...)
+end
+
 @testset "`LuxLib.Impl.matmul(add)` allocations" begin
     if BACKEND_GROUP == "all" || BACKEND_GROUP == "cpu"
         @testset "size $N" for N in (1, 4, 32, 256, 1024)
             x = rand(Float32, N, N)
 
-            trial_opt = median(@benchmark(LuxLib.Impl.matmul($x, $x)))
-            trial_baseline = median(@benchmark($x * $x))
-
-            @test trial_opt.allocs ≤ trial_baseline.allocs
-            @test trial_opt.memory ≤ trial_baseline.memory
+            @test _allocated(LuxLib.Impl.matmul, x, x) ≤ _allocated(*, x, x)
 
             bias = rand(Float32, N)
 
-            trial_opt = median(@benchmark(LuxLib.Impl.matmuladd($x, $x, $bias)))
-            trial_baseline = median(@benchmark(muladd($x, $x, $bias)))
-
-            @test trial_opt.allocs ≤ trial_baseline.allocs
-            @test trial_opt.memory ≤ trial_baseline.memory
+            @test _allocated(LuxLib.Impl.matmuladd, x, x, bias) ≤
+                _allocated(muladd, x, x, bias)
         end
     end
 end

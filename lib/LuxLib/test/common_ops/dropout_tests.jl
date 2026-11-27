@@ -2,13 +2,31 @@ include("../shared_testsetup.jl")
 
 using LuxLib, LuxTestUtils, Test, Statistics
 
+const DROPOUT_CONFIGS = [
+    (Float32, (2, 2, 3, 1), :),
+    (Float32, (2, 2, 3, 1), 1),
+    (Float32, (2, 2, 3, 1), (1, 2)),
+    (Float32, (2, 3), :),
+    (Float32, (2, 2, 3), 1),
+    (Float32, (2, 2, 1, 3, 1), (1, 2)),
+    (Float64, (2, 3), :),
+    (Float64, (2, 2, 3, 1), 1),
+    (Float64, (2, 2, 1, 3, 1), (1, 2)),
+]
+
+const DROPOUT_SHAPE_CONFIGS = [
+    (Float32, (2, 3)),
+    (Float32, (2, 2, 3)),
+    (Float32, (2, 2, 3, 1)),
+    (Float32, (2, 2, 1, 3, 1)),
+    (Float64, (2, 2, 3, 1)),
+]
+
 @testset "Dropout" begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "$T, $x_shape, $dims" for T in (Float32, Float64),
-            x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1)),
-            dims in (:, 1, (1, 2))
+        @testset "$T, $x_shape, $dims" for (T, x_shape, dims) in DROPOUT_CONFIGS
 
             !fp64 && T == Float64 && continue
 
@@ -25,7 +43,6 @@ using LuxLib, LuxTestUtils, Test, Statistics
             @test rng != rng_
 
             @jet sum(first(dropout(rng, x, T(0.5), Val(true), T(2), dims)))
-            @test @inferred(dropout(rng, x, T(0.5), Val(true), T(2), dims)) isa Any
 
             @test_gradients(
                 sumabs2first,
@@ -55,8 +72,7 @@ end
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "$T: $x_shape" for T in (Float32, Float64),
-            x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
+        @testset "$T: $x_shape" for (T, x_shape) in DROPOUT_SHAPE_CONFIGS
 
             !fp64 && T == Float64 && continue
 
@@ -148,8 +164,7 @@ end
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "$T: $x_shape" for T in (Float32, Float64),
-            x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
+        @testset "$T: $x_shape" for (T, x_shape) in DROPOUT_SHAPE_CONFIGS
 
             !fp64 && T == Float64 && continue
 

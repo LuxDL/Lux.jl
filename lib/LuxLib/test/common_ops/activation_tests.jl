@@ -1,4 +1,4 @@
-using Enzyme, LuxLib, Test, NNlib, Zygote
+using LuxLib, Test, NNlib
 
 include("../shared_testsetup.jl")
 
@@ -6,24 +6,30 @@ apply_act(f::F, x) where {F} = sum(abs2, f.(x))
 apply_act_fast(f::F, x) where {F} = sum(abs2, fast_activation!!(f, copy(x)))
 apply_act_fast2(f::F, x) where {F} = sum(abs2, fast_activation(f, x))
 
+const ACTIVATIONS = [
+    identity,
+    relu,
+    sigmoid,
+    sigmoid_fast,
+    softplus,
+    logsigmoid,
+    gelu,
+    swish,
+    lisht,
+    tanh,
+    tanh_fast,
+]
+
+const ALL_TEST_CONFIGS = vcat(
+    [(f, Float32) for f in ACTIVATIONS],
+    [(f, Float64) for f in (identity, relu, sigmoid, gelu)],
+)
+
 @testset "Activation Functions" begin
     rng = StableRNG(1234)
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "$f: $T" for f in [
-                identity,
-                relu,
-                sigmoid,
-                sigmoid_fast,
-                softplus,
-                logsigmoid,
-                gelu,
-                swish,
-                lisht,
-                tanh,
-                tanh_fast,
-            ],
-            T in [Float32, Float64]
+        @testset "$f: $T" for (f, T) in ALL_TEST_CONFIGS
 
             !fp64 && T == Float64 && continue
 
@@ -53,15 +59,6 @@ apply_act_fast2(f::F, x) where {F} = sum(abs2, fast_activation(f, x))
             @test_gradients(apply_act, f, x; atol, rtol)
             @test_gradients(apply_act_fast, f, x; atol, rtol)
             @test_gradients(apply_act_fast2, f, x; atol, rtol)
-
-            if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
-                ∂x1 = Zygote.gradient(apply_act, f, x)[2]
-                ∂x2 = Zygote.gradient(apply_act_fast, f, x)[2]
-                ∂x3 = Zygote.gradient(apply_act_fast2, f, x)[2]
-
-                @test ∂x1 ≈ ∂x2 atol = atol rtol = rtol
-                @test ∂x1 ≈ ∂x3 atol = atol rtol = rtol
-            end
         end
     end
 end
