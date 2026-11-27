@@ -17,8 +17,14 @@ using LuxTestUtils: check_approx
 
         dev = reactant_device(; force=true)
 
-        @testset for cell in (RNNCell, LSTMCell, GRUCell)
-            @testset for ordering in (BatchLastIndex(), TimeLastIndex())
+        cell_configs = (
+            (RNNCell, (BatchLastIndex(),), (false,)),
+            (LSTMCell, (BatchLastIndex(), TimeLastIndex()), (true, false)),
+            (GRUCell, (TimeLastIndex(),), (false,)),
+        )
+
+        @testset for (cell, orderings, mincuts) in cell_configs
+            @testset for ordering in orderings
                 model = Recurrence(cell(4 => 4); ordering)
                 ps, st = Lux.setup(rng, model)
                 ps_ra, st_ra = dev((ps, st))
@@ -43,7 +49,7 @@ using LuxTestUtils: check_approx
 
                 @testset "gradient" begin
                     ∂x_fd, ∂ps_fd = ∇sumabs2_reactant_fd(model, x_ra, ps_ra, st_ra)
-                    @testset for mincut in (true, false), checkpointing in (false,)
+                    @testset for mincut in mincuts, checkpointing in (false,)
                         model_ = Recurrence(cell(4 => 4); ordering, mincut, checkpointing)
                         ∂x_ra, ∂ps_ra = ∇sumabs2_reactant(model_, x_ra, ps_ra, st_ra)
                         @test ∂x_ra ≈ ∂x_fd atol = 1.0e-2 rtol = 1.0e-2

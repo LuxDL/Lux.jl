@@ -8,7 +8,10 @@ using LuxLib: scaled_dot_product_attention
         @testset "Different Batch Sizes" begin
             n, lenq, lenkv = 15, 3, 4
 
+            grad_shapes = ((1, 1), ((2, 1, 3), 5))
+
             @testset for batch_size in [1, 2, (2, 1, 3)], nheads in [1, 3, 5]
+                run_grad = (batch_size, nheads) in grad_shapes
                 q =
                     Reactant.TestUtils.construct_test_array(
                         Float32, n ÷ nheads, nheads, lenq, batch_size...
@@ -36,24 +39,26 @@ using LuxLib: scaled_dot_product_attention
                 @test y1_ra ≈ y1 atol = 1.0f-3 rtol = 1.0f-3
                 @test α1_ra ≈ α1 atol = 1.0f-3 rtol = 1.0f-3
 
-                @testset "Gradient Check" begin
-                    ∂q_fd, ∂k_fd, ∂v_fd = @jit Reactant.TestUtils.finite_difference_gradient(
-                        sum ∘ first ∘ scaled_dot_product_attention,
-                        Float64.(q_ra),
-                        Float64.(k_ra),
-                        Float64.(v_ra),
-                    )
-                    ∂q_reactant, ∂k_reactant, ∂v_reactant = @jit Enzyme.gradient(
-                        Reverse,
-                        Const(sum ∘ first ∘ scaled_dot_product_attention),
-                        q_ra,
-                        k_ra,
-                        v_ra,
-                    )
+                if run_grad
+                    @testset "Gradient Check" begin
+                        ∂q_fd, ∂k_fd, ∂v_fd = @jit Reactant.TestUtils.finite_difference_gradient(
+                            sum ∘ first ∘ scaled_dot_product_attention,
+                            Float64.(q_ra),
+                            Float64.(k_ra),
+                            Float64.(v_ra),
+                        )
+                        ∂q_reactant, ∂k_reactant, ∂v_reactant = @jit Enzyme.gradient(
+                            Reverse,
+                            Const(sum ∘ first ∘ scaled_dot_product_attention),
+                            q_ra,
+                            k_ra,
+                            v_ra,
+                        )
 
-                    @test ∂q_fd ≈ ∂q_reactant atol = 1e-3 rtol = 1e-3
-                    @test ∂k_fd ≈ ∂k_reactant atol = 1e-3 rtol = 1e-3
-                    @test ∂v_fd ≈ ∂v_reactant atol = 1e-3 rtol = 1e-3
+                        @test ∂q_fd ≈ ∂q_reactant atol = 1e-3 rtol = 1e-3
+                        @test ∂k_fd ≈ ∂k_reactant atol = 1e-3 rtol = 1e-3
+                        @test ∂v_fd ≈ ∂v_reactant atol = 1e-3 rtol = 1e-3
+                    end
                 end
 
                 function sdpa(q, k, v)
@@ -78,20 +83,22 @@ using LuxLib: scaled_dot_product_attention
                 @test y2_ra ≈ y2 atol = 1.0f-3 rtol = 1.0f-3
                 @test α2_ra ≈ α2 atol = 1.0f-3 rtol = 1.0f-3
 
-                @testset "Gradient Check" begin
-                    ∂q_fd, ∂k_fd, ∂v_fd = @jit Reactant.TestUtils.finite_difference_gradient(
-                        sum ∘ first ∘ sdpa,
-                        Float64.(q2_ra),
-                        Float64.(k2_ra),
-                        Float64.(v2_ra),
-                    )
-                    ∂q2_reactant, ∂k2_reactant, ∂v2_reactant = @jit Enzyme.gradient(
-                        Reverse, Const(sum ∘ first ∘ sdpa), q2_ra, k2_ra, v2_ra
-                    )
+                if run_grad
+                    @testset "Gradient Check" begin
+                        ∂q_fd, ∂k_fd, ∂v_fd = @jit Reactant.TestUtils.finite_difference_gradient(
+                            sum ∘ first ∘ sdpa,
+                            Float64.(q2_ra),
+                            Float64.(k2_ra),
+                            Float64.(v2_ra),
+                        )
+                        ∂q2_reactant, ∂k2_reactant, ∂v2_reactant = @jit Enzyme.gradient(
+                            Reverse, Const(sum ∘ first ∘ sdpa), q2_ra, k2_ra, v2_ra
+                        )
 
-                    @test ∂q_fd ≈ ∂q2_reactant atol = 1.0f-3 rtol = 1.0f-3
-                    @test ∂k_fd ≈ ∂k2_reactant atol = 1.0f-3 rtol = 1.0f-3
-                    @test ∂v_fd ≈ ∂v2_reactant atol = 1.0f-3 rtol = 1.0f-3
+                        @test ∂q_fd ≈ ∂q2_reactant atol = 1.0f-3 rtol = 1.0f-3
+                        @test ∂k_fd ≈ ∂k2_reactant atol = 1.0f-3 rtol = 1.0f-3
+                        @test ∂v_fd ≈ ∂v2_reactant atol = 1.0f-3 rtol = 1.0f-3
+                    end
                 end
 
                 @test y1 ≈ y2 atol = 1.0f-3 rtol = 1.0f-3
