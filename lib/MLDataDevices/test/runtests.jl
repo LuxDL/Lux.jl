@@ -37,6 +37,10 @@ end
 delete!(testsuite, "common")
 delete!(testsuite, "iterator_tests")
 delete!(testsuite, "misc_tests")
+# Static/QA checks are backend-agnostic; only run them on CPU (or full local) runs
+if BACKEND_GROUP ∉ ("all", "cpu")
+    delete!(testsuite, "qa_tests")
+end
 
 total_jobs = min(
     something(parsed_args.jobs, ParallelTestRunner.default_njobs()), length(keys(testsuite))
