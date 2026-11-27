@@ -82,7 +82,9 @@ include("../shared_testsetup.jl")
                 @test size(y)[4:5] == size(x)[4:5]
 
                 if xsize == (8, 8, 8)
-                    @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+                    @test_gradients(
+                        sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3
+                    )
                 end
             end
         end
