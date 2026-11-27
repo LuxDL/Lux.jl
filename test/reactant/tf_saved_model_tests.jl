@@ -92,7 +92,9 @@ if get(ENV, "LUX_TEST_TF_SAVED_MODEL", "false") == "true"
 
             restored_model = tf.saved_model.load(model_dir)
 
-            x_tf = tf.constant(np.asarray(permutedims(x_saved, (4, 3, 2, 1))); dtype=tf.float32)
+            x_tf = tf.constant(
+                np.asarray(permutedims(x_saved, (4, 3, 2, 1))); dtype=tf.float32
+            )
             res_tf = pywith(tf.device("/CPU:0")) do _
                 return permutedims(PyArray(restored_model.f(x_tf)[0]), (2, 1))
             end
