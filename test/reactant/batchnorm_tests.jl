@@ -14,7 +14,9 @@ using LuxTestUtils: check_approx
             Reactant.set_default_backend("cpu")
         end
 
-        gradient_configs = ((true, true, tanh), (false, false, identity), (false, true, identity))
+        gradient_configs = (
+            (true, true, tanh), (false, false, identity), (false, true, identity)
+        )
 
         @testset for track_stats in (true, false),
             affine in (true, false),
