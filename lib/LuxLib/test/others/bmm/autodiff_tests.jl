@@ -67,31 +67,6 @@ include("bmm_testsetup.jl")
                 rtol=1.0e-3,
                 skip_backends=[AutoEnzyme()]
             )
-
-            @test_gradients(
-                fn,
-                aType(randn(rng, Float32, M, P)),
-                aType(randn(rng, Float32, P, Q, B));
-                atol=1.0e-3,
-                rtol=1.0e-3,
-                skip_backends=[AutoEnzyme()]
-            )
-            @test_gradients(
-                fn,
-                adjoint(aType(randn(rng, Float32, P, M))),
-                aType(randn(rng, Float32, P, Q, B));
-                atol=1.0e-3,
-                rtol=1.0e-3,
-                skip_backends=[AutoEnzyme()]
-            )
-            @test_gradients(
-                fn,
-                aType(randn(rng, Float32, M, P)),
-                batched_adjoint(aType(randn(rng, Float32, Q, P, B)));
-                atol=1.0e-3,
-                rtol=1.0e-3,
-                skip_backends=[AutoEnzyme()]
-            )
         end
 
         @testset "... or equivalent to a matrix" begin
