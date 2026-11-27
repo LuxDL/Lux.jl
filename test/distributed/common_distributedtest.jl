@@ -33,7 +33,7 @@ for arrType in (Array, aType)
 
     DistributedUtils.bcast!(backend, sendbuf, recvbuf; root=0)
 
-    rank != 0 && @test all(recvbuf .== 1)
+    @test all(recvbuf .== 1)
 
     sendrecvbuf = (rank == 0) ? arrType(ones(512)) : arrType(zeros(512))
     DistributedUtils.bcast!(backend, sendrecvbuf; root=0)
