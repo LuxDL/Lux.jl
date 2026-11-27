@@ -384,6 +384,8 @@ end
             (; is_causal=true),
             (; mask, bias),
             (; fdrop=Base.Fix1(*, 0.5f0)),
+            (; kv_lengths=3),
+            (; q_lengths=2, kv_lengths=4),
         ]
             ref, _ = LuxLib.scaled_dot_product_attention(q, k, v; kwargs...)
             y, weights = LuxLib.scaled_dot_product_attention(
@@ -393,6 +395,18 @@ end
             @test y ≈ ref atol = 1e-5 rtol = 1e-4
             qr, kr, vr = Reactant.to_rarray.((q, k, v))
             yr = @jit output_only(qr, kr, vr; kwargs...)
+            @test Array(yr) ≈ ref atol = 1e-3 rtol = 1e-3
+        end
+        @testset "vector kv_lengths" begin
+            kv_lengths = Int32.(mod1.(1:prod(batch), 5))
+            ref, _ = LuxLib.scaled_dot_product_attention(q, k, v; kv_lengths)
+            y, weights = LuxLib.scaled_dot_product_attention(
+                q, k, v; return_attention_weights=false, kv_lengths
+            )
+            @test weights === nothing
+            @test y ≈ ref atol = 1e-5 rtol = 1e-4
+            qr, kr, vr, kv_lr = Reactant.to_rarray.((q, k, v, kv_lengths))
+            yr = @jit output_only(qr, kr, vr; kv_lengths=kv_lr)
             @test Array(yr) ≈ ref atol = 1e-3 rtol = 1e-3
         end
         @testset "head_dim=$hd, token_dim=$td" for hd in 1:3, td in 1:3

@@ -8,7 +8,7 @@
 # ## Package Imports
 
 using BFloat16s, ConcreteStructs, LinearAlgebra, Lux, Random, Reactant
-using HuggingFaceTokenizers, PythonCall, SafeTensors, Scratch, JSON3
+using HuggingFaceTokenizers, PythonCall, SafeTensors, Scratch, JSON
 
 const huggingface_hub = pyimport("huggingface_hub")
 
@@ -191,7 +191,7 @@ function apply_rope(x::AbstractArray{T}, cos_cache, sin_cache) where {T}
     return T.(apply_rotary_embedding(x, cos_cache, sin_cache; seq_dim=3))
 end
 
-function (attn::GroupedQueryAttention)((x, cos_cache, sin_cache), ps, st::NamedTuple)
+function _gqa_qkv_norm_rope(attn::GroupedQueryAttention, x, cos_cache, sin_cache, ps, st)
     _, num_tokens, B = size(x)
 
     ## apply projections
@@ -199,7 +199,7 @@ function (attn::GroupedQueryAttention)((x, cos_cache, sin_cache), ps, st::NamedT
     keys, st_k_proj = attn.k_proj(x, ps.k_proj, st.k_proj)
     values, st_v_proj = attn.v_proj(x, ps.v_proj, st.v_proj)
 
-    ## reshape and permute to (head_dim, num_heads/num_kv_groups, num_tokens, batch)
+    ## reshape to (head_dim, num_heads/num_kv_groups, num_tokens, batch)
     queries = reshape(queries, attn.head_dim, attn.num_heads, num_tokens, B)
     keys = reshape(keys, attn.head_dim, attn.num_kv_groups, num_tokens, B)
     values = reshape(values, attn.head_dim, attn.num_kv_groups, num_tokens, B)
@@ -212,25 +212,24 @@ function (attn::GroupedQueryAttention)((x, cos_cache, sin_cache), ps, st::NamedT
     queries = apply_rope(queries, cos_cache, sin_cache)
     keys = apply_rope(keys, cos_cache, sin_cache)
 
-    ## attention
-    context = reshape(
-        scaled_dot_product_attention(
-            queries,
-            keys,
-            values;
-            head_dim=1,
-            token_dim=3,
-            is_causal=true,
-            return_attention_weights=false,
-        )[1],
-        attn.head_dim * attn.num_heads,
-        num_tokens,
-        B,
-    )
+    return queries, keys, values, st_q_proj, st_k_proj, st_v_proj, st_q_norm, st_k_norm
+end
 
-    ## output projection
-    proj, st_o_proj = attn.o_proj(context, ps.o_proj, st.o_proj)
-
+function _gqa_out_proj(
+    attn::GroupedQueryAttention,
+    context,
+    num_tokens,
+    B,
+    ps,
+    st_q_proj,
+    st_k_proj,
+    st_v_proj,
+    st_q_norm,
+    st_k_norm,
+    st_o_proj_in,
+)
+    context_flat = reshape(context, attn.head_dim * attn.num_heads, num_tokens, B)
+    proj, st_o_proj = attn.o_proj(context_flat, ps.o_proj, st_o_proj_in)
     return (
         proj,
         (;
@@ -241,6 +240,111 @@ function (attn::GroupedQueryAttention)((x, cos_cache, sin_cache), ps, st::NamedT
             q_norm=st_q_norm,
             k_norm=st_k_norm,
         ),
+    )
+end
+
+function (attn::GroupedQueryAttention)((x, cos_cache, sin_cache), ps, st::NamedTuple)
+    _, num_tokens, B = size(x)
+    queries, keys, values, st_q_proj, st_k_proj, st_v_proj, st_q_norm, st_k_norm = _gqa_qkv_norm_rope(
+        attn, x, cos_cache, sin_cache, ps, st
+    )
+
+    context = scaled_dot_product_attention(
+        queries,
+        keys,
+        values;
+        head_dim=1,
+        token_dim=3,
+        is_causal=true,
+        return_attention_weights=false,
+    )[1]
+
+    return _gqa_out_proj(
+        attn,
+        context,
+        num_tokens,
+        B,
+        ps,
+        st_q_proj,
+        st_k_proj,
+        st_v_proj,
+        st_q_norm,
+        st_k_norm,
+        st.o_proj,
+    )
+end
+
+function (attn::GroupedQueryAttention)(
+    (x, cos_cache, sin_cache, kv_cache)::Tuple{Any,Any,Any,Tuple}, ps, st::NamedTuple
+)
+    _, num_tokens, B = size(x)
+    queries, keys, values, st_q_proj, st_k_proj, st_v_proj, st_q_norm, st_k_norm = _gqa_qkv_norm_rope(
+        attn, x, cos_cache, sin_cache, ps, st
+    )
+
+    k_cache, v_cache = kv_cache
+    k_cache[:, :, 1:num_tokens, :] = keys
+    v_cache[:, :, 1:num_tokens, :] = values
+
+    context = scaled_dot_product_attention(
+        queries,
+        keys,
+        values;
+        head_dim=1,
+        token_dim=3,
+        is_causal=true,
+        return_attention_weights=false,
+    )[1]
+
+    return _gqa_out_proj(
+        attn,
+        context,
+        num_tokens,
+        B,
+        ps,
+        st_q_proj,
+        st_k_proj,
+        st_v_proj,
+        st_q_norm,
+        st_k_norm,
+        st.o_proj,
+    )
+end
+
+function (attn::GroupedQueryAttention)(
+    (x, cos_pos, sin_pos, pos, kv_cache)::Tuple{Any,Any,Any,Any,Tuple}, ps, st::NamedTuple
+)
+    _, num_tokens, B = size(x)
+    queries, keys, values, st_q_proj, st_k_proj, st_v_proj, st_q_norm, st_k_norm = _gqa_qkv_norm_rope(
+        attn, x, cos_pos, sin_pos, ps, st
+    )
+
+    k_cache, v_cache = kv_cache
+    k_cache[:, :, pos, :] = reshape(keys, attn.head_dim, attn.num_kv_groups, B)
+    v_cache[:, :, pos, :] = reshape(values, attn.head_dim, attn.num_kv_groups, B)
+
+    context = scaled_dot_product_attention(
+        queries,
+        k_cache,
+        v_cache;
+        head_dim=1,
+        token_dim=3,
+        kv_lengths=pos,
+        return_attention_weights=false,
+    )[1]
+
+    return _gqa_out_proj(
+        attn,
+        context,
+        num_tokens,
+        B,
+        ps,
+        st_q_proj,
+        st_k_proj,
+        st_v_proj,
+        st_q_norm,
+        st_k_norm,
+        st.o_proj,
     )
 end
 
@@ -262,11 +366,11 @@ function Qwen3Attention(cfg::Qwen3Config)
     )
 end
 
-function (block::Qwen3Attention)((x, cos_cache, sin_cache), ps, st::NamedTuple)
+function _block_forward(block::Qwen3Attention, x, attn_args::Tuple, ps, st::NamedTuple)
     ## shortcut connection for attention block
     shortcut = x
     x, st_norm1 = block.input_layernorm(x, ps.input_layernorm, st.input_layernorm)
-    x, st_attn = block.self_attn((x, cos_cache, sin_cache), ps.self_attn, st.self_attn)
+    x, st_attn = block.self_attn((x, attn_args...), ps.self_attn, st.self_attn)
     x = x .+ shortcut
 
     ## shortcut connection for feed-forward block
@@ -288,6 +392,22 @@ function (block::Qwen3Attention)((x, cos_cache, sin_cache), ps, st::NamedTuple)
     )
 end
 
+function (block::Qwen3Attention)((x, cos_cache, sin_cache), ps, st::NamedTuple)
+    return _block_forward(block, x, (cos_cache, sin_cache), ps, st)
+end
+
+function (block::Qwen3Attention)(
+    (x, cos_cache, sin_cache, kv_cache)::Tuple{Any,Any,Any,Tuple}, ps, st::NamedTuple
+)
+    return _block_forward(block, x, (cos_cache, sin_cache, kv_cache), ps, st)
+end
+
+function (block::Qwen3Attention)(
+    (x, cos_pos, sin_pos, pos, kv_cache)::Tuple{Any,Any,Any,Any,Tuple}, ps, st::NamedTuple
+)
+    return _block_forward(block, x, (cos_pos, sin_pos, pos, kv_cache), ps, st)
+end
+
 @concrete struct Qwen3 <:
                  AbstractLuxContainerLayer{(:embed_tokens, :blocks, :norm, :lm_head)}
     embed_tokens
@@ -307,6 +427,14 @@ function Qwen3(cfg::Qwen3Config)
     )
 end
 
+function init_kv_cache(
+    cfg::Qwen3Config, max_cache_len::Int, batch_size::Int, dev=reactant_device(; force=true)
+)
+    dtype = fn_to_dtype(cfg.dtype)
+    z = zeros(dtype, cfg.head_dim, cfg.n_kv_groups, max_cache_len, batch_size)
+    return ntuple(_ -> (dev(z), dev(z)), cfg.n_layers)
+end
+
 function LuxCore.initialstates(rng::AbstractRNG, m::Qwen3)
     head_dim = m.cfg.head_dim === nothing ? m.cfg.emb_dim ÷ m.cfg.n_heads : m.cfg.head_dim
     (; cos_cache, sin_cache) = compute_rotary_embedding_params(
@@ -322,7 +450,7 @@ function LuxCore.initialstates(rng::AbstractRNG, m::Qwen3)
     )
 end
 
-function (qwen3::Qwen3)(in_idx, ps, st::NamedTuple)
+function _forward_transformer(qwen3::Qwen3, in_idx, ps, st::NamedTuple)
     x, st_embed_tokens = qwen3.embed_tokens(in_idx, ps.embed_tokens, st.embed_tokens)
 
     st_blocks = ()
@@ -330,6 +458,23 @@ function (qwen3::Qwen3)(in_idx, ps, st::NamedTuple)
         x, st_block_new = block((x, st.cos_cache, st.sin_cache), ps.blocks[i], st.blocks[i])
         st_blocks = (st_blocks..., st_block_new)
     end
+    return x, st_embed_tokens, st_blocks
+end
+
+function _forward_transformer(qwen3::Qwen3, in_idx, ps, st::NamedTuple, kv_cache::Tuple)
+    x, st_embed_tokens = qwen3.embed_tokens(in_idx, ps.embed_tokens, st.embed_tokens)
+
+    st_blocks = ()
+    for (i, block) in enumerate(qwen3.blocks)
+        x, st_block_new = block(
+            (x, st.cos_cache, st.sin_cache, kv_cache[i]), ps.blocks[i], st.blocks[i]
+        )
+        st_blocks = (st_blocks..., st_block_new)
+    end
+    return x, st_embed_tokens, st_blocks
+end
+
+function _apply_head(qwen3::Qwen3, x, ps, st::NamedTuple, st_embed_tokens, st_blocks)
     x, st_norm = qwen3.norm(x, ps.norm, st.norm)
     logits, st_lm_head = qwen3.lm_head(
         fn_to_dtype(qwen3.cfg.dtype).(x), ps.lm_head, st.lm_head
@@ -346,6 +491,47 @@ function (qwen3::Qwen3)(in_idx, ps, st::NamedTuple)
             lm_head=st_lm_head,
         ),
     )
+end
+
+function (qwen3::Qwen3)(in_idx::AbstractArray, ps, st::NamedTuple)
+    x, st_embed_tokens, st_blocks = _forward_transformer(qwen3, in_idx, ps, st)
+    return _apply_head(qwen3, x, ps, st, st_embed_tokens, st_blocks)
+end
+
+function (qwen3::Qwen3)((in_idx, token_idx)::Tuple{<:AbstractArray,Any}, ps, st::NamedTuple)
+    x, st_embed_tokens, st_blocks = _forward_transformer(qwen3, in_idx, ps, st)
+    x_last = x[:, token_idx, :]
+    return _apply_head(qwen3, x_last, ps, st, st_embed_tokens, st_blocks)
+end
+
+function (qwen3::Qwen3)(
+    (in_idx, token_idx, kv_cache)::Tuple{<:AbstractArray,Any,Tuple}, ps, st::NamedTuple
+)
+    x, st_embed_tokens, st_blocks = _forward_transformer(qwen3, in_idx, ps, st, kv_cache)
+    x_last = reshape(x[:, token_idx, :], size(x, 1), size(x, 3))
+    return _apply_head(qwen3, x_last, ps, st, st_embed_tokens, st_blocks)
+end
+
+function (qwen3::Qwen3)(
+    (token_id, pos, kv_cache, _)::Tuple{<:AbstractArray,Any,Tuple,Val{:decode}},
+    ps,
+    st::NamedTuple,
+)
+    x, st_embed_tokens = qwen3.embed_tokens(token_id, ps.embed_tokens, st.embed_tokens)
+
+    cos_pos = reshape(st.cos_cache[:, pos], :, 1)
+    sin_pos = reshape(st.sin_cache[:, pos], :, 1)
+
+    st_blocks = ()
+    for (i, block) in enumerate(qwen3.blocks)
+        x, st_block_new = block(
+            (x, cos_pos, sin_pos, pos, kv_cache[i]), ps.blocks[i], st.blocks[i]
+        )
+        st_blocks = (st_blocks..., st_block_new)
+    end
+
+    x_last = reshape(x, size(x, 1), size(x, 3))
+    return _apply_head(qwen3, x_last, ps, st, st_embed_tokens, st_blocks)
 end
 
 # ## Model Weights and Tokenizer from HuggingFace
@@ -371,7 +557,7 @@ function download_qwen3_weights_from_huggingface(use_reasoning_model::Bool, vers
         repo_dir = huggingface_hub.snapshot_download(; repo_id=repo_id, local_dir=local_dir)
         index_path = joinpath(string(repo_dir), "model.safetensors.index.json")
 
-        index = JSON3.read(index_path)
+        index = JSON.parsefile(index_path)
 
         weights_dict = Dict()
         for filename in Set(values(index["weight_map"]))
@@ -605,6 +791,14 @@ function get_padded_size(seq_len::Int, context_length::Int)
     return min(max(512, nextpow(2, seq_len)), context_length)
 end
 
+function get_max_cache_len(total_len::Int, context_length::Int)
+    return min(context_length, max(256, nextpow(2, total_len)))
+end
+
+function get_prefill_size(prompt_len::Int, max_cache_len::Int)
+    return min(max_cache_len, max(32, nextpow(2, prompt_len)))
+end
+
 function padded_input_and_mask_len(x::AbstractMatrix, v, cfg::Qwen3Config, pad_token_id)
     return padded_input_and_mask_len(
         x, v, get_padded_size(size(x, 1) + v !== nothing, cfg.context_length), pad_token_id
@@ -634,13 +828,31 @@ end
 
 # ## Helpers to generate text
 
+function _logits_to_tokens(logits, ::Type{T}) where {T}
+    predictions = T.(argmax(logits; dims=1))
+    return mod1.(predictions, T(size(logits, 1)))
+end
+
 function predict_next_token(
-    model, token_ids::AbstractMatrix{T}, input_mask_len, ps, st
+    model, padded_token_ids::AbstractMatrix{T}, input_mask_len, ps, st
 ) where {T}
-    logits, stₙ = model(token_ids, ps, st)
-    predictions = T.(argmax(logits[:, end - input_mask_len, :]; dims=1))
-    predictions = mod1.(predictions, T(size(logits, 1)))
-    return predictions, stₙ
+    last_token_idx = size(padded_token_ids, 1) - input_mask_len
+    logits, stₙ = model((padded_token_ids, last_token_idx), ps, st)
+    return _logits_to_tokens(logits, T), stₙ
+end
+
+function prefill_next_token!(
+    model::Qwen3, padded_token_ids::AbstractMatrix{T}, prompt_len, ps, st, kv_cache
+) where {T}
+    logits, stₙ = model((padded_token_ids, prompt_len, kv_cache), ps, st)
+    return _logits_to_tokens(logits, T), stₙ
+end
+
+function decode_next_token!(
+    model::Qwen3, token_id::AbstractMatrix{T}, pos, ps, st, kv_cache
+) where {T}
+    logits, stₙ = model((token_id, pos, kv_cache, Val(:decode)), ps, st)
+    return _logits_to_tokens(logits, T), stₙ
 end
 
 function update_token_ids_and_mask!(
@@ -659,56 +871,115 @@ end
 
 safe_increment(x) = x + one(x)
 
+function generate_tokens_compiled(
+    model::Qwen3,
+    padded_prompt::AbstractMatrix,
+    prompt_len,
+    max_new_tokens,
+    eos_ids::AbstractVector,
+    ::Val{max_cache_len},
+    ps,
+    st,
+) where {max_cache_len}
+    B = size(padded_prompt, 2)
+    dtype = fn_to_dtype(model.cfg.dtype)
+    kv_cache = ntuple(
+        _ -> (
+            Reactant.@opcall(
+                fill(
+                    zero(dtype),
+                    (model.cfg.head_dim, model.cfg.n_kv_groups, max_cache_len, B),
+                )
+            ),
+            Reactant.@opcall(
+                fill(
+                    zero(dtype),
+                    (model.cfg.head_dim, model.cfg.n_kv_groups, max_cache_len, B),
+                )
+            ),
+        ),
+        model.cfg.n_layers,
+    )
+    output_tokens = Reactant.@opcall fill(Int32(0), (max_cache_len, B))
+
+    logits, st_cur = model((padded_prompt, prompt_len, kv_cache), ps, st)
+    next_token = _logits_to_tokens(logits, eltype(padded_prompt))
+
+    step = Int32(1)
+    output_tokens[step, :] = next_token[1, :]
+    eos_ids_col = Reactant.@opcall reshape(eos_ids, length(eos_ids), 1)
+    hit_eos = all(any(eos_ids_col .== next_token; dims=1))
+
+    Reactant.@trace while (step < max_new_tokens) & (!hit_eos)
+        pos = prompt_len + step
+        logits, st_cur = model((next_token, pos, kv_cache, Val(:decode)), ps, st_cur)
+        next_token = _logits_to_tokens(logits, eltype(padded_prompt))
+        step = step + Int32(1)
+        output_tokens[step, :] = next_token[1, :]
+        hit_eos = all(any(eos_ids_col .== next_token; dims=1))
+    end
+
+    return output_tokens, step
+end
+
 mutable struct CachedReactantThunks
-    cache::Dict{Qwen3Config,Dict{Int,NTuple{3,Reactant.Compiler.Thunk}}}
-    increment_fn::Union{Nothing,Reactant.Compiler.Thunk}
+    generation_cache::Dict{Tuple{Qwen3Config,Int,Int},Reactant.Compiler.Thunk}
 end
 
 function CachedReactantThunks()
-    return CachedReactantThunks(
-        Dict{Qwen3Config,Dict{Int,NTuple{3,Reactant.Compiler.Thunk}}}(), nothing
-    )
+    return CachedReactantThunks(Dict{Tuple{Qwen3Config,Int,Int},Reactant.Compiler.Thunk}())
 end
 
-function cache_and_retrieve!(
+function cache_and_retrieve_generation!(
     cache::CachedReactantThunks,
-    len::Integer,
+    prefill_len::Integer,
+    max_cache_len::Integer,
     model::Qwen3,
-    padded_token_ids,
-    input_mask_len,
+    padded_prompt,
+    prompt_len_traced,
+    max_new_tokens_traced,
+    eos_ids,
     ps,
     st,
-    next_token,
-    cur_num_tokens_traced,
 )
-    if haskey(cache.cache, model.cfg) && haskey(cache.cache[model.cfg], len)
-        return cache.cache[model.cfg][len]
-    end
+    key = (model.cfg, Int(prefill_len), Int(max_cache_len))
+    haskey(cache.generation_cache, key) && return cache.generation_cache[key]
 
     println()
-    @warn "Compiling Qwen3 generation loop for $(model.cfg.version) with $(len) tokens. \
-           This might take a while... (However this is only done once per model per length)"
+    @warn "Compiling Qwen3 generation loop for $(model.cfg.version) with \
+           prefill_len=$(prefill_len), max_cache_len=$(max_cache_len). This might take a \
+           while... (However this is only done once per model per bucket)"
 
-    predict_next_token_compiled = @compile predict_next_token(
-        model, padded_token_ids, input_mask_len, ps, st
-    )
-    update_fn1! = @compile update_token_ids_and_mask!(
-        padded_token_ids, input_mask_len, cur_num_tokens_traced, next_token
-    )
-    update_fn2! = @compile update_token_ids_with_shift!(padded_token_ids, next_token)
-
-    if !haskey(cache.cache, model.cfg)
-        cache.cache[model.cfg] = Dict{Int,NTuple{3,Reactant.Compiler.Thunk}}()
-    end
-
-    return cache.cache[model.cfg][len] = (
-        predict_next_token_compiled, update_fn1!, update_fn2!
+    return cache.generation_cache[key] = @compile generate_tokens_compiled(
+        model,
+        padded_prompt,
+        prompt_len_traced,
+        max_new_tokens_traced,
+        eos_ids,
+        Val(Int(max_cache_len)),
+        ps,
+        st,
     )
 end
 
 const CACHED_THUNKS = CachedReactantThunks()
 
 generate_text(args...; kwargs...) = generate_text!(CACHED_THUNKS, args...; kwargs...)
+
+function _prepare_eos_ids(eos_token_id, dev)
+    if eos_token_id === nothing
+        return dev(Int32[-1])
+    elseif eos_token_id isa Integer
+        return dev(Int32[Int32(eos_token_id)])
+    else
+        ids = collect(Int32, eos_token_id)
+        return isempty(ids) ? dev(Int32[-1]) : dev(ids)
+    end
+end
+
+_matches_eos(tok_id::Integer, eos::Integer) = tok_id == eos
+_matches_eos(tok_id::Integer, eos) = tok_id in eos
+_matches_eos(::Integer, ::Nothing) = false
 
 function generate_text!(
     compile_cache::CachedReactantThunks,
@@ -719,97 +990,64 @@ function generate_text!(
     max_new_tokens,
     tokenizer,
 )
-    token_ids = Reactant.to_rarray(reshape(encode(tokenizer, prompt), :, 1))
-
-    ## TODO: compile the generation loop with Reactant
-    ## TODO: implement some simple KV caching
-    cur_num_tokens = size(token_ids, 1)
+    raw_ids = encode(tokenizer, prompt)
     max_context_length = model.cfg.context_length
-    cur_compiled_fn_token_len = get_padded_size(cur_num_tokens, max_context_length)
+    if length(raw_ids) > max_context_length
+        raw_ids = raw_ids[(end - max_context_length + 1):end]
+    end
+    prompt_len = length(raw_ids)
+    max_new_tokens = min(max_new_tokens, max(0, max_context_length - prompt_len))
+    max_new_tokens <= 0 && return 0.0
 
-    padded_token_ids, input_mask_len = @jit padded_input_and_mask_len(
-        token_ids, nothing, cur_compiled_fn_token_len, tokenizer.pad_token_id
-    )
-    cur_num_tokens_traced = ConcreteRNumber{Int32}(cur_num_tokens)
+    dev = get_device(ps)
+    max_cache_len = get_max_cache_len(prompt_len + max_new_tokens, max_context_length)
+    prefill_len = get_prefill_size(prompt_len, max_cache_len)
 
-    next_token = get_device(ps)(rand(Int32, 1, size(padded_token_ids, 2)))
+    padded_ids = fill(Int32(tokenizer.pad_token_id), prefill_len, 1)
+    padded_ids[1:prompt_len, 1] .= Int32.(raw_ids)
+    padded_token_ids = dev(padded_ids)
 
-    (predict_next_token_compiled, update_fn1!, update_fn2!) = cache_and_retrieve!(
+    prompt_len_traced = ConcreteRNumber{Int32}(prompt_len)
+    max_new_tokens_traced = ConcreteRNumber{Int32}(max_new_tokens)
+    eos_ids = _prepare_eos_ids(tokenizer.eos_token_id, dev)
+
+    gen_fn = cache_and_retrieve_generation!(
         compile_cache,
-        cur_compiled_fn_token_len,
+        prefill_len,
+        max_cache_len,
         model,
         padded_token_ids,
-        input_mask_len,
+        prompt_len_traced,
+        max_new_tokens_traced,
+        eos_ids,
         ps,
         st,
-        next_token,
-        cur_num_tokens_traced,
     )
 
-    if compile_cache.increment_fn === nothing
-        compile_cache.increment_fn = @compile safe_increment(cur_num_tokens_traced)
-    end
-
     start_time = time()
-    compile_time = 0.0
-    ntokens_generated = 0
-
-    for _ in 1:max_new_tokens
-        new_compiled_fn_token_len = get_padded_size(cur_num_tokens, max_context_length)
-        if new_compiled_fn_token_len != cur_compiled_fn_token_len
-            compile_start_time = time()
-            cur_compiled_fn_token_len = new_compiled_fn_token_len
-            padded_token_ids, input_mask_len = @jit padded_input_and_mask_len(
-                padded_token_ids,
-                next_token,
-                cur_compiled_fn_token_len,
-                tokenizer.pad_token_id,
-            )
-
-            (predict_next_token_compiled, update_fn1!, update_fn2!) = cache_and_retrieve!(
-                compile_cache,
-                cur_compiled_fn_token_len,
-                model,
-                padded_token_ids,
-                input_mask_len,
-                ps,
-                st,
-                next_token,
-                cur_num_tokens_traced,
-            )
-            compile_time += time() - compile_start_time
-        end
-
-        next_token, st = predict_next_token_compiled(
-            model, padded_token_ids, input_mask_len, ps, st
-        )
-
-        ntokens_generated += 1
-
-        next_token_jl = vec(Array(next_token))
-
-        if tokenizer.eos_token_id !== nothing &&
-            all(next_token_jl .== tokenizer.eos_token_id)
-            break
-        end
-
-        print(decode(tokenizer, next_token_jl))
-
-        if cur_num_tokens >= max_context_length
-            update_fn2!(padded_token_ids, next_token)
-        elseif new_compiled_fn_token_len > cur_num_tokens
-            input_mask_len, cur_num_tokens_traced = update_fn1!(
-                padded_token_ids, input_mask_len, cur_num_tokens_traced, next_token
-            )
-        else
-            cur_num_tokens_traced = compile_cache.increment_fn(cur_num_tokens_traced)
-        end
-        cur_num_tokens += 1
-    end
+    output_tokens, num_generated_dev = gen_fn(
+        model,
+        padded_token_ids,
+        prompt_len_traced,
+        max_new_tokens_traced,
+        eos_ids,
+        Val(max_cache_len),
+        ps,
+        st,
+    )
+    output_host = Array(output_tokens)
+    num_generated = Int(num_generated_dev)
     total_time = time() - start_time
 
+    generated_tokens = output_host[1:num_generated, 1]
+    tokens_to_decode = if _matches_eos(generated_tokens[end], tokenizer.eos_token_id)
+        generated_tokens[1:(end - 1)]
+    else
+        generated_tokens
+    end
+    print(decode(tokenizer, tokens_to_decode))
     println()
-    return ntokens_generated / (total_time - compile_time)
+    return num_generated / total_time
 end
 
 # ## Entry Point

@@ -10,6 +10,8 @@ function scaled_dot_product_attention(
     bias=nothing,
     fdrop::F=identity,
     return_attention_weights::Bool=true,
+    q_lengths=nothing,
+    kv_lengths=nothing,
 ) where {TQ,TK,TV,F,N}
     @assert N ≥ 4 "N must be at least 4"
     @assert 1 ≤ head_dim ≤ 3 "head_dim must be between 1 and 3"
@@ -56,11 +58,11 @@ function scaled_dot_product_attention(
 
     if return_attention_weights
         return NNlib.scaled_dot_product_attention_with_weights(
-            q, k, v, bias; scale, mask, is_causal, fdrop
+            q, k, v, bias; scale, mask, is_causal, fdrop, q_lengths, kv_lengths
         )
     end
     output = NNlib.scaled_dot_product_attention(
-        q, k, v, bias; scale, mask, is_causal, fdrop
+        q, k, v, bias; scale, mask, is_causal, fdrop, q_lengths, kv_lengths
     )
     return output, nothing
 end
