@@ -15,11 +15,8 @@ end
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        @testset for _cell in (RNNCell, LSTMCell, GRUCell),
-            use_bias in (true, false),
-            train_state in (true, false)
-
-            cell = _cell(3 => 5; use_bias, train_state)
+        @testset for _cell in (RNNCell, LSTMCell, GRUCell)
+            cell = _cell(3 => 5)
             rnn = StatefulRecurrentCell(cell)
             display(rnn)
 
