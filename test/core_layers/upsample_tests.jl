@@ -1,3 +1,5 @@
+using NNlib
+
 include("../shared_testsetup.jl")
 
 @testset "Upsample" begin
