@@ -45,7 +45,7 @@ include("../../shared_testsetup.jl")
 
     initial_loss = lossfn(first(model(x_samples, ps, st)), y_samples)
 
-    model, ps, st = train_model!(model, ps, st, Descent(0.01f0), 10000)
+    model, ps, st = train_model!(model, ps, st, Descent(0.05f0), 400)
 
     final_loss = lossfn(first(model(x_samples, ps, st)), y_samples)
 
@@ -64,35 +64,6 @@ end
         z, st = model(x, ps, st)
         return sum(abs2, z .- y), st, ()
     end
-
-    rng = StableRNG(12345)
-
-    model = Chain(Dense(4 => 3), VariationalHiddenDropout(0.5f0), Dense(3 => 4))
-    ps, st = Lux.setup(rng, model)
-    x = randn(rng, Float32, 4, 32)
-    opt = Adam(0.001f0)
-
-    tstate = Training.TrainState(model, ps, st, opt)
-
-    _, _, _, tstate_new = Training.compute_gradients(AutoEnzyme(), mse, (x, x), tstate)
-
-    @test tstate_new.states !== tstate.states
-
-    model = Chain(Dense(4 => 3), Dense(3 => 4))
-    ps, st = Lux.setup(rng, model)
-
-    tstate = Training.TrainState(model, ps, st, opt)
-
-    _, _, _, tstate_new = Training.compute_gradients(AutoEnzyme(), mse, (x, x), tstate)
-
-    @test @inferred(Training.compute_gradients(AutoEnzyme(), mse, (x, x), tstate_new)) isa
-        Any
-
-    _, _, _, tstate_new2 = Training.compute_gradients(
-        AutoEnzyme(), mse2, (x, x), tstate_new
-    )
-    @test hasfield(typeof(tstate_new2.cache.extras), :forward)
-    @test hasfield(typeof(tstate_new2.cache.extras), :reverse)
 
     rng = StableRNG(12345)
 

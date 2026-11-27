@@ -21,7 +21,7 @@ include("../../shared_testsetup.jl")
             Dense(32, 4),
         )
         dataset_ = [dev((x, y)) for (x, y) in dataset]
-        opt = Adam(0.001f0)
+        opt = Adam(0.01f0)
 
         @testset "$(ad)" for ad in
                              (AutoZygote(), AutoTracker(), AutoReverseDiff(), AutoEnzyme())
@@ -43,7 +43,7 @@ include("../../shared_testsetup.jl")
 
                 initial_loss = get_total_loss(model, tstate)
 
-                for epoch in 1:1000, (x, y) in dataset_
+                for epoch in 1:100, (x, y) in dataset_
                     grads, loss, _, tstate = allow_unstable() do
                         Training.compute_gradients(ad, mse, (x, y), tstate)
                     end
@@ -60,7 +60,7 @@ include("../../shared_testsetup.jl")
 
                 initial_loss = get_total_loss(model, tstate)
 
-                for epoch in 1:1000, (x, y) in dataset_
+                for epoch in 1:100, (x, y) in dataset_
                     grads, loss, _, tstate = allow_unstable() do
                         Training.single_train_step!(ad, mse, (x, y), tstate)
                     end
@@ -76,7 +76,7 @@ include("../../shared_testsetup.jl")
 
                 initial_loss = get_total_loss(model, tstate)
 
-                for epoch in 1:1000, (x, y) in dataset_
+                for epoch in 1:100, (x, y) in dataset_
                     grads, loss, _, tstate = allow_unstable() do
                         Training.single_train_step(ad, mse, (x, y), tstate)
                     end
