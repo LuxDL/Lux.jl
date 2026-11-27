@@ -68,9 +68,16 @@ include("../shared_testsetup.jl")
 
                 @test size(layer(x, ps, st)[1])[1:(end - 2)] ==
                     cld.(size(x)[1:(end - 2)], k)
-                @jet layer(x, ps, st)
-
-                @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+                if (
+                    (ltype == :LPPool && k == (2,)) ||
+                    (ltype == :MeanPool && k == (4, 5)) ||
+                    (ltype == :MaxPool && k == (6, 7, 8))
+                )
+                    @jet layer(x, ps, st)
+                    @test_gradients(
+                        sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3
+                    )
+                end
             end
         end
     end

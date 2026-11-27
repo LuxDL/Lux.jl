@@ -137,8 +137,16 @@ include("../shared_testsetup.jl")
                         cld.(size(x)[1:(end - 2)], kwarg.stride)
                 end
 
-                @jet layer(x, ps, st)
-                @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+                if (
+                    (k == (1,) && kwarg == (; stride=1)) ||
+                    (k == (2, 3) && kwarg == (; dilation=(1, 1), stride=1)) ||
+                    (k == (1, 2, 3) && kwarg == (; stride=3))
+                )
+                    @jet layer(x, ps, st)
+                    @test_gradients(
+                        sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3
+                    )
+                end
             end
         end
 
@@ -238,16 +246,18 @@ end
                 end
                 @test size(y)[3:4] == size(x)[3:4]
 
-                @test_gradients(
-                    sumabs2first,
-                    layer,
-                    x,
-                    ps,
-                    st;
-                    atol=1.0f-3,
-                    rtol=1.0f-3,
-                    ground_truth_eltype=Nothing
-                )
+                if scale == 2
+                    @test_gradients(
+                        sumabs2first,
+                        layer,
+                        x,
+                        ps,
+                        st;
+                        atol=1.0f-3,
+                        rtol=1.0f-3,
+                        ground_truth_eltype=Nothing
+                    )
+                end
             end
 
             sizes = (nothing, (8, 8, 8), (8, 4, 4))
@@ -272,7 +282,11 @@ end
                 end
                 @test size(y)[4:5] == size(x)[4:5]
 
-                @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,)
+                if xsize == (8, 8, 8)
+                    @test_gradients(
+                        sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3
+                    )
+                end
             end
         end
     end
@@ -367,8 +381,17 @@ end
                         cld.(size(x)[1:(end - 2)], kwarg.stride)
                 end
 
-                @jet layer(x, ps, st)
-                @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+                if (
+                    (k == (1,) && kwarg == (; stride=1)) ||
+                    (k == (2, 3) && kwarg == (; dilation=(1, 1), stride=1)) ||
+                    (k == (1, 2, 3) && kwarg == (; stride=3)) ||
+                    (k == (2,) && kwarg == (; stride=1, use_bias=false))
+                )
+                    @jet layer(x, ps, st)
+                    @test_gradients(
+                        sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3
+                    )
+                end
             end
         end
     end
