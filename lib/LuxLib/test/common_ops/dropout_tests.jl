@@ -27,7 +27,6 @@ const DROPOUT_SHAPE_CONFIGS = [
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "$T, $x_shape, $dims" for (T, x_shape, dims) in DROPOUT_CONFIGS
-
             !fp64 && T == Float64 && continue
 
             x = aType(randn(rng, T, x_shape))
@@ -73,7 +72,6 @@ end
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "$T: $x_shape" for (T, x_shape) in DROPOUT_SHAPE_CONFIGS
-
             !fp64 && T == Float64 && continue
 
             x = aType(randn(rng, T, x_shape))
@@ -165,7 +163,6 @@ end
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "$T: $x_shape" for (T, x_shape) in DROPOUT_SHAPE_CONFIGS
-
             !fp64 && T == Float64 && continue
 
             x = aType(randn(rng, T, x_shape))

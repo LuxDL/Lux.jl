@@ -37,8 +37,8 @@ end
 
 const ALL_TEST_CONFIGS = vcat(
     [
-        ((Float32, Float32), 4, 4, hasbias, act) for
-        hasbias in (true, false), act in (identity, tanh, sigmoid_fast, relu)
+        ((Float32, Float32), 4, 4, hasbias, act) for hasbias in (true, false),
+        act in (identity, tanh, sigmoid_fast, relu)
     ][:],
     [
         ((Float32, Float32), 32, 32, true, relu),

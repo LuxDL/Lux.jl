@@ -77,15 +77,13 @@ const ELTYPES = [(Float32, Float32), (Float64, Float64)]
 const ACTIVATIONS = [identity, sigmoid, gelu]
 const PRIMARY_GEOMETRY = ((2, 2), (1, 1), (1, 1), 1)
 const SECONDARY_GEOMETRIES = (
-    ((2,), (1,), (1,), 1),
-    ((2, 2), (0, 0), (2, 2), 1),
-    ((2, 2), (0, 0), (1, 1), 2),
+    ((2,), (1,), (1,), 1), ((2, 2), (0, 0), (2, 2), 1), ((2, 2), (0, 0), (1, 1), 2)
 )
 
 const ALL_TEST_CONFIGS = vcat(
     [
-        ((Float32, Float32), hasbias, act, PRIMARY_GEOMETRY) for
-        hasbias in (true, false), act in ACTIVATIONS
+        ((Float32, Float32), hasbias, act, PRIMARY_GEOMETRY) for hasbias in (true, false),
+        act in ACTIVATIONS
     ][:],
     [
         ((Float32, Float32), true, identity, SECONDARY_GEOMETRIES[1]),

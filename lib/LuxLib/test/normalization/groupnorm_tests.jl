@@ -81,8 +81,8 @@ end
 
 const ALL_TEST_CONFIGS = vcat(
     [
-        (Float32, (4, 4, 6, 2), groups, affine, act) for
-        groups in (2, 3), affine in (true, false), act in (identity, sigmoid_fast, anonact)
+        (Float32, (4, 4, 6, 2), groups, affine, act) for groups in (2, 3),
+        affine in (true, false), act in (identity, sigmoid_fast, anonact)
     ][:],
     [
         (Float32, (6, 2), 2, true, identity),

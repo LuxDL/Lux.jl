@@ -30,7 +30,6 @@ const ALL_TEST_CONFIGS = vcat(
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "$f: $T" for (f, T) in ALL_TEST_CONFIGS
-
             !fp64 && T == Float64 && continue
 
             x = aType(rand(rng, T, 4, 3))

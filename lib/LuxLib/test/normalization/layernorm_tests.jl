@@ -77,8 +77,8 @@ anonact = x -> x^3
 
 const ALL_TEST_CONFIGS = vcat(
     [
-        (Float32, (3, 3, 2, 1), affine_shape, act) for
-        affine_shape in (nothing, (1, 1, 2)), act in (identity, sigmoid_fast, anonact)
+        (Float32, (3, 3, 2, 1), affine_shape, act) for affine_shape in (nothing, (1, 1, 2)),
+        act in (identity, sigmoid_fast, anonact)
     ][:],
     [
         (Float32, (2, 2, 2, 1), nothing, identity),

@@ -107,8 +107,7 @@ end
 const ALL_TEST_CONFIGS = vcat(
     [
         (Float32, (4, 4, 6, 2), training, affine_track, act) for
-        training in (Val(true), Val(false)),
-        affine_track in [(true, true), (false, false)],
+        training in (Val(true), Val(false)), affine_track in [(true, true), (false, false)],
         act in (identity, sigmoid_fast, anonact)
     ][:],
     [
