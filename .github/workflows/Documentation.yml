@@ -120,7 +120,7 @@ jobs:
           job_summary: true
       - uses: julia-actions/setup-julia@v3
         with:
-          version: "1.12"
+          version: "1"
       - uses: julia-actions/cache@v3
         with:
           cache-name: julia-cache;workflow=tutorial-cpu-${{ matrix.group }}-${{ github.event_name }}-${{ github.event.repository.default_branch }}-${{ github.sha }}
@@ -166,7 +166,7 @@ jobs:
           job_summary: true
       - uses: julia-actions/setup-julia@v3
         with:
-          version: "1.12"
+          version: "1"
       - uses: julia-actions/cache@v3
         with:
           cache-name: julia-cache;workflow=documentation-${{ github.event_name }}-${{ github.event.repository.default_branch }}-${{ github.sha }}

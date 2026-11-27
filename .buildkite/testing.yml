@@ -28,7 +28,7 @@ steps:
         matrix:
           setup:
             julia:
-              - "1.12"
+              - "1"
             group:
               - "autodiff"
               - "core_layers"

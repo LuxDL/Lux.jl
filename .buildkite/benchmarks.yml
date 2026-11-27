@@ -5,7 +5,7 @@ steps:
       - label: "CUDA: Run Benchmarks"
         plugins:
           - JuliaCI/julia#v1:
-              version: "1.12"
+              version: "1"
         command: |
           julia --project=benchmarks -e 'println("--- :julia: Instantiating project")
               using Pkg;
@@ -37,7 +37,7 @@ steps:
       - label: "Combine benchmarks"
         plugins:
           - JuliaCI/julia#v1:
-              version: "1.12"
+              version: "1"
         command: |
           buildkite-agent artifact download "benchmarks/results/*" .
 

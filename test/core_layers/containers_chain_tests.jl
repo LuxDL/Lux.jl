@@ -214,7 +214,9 @@ end
             @test y ≈ res
             @test st_out == st_ref
 
-            @jet layer(x, ps, st)
+            @jet layer(x, ps, st) opt_broken = (
+                mode == "cuda" && input_injection === Val(true) && VERSION >= v"1.13-"
+            )
             @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 

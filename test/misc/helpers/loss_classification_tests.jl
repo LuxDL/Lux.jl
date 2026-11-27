@@ -284,7 +284,9 @@ include("../../shared_testsetup.jl")
             @test BinaryFocalLoss()(ŷ1, y1) ≈ 0.05691642237852222
             @test BinaryFocalLoss(; gamma=0)(ŷ, y) ≈ Lux.CrossEntropyLoss()(ŷ, y)
 
-            @jet BinaryFocalLoss()(ŷ, y)
+            @jet BinaryFocalLoss()(ŷ, y) opt_broken = (
+                mode == "cuda" && VERSION >= v"1.13-"
+            )
 
             @test_gradients(Base.Fix2(BinaryFocalLoss(), y), ŷ; atol=1.0f-3, rtol=1.0f-3)
         end
