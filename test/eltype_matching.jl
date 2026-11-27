@@ -21,11 +21,7 @@ include("setup_modes.jl")
         push!(x_ad_arrs, ReverseDiff.track.(x))
     end
 
-    # We only log once so can't really check the warning
-    if (
-        Lux.LuxPreferences.ELTYPE_MISMATCH_HANDLING == "none" ||
-        Lux.LuxPreferences.ELTYPE_MISMATCH_HANDLING == "warn"
-    )
+    if Lux.LuxPreferences.ELTYPE_MISMATCH_HANDLING == "none"
         y, st_ = model(x, ps, st)
         @test eltype(y) == Float64  # We don't change the eltype
 
