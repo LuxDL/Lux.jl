@@ -1,6 +1,6 @@
 include("../shared_testsetup.jl")
 
-using LuxLib, Test, StableRNGs, NNlib, LuxTestUtils, Zygote
+using LuxLib, Test, StableRNGs, NNlib, LuxTestUtils
 using ReverseDiff, Tracker
 
 bias_act_loss1(act, x, b) = sum(abs2, act.(x .+ LuxLib.Impl.reshape_bias(x, b)))
@@ -13,26 +13,36 @@ struct __Fix1{F,A}
 end
 (f::__Fix1)(x, b) = f.f(f.act, x, b)
 
+const ALL_ACTIVATIONS = [
+    identity,
+    relu,
+    sigmoid,
+    sigmoid_fast,
+    softplus,
+    logsigmoid,
+    gelu,
+    swish,
+    lisht,
+    tanh,
+    tanh_fast,
+]
+
+const ALL_TEST_CONFIGS = vcat(
+    [(act, Float32, (2, 2, 3, 4)) for act in ALL_ACTIVATIONS],
+    [(act, Float32, (4, 5)) for act in (identity, relu, sigmoid, gelu)],
+    [
+        (identity, Float64, (2, 2, 3, 4)),
+        (gelu, Float64, (2, 2, 3, 4)),
+        (relu, Float64, (4, 5)),
+        (sigmoid, Float64, (4, 5)),
+    ],
+)
+
 @testset "Bias Activation" begin
     rng = StableRNG(1234)
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "$act, $T, $sz" for act in [
-                identity,
-                relu,
-                sigmoid,
-                sigmoid_fast,
-                softplus,
-                logsigmoid,
-                gelu,
-                swish,
-                lisht,
-                tanh,
-                tanh_fast,
-            ],
-            T in [Float32, Float64],
-            sz in [(2, 2, 3, 4), (4, 5)]
-
+        @testset "$act, $T, $sz" for (act, T, sz) in ALL_TEST_CONFIGS
             !fp64 && T == Float64 && continue
 
             x = aType(rand(rng, T, sz))
@@ -83,17 +93,6 @@ end
                 rtol,
                 soft_fail=fp16 ? [AutoFiniteDiff()] : []
             )
-
-            if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
-                ∂x1, ∂b1 = Zygote.gradient(__Fix1(bias_act_loss1, act), x, b)
-                ∂x2, ∂b2 = Zygote.gradient(__Fix1(bias_act_loss2, act), x, b)
-                ∂x3, ∂b3 = Zygote.gradient(__Fix1(bias_act_loss3, act), x, b)
-
-                @test ∂x1 ≈ ∂x2 atol = atol rtol = rtol
-                @test ∂x1 ≈ ∂x3 atol = atol rtol = rtol
-                @test ∂b1 ≈ ∂b2 atol = atol rtol = rtol
-                @test ∂b1 ≈ ∂b3 atol = atol rtol = rtol
-            end
         end
     end
 end

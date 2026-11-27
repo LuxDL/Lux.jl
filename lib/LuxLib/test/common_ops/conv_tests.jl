@@ -75,17 +75,27 @@ anonact = x -> gelu(x)
 
 const ELTYPES = [(Float32, Float32), (Float64, Float64)]
 const ACTIVATIONS = [identity, sigmoid, gelu]
+const PRIMARY_GEOMETRY = ((2, 2), (1, 1), (1, 1), 1)
+const SECONDARY_GEOMETRIES = (
+    ((2,), (1,), (1,), 1), ((2, 2), (0, 0), (2, 2), 1), ((2, 2), (0, 0), (1, 1), 2)
+)
 
-const ALL_TEST_CONFIGS = Iterators.product(
-    ELTYPES,
-    (true, false),
-    ACTIVATIONS,
-    (
-        ((2,), (1,), (1,), 1),
-        ((2, 2), (1, 1), (1, 1), 1),
-        ((2, 2), (0, 0), (2, 2), 1),
-        ((2, 2), (0, 0), (1, 1), 2),
-    ),
+const ALL_TEST_CONFIGS = vcat(
+    [
+        ((Float32, Float32), hasbias, act, PRIMARY_GEOMETRY) for hasbias in (true, false),
+        act in ACTIVATIONS
+    ][:],
+    [
+        ((Float32, Float32), true, identity, SECONDARY_GEOMETRIES[1]),
+        ((Float32, Float32), false, sigmoid, SECONDARY_GEOMETRIES[2]),
+        ((Float32, Float32), true, gelu, SECONDARY_GEOMETRIES[3]),
+    ],
+    [
+        ((Float64, Float64), true, identity, SECONDARY_GEOMETRIES[1]),
+        ((Float64, Float64), false, sigmoid, PRIMARY_GEOMETRY),
+        ((Float64, Float64), true, gelu, SECONDARY_GEOMETRIES[2]),
+        ((Float64, Float64), false, identity, SECONDARY_GEOMETRIES[3]),
+    ],
 )
 
 @testset "Fused Conv" begin

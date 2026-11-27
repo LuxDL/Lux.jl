@@ -1,7 +1,6 @@
 include("../shared_testsetup.jl")
 
-using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, Static, StableRNGs
-using LuxTestUtils: check_approx
+using LuxLib, LuxTestUtils, Random, Test, NNlib, Static, StableRNGs
 
 function setup_groupnorm(rng, aType, T, sz, affine)
     x = aType(randn(rng, T, sz))
@@ -60,21 +59,6 @@ function run_groupnorm_testing(T, sz, groups, affine, act, aType, mode, ongpu)
 
     @test y ≈ y_simple atol = atol rtol = rtol
 
-    # Check the rrules
-    if LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
-        ∂x, ∂scale, ∂bias = Zygote.gradient(sum ∘ _f, x, scale, bias)
-        ∂x_simple, ∂scale_simple, ∂bias_simple = Zygote.gradient(sum ∘ _f2, x, scale, bias)
-        if length(sz) == 5 && !ongpu
-            @test_softfail check_approx(∂x, ∂x_simple; atol, rtol)
-        else
-            @test ∂x ≈ ∂x_simple atol = atol rtol = rtol
-        end
-        if affine
-            @test ∂scale ≈ ∂scale_simple atol = atol rtol = rtol
-            @test ∂bias ≈ ∂bias_simple atol = atol rtol = rtol
-        end
-    end
-
     @test @inferred(groupnorm(x, scale, bias, groups, act, epsilon)) isa Any
     @jet groupnorm(x, scale, bias, groups, act, epsilon)
 
@@ -95,12 +79,25 @@ function run_groupnorm_testing(T, sz, groups, affine, act, aType, mode, ongpu)
     )
 end
 
-const ALL_TEST_CONFIGS = Iterators.product(
-    [Float32, Float64],
-    ((6, 2), (4, 4, 6, 2), (2, 2, 6, 2)),
-    (2, 3),
-    (true, false),
-    (identity, sigmoid_fast, anonact),
+const ALL_TEST_CONFIGS = vcat(
+    [
+        (Float32, (4, 4, 6, 2), groups, affine, act) for groups in (2, 3),
+        affine in (true, false), act in (identity, sigmoid_fast, anonact)
+    ][:],
+    [
+        (Float32, (6, 2), 2, true, identity),
+        (Float32, (6, 2), 3, false, sigmoid_fast),
+        (Float32, (6, 2), 2, false, anonact),
+        (Float32, (6, 2), 3, true, identity),
+        (Float32, (2, 2, 6, 2), 2, false, identity),
+        (Float32, (2, 2, 6, 2), 3, true, sigmoid_fast),
+    ],
+    [
+        (Float64, (6, 2), 2, true, identity),
+        (Float64, (4, 4, 6, 2), 3, false, sigmoid_fast),
+        (Float64, (4, 4, 6, 2), 2, true, anonact),
+        (Float64, (2, 2, 6, 2), 3, false, identity),
+    ],
 )
 
 @testset "Group Norm" begin

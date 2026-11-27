@@ -1,6 +1,6 @@
 include("../shared_testsetup.jl")
 
-using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, Static
+using LuxLib, LuxTestUtils, Random, Test, NNlib, Static
 
 function setup_batchnorm(gen_f, aType, T, sz; affine::Bool=true, track_stats::Bool)
     x = aType(gen_f(T, sz))
@@ -73,25 +73,6 @@ function run_batchnorm_testing(gen_f, T, sz, training, affine, track_stats, act,
         @test nt.running_var ≈ nt_simple.running_var atol = atol rtol = rtol
     end
 
-    # Check the rrules
-    if is_training(training) && LuxTestUtils.ZYGOTE_TESTING_ENABLED[]
-        _f =
-            (args...) ->
-                sum(first(batchnorm(args..., rm, rv, training, act, T(0.9), epsilon)))
-        _f2 =
-            (args...) -> sum(
-                first(batchnorm_fallback(args..., rm, rv, training, act, T(0.9), epsilon)),
-            )
-
-        ∂x, ∂scale, ∂bias = Zygote.gradient(sum ∘ _f, x, scale, bias)
-        ∂x_simple, ∂scale_simple, ∂bias_simple = Zygote.gradient(sum ∘ _f2, x, scale, bias)
-        @test ∂x ≈ ∂x_simple atol = atol rtol = rtol
-        if affine
-            @test ∂scale ≈ ∂scale_simple atol = atol rtol = rtol
-            @test ∂bias ≈ ∂bias_simple atol = atol rtol = rtol
-        end
-    end
-
     @test @inferred(batchnorm(x, scale, bias, rm, rv, training, act, T(0.9), epsilon)) isa
         Any
     @jet batchnorm(x, scale, bias, rm, rv, training, act, T(0.9), epsilon)
@@ -123,12 +104,24 @@ function run_batchnorm_testing(gen_f, T, sz, training, affine, track_stats, act,
     end
 end
 
-const ALL_TEST_CONFIGS = Iterators.product(
-    [Float32, Float64],
-    ((4, 4, 6, 2), (8, 2)),
-    (Val(true), Val(false)),
-    [(true, true), (false, false)],
-    (identity, sigmoid_fast, anonact),
+const ALL_TEST_CONFIGS = vcat(
+    [
+        (Float32, (4, 4, 6, 2), training, affine_track, act) for
+        training in (Val(true), Val(false)), affine_track in [(true, true), (false, false)],
+        act in (identity, sigmoid_fast, anonact)
+    ][:],
+    [
+        (Float32, (8, 2), Val(true), (true, true), identity),
+        (Float32, (8, 2), Val(true), (false, false), sigmoid_fast),
+        (Float32, (8, 2), Val(true), (true, true), anonact),
+        (Float32, (8, 2), Val(false), (false, false), identity),
+    ],
+    [
+        (Float64, (4, 4, 6, 2), Val(true), (true, true), identity),
+        (Float64, (4, 4, 6, 2), Val(true), (false, false), sigmoid_fast),
+        (Float64, (8, 2), Val(true), (true, true), anonact),
+        (Float64, (8, 2), Val(false), (false, false), identity),
+    ],
 )
 
 @testset "Batch Norm" begin

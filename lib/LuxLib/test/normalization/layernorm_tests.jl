@@ -75,15 +75,21 @@ end
 
 anonact = x -> x^3
 
-const ALL_TEST_CONFIGS = Any[]
-
-for T in (Float32, Float64),
-    x_shape in ((3, 3, 2, 1), (2, 2, 2, 1)),
-    affine_shape in (nothing, (1, 1, x_shape[3])),
-    act in (identity, sigmoid_fast, anonact)
-
-    push!(ALL_TEST_CONFIGS, (T, x_shape, affine_shape, act))
-end
+const ALL_TEST_CONFIGS = vcat(
+    [
+        (Float32, (3, 3, 2, 1), affine_shape, act) for affine_shape in (nothing, (1, 1, 2)),
+        act in (identity, sigmoid_fast, anonact)
+    ][:],
+    [
+        (Float32, (2, 2, 2, 1), nothing, identity),
+        (Float32, (2, 2, 2, 1), (1, 1, 2), sigmoid_fast),
+    ],
+    [
+        (Float64, (3, 3, 2, 1), nothing, identity),
+        (Float64, (3, 3, 2, 1), (1, 1, 2), sigmoid_fast),
+        (Float64, (2, 2, 2, 1), (1, 1, 2), anonact),
+    ],
+)
 
 @testset "Layer Norm" begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES

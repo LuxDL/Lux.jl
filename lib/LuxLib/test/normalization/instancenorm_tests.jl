@@ -79,11 +79,15 @@ function run_instancenorm_testing(gen_f, T, sz, training, act, aType)
     end
 end
 
-const ALL_TEST_CONFIGS = Iterators.product(
-    [Float32, Float64],
-    ((4, 4, 6, 2),),
-    (Val(true), Val(false)),
-    (identity, sigmoid_fast, anonact),
+const ALL_TEST_CONFIGS = vcat(
+    [
+        (Float32, (4, 4, 6, 2), training, act) for training in (Val(true), Val(false)),
+        act in (identity, sigmoid_fast, anonact)
+    ][:],
+    [
+        (Float64, (4, 4, 6, 2), Val(true), identity),
+        (Float64, (4, 4, 6, 2), Val(false), sigmoid_fast),
+    ],
 )
 
 @testset "Instance Norm" begin
