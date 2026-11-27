@@ -1,4 +1,4 @@
-@doc doc"""
+@doc raw"""
     instancenorm(x, scale, bias, training, act, epsilon = eps(eltype(x)) ^ (5 // 7))
     instancenorm(x, scale, bias, running_mean, running_var, training, act, momentum,
         epsilon = eps(eltype(x)) ^ (5 // 7))

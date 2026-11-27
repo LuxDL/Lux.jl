@@ -1,4 +1,4 @@
-@doc doc"""
+@doc raw"""
     batchnorm(x, scale, bias, running_mean, running_var, training,
         σ=identity, momentum = 0.1f0, epsilon = eps(eltype(x)) ^ (5 // 7))
 

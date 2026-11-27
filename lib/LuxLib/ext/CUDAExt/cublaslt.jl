@@ -325,9 +325,12 @@ function LuxLib.Impl.cublasLt_fused_dense(
     ::False,
 ) where {F}
     z = similar(
-        x, LuxLib.concrete_fba_output_eltype(act, weight, x, b), size(weight, 1), size(x, 2)
+        x,
+        LuxLib.Utils.concrete_bias_act_output_eltype(act, weight, x, b),
+        size(weight, 1),
+        size(x, 2),
     )
-    LuxLib.cublasLt_fused_dense!(z, act, weight, x, b)
+    LuxLib.Impl.cublasLt_fused_dense!(z, act, weight, x, b)
     return z, nothing
 end
 
@@ -335,10 +338,13 @@ function LuxLib.Impl.cublasLt_fused_dense(
     act::F, weight::AbstractMatrix, x::AbstractMatrix, b::Optional{<:AbstractVector}, ::True
 ) where {F}
     z = similar(
-        x, LuxLib.concrete_fba_output_eltype(act, weight, x, b), size(weight, 1), size(x, 2)
+        x,
+        LuxLib.Utils.concrete_bias_act_output_eltype(act, weight, x, b),
+        size(weight, 1),
+        size(x, 2),
     )
     y = similar(z)
-    LuxLib.cublasLt_fused_dense!(z, act, weight, x, b, y)
+    LuxLib.Impl.cublasLt_fused_dense!(z, act, weight, x, b, y)
     return z, y
 end
 
