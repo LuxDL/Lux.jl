@@ -19,9 +19,12 @@ using Test:
     @test,
     @test_skip,
     @test_broken,
-    eval_test,
     Threw,
     Returned
+
+isdefined(Test, :eval_test) && @eval using Test: eval_test
+isdefined(Test, :eval_test_comparison) && @eval using Test: eval_test_comparison
+isdefined(Test, :eval_test_function) && @eval using Test: eval_test_function
 
 # Autodiff
 using ADTypes:

@@ -114,6 +114,10 @@ end
     @test errors() do
         @test_softfail 1 + 1
     end
+    @test errors() do
+        @test_softfail error("test")
+    end
     @test_softfail 1 + 1 == 2
     @test_softfail 1 + 1 < 2
+    @test_softfail iseven(2)
 end
