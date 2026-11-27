@@ -423,6 +423,10 @@ export default defineConfig({
                 text: "Profiling Lux Training Loops",
                 link: "/manual/profiling_training_loop",
               },
+              {
+                text: "Nested AutoDiff",
+                link: "/manual/nested_autodiff_reactant",
+              },
             ],
           },
           {
