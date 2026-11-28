@@ -1872,22 +1872,24 @@ Wraps a stateless and parameter less function. Might be used when a function is 
 source
 
 ```julia
-ReverseSequence(dim = nothing)
+ReverseSequence(dim = nothing; ordering = nothing)
 ```
 
-Reverse the specified dimension `dims` of the passed array
+Reverse the specified dimension of the passed array or sequence.
 
 **Arguments**
 
-* `dim`: Dimension that need to be reversed. If `nothing`, for AbstractVector{T} it reverses itself (dimension 1), for other arrays, reverse the dimension `ndims(x) - 1`.
+* `dim`: Dimension that need to be reversed. If `nothing`, for `AbstractVector` it reverses itself (dimension 1), for other arrays, reverse the dimension `ndims(x) - 1`. If an `AbstractTimeSeriesDataBatchOrdering` (e.g. `TimeLastIndex()`, `BatchLastIndex()`), reverse the sequence along the time dimension.
+
+* `ordering`: An `AbstractTimeSeriesDataBatchOrdering`. Can be specified instead of `dim`.
 
 **Inputs**
 
-* `x`: AbstractArray.
+* `x`: AbstractArray or Tuple.
 
 **Returns**
 
-* AbstractArray with the same dimensions as the input
+* Array or Tuple with the same dimensions / shape as the input
 
 * Empty `NamedTuple()`
 
