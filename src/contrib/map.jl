@@ -1,4 +1,4 @@
-@doc doc"""
+@doc raw"""
     layer_map(f, l::AbstractLuxLayer, ps, st::NamedTuple)
 
 Map the function `f` over the model `l`, with the parameters `ps` and states `st`. This is

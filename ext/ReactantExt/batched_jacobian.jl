@@ -43,7 +43,7 @@ function _batched_jacobian_reverse_impl(f::F, ad::AutoEnzyme, x::AbstractArray) 
             reshape(
                 Reactant.promote_to(
                     TracedRArray{Reactant.unwrapped_eltype(y),2},
-                    LinearAlgebra.I(size(y, 1)),
+                    [i == j for i in 1:size(y, 1), j in 1:size(y, 1)],
                 ),
                 size(y, 1),
                 1,
@@ -56,21 +56,6 @@ function _batched_jacobian_reverse_impl(f::F, ad::AutoEnzyme, x::AbstractArray) 
     )
 
     x = Utils.contiguous(reshape(x, :, B))
-
-    # TODO: replace once https://github.com/LuxDL/Lux.jl/issues/1523 is fixed
-    #=
-    dx = similar(x, size(x, 1), size(x, 2), size(y, 1))
-    fill!(dx, false)
-
-    Enzyme.autodiff(
-        ad.mode,
-        Utils.annotate_enzyme_function(ad, f′),
-        Reactant.StackedBatchDuplicated(y, dy),
-        Reactant.StackedBatchDuplicated(x, dx),
-    )
-
-    return permutedims(dx, (3, 1, 2))
-    =#
 
     # Our loop to batch pass should automatically batch this loop and current has better
     # coverage than the above. Though we should fix the above to ensure we never have a
@@ -102,7 +87,7 @@ function _batched_jacobian_forward_impl(f::F, ad::AutoEnzyme, x::AbstractArray) 
             reshape(
                 Reactant.promote_to(
                     TracedRArray{Reactant.unwrapped_eltype(x),2},
-                    LinearAlgebra.I(size(x, 1)),
+                    [i == j for i in 1:size(x, 1), j in 1:size(x, 1)],
                 ),
                 size(x, 1),
                 1,
@@ -113,18 +98,6 @@ function _batched_jacobian_forward_impl(f::F, ad::AutoEnzyme, x::AbstractArray) 
             1,
         ),
     )
-
-    # TODO: replace once https://github.com/LuxDL/Lux.jl/issues/1523 is fixed
-    # return stack(
-    #     only(
-    #         Enzyme.autodiff(
-    #             ad.mode,
-    #             Utils.annotate_enzyme_function(ad, f′),
-    #             Reactant.StackedBatchDuplicated(x, bx),
-    #         ),
-    #     );
-    #     dims=2,
-    # )
 
     dy = similar(y, size(y, 1), size(x, 1), size(x, 2))
     @trace track_numbers = false for i in 1:size(x, 1)
