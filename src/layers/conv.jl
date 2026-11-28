@@ -208,8 +208,8 @@ function Conv(
     pad=0,
     dilation=1,
     groups=1,
-    use_bias::BoolType=True(),
-    cross_correlation::BoolType=False(),
+    use_bias=True(),
+    cross_correlation=False(),
 )
     stride = Utils.expand(Val(length(k)), stride)
     dilation = Utils.expand(Val(length(k)), dilation)
@@ -366,8 +366,8 @@ function ConvTranspose(
     outpad=0,
     dilation=1,
     groups=1,
-    use_bias::BoolType=True(),
-    cross_correlation::BoolType=False(),
+    use_bias=True(),
+    cross_correlation=False(),
 )
     stride = Utils.expand(Val(length(k)), stride)
     dilation = Utils.expand(Val(length(k)), dilation)

@@ -203,8 +203,8 @@ FlattenLayer(; N=nothing) = FlattenLayer(static(N))
 end
 
 @trace function (f::FlattenLayer)(x::AbstractArray{T,N}, _, st::NamedTuple) where {T,N}
-    @assert f.N < N
-    return reshape(x, :, size(x)[(f.N + 1):end]...), st
+    @assert known(f.N) < N
+    return reshape(x, :, size(x)[(known(f.N) + 1):end]...), st
 end
 
 """
@@ -237,13 +237,13 @@ end
 SelectDim(dim::Integer, index::Integer) = SelectDim(static(dim), static(index))
 SelectDim(dim::Integer, index::AbstractVector) = SelectDim(static(dim), index)
 
-@trace function (s::SelectDim{D,<:StaticInt})(x, _, st::NamedTuple) where {D}
+@trace function (s::SelectDim{<:StaticInt,<:StaticInt})(x, _, st::NamedTuple)
     return selectdim(x, known(s.dim), known(s.index)), st
 end
-(s::SelectDim)(x, _, st::NamedTuple) = selectdim(x, known(s.dim), s.index), st
+(s::SelectDim)(x, _, st::NamedTuple) = selectdim(x, known(s.dim), known(s.index)), st
 
 function Base.show(io::IO, s::SelectDim)
-    return print(io, "SelectDim(dim = ", s.dim, ", index = ", s.index, ")")
+    return print(io, "SelectDim(dim = ", known(s.dim), ", index = ", known(s.index), ")")
 end
 
 """
@@ -366,7 +366,7 @@ function Dense(
     activation=identity;
     init_weight=nothing,
     init_bias=nothing,
-    use_bias::BoolType=True(),
+    use_bias=True(),
 )
     return Dense(activation, in_dims, out_dims, init_weight, init_bias, static(use_bias))
 end
@@ -457,7 +457,7 @@ function Scale(
     activation=identity;
     init_weight=glorot_uniform,
     init_bias=zeros32,
-    use_bias::BoolType=True(),
+    use_bias=True(),
 )
     return Scale(activation, dims, init_weight, init_bias, static(use_bias))
 end
@@ -573,7 +573,7 @@ function Bilinear(
     activation=identity;
     init_weight=nothing,
     init_bias=nothing,
-    use_bias::BoolType=True(),
+    use_bias=True(),
 )
     return Bilinear(
         activation, in1_dims, in2_dims, out, init_weight, init_bias, static(use_bias)
