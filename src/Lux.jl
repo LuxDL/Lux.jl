@@ -159,13 +159,7 @@ export Training
 export jacobian_vector_product, vector_jacobian_product
 export batched_jacobian
 export AutoEnzyme,
-    AutoForwardDiff,
-    AutoMooncake,
-    AutoReactant,
-    AutoReverseDiff,
-    AutoTracker,
-    AutoZygote,
-    AutoForwardDiff
+    AutoForwardDiff, AutoMooncake, AutoReactant, AutoReverseDiff, AutoTracker, AutoZygote
 
 export BinaryCrossEntropyLoss,
     BinaryFocalLoss,
