@@ -162,36 +162,36 @@ trained_model = train_model(dataloader)
 ```
 
 ```
-Iteration:     1, Loss: 7.869703e-02
-Iteration:    25, Loss: 5.155661e-02
-Iteration:    50, Loss: 2.385353e-02
-Iteration:    75, Loss: 9.171640e-02
-Iteration:   100, Loss: 1.930836e-01
-Iteration:   100, Loss: 2.384517e-02
-Iteration:     1, Loss: 4.591471e-01
-Iteration:    25, Loss: 2.945075e-02
-Iteration:     1, Loss: 2.809387e-02
-Iteration:    25, Loss: 5.097524e-02
-Iteration:    50, Loss: 3.053948e-02
-Iteration:    75, Loss: 2.791872e-02
-Iteration:   100, Loss: 2.610432e-02
-Iteration:   125, Loss: 2.452494e-02
-Iteration:   150, Loss: 2.308792e-02
-Iteration:   175, Loss: 2.169772e-02
-Iteration:   200, Loss: 2.015633e-02
-Iteration:   225, Loss: 1.779146e-02
-Iteration:   250, Loss: 1.529719e-02
-Iteration:   275, Loss: 1.340379e-02
-Iteration:   300, Loss: 2.561633e-02
-Iteration:   325, Loss: 1.319102e-02
-Iteration:   350, Loss: 1.126629e-02
-Iteration:   375, Loss: 9.946230e-03
-Iteration:   400, Loss: 9.489950e-03
-Iteration:   425, Loss: 9.630069e-03
-Iteration:   450, Loss: 8.487782e-03
-Iteration:   475, Loss: 7.625140e-03
-Iteration:   500, Loss: 2.244992e-02
-Iteration:   500, Loss: 7.610908e-03
+Iteration:     1, Loss: 9.041665e-02
+Iteration:    25, Loss: 1.175146e-01
+Iteration:    50, Loss: 2.379424e-02
+Iteration:    75, Loss: 8.060518e-02
+Iteration:   100, Loss: 2.242134e-01
+Iteration:   100, Loss: 8.358527e-03
+Iteration:     1, Loss: 4.404109e-01
+Iteration:    25, Loss: 5.130491e-02
+Iteration:     1, Loss: 5.072330e-02
+Iteration:    25, Loss: 7.235188e-02
+Iteration:    50, Loss: 4.890817e-02
+Iteration:    75, Loss: 4.025806e-02
+Iteration:   100, Loss: 3.287002e-02
+Iteration:   125, Loss: 2.870630e-02
+Iteration:   150, Loss: 2.588526e-02
+Iteration:   175, Loss: 2.370296e-02
+Iteration:   200, Loss: 3.078521e-02
+Iteration:   225, Loss: 3.035287e-02
+Iteration:   250, Loss: 2.268512e-02
+Iteration:   275, Loss: 2.038383e-02
+Iteration:   300, Loss: 1.881780e-02
+Iteration:   325, Loss: 1.752454e-02
+Iteration:   350, Loss: 1.631786e-02
+Iteration:   375, Loss: 1.515377e-02
+Iteration:   400, Loss: 2.771566e-02
+Iteration:   425, Loss: 1.616668e-02
+Iteration:   450, Loss: 1.421575e-02
+Iteration:   475, Loss: 1.298299e-02
+Iteration:   500, Loss: 1.159140e-02
+Iteration:   500, Loss: 1.159140e-02
 
 ```
 
@@ -242,9 +242,9 @@ Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 4 × AMD EPYC 9V45 96-Core Processor
+  CPU: 4 × AMD EPYC 7763 64-Core Processor
   WORD_SIZE: 64
-  LLVM: libLLVM-20.1.8 (ORCJIT, znver5)
+  LLVM: libLLVM-20.1.8 (ORCJIT, znver3)
   GC: Built with stock GC
 Threads: 4 default, 1 interactive, 4 GC (on 4 virtual cores)
 Environment:

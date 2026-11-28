@@ -536,10 +536,10 @@ W * x
 ```
 5-element Vector{Float64}:
   1.2197981041108443
- -2.62625877100596
+ -2.6262587710059595
  -2.8573820474674845
- -2.4319346874291314
-  1.0108668577150213
+ -2.4319346874291305
+  1.010866857715021
 ```
 
 Julia's arrays are very powerful, and you can learn more about what they can do [here](https://docs.julialang.org/en/v1/manual/arrays/).
@@ -881,9 +881,9 @@ Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 4 × AMD EPYC 7763 64-Core Processor
+  CPU: 4 × AMD EPYC 9V45 96-Core Processor
   WORD_SIZE: 64
-  LLVM: libLLVM-20.1.8 (ORCJIT, znver3)
+  LLVM: libLLVM-20.1.8 (ORCJIT, znver5)
   GC: Built with stock GC
 Threads: 4 default, 1 interactive, 4 GC (on 4 virtual cores)
 Environment:
@@ -1165,9 +1165,9 @@ Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 4 × AMD EPYC 7763 64-Core Processor
+  CPU: 4 × AMD EPYC 9V45 96-Core Processor
   WORD_SIZE: 64
-  LLVM: libLLVM-20.1.8 (ORCJIT, znver3)
+  LLVM: libLLVM-20.1.8 (ORCJIT, znver5)
   GC: Built with stock GC
 Threads: 4 default, 1 interactive, 4 GC (on 4 virtual cores)
 Environment:
@@ -1400,56 +1400,56 @@ ps_trained, st_trained = main(SpiralClassifier)
 ```
 ┌ Warning: `replicate` doesn't work for `TaskLocalRNG`. Returning the same `TaskLocalRNG`.
 └ @ LuxCore ~/work/Lux.jl/Lux.jl/lib/LuxCore/src/LuxCore.jl:18
-Epoch [  1]: Loss 0.52868
-Validation:	Loss 0.43961	Accuracy 1.00000
-Epoch [  2]: Loss 0.38586
-Validation:	Loss 0.31357	Accuracy 1.00000
-Epoch [  3]: Loss 0.26748
-Validation:	Loss 0.20873	Accuracy 1.00000
-Epoch [  4]: Loss 0.17544
-Validation:	Loss 0.13613	Accuracy 1.00000
-Epoch [  5]: Loss 0.11590
-Validation:	Loss 0.09253	Accuracy 1.00000
-Epoch [  6]: Loss 0.08035
-Validation:	Loss 0.06596	Accuracy 1.00000
-Epoch [  7]: Loss 0.05798
-Validation:	Loss 0.04892	Accuracy 1.00000
-Epoch [  8]: Loss 0.04350
-Validation:	Loss 0.03716	Accuracy 1.00000
-Epoch [  9]: Loss 0.03350
-Validation:	Loss 0.02875	Accuracy 1.00000
-Epoch [ 10]: Loss 0.02603
-Validation:	Loss 0.02267	Accuracy 1.00000
-Epoch [ 11]: Loss 0.02075
-Validation:	Loss 0.01827	Accuracy 1.00000
-Epoch [ 12]: Loss 0.01691
-Validation:	Loss 0.01520	Accuracy 1.00000
-Epoch [ 13]: Loss 0.01419
-Validation:	Loss 0.01308	Accuracy 1.00000
-Epoch [ 14]: Loss 0.01238
-Validation:	Loss 0.01152	Accuracy 1.00000
-Epoch [ 15]: Loss 0.01096
-Validation:	Loss 0.01031	Accuracy 1.00000
-Epoch [ 16]: Loss 0.00988
-Validation:	Loss 0.00934	Accuracy 1.00000
-Epoch [ 17]: Loss 0.00897
-Validation:	Loss 0.00853	Accuracy 1.00000
-Epoch [ 18]: Loss 0.00822
-Validation:	Loss 0.00784	Accuracy 1.00000
-Epoch [ 19]: Loss 0.00758
-Validation:	Loss 0.00724	Accuracy 1.00000
-Epoch [ 20]: Loss 0.00699
-Validation:	Loss 0.00669	Accuracy 1.00000
-Epoch [ 21]: Loss 0.00647
-Validation:	Loss 0.00619	Accuracy 1.00000
-Epoch [ 22]: Loss 0.00599
-Validation:	Loss 0.00572	Accuracy 1.00000
-Epoch [ 23]: Loss 0.00553
-Validation:	Loss 0.00528	Accuracy 1.00000
-Epoch [ 24]: Loss 0.00511
-Validation:	Loss 0.00489	Accuracy 1.00000
-Epoch [ 25]: Loss 0.00473
-Validation:	Loss 0.00454	Accuracy 1.00000
+Epoch [  1]: Loss 0.51980
+Validation:	Loss 0.43143	Accuracy 1.00000
+Epoch [  2]: Loss 0.37584
+Validation:	Loss 0.30698	Accuracy 1.00000
+Epoch [  3]: Loss 0.26554
+Validation:	Loss 0.21414	Accuracy 1.00000
+Epoch [  4]: Loss 0.18489
+Validation:	Loss 0.14874	Accuracy 1.00000
+Epoch [  5]: Loss 0.12881
+Validation:	Loss 0.10385	Accuracy 1.00000
+Epoch [  6]: Loss 0.09022
+Validation:	Loss 0.07326	Accuracy 1.00000
+Epoch [  7]: Loss 0.06423
+Validation:	Loss 0.05329	Accuracy 1.00000
+Epoch [  8]: Loss 0.04733
+Validation:	Loss 0.04017	Accuracy 1.00000
+Epoch [  9]: Loss 0.03609
+Validation:	Loss 0.03126	Accuracy 1.00000
+Epoch [ 10]: Loss 0.02839
+Validation:	Loss 0.02508	Accuracy 1.00000
+Epoch [ 11]: Loss 0.02304
+Validation:	Loss 0.02069	Accuracy 1.00000
+Epoch [ 12]: Loss 0.01919
+Validation:	Loss 0.01743	Accuracy 1.00000
+Epoch [ 13]: Loss 0.01628
+Validation:	Loss 0.01493	Accuracy 1.00000
+Epoch [ 14]: Loss 0.01403
+Validation:	Loss 0.01296	Accuracy 1.00000
+Epoch [ 15]: Loss 0.01225
+Validation:	Loss 0.01134	Accuracy 1.00000
+Epoch [ 16]: Loss 0.01077
+Validation:	Loss 0.01001	Accuracy 1.00000
+Epoch [ 17]: Loss 0.00955
+Validation:	Loss 0.00890	Accuracy 1.00000
+Epoch [ 18]: Loss 0.00853
+Validation:	Loss 0.00796	Accuracy 1.00000
+Epoch [ 19]: Loss 0.00766
+Validation:	Loss 0.00717	Accuracy 1.00000
+Epoch [ 20]: Loss 0.00693
+Validation:	Loss 0.00648	Accuracy 1.00000
+Epoch [ 21]: Loss 0.00629
+Validation:	Loss 0.00589	Accuracy 1.00000
+Epoch [ 22]: Loss 0.00573
+Validation:	Loss 0.00538	Accuracy 1.00000
+Epoch [ 23]: Loss 0.00525
+Validation:	Loss 0.00495	Accuracy 1.00000
+Epoch [ 24]: Loss 0.00485
+Validation:	Loss 0.00458	Accuracy 1.00000
+Epoch [ 25]: Loss 0.00450
+Validation:	Loss 0.00425	Accuracy 1.00000
 
 ```
 
@@ -1462,56 +1462,56 @@ ps_trained2, st_trained2 = main(SpiralClassifierCompact)
 ```
 ┌ Warning: `replicate` doesn't work for `TaskLocalRNG`. Returning the same `TaskLocalRNG`.
 └ @ LuxCore ~/work/Lux.jl/Lux.jl/lib/LuxCore/src/LuxCore.jl:18
-Epoch [  1]: Loss 0.56740
-Validation:	Loss 0.43841	Accuracy 1.00000
-Epoch [  2]: Loss 0.37657
-Validation:	Loss 0.29699	Accuracy 1.00000
-Epoch [  3]: Loss 0.25307
-Validation:	Loss 0.19647	Accuracy 1.00000
-Epoch [  4]: Loss 0.16384
-Validation:	Loss 0.12473	Accuracy 1.00000
-Epoch [  5]: Loss 0.10304
-Validation:	Loss 0.07883	Accuracy 1.00000
-Epoch [  6]: Loss 0.06588
-Validation:	Loss 0.05164	Accuracy 1.00000
-Epoch [  7]: Loss 0.04412
-Validation:	Loss 0.03589	Accuracy 1.00000
-Epoch [  8]: Loss 0.03157
-Validation:	Loss 0.02662	Accuracy 1.00000
-Epoch [  9]: Loss 0.02398
-Validation:	Loss 0.02093	Accuracy 1.00000
-Epoch [ 10]: Loss 0.01922
-Validation:	Loss 0.01718	Accuracy 1.00000
-Epoch [ 11]: Loss 0.01600
-Validation:	Loss 0.01456	Accuracy 1.00000
-Epoch [ 12]: Loss 0.01371
-Validation:	Loss 0.01262	Accuracy 1.00000
-Epoch [ 13]: Loss 0.01198
-Validation:	Loss 0.01113	Accuracy 1.00000
-Epoch [ 14]: Loss 0.01064
-Validation:	Loss 0.00994	Accuracy 1.00000
-Epoch [ 15]: Loss 0.00955
-Validation:	Loss 0.00897	Accuracy 1.00000
-Epoch [ 16]: Loss 0.00865
-Validation:	Loss 0.00816	Accuracy 1.00000
-Epoch [ 17]: Loss 0.00790
-Validation:	Loss 0.00747	Accuracy 1.00000
-Epoch [ 18]: Loss 0.00725
-Validation:	Loss 0.00688	Accuracy 1.00000
-Epoch [ 19]: Loss 0.00669
-Validation:	Loss 0.00636	Accuracy 1.00000
-Epoch [ 20]: Loss 0.00621
-Validation:	Loss 0.00591	Accuracy 1.00000
-Epoch [ 21]: Loss 0.00579
-Validation:	Loss 0.00551	Accuracy 1.00000
-Epoch [ 22]: Loss 0.00541
-Validation:	Loss 0.00515	Accuracy 1.00000
-Epoch [ 23]: Loss 0.00506
-Validation:	Loss 0.00484	Accuracy 1.00000
-Epoch [ 24]: Loss 0.00477
-Validation:	Loss 0.00455	Accuracy 1.00000
-Epoch [ 25]: Loss 0.00449
-Validation:	Loss 0.00430	Accuracy 1.00000
+Epoch [  1]: Loss 0.60672
+Validation:	Loss 0.51822	Accuracy 1.00000
+Epoch [  2]: Loss 0.45413
+Validation:	Loss 0.38857	Accuracy 1.00000
+Epoch [  3]: Loss 0.33398
+Validation:	Loss 0.28103	Accuracy 1.00000
+Epoch [  4]: Loss 0.23658
+Validation:	Loss 0.19494	Accuracy 1.00000
+Epoch [  5]: Loss 0.16282
+Validation:	Loss 0.13153	Accuracy 1.00000
+Epoch [  6]: Loss 0.11079
+Validation:	Loss 0.08883	Accuracy 1.00000
+Epoch [  7]: Loss 0.07589
+Validation:	Loss 0.06191	Accuracy 1.00000
+Epoch [  8]: Loss 0.05405
+Validation:	Loss 0.04528	Accuracy 1.00000
+Epoch [  9]: Loss 0.04026
+Validation:	Loss 0.03476	Accuracy 1.00000
+Epoch [ 10]: Loss 0.03153
+Validation:	Loss 0.02796	Accuracy 1.00000
+Epoch [ 11]: Loss 0.02571
+Validation:	Loss 0.02330	Accuracy 1.00000
+Epoch [ 12]: Loss 0.02169
+Validation:	Loss 0.02001	Accuracy 1.00000
+Epoch [ 13]: Loss 0.01880
+Validation:	Loss 0.01755	Accuracy 1.00000
+Epoch [ 14]: Loss 0.01660
+Validation:	Loss 0.01566	Accuracy 1.00000
+Epoch [ 15]: Loss 0.01490
+Validation:	Loss 0.01413	Accuracy 1.00000
+Epoch [ 16]: Loss 0.01349
+Validation:	Loss 0.01287	Accuracy 1.00000
+Epoch [ 17]: Loss 0.01234
+Validation:	Loss 0.01182	Accuracy 1.00000
+Epoch [ 18]: Loss 0.01135
+Validation:	Loss 0.01092	Accuracy 1.00000
+Epoch [ 19]: Loss 0.01051
+Validation:	Loss 0.01014	Accuracy 1.00000
+Epoch [ 20]: Loss 0.00978
+Validation:	Loss 0.00946	Accuracy 1.00000
+Epoch [ 21]: Loss 0.00912
+Validation:	Loss 0.00886	Accuracy 1.00000
+Epoch [ 22]: Loss 0.00855
+Validation:	Loss 0.00832	Accuracy 1.00000
+Epoch [ 23]: Loss 0.00804
+Validation:	Loss 0.00783	Accuracy 1.00000
+Epoch [ 24]: Loss 0.00757
+Validation:	Loss 0.00739	Accuracy 1.00000
+Epoch [ 25]: Loss 0.00716
+Validation:	Loss 0.00700	Accuracy 1.00000
 
 ```
 
@@ -1562,9 +1562,9 @@ Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 4 × Intel(R) Xeon(R) 6975P-C
+  CPU: 4 × AMD EPYC 9V74 80-Core Processor
   WORD_SIZE: 64
-  LLVM: libLLVM-20.1.8 (ORCJIT, graniterapids)
+  LLVM: libLLVM-20.1.8 (ORCJIT, znver4)
   GC: Built with stock GC
 Threads: 4 default, 1 interactive, 4 GC (on 4 virtual cores)
 Environment:
@@ -1906,36 +1906,36 @@ trained_model = train_model(dataloader)
 ```
 
 ```
-Iteration:     1, Loss: 7.869703e-02
-Iteration:    25, Loss: 5.155661e-02
-Iteration:    50, Loss: 2.385353e-02
-Iteration:    75, Loss: 9.171640e-02
-Iteration:   100, Loss: 1.930836e-01
-Iteration:   100, Loss: 2.384517e-02
-Iteration:     1, Loss: 4.591471e-01
-Iteration:    25, Loss: 2.945075e-02
-Iteration:     1, Loss: 2.809387e-02
-Iteration:    25, Loss: 5.097524e-02
-Iteration:    50, Loss: 3.053948e-02
-Iteration:    75, Loss: 2.791872e-02
-Iteration:   100, Loss: 2.610432e-02
-Iteration:   125, Loss: 2.452494e-02
-Iteration:   150, Loss: 2.308792e-02
-Iteration:   175, Loss: 2.169772e-02
-Iteration:   200, Loss: 2.015633e-02
-Iteration:   225, Loss: 1.779146e-02
-Iteration:   250, Loss: 1.529719e-02
-Iteration:   275, Loss: 1.340379e-02
-Iteration:   300, Loss: 2.561633e-02
-Iteration:   325, Loss: 1.319102e-02
-Iteration:   350, Loss: 1.126629e-02
-Iteration:   375, Loss: 9.946230e-03
-Iteration:   400, Loss: 9.489950e-03
-Iteration:   425, Loss: 9.630069e-03
-Iteration:   450, Loss: 8.487782e-03
-Iteration:   475, Loss: 7.625140e-03
-Iteration:   500, Loss: 2.244992e-02
-Iteration:   500, Loss: 7.610908e-03
+Iteration:     1, Loss: 9.041665e-02
+Iteration:    25, Loss: 1.175146e-01
+Iteration:    50, Loss: 2.379424e-02
+Iteration:    75, Loss: 8.060518e-02
+Iteration:   100, Loss: 2.242134e-01
+Iteration:   100, Loss: 8.358527e-03
+Iteration:     1, Loss: 4.404109e-01
+Iteration:    25, Loss: 5.130491e-02
+Iteration:     1, Loss: 5.072330e-02
+Iteration:    25, Loss: 7.235188e-02
+Iteration:    50, Loss: 4.890817e-02
+Iteration:    75, Loss: 4.025806e-02
+Iteration:   100, Loss: 3.287002e-02
+Iteration:   125, Loss: 2.870630e-02
+Iteration:   150, Loss: 2.588526e-02
+Iteration:   175, Loss: 2.370296e-02
+Iteration:   200, Loss: 3.078521e-02
+Iteration:   225, Loss: 3.035287e-02
+Iteration:   250, Loss: 2.268512e-02
+Iteration:   275, Loss: 2.038383e-02
+Iteration:   300, Loss: 1.881780e-02
+Iteration:   325, Loss: 1.752454e-02
+Iteration:   350, Loss: 1.631786e-02
+Iteration:   375, Loss: 1.515377e-02
+Iteration:   400, Loss: 2.771566e-02
+Iteration:   425, Loss: 1.616668e-02
+Iteration:   450, Loss: 1.421575e-02
+Iteration:   475, Loss: 1.298299e-02
+Iteration:   500, Loss: 1.159140e-02
+Iteration:   500, Loss: 1.159140e-02
 
 ```
 
@@ -1986,9 +1986,9 @@ Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 4 × AMD EPYC 9V45 96-Core Processor
+  CPU: 4 × AMD EPYC 7763 64-Core Processor
   WORD_SIZE: 64
-  LLVM: libLLVM-20.1.8 (ORCJIT, znver5)
+  LLVM: libLLVM-20.1.8 (ORCJIT, znver3)
   GC: Built with stock GC
 Threads: 4 default, 1 interactive, 4 GC (on 4 virtual cores)
 Environment:
@@ -2539,109 +2539,109 @@ test_acc_list = train()
 ```
 ┌ Warning: Reactant unsafe_free! is not defined for OneHotArrays.OneHotMatrix{UInt32, Reactant.ConcretePJRTArray{UInt32, 1, 1}}.
 └ @ ReactantExt ~/work/Lux.jl/Lux.jl/lib/MLDataDevices/ext/ReactantExt.jl:106
-[  1/ 50]	       MNIST	Time 29.93114s	Training Accuracy: 35.35%	Test Accuracy: 37.50%
-[  1/ 50]	FashionMNIST	Time 0.01651s	Training Accuracy: 32.81%	Test Accuracy: 43.75%
-[  2/ 50]	       MNIST	Time 0.03194s	Training Accuracy: 41.70%	Test Accuracy: 40.62%
-[  2/ 50]	FashionMNIST	Time 0.01450s	Training Accuracy: 58.20%	Test Accuracy: 65.62%
-[  3/ 50]	       MNIST	Time 0.03648s	Training Accuracy: 56.05%	Test Accuracy: 43.75%
-[  3/ 50]	FashionMNIST	Time 0.01510s	Training Accuracy: 68.36%	Test Accuracy: 68.75%
-[  4/ 50]	       MNIST	Time 0.02060s	Training Accuracy: 66.70%	Test Accuracy: 56.25%
-[  4/ 50]	FashionMNIST	Time 0.01495s	Training Accuracy: 74.22%	Test Accuracy: 65.62%
-[  5/ 50]	       MNIST	Time 0.02498s	Training Accuracy: 75.78%	Test Accuracy: 56.25%
-[  5/ 50]	FashionMNIST	Time 0.01572s	Training Accuracy: 78.32%	Test Accuracy: 65.62%
-[  6/ 50]	       MNIST	Time 0.01580s	Training Accuracy: 80.08%	Test Accuracy: 56.25%
-[  6/ 50]	FashionMNIST	Time 0.01581s	Training Accuracy: 82.91%	Test Accuracy: 68.75%
-[  7/ 50]	       MNIST	Time 0.01410s	Training Accuracy: 85.25%	Test Accuracy: 56.25%
-[  7/ 50]	FashionMNIST	Time 0.01508s	Training Accuracy: 84.38%	Test Accuracy: 68.75%
-[  8/ 50]	       MNIST	Time 0.01638s	Training Accuracy: 88.87%	Test Accuracy: 59.38%
-[  8/ 50]	FashionMNIST	Time 0.01412s	Training Accuracy: 87.60%	Test Accuracy: 68.75%
-[  9/ 50]	       MNIST	Time 0.01399s	Training Accuracy: 91.89%	Test Accuracy: 71.88%
-[  9/ 50]	FashionMNIST	Time 0.01386s	Training Accuracy: 91.60%	Test Accuracy: 65.62%
-[ 10/ 50]	       MNIST	Time 0.01601s	Training Accuracy: 95.80%	Test Accuracy: 71.88%
-[ 10/ 50]	FashionMNIST	Time 0.02135s	Training Accuracy: 92.48%	Test Accuracy: 71.88%
-[ 11/ 50]	       MNIST	Time 0.02521s	Training Accuracy: 97.07%	Test Accuracy: 71.88%
-[ 11/ 50]	FashionMNIST	Time 0.02336s	Training Accuracy: 92.68%	Test Accuracy: 75.00%
-[ 12/ 50]	       MNIST	Time 0.01334s	Training Accuracy: 98.63%	Test Accuracy: 75.00%
-[ 12/ 50]	FashionMNIST	Time 0.02022s	Training Accuracy: 95.51%	Test Accuracy: 68.75%
-[ 13/ 50]	       MNIST	Time 0.01466s	Training Accuracy: 99.61%	Test Accuracy: 75.00%
-[ 13/ 50]	FashionMNIST	Time 0.02206s	Training Accuracy: 95.80%	Test Accuracy: 78.12%
-[ 14/ 50]	       MNIST	Time 0.01462s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
-[ 14/ 50]	FashionMNIST	Time 0.02551s	Training Accuracy: 98.34%	Test Accuracy: 71.88%
-[ 15/ 50]	       MNIST	Time 0.01405s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
-[ 15/ 50]	FashionMNIST	Time 0.01604s	Training Accuracy: 99.02%	Test Accuracy: 75.00%
-[ 16/ 50]	       MNIST	Time 0.01752s	Training Accuracy: 100.00%	Test Accuracy: 71.88%
-[ 16/ 50]	FashionMNIST	Time 0.01388s	Training Accuracy: 99.61%	Test Accuracy: 75.00%
-[ 17/ 50]	       MNIST	Time 0.01688s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 17/ 50]	FashionMNIST	Time 0.01325s	Training Accuracy: 97.46%	Test Accuracy: 75.00%
-[ 18/ 50]	       MNIST	Time 0.01415s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
-[ 18/ 50]	FashionMNIST	Time 0.01610s	Training Accuracy: 99.12%	Test Accuracy: 75.00%
-[ 19/ 50]	       MNIST	Time 0.01428s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
-[ 19/ 50]	FashionMNIST	Time 0.01429s	Training Accuracy: 99.22%	Test Accuracy: 75.00%
-[ 20/ 50]	       MNIST	Time 0.02316s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
-[ 20/ 50]	FashionMNIST	Time 0.01565s	Training Accuracy: 99.61%	Test Accuracy: 75.00%
-[ 21/ 50]	       MNIST	Time 0.02265s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
-[ 21/ 50]	FashionMNIST	Time 0.01524s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
-[ 22/ 50]	       MNIST	Time 0.02046s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 22/ 50]	FashionMNIST	Time 0.01391s	Training Accuracy: 100.00%	Test Accuracy: 71.88%
-[ 23/ 50]	       MNIST	Time 0.02315s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 23/ 50]	FashionMNIST	Time 0.01570s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
-[ 24/ 50]	       MNIST	Time 0.01370s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 24/ 50]	FashionMNIST	Time 0.01509s	Training Accuracy: 99.90%	Test Accuracy: 75.00%
-[ 25/ 50]	       MNIST	Time 0.01520s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 25/ 50]	FashionMNIST	Time 0.01361s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
-[ 26/ 50]	       MNIST	Time 0.01596s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
-[ 26/ 50]	FashionMNIST	Time 0.02060s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
-[ 27/ 50]	       MNIST	Time 0.01412s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 27/ 50]	FashionMNIST	Time 0.01418s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
-[ 28/ 50]	       MNIST	Time 0.01637s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 28/ 50]	FashionMNIST	Time 0.01527s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
-[ 29/ 50]	       MNIST	Time 0.01609s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 29/ 50]	FashionMNIST	Time 0.02122s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
-[ 30/ 50]	       MNIST	Time 0.01375s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 30/ 50]	FashionMNIST	Time 0.02170s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
-[ 31/ 50]	       MNIST	Time 0.01472s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 31/ 50]	FashionMNIST	Time 0.02532s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
-[ 32/ 50]	       MNIST	Time 0.01364s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 32/ 50]	FashionMNIST	Time 0.02313s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
-[ 33/ 50]	       MNIST	Time 0.01600s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 33/ 50]	FashionMNIST	Time 0.01365s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
-[ 34/ 50]	       MNIST	Time 0.01576s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 34/ 50]	FashionMNIST	Time 0.01468s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
-[ 35/ 50]	       MNIST	Time 0.01250s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 35/ 50]	FashionMNIST	Time 0.01574s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
-[ 36/ 50]	       MNIST	Time 0.01447s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 36/ 50]	FashionMNIST	Time 0.01490s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
-[ 37/ 50]	       MNIST	Time 0.01599s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 37/ 50]	FashionMNIST	Time 0.01391s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
-[ 38/ 50]	       MNIST	Time 0.01906s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 38/ 50]	FashionMNIST	Time 0.01463s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
-[ 39/ 50]	       MNIST	Time 0.02507s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 39/ 50]	FashionMNIST	Time 0.01433s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
-[ 40/ 50]	       MNIST	Time 0.02347s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 40/ 50]	FashionMNIST	Time 0.01535s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
-[ 41/ 50]	       MNIST	Time 0.02125s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 41/ 50]	FashionMNIST	Time 0.01544s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
-[ 42/ 50]	       MNIST	Time 0.02216s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 42/ 50]	FashionMNIST	Time 0.01635s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
-[ 43/ 50]	       MNIST	Time 0.01548s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 43/ 50]	FashionMNIST	Time 0.01606s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
-[ 44/ 50]	       MNIST	Time 0.01528s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 44/ 50]	FashionMNIST	Time 0.01727s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
-[ 45/ 50]	       MNIST	Time 0.01576s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 45/ 50]	FashionMNIST	Time 0.01653s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
-[ 46/ 50]	       MNIST	Time 0.01350s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 46/ 50]	FashionMNIST	Time 0.01543s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
-[ 47/ 50]	       MNIST	Time 0.01489s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 47/ 50]	FashionMNIST	Time 0.01959s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
-[ 48/ 50]	       MNIST	Time 0.01687s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 48/ 50]	FashionMNIST	Time 0.02212s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
-[ 49/ 50]	       MNIST	Time 0.01879s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 49/ 50]	FashionMNIST	Time 0.02106s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
-[ 50/ 50]	       MNIST	Time 0.01402s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[ 50/ 50]	FashionMNIST	Time 0.02393s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
+[  1/ 50]	       MNIST	Time 23.21210s	Training Accuracy: 35.35%	Test Accuracy: 37.50%
+[  1/ 50]	FashionMNIST	Time 0.01166s	Training Accuracy: 32.81%	Test Accuracy: 43.75%
+[  2/ 50]	       MNIST	Time 0.04230s	Training Accuracy: 41.70%	Test Accuracy: 40.62%
+[  2/ 50]	FashionMNIST	Time 0.01041s	Training Accuracy: 58.20%	Test Accuracy: 65.62%
+[  3/ 50]	       MNIST	Time 0.01090s	Training Accuracy: 56.05%	Test Accuracy: 43.75%
+[  3/ 50]	FashionMNIST	Time 0.02327s	Training Accuracy: 68.36%	Test Accuracy: 68.75%
+[  4/ 50]	       MNIST	Time 0.01307s	Training Accuracy: 66.70%	Test Accuracy: 56.25%
+[  4/ 50]	FashionMNIST	Time 0.02175s	Training Accuracy: 74.22%	Test Accuracy: 65.62%
+[  5/ 50]	       MNIST	Time 0.01129s	Training Accuracy: 75.78%	Test Accuracy: 56.25%
+[  5/ 50]	FashionMNIST	Time 0.01129s	Training Accuracy: 78.32%	Test Accuracy: 65.62%
+[  6/ 50]	       MNIST	Time 0.01077s	Training Accuracy: 80.18%	Test Accuracy: 56.25%
+[  6/ 50]	FashionMNIST	Time 0.01390s	Training Accuracy: 82.71%	Test Accuracy: 68.75%
+[  7/ 50]	       MNIST	Time 0.01079s	Training Accuracy: 84.96%	Test Accuracy: 56.25%
+[  7/ 50]	FashionMNIST	Time 0.00981s	Training Accuracy: 84.47%	Test Accuracy: 68.75%
+[  8/ 50]	       MNIST	Time 0.01657s	Training Accuracy: 89.55%	Test Accuracy: 59.38%
+[  8/ 50]	FashionMNIST	Time 0.01143s	Training Accuracy: 87.21%	Test Accuracy: 75.00%
+[  9/ 50]	       MNIST	Time 0.02259s	Training Accuracy: 92.29%	Test Accuracy: 71.88%
+[  9/ 50]	FashionMNIST	Time 0.01082s	Training Accuracy: 91.60%	Test Accuracy: 68.75%
+[ 10/ 50]	       MNIST	Time 0.02259s	Training Accuracy: 95.70%	Test Accuracy: 71.88%
+[ 10/ 50]	FashionMNIST	Time 0.01081s	Training Accuracy: 92.19%	Test Accuracy: 68.75%
+[ 11/ 50]	       MNIST	Time 0.00867s	Training Accuracy: 96.68%	Test Accuracy: 75.00%
+[ 11/ 50]	FashionMNIST	Time 0.00978s	Training Accuracy: 93.16%	Test Accuracy: 75.00%
+[ 12/ 50]	       MNIST	Time 0.01028s	Training Accuracy: 98.73%	Test Accuracy: 75.00%
+[ 12/ 50]	FashionMNIST	Time 0.01079s	Training Accuracy: 95.51%	Test Accuracy: 71.88%
+[ 13/ 50]	       MNIST	Time 0.01096s	Training Accuracy: 99.71%	Test Accuracy: 75.00%
+[ 13/ 50]	FashionMNIST	Time 0.01066s	Training Accuracy: 96.39%	Test Accuracy: 78.12%
+[ 14/ 50]	       MNIST	Time 0.01071s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 14/ 50]	FashionMNIST	Time 0.02130s	Training Accuracy: 98.63%	Test Accuracy: 78.12%
+[ 15/ 50]	       MNIST	Time 0.01031s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 15/ 50]	FashionMNIST	Time 0.02089s	Training Accuracy: 99.12%	Test Accuracy: 78.12%
+[ 16/ 50]	       MNIST	Time 0.01005s	Training Accuracy: 100.00%	Test Accuracy: 71.88%
+[ 16/ 50]	FashionMNIST	Time 0.02314s	Training Accuracy: 99.61%	Test Accuracy: 81.25%
+[ 17/ 50]	       MNIST	Time 0.01067s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
+[ 17/ 50]	FashionMNIST	Time 0.01176s	Training Accuracy: 97.66%	Test Accuracy: 75.00%
+[ 18/ 50]	       MNIST	Time 0.01102s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 18/ 50]	FashionMNIST	Time 0.00968s	Training Accuracy: 99.71%	Test Accuracy: 75.00%
+[ 19/ 50]	       MNIST	Time 0.01231s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 19/ 50]	FashionMNIST	Time 0.01082s	Training Accuracy: 99.71%	Test Accuracy: 71.88%
+[ 20/ 50]	       MNIST	Time 0.01069s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 20/ 50]	FashionMNIST	Time 0.01058s	Training Accuracy: 99.90%	Test Accuracy: 78.12%
+[ 21/ 50]	       MNIST	Time 0.02163s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 21/ 50]	FashionMNIST	Time 0.01057s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 22/ 50]	       MNIST	Time 0.01934s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
+[ 22/ 50]	FashionMNIST	Time 0.00949s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 23/ 50]	       MNIST	Time 0.02169s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 23/ 50]	FashionMNIST	Time 0.01608s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
+[ 24/ 50]	       MNIST	Time 0.00949s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 24/ 50]	FashionMNIST	Time 0.01063s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 25/ 50]	       MNIST	Time 0.01192s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 25/ 50]	FashionMNIST	Time 0.01438s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
+[ 26/ 50]	       MNIST	Time 0.01064s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
+[ 26/ 50]	FashionMNIST	Time 0.01148s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 27/ 50]	       MNIST	Time 0.01095s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
+[ 27/ 50]	FashionMNIST	Time 0.01930s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
+[ 28/ 50]	       MNIST	Time 0.01156s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
+[ 28/ 50]	FashionMNIST	Time 0.02321s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 29/ 50]	       MNIST	Time 0.01068s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
+[ 29/ 50]	FashionMNIST	Time 0.00968s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 30/ 50]	       MNIST	Time 0.01098s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
+[ 30/ 50]	FashionMNIST	Time 0.01027s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 31/ 50]	       MNIST	Time 0.00944s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
+[ 31/ 50]	FashionMNIST	Time 0.00934s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 32/ 50]	       MNIST	Time 0.01055s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
+[ 32/ 50]	FashionMNIST	Time 0.00956s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 33/ 50]	       MNIST	Time 0.02378s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
+[ 33/ 50]	FashionMNIST	Time 0.01104s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 34/ 50]	       MNIST	Time 0.02462s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
+[ 34/ 50]	FashionMNIST	Time 0.00984s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 35/ 50]	       MNIST	Time 0.02024s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
+[ 35/ 50]	FashionMNIST	Time 0.01002s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 36/ 50]	       MNIST	Time 0.01026s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
+[ 36/ 50]	FashionMNIST	Time 0.01225s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 37/ 50]	       MNIST	Time 0.01066s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
+[ 37/ 50]	FashionMNIST	Time 0.00940s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 38/ 50]	       MNIST	Time 0.01076s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
+[ 38/ 50]	FashionMNIST	Time 0.01370s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 39/ 50]	       MNIST	Time 0.01075s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
+[ 39/ 50]	FashionMNIST	Time 0.02069s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 40/ 50]	       MNIST	Time 0.01033s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
+[ 40/ 50]	FashionMNIST	Time 0.01998s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 41/ 50]	       MNIST	Time 0.01024s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
+[ 41/ 50]	FashionMNIST	Time 0.02362s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 42/ 50]	       MNIST	Time 0.01211s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
+[ 42/ 50]	FashionMNIST	Time 0.00865s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 43/ 50]	       MNIST	Time 0.01069s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
+[ 43/ 50]	FashionMNIST	Time 0.01482s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 44/ 50]	       MNIST	Time 0.01084s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
+[ 44/ 50]	FashionMNIST	Time 0.01020s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 45/ 50]	       MNIST	Time 0.01122s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
+[ 45/ 50]	FashionMNIST	Time 0.01082s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 46/ 50]	       MNIST	Time 0.02191s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
+[ 46/ 50]	FashionMNIST	Time 0.00942s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 47/ 50]	       MNIST	Time 0.01883s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
+[ 47/ 50]	FashionMNIST	Time 0.00939s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 48/ 50]	       MNIST	Time 0.01025s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
+[ 48/ 50]	FashionMNIST	Time 0.01223s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
+[ 49/ 50]	       MNIST	Time 0.01054s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
+[ 49/ 50]	FashionMNIST	Time 0.01080s	Training Accuracy: 100.00%	Test Accuracy: 78.12%
+[ 50/ 50]	       MNIST	Time 0.01052s	Training Accuracy: 100.00%	Test Accuracy: 81.25%
+[ 50/ 50]	FashionMNIST	Time 0.01055s	Training Accuracy: 100.00%	Test Accuracy: 75.00%
 
 [FINAL]	       MNIST	Training Accuracy: 100.00%	Test Accuracy: 81.25%
-[FINAL]	FashionMNIST	Training Accuracy: 100.00%	Test Accuracy: 78.12%
+[FINAL]	FashionMNIST	Training Accuracy: 100.00%	Test Accuracy: 75.00%
 
 ```
 
@@ -2672,9 +2672,9 @@ Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 4 × AMD EPYC 7763 64-Core Processor
+  CPU: 4 × AMD EPYC 9V45 96-Core Processor
   WORD_SIZE: 64
-  LLVM: libLLVM-20.1.8 (ORCJIT, znver3)
+  LLVM: libLLVM-20.1.8 (ORCJIT, znver5)
   GC: Built with stock GC
 Threads: 4 default, 1 interactive, 4 GC (on 4 virtual cores)
 Environment:
@@ -3035,9 +3035,9 @@ Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 4 × Intel(R) Xeon(R) 6975P-C
+  CPU: 4 × AMD EPYC 9V74 80-Core Processor
   WORD_SIZE: 64
-  LLVM: libLLVM-20.1.8 (ORCJIT, graniterapids)
+  LLVM: libLLVM-20.1.8 (ORCJIT, znver4)
   GC: Built with stock GC
 Threads: 4 default, 1 interactive, 4 GC (on 4 virtual cores)
 Environment:
@@ -3404,106 +3404,106 @@ img = main()
 
 ```
 Total Trainable Parameters: 0.1493 M
-Epoch 1, Iter 39, Loss: 24910.3359375, Throughput: 19.210261 im/s
-Epoch 1, Train Loss: 40456.6523438, Time: 260.1212s, Throughput: 19.191052 im/s
-Epoch 2, Iter 39, Loss: 19196.7089844, Throughput: 148.139215 im/s
-Epoch 2, Train Loss: 20794.9140625, Time: 33.6982s, Throughput: 148.138332 im/s
-Epoch 3, Iter 39, Loss: 17263.7382812, Throughput: 148.863044 im/s
-Epoch 3, Train Loss: 17111.4082031, Time: 33.5344s, Throughput: 148.862170 im/s
-Epoch 4, Iter 39, Loss: 15036.9589844, Throughput: 148.849090 im/s
-Epoch 4, Train Loss: 15495.0107422, Time: 33.5375s, Throughput: 148.848362 im/s
-Epoch 5, Iter 39, Loss: 13910.8476562, Throughput: 149.157498 im/s
-Epoch 5, Train Loss: 14561.1845703, Time: 33.4681s, Throughput: 149.156806 im/s
-Epoch 6, Iter 39, Loss: 13800.8027344, Throughput: 148.853963 im/s
-Epoch 6, Train Loss: 13846.7050781, Time: 33.5364s, Throughput: 148.853257 im/s
-Epoch 7, Iter 39, Loss: 12889.6835938, Throughput: 148.436607 im/s
-Epoch 7, Train Loss: 13360.3369141, Time: 33.6307s, Throughput: 148.435870 im/s
-Epoch 8, Iter 39, Loss: 12567.4833984, Throughput: 148.437649 im/s
-Epoch 8, Train Loss: 13026.4394531, Time: 33.6304s, Throughput: 148.436930 im/s
-Epoch 9, Iter 39, Loss: 12350.4306641, Throughput: 148.933496 im/s
-Epoch 9, Train Loss: 12661.1523438, Time: 33.5185s, Throughput: 148.932755 im/s
-Epoch 10, Iter 39, Loss: 12180.0507812, Throughput: 148.230833 im/s
-Epoch 10, Train Loss: 12348.0468750, Time: 33.6774s, Throughput: 148.230102 im/s
-Epoch 11, Iter 39, Loss: 12417.6044922, Throughput: 148.192562 im/s
-Epoch 11, Train Loss: 12220.6455078, Time: 33.6860s, Throughput: 148.191946 im/s
-Epoch 12, Iter 39, Loss: 11427.8271484, Throughput: 148.536580 im/s
-Epoch 12, Train Loss: 12010.1611328, Time: 33.6080s, Throughput: 148.535864 im/s
-Epoch 13, Iter 39, Loss: 12179.2236328, Throughput: 148.689190 im/s
-Epoch 13, Train Loss: 11886.3291016, Time: 33.5736s, Throughput: 148.688460 im/s
-Epoch 14, Iter 39, Loss: 11062.2656250, Throughput: 149.247738 im/s
-Epoch 14, Train Loss: 11685.5546875, Time: 33.4479s, Throughput: 149.246957 im/s
-Epoch 15, Iter 39, Loss: 11326.1767578, Throughput: 148.960498 im/s
-Epoch 15, Train Loss: 11509.7080078, Time: 33.5124s, Throughput: 148.959721 im/s
-Epoch 16, Iter 39, Loss: 11155.5341797, Throughput: 149.270570 im/s
-Epoch 16, Train Loss: 11402.4892578, Time: 33.4428s, Throughput: 149.269825 im/s
-Epoch 17, Iter 39, Loss: 11170.9355469, Throughput: 148.621766 im/s
-Epoch 17, Train Loss: 11314.6777344, Time: 33.5888s, Throughput: 148.621075 im/s
-Epoch 18, Iter 39, Loss: 11117.1142578, Throughput: 149.017421 im/s
-Epoch 18, Train Loss: 11231.3593750, Time: 33.4996s, Throughput: 149.016766 im/s
-Epoch 19, Iter 39, Loss: 10595.1289062, Throughput: 148.573016 im/s
-Epoch 19, Train Loss: 11093.0693359, Time: 33.5998s, Throughput: 148.572278 im/s
-Epoch 20, Iter 39, Loss: 11095.4296875, Throughput: 148.408342 im/s
-Epoch 20, Train Loss: 11074.6552734, Time: 33.6371s, Throughput: 148.407558 im/s
-Epoch 21, Iter 39, Loss: 10830.2363281, Throughput: 148.360805 im/s
-Epoch 21, Train Loss: 10938.7656250, Time: 33.6479s, Throughput: 148.359866 im/s
-Epoch 22, Iter 39, Loss: 10336.9765625, Throughput: 149.116120 im/s
-Epoch 22, Train Loss: 10888.1591797, Time: 33.4774s, Throughput: 149.115372 im/s
-Epoch 23, Iter 39, Loss: 9302.5087891, Throughput: 148.632553 im/s
-Epoch 23, Train Loss: 10756.5166016, Time: 33.5864s, Throughput: 148.631797 im/s
-Epoch 24, Iter 39, Loss: 11266.1542969, Throughput: 148.752300 im/s
-Epoch 24, Train Loss: 10624.2685547, Time: 33.5593s, Throughput: 148.751626 im/s
-Epoch 25, Iter 39, Loss: 10397.2080078, Throughput: 148.263314 im/s
-Epoch 25, Train Loss: 10682.4042969, Time: 33.6700s, Throughput: 148.262663 im/s
-Epoch 26, Iter 39, Loss: 10197.4296875, Throughput: 148.621699 im/s
-Epoch 26, Train Loss: 10600.5566406, Time: 33.5888s, Throughput: 148.621022 im/s
-Epoch 27, Iter 39, Loss: 10344.3769531, Throughput: 149.100799 im/s
-Epoch 27, Train Loss: 10525.1748047, Time: 33.4809s, Throughput: 149.100072 im/s
-Epoch 28, Iter 39, Loss: 10354.2373047, Throughput: 148.722218 im/s
-Epoch 28, Train Loss: 10424.9472656, Time: 33.5661s, Throughput: 148.721455 im/s
-Epoch 29, Iter 39, Loss: 10058.0957031, Throughput: 148.661891 im/s
-Epoch 29, Train Loss: 10342.2939453, Time: 33.5797s, Throughput: 148.661067 im/s
-Epoch 30, Iter 39, Loss: 9902.7734375, Throughput: 149.202252 im/s
-Epoch 30, Train Loss: 10386.9931641, Time: 33.4581s, Throughput: 149.201459 im/s
-Epoch 31, Iter 39, Loss: 10805.1835938, Throughput: 148.573511 im/s
-Epoch 31, Train Loss: 10341.9218750, Time: 33.5997s, Throughput: 148.572751 im/s
-Epoch 32, Iter 39, Loss: 10416.6464844, Throughput: 149.114726 im/s
-Epoch 32, Train Loss: 10373.3486328, Time: 33.4777s, Throughput: 149.114004 im/s
-Epoch 33, Iter 39, Loss: 10075.8808594, Throughput: 148.753542 im/s
-Epoch 33, Train Loss: 10182.7128906, Time: 33.5590s, Throughput: 148.752890 im/s
-Epoch 34, Iter 39, Loss: 10232.0000000, Throughput: 149.103934 im/s
-Epoch 34, Train Loss: 10181.6445312, Time: 33.4801s, Throughput: 149.103297 im/s
-Epoch 35, Iter 39, Loss: 10256.7968750, Throughput: 149.000127 im/s
-Epoch 35, Train Loss: 10126.2744141, Time: 33.5035s, Throughput: 148.999345 im/s
-Epoch 36, Iter 39, Loss: 9967.9833984, Throughput: 148.922287 im/s
-Epoch 36, Train Loss: 10170.8691406, Time: 33.5210s, Throughput: 148.921554 im/s
-Epoch 37, Iter 39, Loss: 10389.6464844, Throughput: 148.868382 im/s
-Epoch 37, Train Loss: 10033.7646484, Time: 33.5332s, Throughput: 148.867583 im/s
-Epoch 38, Iter 39, Loss: 9831.4501953, Throughput: 148.742287 im/s
-Epoch 38, Train Loss: 9963.8994141, Time: 33.5616s, Throughput: 148.741490 im/s
-Epoch 39, Iter 39, Loss: 9822.0039062, Throughput: 148.728896 im/s
-Epoch 39, Train Loss: 9975.6767578, Time: 33.5646s, Throughput: 148.728178 im/s
-Epoch 40, Iter 39, Loss: 10295.3769531, Throughput: 148.332904 im/s
-Epoch 40, Train Loss: 9975.7080078, Time: 33.6542s, Throughput: 148.332102 im/s
-Epoch 41, Iter 39, Loss: 10163.5625000, Throughput: 149.072939 im/s
-Epoch 41, Train Loss: 9900.7431641, Time: 33.4871s, Throughput: 149.072227 im/s
-Epoch 42, Iter 39, Loss: 9620.4453125, Throughput: 149.028075 im/s
-Epoch 42, Train Loss: 9816.9794922, Time: 33.4972s, Throughput: 149.027408 im/s
-Epoch 43, Iter 39, Loss: 9184.0019531, Throughput: 148.612275 im/s
-Epoch 43, Train Loss: 9883.7294922, Time: 33.5909s, Throughput: 148.611545 im/s
-Epoch 44, Iter 39, Loss: 10168.5361328, Throughput: 148.374117 im/s
-Epoch 44, Train Loss: 9815.0107422, Time: 33.6448s, Throughput: 148.373451 im/s
-Epoch 45, Iter 39, Loss: 9611.9091797, Throughput: 148.931844 im/s
-Epoch 45, Train Loss: 9845.9414062, Time: 33.5189s, Throughput: 148.931016 im/s
-Epoch 46, Iter 39, Loss: 9991.4199219, Throughput: 149.251733 im/s
-Epoch 46, Train Loss: 9713.0234375, Time: 33.4470s, Throughput: 149.250872 im/s
-Epoch 47, Iter 39, Loss: 10010.2275391, Throughput: 148.444001 im/s
-Epoch 47, Train Loss: 9753.4248047, Time: 33.6290s, Throughput: 148.443303 im/s
-Epoch 48, Iter 39, Loss: 9486.3818359, Throughput: 149.007034 im/s
-Epoch 48, Train Loss: 9718.4560547, Time: 33.5020s, Throughput: 149.006153 im/s
-Epoch 49, Iter 39, Loss: 9279.2773438, Throughput: 148.996637 im/s
-Epoch 49, Train Loss: 9649.6630859, Time: 33.5043s, Throughput: 148.995992 im/s
-Epoch 50, Iter 39, Loss: 10167.5390625, Throughput: 149.185629 im/s
-Epoch 50, Train Loss: 9708.8925781, Time: 33.4618s, Throughput: 149.184956 im/s
+Epoch 1, Iter 39, Loss: 25857.8164062, Throughput: 17.379297 im/s
+Epoch 1, Train Loss: 40049.4570312, Time: 287.4960s, Throughput: 17.363719 im/s
+Epoch 2, Iter 39, Loss: 18202.8769531, Throughput: 75.502163 im/s
+Epoch 2, Train Loss: 20681.1386719, Time: 66.1175s, Throughput: 75.501915 im/s
+Epoch 3, Iter 39, Loss: 15772.9902344, Throughput: 75.485833 im/s
+Epoch 3, Train Loss: 17088.1035156, Time: 66.1318s, Throughput: 75.485595 im/s
+Epoch 4, Iter 39, Loss: 14639.9082031, Throughput: 75.575295 im/s
+Epoch 4, Train Loss: 15638.6455078, Time: 66.0535s, Throughput: 75.575064 im/s
+Epoch 5, Iter 39, Loss: 14652.9482422, Throughput: 75.566991 im/s
+Epoch 5, Train Loss: 14592.5546875, Time: 66.0608s, Throughput: 75.566768 im/s
+Epoch 6, Iter 39, Loss: 13207.8847656, Throughput: 75.569603 im/s
+Epoch 6, Train Loss: 13956.4326172, Time: 66.0585s, Throughput: 75.569377 im/s
+Epoch 7, Iter 39, Loss: 12254.5810547, Throughput: 75.514881 im/s
+Epoch 7, Train Loss: 13477.7968750, Time: 66.1064s, Throughput: 75.514658 im/s
+Epoch 8, Iter 39, Loss: 13489.4199219, Throughput: 75.542398 im/s
+Epoch 8, Train Loss: 13075.5859375, Time: 66.0823s, Throughput: 75.542160 im/s
+Epoch 9, Iter 39, Loss: 12613.7919922, Throughput: 75.633727 im/s
+Epoch 9, Train Loss: 12750.4550781, Time: 66.0025s, Throughput: 75.633453 im/s
+Epoch 10, Iter 39, Loss: 12539.3515625, Throughput: 75.639397 im/s
+Epoch 10, Train Loss: 12459.5859375, Time: 65.9976s, Throughput: 75.639158 im/s
+Epoch 11, Iter 39, Loss: 12439.5000000, Throughput: 75.682420 im/s
+Epoch 11, Train Loss: 12374.4755859, Time: 65.9600s, Throughput: 75.682190 im/s
+Epoch 12, Iter 39, Loss: 13526.4873047, Throughput: 75.693546 im/s
+Epoch 12, Train Loss: 12035.1513672, Time: 65.9503s, Throughput: 75.693329 im/s
+Epoch 13, Iter 39, Loss: 11118.9531250, Throughput: 75.583109 im/s
+Epoch 13, Train Loss: 11814.3857422, Time: 66.0467s, Throughput: 75.582887 im/s
+Epoch 14, Iter 39, Loss: 11814.6640625, Throughput: 75.533917 im/s
+Epoch 14, Train Loss: 11684.9785156, Time: 66.0897s, Throughput: 75.533679 im/s
+Epoch 15, Iter 39, Loss: 10986.2343750, Throughput: 75.645540 im/s
+Epoch 15, Train Loss: 11591.4130859, Time: 65.9922s, Throughput: 75.645295 im/s
+Epoch 16, Iter 39, Loss: 11379.6777344, Throughput: 75.663715 im/s
+Epoch 16, Train Loss: 11481.9316406, Time: 65.9764s, Throughput: 75.663439 im/s
+Epoch 17, Iter 39, Loss: 11181.9628906, Throughput: 75.764986 im/s
+Epoch 17, Train Loss: 11529.8085938, Time: 65.8882s, Throughput: 75.764745 im/s
+Epoch 18, Iter 39, Loss: 10647.3515625, Throughput: 75.739158 im/s
+Epoch 18, Train Loss: 11264.4619141, Time: 65.9106s, Throughput: 75.738910 im/s
+Epoch 19, Iter 39, Loss: 11392.3837891, Throughput: 75.743573 im/s
+Epoch 19, Train Loss: 11235.5380859, Time: 65.9068s, Throughput: 75.743355 im/s
+Epoch 20, Iter 39, Loss: 11962.2812500, Throughput: 75.726841 im/s
+Epoch 20, Train Loss: 11085.9648438, Time: 65.9213s, Throughput: 75.726632 im/s
+Epoch 21, Iter 39, Loss: 10632.3867188, Throughput: 75.714924 im/s
+Epoch 21, Train Loss: 11091.0830078, Time: 65.9317s, Throughput: 75.714728 im/s
+Epoch 22, Iter 39, Loss: 10560.4414062, Throughput: 75.836731 im/s
+Epoch 22, Train Loss: 10917.3359375, Time: 65.8258s, Throughput: 75.836472 im/s
+Epoch 23, Iter 39, Loss: 10925.0195312, Throughput: 75.799187 im/s
+Epoch 23, Train Loss: 10872.1875000, Time: 65.8584s, Throughput: 75.798935 im/s
+Epoch 24, Iter 39, Loss: 10675.7460938, Throughput: 75.709809 im/s
+Epoch 24, Train Loss: 10706.3359375, Time: 65.9362s, Throughput: 75.709561 im/s
+Epoch 25, Iter 39, Loss: 11280.7119141, Throughput: 75.720833 im/s
+Epoch 25, Train Loss: 10718.6386719, Time: 65.9266s, Throughput: 75.720603 im/s
+Epoch 26, Iter 39, Loss: 10686.4218750, Throughput: 75.765990 im/s
+Epoch 26, Train Loss: 10696.6503906, Time: 65.8873s, Throughput: 75.765744 im/s
+Epoch 27, Iter 39, Loss: 10724.5429688, Throughput: 75.853876 im/s
+Epoch 27, Train Loss: 10550.4726562, Time: 65.8109s, Throughput: 75.853642 im/s
+Epoch 28, Iter 39, Loss: 10138.4707031, Throughput: 75.788011 im/s
+Epoch 28, Train Loss: 10514.5332031, Time: 65.8681s, Throughput: 75.787800 im/s
+Epoch 29, Iter 39, Loss: 10420.4121094, Throughput: 75.788785 im/s
+Epoch 29, Train Loss: 10493.5390625, Time: 65.8675s, Throughput: 75.788545 im/s
+Epoch 30, Iter 39, Loss: 11371.3916016, Throughput: 75.750497 im/s
+Epoch 30, Train Loss: 10407.1796875, Time: 65.9008s, Throughput: 75.750243 im/s
+Epoch 31, Iter 39, Loss: 10432.4931641, Throughput: 75.623350 im/s
+Epoch 31, Train Loss: 10504.0419922, Time: 66.0116s, Throughput: 75.623109 im/s
+Epoch 32, Iter 39, Loss: 10416.0429688, Throughput: 75.769841 im/s
+Epoch 32, Train Loss: 10350.3906250, Time: 65.8839s, Throughput: 75.769634 im/s
+Epoch 33, Iter 39, Loss: 10410.6259766, Throughput: 75.873006 im/s
+Epoch 33, Train Loss: 10242.6894531, Time: 65.7944s, Throughput: 75.872757 im/s
+Epoch 34, Iter 39, Loss: 9762.8232422, Throughput: 75.822487 im/s
+Epoch 34, Train Loss: 10207.3876953, Time: 65.8382s, Throughput: 75.822267 im/s
+Epoch 35, Iter 39, Loss: 10152.5546875, Throughput: 75.774374 im/s
+Epoch 35, Train Loss: 10226.8818359, Time: 65.8800s, Throughput: 75.774165 im/s
+Epoch 36, Iter 39, Loss: 10093.5605469, Throughput: 75.714007 im/s
+Epoch 36, Train Loss: 10186.4677734, Time: 65.9325s, Throughput: 75.713794 im/s
+Epoch 37, Iter 39, Loss: 9936.0878906, Throughput: 75.705668 im/s
+Epoch 37, Train Loss: 10111.9082031, Time: 65.9398s, Throughput: 75.705447 im/s
+Epoch 38, Iter 39, Loss: 11028.1640625, Throughput: 75.778803 im/s
+Epoch 38, Train Loss: 10175.6943359, Time: 65.8761s, Throughput: 75.778609 im/s
+Epoch 39, Iter 39, Loss: 10550.4746094, Throughput: 75.720162 im/s
+Epoch 39, Train Loss: 10167.8378906, Time: 65.9271s, Throughput: 75.719945 im/s
+Epoch 40, Iter 39, Loss: 9463.3857422, Throughput: 75.635732 im/s
+Epoch 40, Train Loss: 10025.7919922, Time: 66.0007s, Throughput: 75.635525 im/s
+Epoch 41, Iter 39, Loss: 9789.3105469, Throughput: 75.624083 im/s
+Epoch 41, Train Loss: 9984.6845703, Time: 66.0109s, Throughput: 75.623855 im/s
+Epoch 42, Iter 39, Loss: 9832.6406250, Throughput: 75.538978 im/s
+Epoch 42, Train Loss: 9927.9853516, Time: 66.0853s, Throughput: 75.538774 im/s
+Epoch 43, Iter 39, Loss: 9631.9365234, Throughput: 75.387373 im/s
+Epoch 43, Train Loss: 9940.9873047, Time: 66.2182s, Throughput: 75.387161 im/s
+Epoch 44, Iter 39, Loss: 9986.0664062, Throughput: 75.489347 im/s
+Epoch 44, Train Loss: 9912.0820312, Time: 66.1287s, Throughput: 75.489133 im/s
+Epoch 45, Iter 39, Loss: 10060.5341797, Throughput: 75.658948 im/s
+Epoch 45, Train Loss: 9870.2167969, Time: 65.9805s, Throughput: 75.658726 im/s
+Epoch 46, Iter 39, Loss: 9778.9179688, Throughput: 75.559708 im/s
+Epoch 46, Train Loss: 9827.4833984, Time: 66.0671s, Throughput: 75.559496 im/s
+Epoch 47, Iter 39, Loss: 9152.4482422, Throughput: 75.762408 im/s
+Epoch 47, Train Loss: 9753.7021484, Time: 65.8904s, Throughput: 75.762193 im/s
+Epoch 48, Iter 39, Loss: 10002.3720703, Throughput: 75.619021 im/s
+Epoch 48, Train Loss: 9777.3798828, Time: 66.0153s, Throughput: 75.618793 im/s
+Epoch 49, Iter 39, Loss: 10227.7822266, Throughput: 75.562007 im/s
+Epoch 49, Train Loss: 9763.8330078, Time: 66.0652s, Throughput: 75.561745 im/s
+Epoch 50, Iter 39, Loss: 9786.4746094, Throughput: 75.581786 im/s
+Epoch 50, Train Loss: 9722.8203125, Time: 66.0478s, Throughput: 75.581568 im/s
 
 ```
 
@@ -3536,9 +3536,9 @@ Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 4 × AMD EPYC 7763 64-Core Processor
+  CPU: 4 × INTEL(R) XEON(R) PLATINUM 8573C
   WORD_SIZE: 64
-  LLVM: libLLVM-20.1.8 (ORCJIT, znver3)
+  LLVM: libLLVM-20.1.8 (ORCJIT, emeraldrapids)
   GC: Built with stock GC
 Threads: 4 default, 1 interactive, 4 GC (on 4 virtual cores)
 Environment:
@@ -3761,40 +3761,40 @@ main()
 ┌ Warning: `replicate` doesn't work for `TaskLocalRNG`. Returning the same `TaskLocalRNG`.
 └ @ LuxCore ~/work/Lux.jl/Lux.jl/lib/LuxCore/src/LuxCore.jl:18
 Total Trainable Parameters: 0.0964 M
-Epoch   1	Train Loss: 15.483308	Train Acc: 22.1429%	Val Loss: 7.571783	Val Acc: 25.8000%
-Epoch   2	Train Loss: 10.125029	Train Acc: 22.1429%	Val Loss: 3.797887	Val Acc: 29.4000%
+Epoch   1	Train Loss: 15.483308	Train Acc: 22.1429%	Val Loss: 7.571782	Val Acc: 25.8000%
+Epoch   2	Train Loss: 10.125029	Train Acc: 22.1429%	Val Loss: 3.797886	Val Acc: 29.4000%
 Epoch   3	Train Loss: 4.467242	Train Acc: 37.8571%	Val Loss: 2.431701	Val Acc: 32.0000%
 Epoch   4	Train Loss: 2.424877	Train Acc: 51.4286%	Val Loss: 2.113642	Val Acc: 37.8000%
 Epoch   5	Train Loss: 1.761382	Train Acc: 58.5714%	Val Loss: 1.889250	Val Acc: 45.0000%
 Epoch   6	Train Loss: 1.484980	Train Acc: 67.8571%	Val Loss: 1.611183	Val Acc: 51.6000%
 Epoch   7	Train Loss: 1.267712	Train Acc: 71.4286%	Val Loss: 1.504884	Val Acc: 58.4000%
 Epoch   8	Train Loss: 1.319321	Train Acc: 72.1429%	Val Loss: 1.505576	Val Acc: 59.8000%
-Epoch   9	Train Loss: 1.617085	Train Acc: 73.5714%	Val Loss: 1.520861	Val Acc: 61.2000%
+Epoch   9	Train Loss: 1.617086	Train Acc: 73.5714%	Val Loss: 1.520861	Val Acc: 61.2000%
 Epoch  10	Train Loss: 1.249781	Train Acc: 74.2857%	Val Loss: 1.519172	Val Acc: 62.0000%
 Epoch  11	Train Loss: 1.187690	Train Acc: 78.5714%	Val Loss: 1.504537	Val Acc: 62.0000%
 Epoch  12	Train Loss: 1.179360	Train Acc: 78.5714%	Val Loss: 1.547555	Val Acc: 61.8000%
 Epoch  13	Train Loss: 0.898748	Train Acc: 80.0000%	Val Loss: 1.608347	Val Acc: 62.0000%
 Epoch  14	Train Loss: 0.946830	Train Acc: 80.0000%	Val Loss: 1.649864	Val Acc: 61.8000%
-Epoch  15	Train Loss: 1.425961	Train Acc: 80.7143%	Val Loss: 1.633293	Val Acc: 64.4000%
-Epoch  16	Train Loss: 0.875585	Train Acc: 82.1429%	Val Loss: 1.616586	Val Acc: 66.6000%
+Epoch  15	Train Loss: 1.425960	Train Acc: 80.7143%	Val Loss: 1.633293	Val Acc: 64.4000%
+Epoch  16	Train Loss: 0.875585	Train Acc: 82.1429%	Val Loss: 1.616587	Val Acc: 66.6000%
 Epoch  17	Train Loss: 0.810615	Train Acc: 81.4286%	Val Loss: 1.592887	Val Acc: 67.0000%
 Epoch  18	Train Loss: 0.763062	Train Acc: 80.7143%	Val Loss: 1.569996	Val Acc: 67.4000%
 Epoch  19	Train Loss: 0.881348	Train Acc: 82.1429%	Val Loss: 1.543069	Val Acc: 67.2000%
 Epoch  20	Train Loss: 0.750949	Train Acc: 82.8571%	Val Loss: 1.520200	Val Acc: 66.8000%
-Epoch  21	Train Loss: 0.685395	Train Acc: 83.5714%	Val Loss: 1.504100	Val Acc: 66.6000%
-Epoch  22	Train Loss: 0.611382	Train Acc: 85.0000%	Val Loss: 1.500499	Val Acc: 66.0000%
+Epoch  21	Train Loss: 0.685395	Train Acc: 83.5714%	Val Loss: 1.504101	Val Acc: 66.6000%
+Epoch  22	Train Loss: 0.611383	Train Acc: 85.0000%	Val Loss: 1.500499	Val Acc: 66.0000%
 Epoch  23	Train Loss: 0.603166	Train Acc: 84.2857%	Val Loss: 1.511355	Val Acc: 66.2000%
 Epoch  24	Train Loss: 1.565990	Train Acc: 85.7143%	Val Loss: 1.550028	Val Acc: 66.0000%
-Epoch  25	Train Loss: 0.564261	Train Acc: 88.5714%	Val Loss: 1.616222	Val Acc: 64.6000%
+Epoch  25	Train Loss: 0.564262	Train Acc: 88.5714%	Val Loss: 1.616222	Val Acc: 64.6000%
 Epoch  26	Train Loss: 0.524013	Train Acc: 87.8571%	Val Loss: 1.695767	Val Acc: 64.0000%
-Epoch  27	Train Loss: 0.508034	Train Acc: 88.5714%	Val Loss: 1.788846	Val Acc: 64.0000%
+Epoch  27	Train Loss: 0.508034	Train Acc: 88.5714%	Val Loss: 1.788847	Val Acc: 64.0000%
 Epoch  28	Train Loss: 0.621814	Train Acc: 87.8571%	Val Loss: 1.853111	Val Acc: 63.0000%
 Epoch  29	Train Loss: 0.579144	Train Acc: 88.5714%	Val Loss: 1.872776	Val Acc: 63.2000%
 Epoch  30	Train Loss: 0.491464	Train Acc: 88.5714%	Val Loss: 1.874164	Val Acc: 63.8000%
 Epoch  31	Train Loss: 0.493937	Train Acc: 89.2857%	Val Loss: 1.847677	Val Acc: 64.6000%
 Epoch  32	Train Loss: 0.562605	Train Acc: 90.0000%	Val Loss: 1.800509	Val Acc: 66.0000%
 Epoch  33	Train Loss: 0.490372	Train Acc: 91.4286%	Val Loss: 1.742706	Val Acc: 66.0000%
-Epoch  34	Train Loss: 0.623589	Train Acc: 91.4286%	Val Loss: 1.702445	Val Acc: 65.8000%
+Epoch  34	Train Loss: 0.623590	Train Acc: 91.4286%	Val Loss: 1.702445	Val Acc: 65.8000%
 Epoch  35	Train Loss: 0.441532	Train Acc: 92.8571%	Val Loss: 1.669238	Val Acc: 66.2000%
 Epoch  36	Train Loss: 0.414883	Train Acc: 92.1429%	Val Loss: 1.649799	Val Acc: 67.4000%
 Epoch  37	Train Loss: 0.396852	Train Acc: 93.5714%	Val Loss: 1.642260	Val Acc: 68.0000%
@@ -3835,9 +3835,9 @@ Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 4 × AMD EPYC 9V45 96-Core Processor
+  CPU: 4 × AMD EPYC 7763 64-Core Processor
   WORD_SIZE: 64
-  LLVM: libLLVM-20.1.8 (ORCJIT, znver5)
+  LLVM: libLLVM-20.1.8 (ORCJIT, znver3)
   GC: Built with stock GC
 Threads: 4 default, 1 interactive, 4 GC (on 4 virtual cores)
 Environment:
@@ -4586,9 +4586,9 @@ Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 4 × AMD EPYC 7763 64-Core Processor
+  CPU: 4 × AMD EPYC 9V45 96-Core Processor
   WORD_SIZE: 64
-  LLVM: libLLVM-20.1.8 (ORCJIT, znver3)
+  LLVM: libLLVM-20.1.8 (ORCJIT, znver5)
   GC: Built with stock GC
 Threads: 4 default, 1 interactive, 4 GC (on 4 virtual cores)
 Environment:
@@ -5625,7 +5625,7 @@ ps, st = Lux.setup(Random.default_rng(), nn)
 ```
 
 ```
-((layer_1 = NamedTuple(), layer_2 = (weight = Float32[0.0001164363; 3.682158f-5; 0.00022136187; -1.9323877f-5; -8.6531945f-5; 3.800559f-5; 0.00016159349; 0.0002759887; -1.2675535f-5; 0.000106230334; 0.0001467675; 0.00010462313; 9.253932f-7; 8.218773f-5; -7.633997f-5; -0.00013764488; 4.1895066f-5; -0.0002373249; 3.8094165f-6; 5.301508f-5; -8.82693f-5; -2.296501f-5; 0.000112554175; -8.1181f-7; 0.00012166749; -3.0854237f-6; 5.586494f-7; -0.00016246016; -0.00014273557; 7.5974465f-5; 1.1655766f-5; 0.00018411287;;], bias = Float32[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]), layer_3 = (weight = Float32[0.00010295813 0.000101001286 -6.400643f-5 9.696116f-5 -4.4550798f-5 -6.436508f-5 9.841152f-5 0.0002474172 -0.00014219018 -0.000136203 4.1999056f-6 1.9272567f-5 -6.956641f-5 0.00011576086 -0.00012361613 3.3587843f-5 -1.7703527f-6 -4.706444f-5 1.0069955f-5 -3.1798474f-5 -5.5929882f-5 5.606598f-6 -2.6376816f-5 -0.00013132989 1.3731446f-5 -6.270989f-5 -9.651942f-5 9.050579f-5 -9.190958f-5 -0.00010679896 1.4976037f-5 -1.2653529f-5; 6.185922f-5 -8.362575f-5 -2.7601243f-5 -3.624896f-5 -5.2887306f-5 0.00013064276 -9.1907365f-5 -3.8901308f-5 2.051916f-6 8.521018f-5 -4.9594302f-5 -7.066665f-5 9.981944f-5 6.855118f-5 -6.527328f-5 -0.00020033267 0.00016110754 5.6374767f-5 -5.3481344f-5 -2.5743264f-5 -7.837188f-5 -2.8311939f-5 1.4450201f-5 2.3960616f-5 5.580555f-5 0.00015367434 8.67172f-5 0.00013693498 -9.8698954f-5 -4.0402047f-5 -1.0183502f-5 -7.311466f-5; 6.449153f-5 0.000110112465 1.1501307f-5 3.9056864f-5 0.0001706467 -1.7096883f-5 5.803934f-5 3.522423f-6 1.9227153f-5 -7.023829f-5 -4.1146184f-5 -4.0943858f-5 8.923097f-5 -1.1402321f-5 6.274342f-5 -0.00018794276 -2.5002368f-5 -8.972375f-5 3.508084f-5 -2.3735927f-6 0.000114059934 -1.4614377f-5 -0.000111771034 4.872832f-5 2.512687f-6 0.00010551436 5.065073f-5 2.9293993f-5 -6.2559857f-6 7.70315f-5 -5.724652f-5 -6.726485f-5; 0.00017845423 6.547815f-5 1.6619817f-5 -0.00016460939 8.563104f-5 -3.6533846f-5 -6.2710984f-5 -6.0045306f-5 -0.0001266847 -0.00014665308 -7.3973416f-7 0.00010143824 8.085218f-5 -6.113249f-5 2.55347f-5 -0.00010860444 2.431848f-6 -5.7882266f-5 1.1855583f-5 -0.00019095282 -6.627614f-6 -0.00010355805 1.6735971f-6 -4.372527f-5 2.4194165f-5 -4.788879f-5 -8.5620166f-5 -1.852427f-5 2.3379065f-5 4.0772025f-5 0.00012845869 -3.964095f-5; -5.798957f-5 -0.00013289592 7.661318f-5 -6.0013885f-5 -5.0210972f-5 3.8748003f-5 0.00020050464 0.00014332143 -0.00020561677 -4.0181527f-5 -4.381348f-6 -0.00015654317 0.0001463779 -4.054473f-5 -2.8965782f-5 1.4630746f-5 0.00017785565 -0.00011768735 8.4498184f-5 0.00015596178 -0.00010215239 0.00011258743 -2.566645f-5 -3.5448476f-5 0.00010246706 -6.117764f-5 -2.287246f-5 -8.944235f-6 7.2199204f-5 -1.4183074f-5 0.00011590039 -9.2558446f-5; 2.5624651f-5 -7.5101736f-5 6.204385f-6 -0.00011622614 -0.00015503562 -9.987983f-6 0.00018343439 -2.059484f-5 1.2062024f-5 0.00016903969 -9.691639f-6 -4.684126f-5 2.7903649f-5 5.8880454f-5 0.00012008038 7.2842624f-5 -1.5892972f-5 7.6820055f-5 -2.1183556f-5 -2.2778562f-5 -2.3410787f-5 5.358518f-5 -9.010284f-6 9.30382f-5 -0.00019924415 -0.000111563066 0.00021446924 -0.00014250437 8.0006816f-5 0.0001809657 2.355067f-5 3.5747973f-5; 2.1488757f-5 -6.486777f-5 -0.00010332835 -0.00014900928 -3.3141467f-5 0.00013156616 8.598255f-6 5.2750875f-5 8.14768f-6 -6.2388506f-5 -0.00014171709 0.0001356733 -0.00013500644 -4.2081974f-5 0.0001600098 -5.222732f-6 0.00013909294 8.7424785f-5 -0.00021808039 6.553353f-5 -5.3098905f-5 8.988292f-6 3.3958895f-6 -0.000112615424 0.00010202011 3.6944293f-5 9.2770984f-5 7.231792f-5 0.00016728495 -0.00015422667 3.3164873f-5 2.9440527f-5; 7.771632f-5 1.1955059f-6 0.0001812391 -5.990624f-5 0.00017059034 -0.00011242996 2.1226062f-5 8.624646f-5 0.0002766707 0.00014785379 0.00011096192 -7.9748934f-5 6.83683f-5 -5.7114485f-5 -0.00018446735 -5.5839075f-5 9.5740856f-5 -3.179951f-5 1.93493f-5 1.4389556f-5 -0.00021284887 -0.00010073634 -8.124258f-5 -0.00011331171 -5.0526007f-5 1.370457f-5 6.0686187f-5 -3.53465f-5 -2.482037f-5 0.00010878234 -3.9678267f-5 0.00011145687; -0.00011463887 3.542708f-5 -0.00015867889 4.2727246f-5 -2.7216121f-5 4.9060072f-5 -4.57275f-6 -2.2658276f-5 -1.8102473f-5 -6.6578896f-6 1.8909906f-5 0.00014858214 6.2564046f-5 -5.3879725f-5 -5.5983586f-5 7.9902835f-5 -8.677992f-5 2.8006312f-5 -7.582983f-5 6.4078915f-5 -0.00013877763 2.8957164f-5 -9.466533f-5 -9.865014f-5 7.909938f-5 0.00012229173 -1.9760897f-5 -0.00018328747 0.0001450419 0.00022648032 -1.9052492f-5 -3.735647f-5; 6.524054f-5 0.00010973469 7.750661f-5 -0.00016238999 8.814292f-5 1.4724532f-5 0.00020821646 6.486996f-5 -0.00015857068 0.00023935737 -5.702343f-5 -0.000102290454 3.668177f-5 -0.00018524307 -6.2156123f-6 -1.1791399f-5 3.9476115f-5 0.00016782932 -6.488947f-5 0.00018414795 0.00013410705 -2.5793503f-5 -0.00012306363 0.00012473132 -1.946749f-5 9.958876f-5 -8.2962084f-5 -0.00011000017 6.0414955f-6 0.00010035508 0.00018345553 -3.8759968f-6; -0.00010817409 -5.4273532f-5 -8.2126884f-5 5.8129714f-5 7.01786f-6 0.00019737972 -8.147907f-5 0.00023100937 -0.0001459764 -0.00017841796 -0.00017523313 0.0001414112 0.00012189697 0.000117242285 -9.2122624f-5 -3.4945263f-6 -5.698471f-5 2.8067972f-5 -6.297062f-5 0.00010756863 -0.00016552345 0.00022161315 5.389391f-5 2.4914198f-6 -3.5942154f-5 9.062977f-5 -0.00019034512 -0.00020994815 -5.0173472f-5 1.2987241f-6 -0.00013070149 -1.9333231f-6; 7.514583f-5 3.672756f-5 1.990553f-5 0.00018512686 7.471402f-5 -6.0389393f-5 -0.000103651066 -0.00011862235 -1.7436185f-5 -0.000119382305 -0.00015516553 7.420558f-5 -5.674955f-6 7.8404075f-5 3.8782662f-5 6.788345f-5 4.963682f-5 -2.1636848f-5 3.5016423f-5 -6.482171f-5 -4.06974f-5 -5.4249405f-5 2.4086843f-5 2.4678922f-5 5.4160653f-5 -5.583967f-5 0.000101286765 9.714526f-5 -0.00017925967 -4.4641423f-5 2.1723947f-6 5.8375695f-6; 0.00018683517 0.00012066727 -5.9428825f-5 -0.0002745901 -3.1771713f-5 -0.00027665283 5.8636324f-5 -2.1353206f-5 0.00010714582 0.00022672115 -8.581051f-5 0.00012720867 -2.353233f-5 -0.000117677315 9.917422f-5 -2.537889f-5 -4.892123f-5 -6.332959f-5 -0.00012049084 2.8990433f-5 4.4394244f-5 -6.359792f-5 -0.0001357889 -0.0001423645 -0.00011032903 -0.0001665217 0.00013964162 -4.861097f-6 -7.2260623f-6 9.192531f-5 -0.00014046654 -8.7650275f-5; 8.075744f-6 -0.00019412863 -5.553442f-5 2.6946511f-6 3.0992956f-6 -5.9812104f-5 -7.972168f-5 4.278955f-5 2.100576f-5 -6.835992f-5 3.5254638f-5 -4.358144f-5 -2.0887952f-5 -4.4476397f-5 -0.00022360508 9.522403f-6 0.00028128567 8.981825f-6 -0.00010604082 8.7069595f-5 -0.00016322326 5.759773f-5 -1.3984975f-5 -1.6503278f-5 0.00010983582 0.000110742265 0.00014560044 1.7499233f-5 0.000114044575 -0.00012207242 2.0636167f-5 0.0001468931; -0.00016087352 4.0177598f-5 5.3519485f-5 0.00011938251 -9.75656f-5 1.4756415f-5 9.659136f-5 -9.430839f-7 5.6673583f-5 0.00015393276 8.587144f-5 0.00012625715 1.2809304f-5 1.5316291f-5 3.8168455f-5 -2.8767949f-5 7.029517f-5 -0.00023041412 -6.169932f-5 5.3008804f-5 -3.224618f-5 -4.355658f-5 0.00011611834 -7.771273f-5 -0.00014819574 4.9437724f-5 -4.03113f-5 5.0289324f-5 6.20103f-5 -8.621718f-5 -9.950044f-5 -3.5683355f-5; 7.520617f-5 -1.3962934f-5 3.357447f-5 9.6885975f-5 0.00015169974 5.976087f-6 -0.0002181963 -0.00013608311 -8.498379f-5 0.00023984032 0.0001065197 3.5699926f-5 0.00014615532 -3.181031f-6 7.020643f-5 5.0329792f-5 1.3241452f-5 3.3424025f-5 7.406853f-5 3.7780675f-5 9.4479445f-5 2.7741886f-5 -6.240172f-5 -2.9759418f-5 -0.00018671998 4.815884f-5 -0.00013790054 0.0001889987 8.778913f-5 -0.000105104875 -6.206439f-5 -0.00010481544; 8.440702f-6 -2.2812817f-5 -0.00011154918 2.022713f-5 -2.0920375f-5 -0.000105759085 -0.00013240763 0.00012764044 4.3598753f-5 2.5334162f-5 8.414538f-6 3.804115f-5 -5.272883f-5 -5.279417f-5 -0.000116373696 4.2255666f-5 -1.8276716f-5 1.2611481f-5 5.6014346f-7 4.6060877f-6 3.1598916f-5 3.4714598f-5 0.00016716098 -9.533581f-5 -2.2214319f-5 -6.183114f-5 -4.8830247f-5 -0.00014140274 -2.3632798f-5 1.6944125f-6 3.7051675f-5 -7.616265f-6; 3.7672933f-5 2.1339067f-5 -4.3498226f-6 5.9062695f-5 -1.617622f-5 -0.00011108171 0.00014427547 9.950802f-5 6.2288105f-5 -8.934303f-5 8.831076f-5 -2.338238f-5 -3.3702663f-6 -0.00013092047 -9.650044f-5 3.0928855f-5 -6.4177155f-5 -0.00013561707 -0.00018065398 4.9569895f-5 -1.45532495f-5 2.5301439f-5 -2.1859034f-5 4.7234826f-5 -1.2603996f-5 0.00012935385 -9.166358f-5 8.1432f-5 -6.666239f-5 7.303204f-5 -0.00024592268 -0.00017012384; 1.01023925f-5 0.00011539621 -0.00019367608 -5.312067f-6 -0.00017951641 7.433832f-6 -3.1121504f-5 0.00019458424 0.00012875722 6.541837f-5 5.1548537f-5 -0.00013709023 6.589401f-5 -1.2925273f-5 -3.703795f-5 -0.00038482368 -8.18704f-5 5.2726937f-5 1.7813485f-5 4.8799746f-5 -0.00014063186 -9.011923f-5 0.000117206844 0.00011620587 5.0435166f-5 -4.867664f-6 0.00012121892 3.7059537f-5 6.0132083f-5 -1.3268658f-5 -4.4808704f-7 -6.972455f-5; 0.0001663557 -1.8138544f-5 -0.0001249586 -5.49664f-5 0.00012374949 3.3276814f-5 -0.00011943534 -6.9607637f-7 -5.589416f-5 6.506593f-5 8.6592394f-5 1.9747384f-5 0.00014895682 0.00016698212 8.9346795f-6 0.000105919586 8.098344f-5 -9.171591f-5 -0.00010062877 -8.058941f-6 0.00012561596 -6.647618f-5 2.1225087f-5 -0.00010520404 -8.377393f-5 -0.00010180036 2.7415024f-5 0.00011072071 7.920362f-5 -0.000113076545 8.81936f-5 0.0001635954; -3.956871f-5 0.00032329402 0.00015448661 -9.3874616f-5 -9.040753f-5 1.4845598f-5 -6.812561f-5 6.2025865f-5 -7.416158f-5 0.0001544657 0.00011085939 -3.5991416f-5 9.350557f-5 -7.599714f-5 0.000109815104 -7.303385f-5 -0.00016611777 -3.362642f-6 5.534821f-5 -3.3825967f-5 -7.764058f-5 3.0961264f-6 -0.0001503243 8.851339f-5 -1.578539f-5 -8.958652f-5 -8.868972f-5 0.00015804173 -1.0146362f-5 -4.3666903f-5 0.00016113029 5.9802092f-5; -2.477264f-5 2.0614025f-5 -0.00017453954 -0.00014196902 -5.6302262f-5 0.00013396933 -2.5656302f-5 0.00013119487 2.9268993f-5 8.673938f-5 -8.0724865f-5 -7.851277f-5 0.0001659219 9.786742f-5 9.082099f-5 5.3156426f-5 -9.328506f-5 -9.547082f-7 -6.722951f-5 0.0001288099 7.872893f-6 -3.4217286f-5 0.00018951246 -0.00017661267 6.008079f-5 -0.00016147825 8.086375f-5 6.8181966f-5 -8.167528f-6 -1.33040185f-5 0.00014049618 -7.820319f-6; 6.446411f-5 -6.8127105f-5 -0.00014626858 2.1040787f-5 -0.00020791337 -0.00014515538 -1.1780116f-5 0.00010388056 -5.261464f-5 4.0930678f-5 0.00014438474 5.6067423f-5 2.9953346f-6 9.062461f-6 -0.00013750269 3.2698415f-5 -0.00014208123 5.3245927f-5 7.860972f-5 2.8161961f-5 -0.00017635364 7.562556f-5 7.245323f-5 9.067695f-5 3.5777724f-5 0.00013824152 -5.2405252f-5 -0.00012863798 6.8700847f-6 -8.293605f-6 -1.5093823f-5 -0.00010586414; -6.791957f-5 -0.00012975857 -5.5822908f-5 -2.9953848f-5 3.5095494f-5 1.6734944f-5 -7.767584f-6 1.5276531f-6 -8.992988f-5 1.9517186f-6 1.527729f-5 4.2268795f-5 0.00022297021 -1.2834037f-7 0.00012101195 -0.00016856453 -5.6367127f-5 -7.939953f-5 1.0709213f-5 -3.5106328f-5 -0.00023219758 -6.1104554f-5 -5.1267005f-5 -8.693799f-5 -0.0001207649 -6.82033f-5 7.796974f-5 -0.00012320968 -3.6982114f-5 -0.00022592669 -9.089974f-5 0.00014908049; -0.00012125079 7.767378f-5 4.7939364f-5 -2.8081884f-5 -9.703166f-6 5.252014f-5 -6.057836f-5 -4.9263686f-5 0.00014388036 -7.540365f-5 -0.00012956209 -0.00014699323 -0.00012098784 2.9844185f-5 0.0001123455 -5.1916824f-5 -2.8741924f-5 -5.4542426f-5 6.631831f-5 -8.4589185f-5 5.3678687f-5 -2.8893f-6 0.00012495228 -9.856623f-5 -9.8314355f-5 -8.5161715f-5 4.8957925f-5 1.8410714f-5 -1.9967087f-5 -6.0204402f-5 -2.4225043f-5 -6.976286f-5; 9.829814f-5 3.089756f-5 -0.00013528453 -8.4451254f-5 0.00012772283 -2.426531f-5 0.00010404192 0.00019402387 -6.2570856f-5 0.00015522067 0.0002841309 4.4303055f-5 -8.217736f-5 -6.735812f-5 -5.1322262f-5 3.819979f-5 8.95552f-5 0.00010759844 0.00014142536 -5.033994f-5 8.696194f-5 2.4306239f-5 8.6446704f-8 0.00015281253 -4.6102752f-5 2.1306158f-5 6.6050484f-6 -4.0772706f-5 -6.153875f-5 -0.00011026581 0.00010095356 2.9837918f-5; 0.00018682891 2.906389f-5 -0.00015383838 7.588114f-5 9.04196f-5 -9.494076f-5 -0.0001254299 3.8247108f-5 -5.0354636f-5 -0.00015842209 -2.7875114f-5 7.520257f-5 -1.6407823f-5 -9.863384f-5 2.510156f-5 1.8881237f-5 8.795189f-5 -4.658768f-5 5.8157264f-5 0.00011143198 0.00011571531 1.3547798f-5 0.00015709997 -6.739702f-5 0.000109935885 -3.3653545f-5 4.2962878f-5 0.00013633537 -0.00014290321 2.949136f-5 4.2958014f-5 0.00016489126; 1.2061424f-5 7.5410826f-5 -0.00010861473 -0.00018601336 -8.505898f-5 -2.2496122f-5 0.0001021989 2.1352991f-5 7.423025f-5 7.6550736f-5 -1.2233987f-5 -4.598909f-6 -8.899187f-5 6.095188f-5 -0.00014223596 3.6208865f-5 -1.7875165f-5 2.36355f-5 -0.000118299075 4.8259462f-5 4.5943634f-5 3.757769f-5 -6.1584906f-5 -1.51245f-5 9.760831f-5 -7.640183f-5 -2.4474057f-5 5.0536046f-6 -6.087912f-6 -4.8340553f-5 -5.0106155f-5 3.7722453f-5; 6.2931365f-5 2.3008626f-9 0.00020140359 -4.011835f-5 -0.00024279764 -8.395932f-5 -1.9381543f-5 -0.000119372584 0.00021561474 -8.783721f-5 4.3693362f-5 8.856784f-6 0.00019218249 4.821796f-5 0.00014990602 0.00018279464 4.7543203f-5 -0.00016498435 5.7568403f-5 0.000113646434 -6.019224f-6 -1.8376462f-5 -0.00015181527 5.037596f-5 -4.2720778f-5 -4.9544164f-5 0.000111696965 4.9551722f-6 0.00020467254 9.981428f-7 1.5179271f-5 -7.40646f-5; -0.00013603878 -9.48324f-5 -5.4980603f-5 1.4524771f-5 -2.8631282f-5 -0.00014589648 -7.024195f-6 -7.509383f-5 9.516414f-6 8.913514f-6 3.0509178f-5 5.771464f-5 0.0001992417 -0.00015301678 -9.278002f-5 0.00010840399 -6.535469f-5 -5.2692645f-5 0.00010877232 0.00013435222 -0.000111666435 -2.2403621f-5 -4.29395f-5 -1.0378655f-5 0.0001460868 -0.0001703563 9.276379f-5 -6.511813f-5 0.00021469791 -5.1560284f-5 -5.56889f-5 -7.1546194f-5; -5.290972f-5 9.276154f-5 -8.060005f-6 -1.8881265f-5 4.528071f-5 -1.8445713f-5 0.0001470546 3.395441f-5 -3.070148f-5 0.00012442433 6.988362f-5 -4.0622246f-5 -5.0456343f-5 -6.8047616f-6 2.3448163f-5 -2.6163643f-6 -4.8815382f-5 -2.738425f-5 7.4759904f-5 0.00014765552 -0.00013935706 6.440619f-5 0.00018732045 7.308343f-5 8.551188f-5 1.6711778f-5 -0.00022099099 -0.00010421875 -6.6402856f-5 -5.7133693f-5 -2.1685912f-5 1.7185472f-5; 3.2544845f-5 2.8166467f-5 -6.9233097f-6 0.000101031634 -5.1011f-5 2.7538606f-5 -0.00013655025 1.3508864f-6 -0.00021778505 -1.9347064f-5 -1.1404954f-5 9.61356f-5 5.633765f-5 -0.0001645563 -8.639257f-5 -0.00015235598 -5.487702f-5 5.7117235f-5 -0.00013720877 8.569628f-5 -6.2593235f-6 -0.00012902214 -1.6694155f-5 -7.542803f-5 -0.00016145986 2.0023406f-5 -5.79145f-5 3.6535519f-6 -4.289648f-5 -4.322141f-5 -7.72824f-5 0.00015681113], bias = Float32[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]), layer_4 = (weight = Float32[3.7046536f-6 0.00012151464 -6.910752f-5 -0.00018411955 0.00023277414 -0.0001883473 1.779935f-5 -7.451856f-6 9.0205926f-5 0.0001910674 -5.8940645f-5 -0.00014818822 -3.1277952f-5 1.1622071f-5 0.00015754267 -4.476932f-5 -0.00019098587 0.0001010269 4.9210103f-5 9.5874944f-5 -1.2410487f-5 0.000100782825 7.570155f-5 -9.814481f-5 0.00011093581 8.452942f-5 -1.7663924f-5 2.8510498f-5 2.2001366f-5 -0.00016211788 1.6122669f-5 9.895865f-5; 2.1849657f-5 -0.00023801038 -0.00012947664 -5.0074603f-5 -8.982802f-6 0.00013317175 -7.574978f-5 8.458751f-5 4.860553f-5 -2.1343192f-5 5.6021254f-5 4.6274894f-5 -0.00011025336 -3.0418958f-5 9.822359f-5 -1.1703227f-5 0.0001069526 8.805404f-5 2.8976576f-5 3.3286542f-5 -0.00015477603 -2.291766f-5 -9.4777846f-5 -6.170161f-5 0.00024523336 9.957472f-6 -3.8137827f-5 3.599875f-5 9.766994f-5 5.9330116f-5 6.1262767f-6 -0.00010121868], bias = Float32[0.0, 0.0])), (layer_1 = NamedTuple(), layer_2 = NamedTuple(), layer_3 = NamedTuple(), layer_4 = NamedTuple()))
+((layer_1 = NamedTuple(), layer_2 = (weight = Float32[5.1809897f-5; 4.8058344f-5; -3.973795f-5; -6.446355f-6; 0.00010011666; 3.9269078f-5; 0.00010699868; 0.00011431937; 3.1598105f-5; -4.5437537f-5; -0.00014397882; -6.0852476f-6; -9.2927155f-5; -6.2434985f-5; -4.9471968f-5; 1.7112831f-6; -5.463557f-5; 0.00022483835; 0.00012906494; 3.5820365f-5; -7.582825f-5; 1.29268865f-5; 0.00012672905; -0.0001332171; -8.603232f-5; -0.00010047319; -2.1185278f-5; 9.477617f-5; 6.433746f-5; -0.00014426379; 5.1506468f-5; -0.0001293044;;], bias = Float32[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]), layer_3 = (weight = Float32[-0.00013673276 -4.6197114f-5 0.0001115842 -6.647669f-5 9.98442f-5 -9.9809724f-5 -5.5466542f-5 4.6406654f-5 7.3139705f-7 3.071392f-5 -9.946582f-5 7.763994f-5 -7.380559f-5 8.0103404f-5 8.773146f-5 1.1965427f-5 1.6189057f-5 2.6728003f-6 -3.8569844f-5 0.0001287472 -7.186551f-5 2.5426782f-5 4.9183982f-5 -2.6854184f-5 -7.7904224f-5 -0.00015126704 0.00017358418 2.4136772f-5 -2.1046424f-5 -1.564883f-5 4.8592898f-5 -4.7651713f-5; 2.0426808f-6 -2.7094853f-5 0.00011112026 9.154147f-5 -8.302139f-5 -8.73404f-5 -9.7336284f-5 -0.00013138987 -6.620939f-5 1.0043882f-6 -2.8173603f-5 -0.00017881572 -1.2881538f-5 -2.0445108f-5 -0.00010230512 9.671668f-5 0.00015762205 8.0272424f-5 0.00017837078 6.831128f-5 -4.006725f-5 -0.00013502831 -0.00021812857 -5.608645f-5 7.909308f-5 -0.0001783845 7.021222f-5 -3.153257f-6 4.3495875f-5 0.00011657196 -2.03652f-5 -0.00014905952; 0.00014368162 6.73414f-5 -2.6889362f-5 5.8965612f-5 -3.596853f-5 7.3607356f-7 -0.00010043002 9.518227f-5 -5.7193953f-5 4.077316f-5 4.1808842f-5 7.590487f-5 -0.00011947913 3.156773f-5 1.6974382f-5 9.687089f-6 5.6229983f-6 -0.00019685249 4.4296583f-5 -1.8267418f-5 -1.4799028f-5 9.6859054f-5 -0.00015118609 -1.7471426f-5 -5.2308136f-5 -6.320018f-5 -0.00014347323 -8.5953514f-5 6.797048f-5 -3.3444245f-5 7.7402874f-5 -0.000106636646; -0.00014974712 6.5963395f-5 6.7681767f-6 7.84088f-6 1.2207813f-5 7.12762f-5 -1.5592113f-6 1.9086649f-5 -4.8564667f-5 6.816238f-5 0.000119212855 -0.00018221712 0.0002262274 2.5832182f-5 -7.986927f-5 -2.3949857f-5 4.8275946f-5 -8.332728f-5 -3.662866f-6 0.00011171156 -6.662233f-5 -2.6428595f-5 1.49441585f-5 9.046296f-5 5.3143685f-5 -6.497857f-5 2.4070969f-5 -2.3332419f-5 5.6333512f-5 0.00012816951 3.63555f-5 0.00014087584; -9.792051f-5 -0.00016109087 0.00013258765 -1.2820962f-5 6.540979f-6 -7.665781f-5 -6.318291f-5 -3.4555636f-5 5.7813235f-5 8.730199f-5 -6.7912595f-5 4.9690927f-5 -4.505147f-5 4.959363f-5 5.163047f-5 -7.0729795f-5 -9.989871f-5 -0.000117927804 0.0001671422 -0.00010116528 -0.00018642847 -0.00026956678 -9.043442f-5 -6.6178116f-5 -0.00011525611 0.00014024806 -0.0001330409 -1.25126335f-5 1.0919202f-5 9.218253f-5 3.0355899f-5 0.00020080528; -4.7177018f-5 5.11087f-5 -9.144899f-5 4.189525f-7 -1.761767f-5 0.00015428984 4.5501372f-5 -5.9544524f-5 0.00011228334 0.00014309518 8.324063f-5 3.1504685f-5 0.00013033906 -8.476011f-5 -7.625144f-5 0.00014729214 -5.5876775f-5 -0.00024916034 2.6792137f-5 1.6204198f-5 -9.757765f-5 -4.5922145f-5 6.1392304f-5 -0.00013325576 -3.4793014f-5 -2.3067896f-6 6.950794f-5 -5.284403f-5 3.1993313f-5 -0.00022058017 -0.00020099894 -1.5167058f-5; 9.845541f-5 0.00021004913 1.8197798f-5 0.0001001302 6.889238f-5 5.19287f-5 -5.8619794f-6 8.915856f-5 -0.000100096 4.2575328f-5 -3.939284f-5 -2.8644543f-5 2.1781081f-5 -3.5849505f-5 -0.00012370688 0.00015662741 -0.00010254414 3.867372f-5 8.418104f-5 -4.1756804f-5 -0.00016834907 0.00012316719 -0.00022477009 -0.00016716955 0.0002777117 -5.68001f-5 0.0001140917 2.974647f-6 6.123133f-5 -5.2115225f-5 0.00025308426 7.9721845f-5; -7.5389755f-5 -8.197757f-5 1.6565073f-5 1.5317455f-5 5.434712f-6 -0.00018630555 -6.880422f-5 -9.335242f-5 -0.00010242504 2.5101357f-5 -6.9486436f-5 3.0552776f-5 0.00013907955 0.00010632413 -8.637222f-5 8.051407f-5 -8.167917f-5 -0.00014471645 0.00016851594 0.0001366793 -3.594408f-5 5.4125076f-6 -7.310384f-5 -0.000111440975 -6.4757754f-5 -0.000115216884 -0.00019194491 2.6040939f-6 -0.0001387011 -1.9634645f-5 9.997429f-6 -3.2236156f-5; 3.277387f-5 -5.650526f-5 -4.1083164f-5 -8.160438f-6 7.262368f-5 -0.0001251361 -8.481095f-5 -2.6493613f-5 -1.3396502f-5 4.995478f-5 0.00010082487 -7.687094f-5 -0.00011217475 -0.00010538298 -2.6983931f-5 -5.2381114f-5 -0.00012912045 -5.4838765f-5 -7.8549325f-5 -1.8187978f-6 7.211038f-6 2.5657771f-5 -5.0835955f-5 0.00019916812 0.00018727857 -4.635561f-5 0.000121281526 -7.467102f-5 0.0001021283 1.7060438f-5 -3.829257f-5 -3.198949f-5; -1.0413595f-5 6.438326f-5 -1.2537569f-5 -0.00010121157 -6.984048f-5 -0.00012446378 -9.122147f-5 -4.549128f-5 -3.2617554f-5 -7.617112f-5 5.3774645f-5 -7.119499f-5 0.00014329606 3.5564084f-5 0.00018592169 -0.00027650292 -0.00017393695 -0.0001242537 -5.8488095f-5 -5.9520604f-5 0.0001141865 0.00018133121 1.8250692f-5 4.8799782f-5 -0.00015472417 -0.00013543056 -2.772372f-6 0.0001643453 -0.0001602742 -0.00024614058 7.928697f-5 -0.0001347789; 0.00022396528 1.9788795f-5 -4.786292f-6 -5.856367f-6 -9.7029646f-5 0.00016073727 -3.785853f-6 -1.90215f-5 -2.5237949f-5 -9.4207004f-5 -2.8912373f-5 -8.540519f-5 -1.9938037f-5 -1.08197255f-5 4.5965877f-5 -5.0566432f-5 -0.00015549333 -0.00015467129 -8.958466f-5 0.0001434923 4.931813f-5 -1.0589473f-5 -0.00021608891 -9.046391f-5 -5.6088275f-6 3.7939382f-5 -9.695789f-5 2.1654601f-5 -1.7076643f-5 6.3198386f-5 6.880499f-5 -0.00014357726; -9.928952f-5 2.3003515f-5 2.80628f-5 8.025811f-5 -1.8282579f-5 -6.6718196f-5 -7.677211f-5 -0.00011954604 0.00011434424 5.4504406f-5 0.000105328894 -0.00010512622 -0.00015387576 9.1260976f-5 -4.2511052f-5 9.147661f-5 -7.4422674f-6 0.00017912322 -3.3824323f-5 9.7929165f-5 -4.5486886f-5 0.00015113005 -4.476759f-5 -7.433195f-5 0.00024625976 5.6275672f-5 -0.00015914324 9.982368f-6 -0.0001541451 -0.00015035394 7.127293f-5 -2.8847293f-5; -0.00015346428 0.00020180208 6.980381f-5 -0.000114104165 1.9351016f-6 -2.9585428f-5 9.404143f-5 0.00011727819 0.00015106733 0.00013695145 -5.5048906f-5 4.9325718f-5 8.6964246f-5 9.687284f-6 6.942915f-5 -8.807753f-6 5.041082f-5 4.307726f-5 -2.4751766f-5 0.00012991136 -0.000118185686 0.00022089799 -8.562868f-5 0.00011943676 5.8439193f-5 -2.3148896f-6 3.269536f-5 -0.000120507255 -0.00019509564 0.0001772374 5.3478383f-5 -4.9864568f-5; -9.141067f-5 -0.00015206757 -5.3378775f-5 -2.2458165f-5 0.00014069834 -7.196632f-5 -0.0001257832 8.962434f-5 1.2343353f-5 -0.00015355056 0.00020458367 -3.353015f-6 -6.773149f-5 -2.3091703f-5 -9.759997f-7 0.00011701467 5.8019144f-5 -2.4468178f-5 -0.000109967055 -7.740558f-5 -5.2718922f-5 -0.00015402396 -2.3642124f-5 0.00014466105 0.00019405501 -0.0002715388 -0.0001712249 -0.000107538806 0.00011900943 3.7270438f-5 1.5810441f-5 -7.463433f-5; -0.00015441129 -3.5310786f-6 -0.000121395664 1.4686835f-5 -2.3975319f-5 -0.00022713757 0.00015932877 -9.9966455f-5 0.0001350565 0.00019081213 -0.00012352149 6.8278016f-5 5.0437397f-5 2.6254984f-5 -0.00013161986 -8.65385f-5 -1.8591576f-5 -6.214173f-5 -0.00010537923 4.962607f-6 -5.49107f-5 -4.8760405f-5 -0.00015361134 6.1078135f-5 9.557329f-5 1.5343881f-5 0.00010248141 -0.00017058522 6.7707595f-5 1.9567173f-5 4.41045f-5 3.873694f-6; 4.456825f-5 -8.593534f-5 1.3563361f-5 -1.4977154f-5 -0.000118349395 -7.0354654f-5 0.00011129979 3.675746f-5 -5.7234898f-5 -2.5970572f-5 -0.00013805961 -1.3650987f-5 7.768839f-5 -6.197724f-5 8.163813f-5 -0.00013575253 -0.00017670853 -4.689354f-5 3.6659352f-5 -2.8754119f-5 9.339444f-5 -5.754222f-5 0.00011921355 -9.5067655f-5 -7.7590914f-5 -2.7727103f-5 0.00010042428 0.000106467196 2.7230748f-5 1.9848785f-6 -1.8811581f-5 1.8459643f-6; 0.000112110865 0.000117499076 0.00012376175 -2.5419118f-5 0.00010043444 0.00011562055 -5.180135f-5 -7.1301176f-5 0.000104095765 -1.0970832f-5 1.5820186f-5 -2.2043845f-5 6.929945f-6 -0.00017632556 4.2224715f-6 -4.1251524f-6 -4.188984f-5 -4.814408f-5 -4.2364238f-5 7.315618f-5 -4.35286f-5 -9.974062f-5 4.3133487f-6 1.4899573f-5 2.0001083f-7 0.000110640314 -3.7226127f-5 -5.343411f-5 -9.096399f-5 5.735113f-5 -0.00029693887 2.2487386f-5; -6.0951646f-5 -6.2163635f-5 -6.6612592f-6 0.00025717207 -0.00010853353 -4.8636768f-5 -2.6716029f-5 -8.52012f-5 7.72864f-5 7.78619f-5 -3.4816858f-5 8.1373066f-5 -1.0653466f-5 -0.00015026059 0.00014703808 -0.00017617267 1.4598656f-5 8.776296f-5 8.096029f-5 -1.0434282f-5 -9.701533f-5 -3.0909647f-5 -0.00010791224 -0.00013512686 -0.0001607058 -0.00010217082 8.0006976f-5 9.627446f-5 -4.2755633f-5 9.944577f-5 8.8675304f-5 -8.470674f-6; 1.1480959f-6 0.00012900386 9.439301f-5 -6.730062f-5 -6.6800574f-5 -2.6448091f-5 -5.045493f-5 7.922435f-5 2.9068378f-5 0.0002024615 -6.895252f-5 8.849841f-5 0.00012184076 0.00013107008 9.6888194f-5 0.00021595115 -2.7034985f-5 -4.81353f-5 6.40333f-5 7.3701754f-5 1.9951573f-5 -1.6896756f-6 0.00015177505 3.2819655f-5 1.607885f-5 0.00012162412 -0.0002639677 -0.00014477469 7.665515f-5 0.00011534966 -0.00012275444 0.000109429544; -7.613715f-5 -8.9936344f-5 -5.115276f-5 0.00022576917 -0.00021125643 -0.00015476445 0.00011861884 -2.9608605f-5 -5.9437316f-5 0.00016796602 -6.1023624f-5 5.879932f-5 8.122807f-5 -0.000190411 -3.7357895f-5 -2.1706457f-5 -7.761963f-6 -2.2715532f-5 -5.859893f-5 -2.0927428f-6 -0.00023524837 -0.00012565136 -0.00012124697 -7.0393864f-5 -0.00012633836 6.881311f-5 -0.00010978947 4.5379416f-5 -0.0001055753 -0.00015732738 -6.867598f-5 -7.306727f-5; -6.0420847f-5 6.2554725f-5 -3.2379794f-5 -0.0001870064 3.506195f-5 2.2347816f-5 3.165634f-7 0.00010462334 9.188702f-5 -7.910104f-5 -4.7321722f-5 2.6307736f-5 4.5436453f-5 -2.003891f-5 -0.00010882917 0.00015269105 0.00012217667 -0.00021789143 -6.79824f-5 -0.0001748753 7.611598f-5 -3.2658132f-5 -3.6290596f-5 -8.36464f-5 -0.00014294157 6.7636693f-6 2.3178103f-5 -6.8203653f-6 -9.738625f-6 1.6370192f-5 6.027649f-5 3.4994464f-5; -6.5372835f-5 -0.00021143866 0.00013407963 -0.000102801845 6.506024f-5 -6.677432f-5 -6.207826f-5 0.0001897968 2.8752793f-5 -3.868294f-5 -4.3996457f-5 -7.936814f-5 -0.000108226486 -0.00018489613 -4.6449004f-6 -7.056226f-5 -9.979316f-5 -3.282872f-5 -8.182311f-5 -8.654446f-6 8.440255f-5 2.3826993f-5 9.28712f-8 -6.539658f-5 -6.0274873f-5 3.071287f-5 -5.5163655f-6 -0.000106208616 0.00011862753 0.00012569071 4.5234425f-5 -9.699454f-5; -0.00019578717 -2.0555148f-5 0.0002462006 -3.0301911f-5 -0.00012749841 -3.0802843f-5 -3.873829f-6 6.6815526f-5 -6.6438035f-5 0.00013113435 0.00017276437 -0.00017983632 -8.972654f-5 4.6234403f-5 0.00011617741 2.9700406f-5 9.177473f-5 -0.000107669286 5.470933f-5 -0.000229389 4.1176303f-5 -0.00016588072 -0.00012907923 -0.00011329431 -5.117379f-6 3.3666416f-5 7.8359815f-5 1.2018457f-5 -9.813955f-6 2.228587f-5 -9.0990405f-5 -0.00016613517; 7.070744f-5 5.1418814f-5 8.424766f-5 3.580917f-5 -0.00016345692 -4.822437f-5 -0.00012556551 -0.00011924081 -1.1361886f-5 7.6229495f-5 -0.00015517599 -0.00017959836 -8.734728f-5 -0.0001742578 -0.00019348123 -6.908925f-5 2.537332f-6 -3.4492063f-5 -5.8703918f-5 2.7841726f-5 -7.149467f-5 1.2363242f-5 -4.8185604f-5 -3.2876425f-5 -0.000110780755 9.426744f-5 2.8612914f-5 -0.00012838747 5.0348233f-5 3.0818148f-5 -2.2738268f-5 4.1314066f-5; 0.00012267186 -1.2322442f-5 -7.2419156f-5 8.550783f-5 0.00014818064 1.4074466f-5 0.00020223019 0.00012331222 5.4956636f-5 -0.0001735169 -1.751838f-5 -0.000104972 0.0001762155 -0.00013343449 4.0078245f-5 -0.00015787834 7.896184f-5 -1.9796014f-5 -9.137229f-5 -6.615415f-5 2.3970706f-5 -0.00010641341 -8.0583035f-5 0.00014156089 -5.046985f-5 -0.0002671489 1.4263017f-5 -7.139694f-5 0.00015641996 0.00014928225 0.00013841124 -5.7661913f-5; 4.8247628f-5 1.3759182f-5 -2.2725742f-5 4.055129f-5 5.8271515f-5 -2.9694756f-6 -7.7632605f-5 -1.6396783f-5 -4.908299f-5 -3.0965486f-5 5.668923f-5 -0.00010431797 0.00015466663 -9.082178f-5 7.091444f-5 5.3538645f-7 -0.00016613492 -5.28076f-5 -0.00018199494 -0.00012280612 0.00010939948 -0.000105928375 -3.388055f-5 0.00018045724 1.3984703f-5 -8.683474f-5 -0.00012895672 -0.0002604066 0.00015860629 0.00023005488 0.00015467558 -7.854656f-5; 2.4461831f-5 9.941384f-5 -0.00011864454 -0.00017220894 -9.727275f-6 -7.207679f-5 -5.986693f-5 -6.189083f-5 0.0001423048 -0.00012771084 8.159317f-5 5.4713237f-5 1.919081f-5 8.436428f-6 3.6575436f-6 -8.1775084f-5 -1.0996701f-5 0.00021997868 -5.6366258f-5 -4.8621245f-5 -0.00010251869 -0.00022577545 5.5010598f-5 -7.594585f-5 -0.0001384422 -5.9150887f-5 8.526181f-5 -6.905327f-5 -9.651284f-5 3.659997f-5 0.00012632877 -9.906565f-5; 0.0001278828 1.0432314f-5 0.00015476812 -3.833598f-5 -0.00020034771 -8.449267f-5 0.00015090861 2.9926658f-5 -0.00020624402 -0.00011561874 3.51195f-5 -8.266136f-5 -4.4845518f-5 0.00013638294 0.00016342079 -4.5897712f-5 2.1883781f-5 -7.763603f-5 -2.764852f-5 3.8360154f-6 -0.00014374037 0.0001842248 2.7305645f-5 -3.6456888f-5 -0.00018211984 -2.944591f-5 -0.0001609795 5.8336216f-5 1.8064946f-5 -5.9434013f-5 -3.3725606f-5 -0.00010939308; 5.2311756f-5 -3.386815f-6 0.00010017216 -0.00013131578 3.620051f-5 0.00016686981 0.00016237675 8.2705014f-7 1.284835f-5 6.430257f-5 4.030021f-6 -0.00010955819 -7.294039f-5 6.629082f-5 4.701096f-5 -7.471346f-5 -0.00011986741 -2.4049454f-5 5.9348222f-5 -2.9514487f-5 -8.7547454f-7 -9.147137f-5 0.00031597717 -2.512435f-5 -0.00011006583 0.000109722045 -8.1241305f-6 -1.729005f-6 0.00015290322 9.6917924f-5 0.00019944651 6.66359f-5; -0.00013882952 -0.00025821044 -1.9850826f-5 -6.040362f-5 -0.0003237391 -4.385816f-5 -2.0584524f-5 -3.0959796f-5 -4.945586f-5 3.927366f-5 -7.631774f-6 -0.00014221828 -4.0695453f-5 -5.2426876f-5 -0.00011419467 -4.485675f-5 4.868069f-5 -5.0251965f-6 4.6448724f-5 7.717177f-5 4.852108f-5 9.9532444f-5 6.28176f-5 -0.00012702614 0.00011548524 0.00022411835 3.8578146f-5 0.00015628914 -4.441701f-5 0.0001474549 -6.0393275f-5 4.752123f-5; 8.331281f-6 1.17181935f-5 0.00013947106 -6.736992f-5 -8.141548f-5 -3.3224533f-5 -0.00010714082 7.87139f-5 0.00012236851 0.00012644302 -4.5649766f-5 5.526428f-5 -5.816972f-5 -0.0001496657 4.0765244f-6 -0.00011053556 2.1655169f-5 5.9753856f-5 -4.9901486f-5 -6.0404378f-5 5.027392f-5 -0.000106368156 -4.5008615f-5 0.00023116278 -3.997786f-5 8.538674f-5 -3.9804767f-5 6.0638824f-5 5.4722836f-6 3.2435155f-6 -3.2858337f-5 -3.4549263f-5; 7.583361f-6 -2.7712496f-5 -0.00022085212 0.000114091345 -8.844946f-5 -7.714698f-6 0.00012741494 -3.7102654f-5 0.00012446273 -1.08077775f-5 -0.00023240352 -0.00019917733 -4.117939f-5 -3.0794097f-5 -9.4374904f-5 5.537003f-5 0.0001037676 6.670751f-5 -6.7386114f-5 2.7428567f-5 3.652789f-6 5.6935754f-5 -0.000117587246 0.00014019336 7.4393334f-5 -2.5583386f-5 6.636386f-5 0.00023954043 -8.321069f-5 -4.7523947f-5 0.00014897442 -1.2875828f-5], bias = Float32[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]), layer_4 = (weight = Float32[-2.0160858f-5 2.9844932f-5 0.00010903087 -9.864195f-5 -7.571351f-5 -0.00011594846 1.7631359f-5 1.6487102f-5 -8.704501f-5 -0.00026473444 -3.3392145f-5 -5.8356996f-5 1.4616536f-5 1.1234873f-5 0.00010846469 -1.1936837f-5 2.6906633f-5 1.641626f-5 -2.9239829f-5 -1.6787579f-5 -0.00013206468 5.0013955f-6 -5.6800254f-5 4.1877825f-5 3.153915f-6 2.1058479f-5 6.3756444f-5 6.523368f-5 -1.15121065f-5 0.00011614308 3.9874463f-5 -3.925518f-6; -0.00024709728 0.000110075685 -0.00015892708 -3.1789343f-5 4.944399f-5 -4.2749918f-5 -0.00014134351 -3.2670836f-5 3.8380786f-5 2.3013165f-5 -2.6448739f-5 2.4963385f-5 -7.282425f-5 0.000122059915 0.00013854193 -0.00010570939 5.7647183f-5 0.00022418505 -0.00011646157 -6.5022454f-5 2.4264833f-5 4.195434f-6 0.0001048533 0.00011229601 -5.9097532f-5 -1.0951383f-5 -8.808579f-5 4.4243243f-5 2.4171552f-5 -7.5123266f-5 -7.994305f-5 -9.005266f-5], bias = Float32[0.0, 0.0])), (layer_1 = NamedTuple(), layer_2 = NamedTuple(), layer_3 = NamedTuple(), layer_4 = NamedTuple()))
 ```
 
 Similar to most deep learning frameworks, Lux defaults to using `Float32`. However, in this case we need Float64
@@ -5728,7 +5728,7 @@ loss(params)
 ```
 
 ```
-0.0007364759486704448
+0.0006981786587852765
 ```
 
 Now let us define a callback function to store the loss over time
@@ -5761,7 +5761,7 @@ res = Optimization.solve(
 
 ```
 retcode: Success
-u: ComponentVector{Float64}(layer_1 = Float64[], layer_2 = (weight = [0.00011643629841262914; 3.682158057925381e-5; 0.00022136187180859395; -1.9323877495488548e-5; -8.653194527132212e-5; 3.800558988584708e-5; 0.00016159348888308584; 0.00027598871383815033; -1.2675534890145324e-5; 0.0001062303344950015; 0.00014676750288325008; 0.00010462312639003711; 9.253931807505694e-7; 8.218773291442867e-5; -7.633997302030696e-5; -0.000137644878122744; 4.189506580580989e-5; -0.00023732490080858622; 3.8094165120085174e-6; 5.3015079174612545e-5; -8.826929843037399e-5; -2.2965010430189208e-5; 0.00011255417484792751; -8.118100254238164e-7; 0.00012166748638260166; -3.085423713854173e-6; 5.586493898589078e-7; -0.00016246015729831442; -0.00014273557462722146; 7.597446528957464e-5; 1.1655765774749323e-5; 0.00018411286873736127;;], bias = [1.1829178327563086e-16, 2.0537623048070256e-17, 1.9705819791481755e-16, 8.297801720112553e-18, -1.0735106041875674e-16, 2.642587473629774e-17, 1.5779622499026404e-16, 1.0036282789021715e-17, -5.2399913782996334e-18, 2.1480773117790866e-16, 2.2262336452456496e-16, -1.2938390377320965e-16, 1.0448647629933096e-19, 3.923426343774921e-17, -6.803307344867393e-17, -2.38536812739105e-16, 7.279315861674648e-17, -1.7784580536614544e-16, 4.882925735506938e-18, 4.906659989580207e-17, -1.7971373767745972e-16, -1.0450715238248305e-17, -2.798199656759908e-17, -1.4228050134165423e-18, 5.3626200490147934e-17, -1.6038344385020081e-18, 1.6320461133278024e-19, -1.9390738561344852e-16, -8.162833342790878e-17, 5.0439807542076365e-17, 3.019288907944334e-17, 7.37966145785509e-17]), layer_3 = (weight = [0.00010295664991394691 0.00010099980294147926 -6.400791450026524e-5 9.695967468109352e-5 -4.45522803263481e-5 -6.436656100300649e-5 9.84100349680868e-5 0.00024741570972517437 -0.00014219166611179347 -0.0001362044843178898 4.1984228457766065e-6 1.927108472704837e-5 -6.956789571882804e-5 0.00011575937400015749 -0.00012361761606621854 3.358636034795418e-5 -1.7718354117812038e-6 -4.706592359319054e-5 1.0068472636012637e-5 -3.1799956798529964e-5 -5.593136507991904e-5 5.605115108883763e-6 -2.6378298810189266e-5 -0.00013133136805005017 1.3729963700141716e-5 -6.271137523322945e-5 -9.652090217310582e-5 9.050430684260785e-5 -9.191105915556259e-5 -0.0001068004405740399 1.4974554448818191e-5 -1.2655011471671662e-5; 6.185926770499143e-5 -8.362570212980547e-5 -2.7601192298474584e-5 -3.624890802953206e-5 -5.288725503546941e-5 0.00013064280949706396 -9.190731350159128e-5 -3.8901256514377264e-5 2.0519670464152063e-6 8.521023130683398e-5 -4.9594251206739214e-5 -7.066659588659012e-5 9.981948835715838e-5 6.855122785723014e-5 -6.527322682145804e-5 -0.0002003326152340866 0.00016110759327361544 5.637481820244437e-5 -5.3481293318921694e-5 -2.574321285706297e-5 -7.837182772405271e-5 -2.8311887829343793e-5 1.4450252026423618e-5 2.3960667137859395e-5 5.580560184839345e-5 0.0001536743876634743 8.671724947575667e-5 0.00013693502853797892 -9.86989033414408e-5 -4.0401995531877585e-5 -1.0183451079368118e-5 -7.311460637779774e-5; 6.449297708945411e-5 0.00011011391527040568 1.1502757133464571e-5 3.9058313832131524e-5 0.00017064815094249673 -1.709543337733317e-5 5.8040788844427395e-5 3.523872892140897e-6 1.9228602668365885e-5 -7.023683954708109e-5 -4.114473429604746e-5 -4.094240810468608e-5 8.923241895877527e-5 -1.1400871499291044e-5 6.274487006498927e-5 -0.00018794130826814295 -2.500091775823231e-5 -8.972229787129998e-5 3.5082290396306225e-5 -2.372142744432913e-6 0.00011406138421057127 -1.461292666158195e-5 -0.00011176958449164299 4.872977135142081e-5 2.514136867598909e-6 0.00010551580837250456 5.065218121649467e-5 2.9295443000354983e-5 -6.254535747082222e-6 7.703295179430825e-5 -5.724507153013026e-5 -6.726340305273384e-5; 0.00017845188849827811 6.54758099721519e-5 1.6617479925546668e-5 -0.00016461172490159516 8.562870644021853e-5 -3.653618259483406e-5 -6.271332094688335e-5 -6.0047642907651916e-5 -0.00012668703275045865 -0.00014665541820937404 -7.420711972829449e-7 0.00010143590625597504 8.084984292730189e-5 -6.113482377037388e-5 2.553236336319655e-5 -0.00010860678012027386 2.4295110528629403e-6 -5.7884602572376954e-5 1.185324563487634e-5 -0.0001909551589029124 -6.62995089220368e-6 -0.00010356038692186112 1.6712600904086568e-6 -4.3727608133456986e-5 2.419182819944042e-5 -4.789112572104236e-5 -8.562250295432785e-5 -1.8526606797919324e-5 2.3376728133779363e-5 4.076968835073466e-5 0.00012845635356137044 -3.964328570649729e-5; -5.798877316614024e-5 -0.00013289512060203618 7.661397614661282e-5 -6.001308645557616e-5 -5.021017421007343e-5 3.874880132877237e-5 0.00020050543900957594 0.00014332223292817272 -0.00020561597409744743 -4.018072866223105e-5 -4.380549741325326e-6 -0.00015654237574984592 0.00014637870265084328 -4.0543933552393506e-5 -2.896498370012878e-5 1.4631543875441267e-5 0.0001778564452464409 -0.00011768655019900342 8.449898234481929e-5 0.00015596257946832973 -0.00010215159488928698 0.00011258823144395829 -2.566565160726517e-5 -3.544767821643496e-5 0.00010246785461582801 -6.117684313415544e-5 -2.2871662055542633e-5 -8.943436456902162e-6 7.220000190806056e-5 -1.4182276005734717e-5 0.00011590118594846692 -9.255764814646849e-5; 2.5626479510782265e-5 -7.509990773444171e-5 6.206213312038996e-6 -0.00011622431138577919 -0.00015503379636259295 -9.98615432665562e-6 0.0001834362139571205 -2.0593011685353207e-5 1.2063852592361745e-5 0.00016904151762088987 -9.689810939504932e-6 -4.6839433524773775e-5 2.7905476782577796e-5 5.888228242936112e-5 0.00012008221001549248 7.284445218926061e-5 -1.589114417486023e-5 7.682188352286197e-5 -2.1181727605765012e-5 -2.2776733930117523e-5 -2.340895825812155e-5 5.358700782478732e-5 -9.008455707708793e-6 9.304002942469878e-5 -0.00019924232565147784 -0.00011156123746234017 0.000214471069012759 -0.00014250254553093328 8.000864381853171e-5 0.00018096752519438606 2.3552498715687217e-5 3.574980128274098e-5; 2.1489101359538683e-5 -6.48674223927889e-5 -0.00010332800337413072 -0.00014900893910155767 -3.314112217115456e-5 0.000131566509312753 8.598599211171206e-6 5.275121913224407e-5 8.14802462197938e-6 -6.238816166362984e-5 -0.00014171674154998178 0.00013567364186680618 -0.00013500609673858753 -4.2081629712565105e-5 0.0001600101484794057 -5.222387412441851e-6 0.00013909328373781253 8.742512983668765e-5 -0.00021808004129045776 6.553387612736617e-5 -5.3098560951847925e-5 8.98863692352409e-6 3.3962340378547535e-6 -0.00011261507932861469 0.00010202045342818534 3.6944637772895914e-5 9.277132886861318e-5 7.231826276917515e-5 0.0001672852911863347 -0.000154226324579876 3.316521798776327e-5 2.9440871744798034e-5; 7.77176784524296e-5 1.1968620740013339e-6 0.00018124045449638776 -5.9904884308517425e-5 0.00017059169762633755 -0.00011242860351357328 2.1227418203303864e-5 8.624781470841499e-5 0.00027667206008319157 0.00014785514498926543 0.00011096327502145755 -7.974757759966098e-5 6.836965907696978e-5 -5.711312847578853e-5 -0.0001844659972064561 -5.583771858964609e-5 9.574221179919585e-5 -3.179815472123498e-5 1.9350655877323534e-5 1.4390912058122795e-5 -0.0002128475142470002 -0.00010073498275031947 -8.124122255848938e-5 -0.0001133103549889627 -5.052465063072121e-5 1.3705926123483751e-5 6.0687542956847414e-5 -3.5345144040369274e-5 -2.4819014340938048e-5 0.00010878369643451735 -3.967691087181342e-5 0.00011145822931411452; -0.0001146392292309641 3.542671989750951e-5 -0.00015867924734149597 4.2726884622675206e-5 -2.721648301187462e-5 4.905971078303547e-5 -4.573111744977461e-6 -2.2658637625422902e-5 -1.810283496408834e-5 -6.6582511305783785e-6 1.8909544870691844e-5 0.00014858177970497886 6.256368438814654e-5 -5.3880086433058945e-5 -5.598394776709422e-5 7.990247328168822e-5 -8.678027874223048e-5 2.8005950717926853e-5 -7.583018808757068e-5 6.407855331533508e-5 -0.0001387779898675254 2.8956801962772254e-5 -9.466569239404949e-5 -9.865050154869557e-5 7.90990183861839e-5 0.00012229137288275062 -1.976125853500442e-5 -0.00018328783111312228 0.000145041531560562 0.00022647995725608383 -1.9052853111793465e-5 -3.7356830524659665e-5; 6.524413176585035e-5 0.00010973827877088975 7.75101957703162e-5 -0.0001623863995330624 8.814651075291264e-5 1.4728120295983292e-5 0.0002082200458250426 6.487354541661465e-5 -0.00015856708931030977 0.00023936095523886691 -5.701984125999683e-5 -0.00010228686594864005 3.6685357845926026e-5 -0.00018523948390728893 -6.2120238720019585e-6 -1.1787810289483733e-5 3.947970391956637e-5 0.00016783290768275716 -6.488588267464441e-5 0.00018415154183523154 0.00013411063402664624 -2.5789914142734684e-5 -0.00012306003780331314 0.00012473490780459464 -1.946390191669677e-5 9.959234877962369e-5 -8.295849554931994e-5 -0.00010999657977601093 6.045083883412413e-6 0.00010035866718745804 0.00018345911805292322 -3.872408323626556e-6; -0.00010817593279071294 -5.427537321239655e-5 -8.212872485171876e-5 5.812787280873391e-5 7.016019072663787e-6 0.0001973778781130823 -8.148090996555371e-5 0.00023100752882886571 -0.0001459782433347871 -0.000178419802931699 -0.00017523497076481242 0.00014140936405155507 0.00012189512931498672 0.00011724044457068114 -9.212446452594038e-5 -3.496367024945727e-6 -5.698655145252975e-5 2.8066131609306727e-5 -6.297245995384668e-5 0.00010756678971219019 -0.00016552529264018427 0.00022161131351011812 5.389206858225901e-5 2.4895789930151972e-6 -3.59439945431433e-5 9.062793110487025e-5 -0.00019034696010650158 -0.00020994999062977102 -5.017531288913183e-5 1.2968833298972535e-6 -0.0001307033307502141 -1.935163890166702e-6; 7.514584232606443e-5 3.672757467623322e-5 1.9905544301336292e-5 0.00018512687476370942 7.471403606953552e-5 -6.038937916261622e-5 -0.00010365105170737509 -0.00011862233858070848 -1.743617084091075e-5 -0.0001193822905256368 -0.00015516551555580944 7.420559215145635e-5 -5.674940970011635e-6 7.840408890527194e-5 3.878267618031692e-5 6.788346164878905e-5 4.963683333383395e-5 -2.1636834011106193e-5 3.501643679240241e-5 -6.482169609032118e-5 -4.069738550558236e-5 -5.42493913448836e-5 2.4086857062256722e-5 2.4678936294121553e-5 5.416066725641005e-5 -5.583965738284879e-5 0.00010128677915102327 9.714527497319948e-5 -0.00017925966002027988 -4.4641409279820655e-5 2.172408736923713e-6 5.83758348196136e-6; 0.0001868319200411716 0.0001206640195277668 -5.9432073135189856e-5 -0.00027459334839934963 -3.1774961348694875e-5 -0.00027665608238296944 5.863307571871573e-5 -2.1356453976244116e-5 0.00010714256907246501 0.00022671790477486994 -8.581376048369448e-5 0.0001272054182891052 -2.353557781592068e-5 -0.00011768056308485378 9.917097170271073e-5 -2.5382137641836112e-5 -4.892447711884381e-5 -6.333284134140412e-5 -0.00012049408858277424 2.8987184600711404e-5 4.439099623139315e-5 -6.360117138231638e-5 -0.00013579214598850465 -0.0001423677490265906 -0.00011033227517601926 -0.00016652494693974554 0.0001396383709333971 -4.864345078204748e-6 -7.229310517694149e-6 9.192205882297917e-5 -0.00014046978637910026 -8.765352274621579e-5; 8.075788483788687e-6 -0.0001941285869712507 -5.553437464060643e-5 2.6946960055150913e-6 3.099340430149159e-6 -5.981205927911526e-5 -7.972163317264407e-5 4.2789595082817116e-5 2.100580544846288e-5 -6.835987611213095e-5 3.5254682499166894e-5 -4.3581395092237276e-5 -2.0887907029295647e-5 -4.4476352430697004e-5 -0.000223605033769322 9.522448036827963e-6 0.0002812857140646751 8.981869851945237e-6 -0.00010604077275148905 8.706963975908851e-5 -0.00016322321485733003 5.759777317633542e-5 -1.3984930463825377e-5 -1.650323307204836e-5 0.00010983586375130939 0.00011074230982684218 0.00014560048415786277 1.7499277729607422e-5 0.00011404461960536087 -0.0001220723776519796 2.063621226751401e-5 0.0001468931453395133; -0.00016087321554352296 4.017790062078625e-5 5.351978771812167e-5 0.00011938281105556885 -9.756529751741036e-5 1.4756717893927133e-5 9.659165963255909e-5 -9.427810940224085e-7 5.6673886240044504e-5 0.00015393306686035612 8.58717438970242e-5 0.00012625744867562577 1.2809607062247961e-5 1.5316593737391006e-5 3.816875770297207e-5 -2.876764582453583e-5 7.029547569998887e-5 -0.00023041382072535536 -6.169901743107112e-5 5.300910644308068e-5 -3.224587552523885e-5 -4.3556278876910125e-5 0.00011611864184686221 -7.771242516156854e-5 -0.0001481954414774176 4.9438026428272856e-5 -4.0310998054171066e-5 5.028962633530714e-5 6.201060469919048e-5 -8.621687728720409e-5 -9.950013471808854e-5 -3.568305245409688e-5; 7.520812977822678e-5 -1.3960971778528473e-5 3.3576431810089975e-5 9.688793688333684e-5 0.000151701705539791 5.978048824959205e-6 -0.00021819434442073724 -0.00013608114641610626 -8.498182688121579e-5 0.0002398422777282107 0.00010652166128642528 3.5701888186348344e-5 0.00014615728031863577 -3.1790689768499144e-6 7.020839002002707e-5 5.0331754386609655e-5 1.324341355435088e-5 3.342598683449683e-5 7.407049014951217e-5 3.778263744102727e-5 9.448140662648333e-5 2.7743847744619365e-5 -6.239975737621769e-5 -2.975745592770517e-5 -0.00018671801336090908 4.816080144742619e-5 -0.000137898578764674 0.00018900066533609586 8.779109084065749e-5 -0.0001051029128625921 -6.206242942930093e-5 -0.00010481347526871786; 8.4389709517686e-6 -2.2814548458040155e-5 -0.00011155091425466194 2.0225398373372827e-5 -2.0922106443386227e-5 -0.00010576081632468603 -0.00013240936033258424 0.00012763870535124867 4.35970220568607e-5 2.5332431221551855e-5 8.41280660819254e-6 3.803942007646751e-5 -5.273055950244726e-5 -5.279590123979759e-5 -0.00011637542712566879 4.225393485097524e-5 -1.8278447270926252e-5 1.2609749945077273e-5 5.584124100323578e-7 4.604356661663357e-6 3.15971853414611e-5 3.471286680717213e-5 0.00016715924783778329 -9.533754138108181e-5 -2.2216050012562616e-5 -6.183286978928209e-5 -4.883197772148834e-5 -0.00014140446665993157 -2.363452887226436e-5 1.6926814513941285e-6 3.7049944410614515e-5 -7.6179961179639565e-6; 3.7670692013267e-5 2.1336825643580408e-5 -4.352063665479445e-6 5.9060453982006034e-5 -1.6178461105527553e-5 -0.00011108395129217946 0.0001442732317582028 9.95057779573523e-5 6.228586416450057e-5 -8.934527441401428e-5 8.83085157465411e-5 -2.33846204583156e-5 -3.37250740363315e-6 -0.0001309227082902452 -9.650267757483621e-5 3.0926614176641906e-5 -6.41793959448968e-5 -0.00013561930982633407 -0.00018065622144154556 4.956765396395617e-5 -1.4555490547581087e-5 2.5299197563931668e-5 -2.1861275040505605e-5 4.7232584524813044e-5 -1.2606236946379295e-5 0.00012935161057152502 -9.166582467974448e-5 8.142975993447708e-5 -6.666463023524466e-5 7.302979783612435e-5 -0.00024592492273318864 -0.0001701260772324787; 1.0101880324579643e-5 0.00011539569539243046 -0.0001936765939906005 -5.312579215320055e-6 -0.00017951692563722115 7.433319641927206e-6 -3.1122016590162096e-5 0.00019458372560556054 0.00012875671098233802 6.541785558445235e-5 5.154802500262883e-5 -0.0001370907440293409 6.589349948560488e-5 -1.2925785195624788e-5 -3.703846152413872e-5 -0.00038482419324347767 -8.187091145439374e-5 5.272642454591254e-5 1.7812972945898257e-5 4.879923369960574e-5 -0.0001406323746057061 -9.011974463712745e-5 0.00011720633199663713 0.00011620535667977896 5.043465433052655e-5 -4.868176002424266e-6 0.00012121841144041759 3.7059024979752627e-5 6.013157042550861e-5 -1.326917037724753e-5 -4.485991912365919e-7 -6.972506082158303e-5; 0.00016635815465969745 -1.8136094310006108e-5 -0.0001249561560838042 -5.4963950402719105e-5 0.00012375193675661725 3.327926371976541e-5 -0.00011943288934736801 -6.936267153461868e-7 -5.589171139608228e-5 6.506837728347586e-5 8.659484358185047e-5 1.9749833357944003e-5 0.00014895927363223324 0.00016698457095453838 8.93712915394847e-6 0.00010592203527602649 8.098588789262594e-5 -9.171346262186659e-5 -0.0001006263215242986 -8.056491038855838e-6 0.00012561840905955302 -6.647373318291389e-5 2.1227536693637603e-5 -0.0001052015891912494 -8.377147839956306e-5 -0.00010179791077124962 2.7417473960401652e-5 0.00011072316321923087 7.920607224486006e-5 -0.00011307409529426671 8.81960490221056e-5 0.00016359784551575805; -3.9567367514689616e-5 0.00032329536346616637 0.00015448795178335368 -9.387327432967261e-5 -9.04061859390683e-5 1.4846940154819245e-5 -6.812427151352824e-5 6.202720700192227e-5 -7.41602386032184e-5 0.00015446704068118695 0.00011086073512807033 -3.599007383207787e-5 9.350691410610931e-5 -7.599579536225463e-5 0.00010981644603554383 -7.303250882877381e-5 -0.00016611642482792556 -3.3613002077873234e-6 5.5349551382386236e-5 -3.382462515481392e-5 -7.763923773644352e-5 3.097468231425051e-6 -0.00015032295474419447 8.851473406786578e-5 -1.578404832151883e-5 -8.958518143379582e-5 -8.868837600210203e-5 0.00015804307198514491 -1.0145020189966886e-5 -4.3665561554811484e-5 0.00016113162868088582 5.9803434248444925e-5; -2.4771193697320672e-5 2.061547138137998e-5 -0.0001745380955109011 -0.00014196757684120607 -5.630081568969446e-5 0.00013397077281834813 -2.5654855111590313e-5 0.00013119631921278788 2.9270439423190746e-5 8.674082937059716e-5 -8.072341870874856e-5 -7.851132386721864e-5 0.0001659233444078485 9.786886812062937e-5 9.08224378653434e-5 5.315787211284404e-5 -9.328361329979958e-5 -9.532616369303034e-7 -6.722805983744244e-5 0.0001288113476183843 7.874339185861872e-6 -3.421583960888614e-5 0.00018951390529392016 -0.00017661121956197225 6.008223726521803e-5 -0.00016147680571892913 8.086519528288712e-5 6.818341216412386e-5 -8.166081446778796e-6 -1.3302571918840503e-5 0.00014049762694040625 -7.818872749436292e-6; 6.446265206281232e-5 -6.812856418006562e-5 -0.00014627003520185182 2.103932774874361e-5 -0.00020791482938844864 -0.00014515684279073465 -1.1781575721809342e-5 0.00010387909742382652 -5.2616098855347674e-5 4.092921835794142e-5 0.0001443832838961906 5.606596414539976e-5 2.9938753417206184e-6 9.061001492534315e-6 -0.00013750415064320198 3.269695616867784e-5 -0.0001420826924910811 5.324446783594147e-5 7.860826326608155e-5 2.8160502097612265e-5 -0.00017635510130245379 7.562410201020061e-5 7.245176993850712e-5 9.067548990090806e-5 3.5776265122277753e-5 0.0001382400619152883 -5.2406711347126785e-5 -0.00012863944402820624 6.868625405644919e-6 -8.295064162360488e-6 -1.5095282378448488e-5 -0.00010586560210835954; -6.792420795246332e-5 -0.00012976320472373913 -5.582754279307632e-5 -2.9958483038381368e-5 3.5090859045141246e-5 1.673030924282229e-5 -7.772219261085086e-6 1.523017930499442e-6 -8.993451815625188e-5 1.947083363836769e-6 1.5272654808363553e-5 4.226416017335138e-5 0.00022296557249207487 -1.3297557015429207e-7 0.00012100731651005723 -0.00016856916086107916 -5.637176259481574e-5 -7.940416294435406e-5 1.0704577606492439e-5 -3.5110963336798096e-5 -0.0002322022123291554 -6.110918952911575e-5 -5.127164008737051e-5 -8.694262255742705e-5 -0.00012076953176002137 -6.820793391964887e-5 7.796510139884868e-5 -0.00012321431900198804 -3.698674886545375e-5 -0.00022593132639596791 -9.090437420239212e-5 0.00014907585095791113; -0.0001212534990901359 7.767107294226399e-5 4.7936657067023915e-5 -2.808459081110763e-5 -9.705872942628899e-6 5.251743263384669e-5 -6.058106751708588e-5 -4.9266393178250177e-5 0.00014387765244633184 -7.540635866292475e-5 -0.00012956479636898013 -0.00014699593899252577 -0.00012099054598197127 2.984147780977069e-5 0.00011234279358346746 -5.19195311045458e-5 -2.8744631125066462e-5 -5.4545133169167026e-5 6.631560230912856e-5 -8.459189135295808e-5 5.367597972677991e-5 -2.892006849054899e-6 0.0001249495688551798 -9.856893317023078e-5 -9.831706134548753e-5 -8.516442190570543e-5 4.895521837339019e-5 1.8408007092040324e-5 -1.9969793500535554e-5 -6.020710876158647e-5 -2.4227749379992085e-5 -6.976556338314487e-5; 9.830246664496362e-5 3.0901891582487887e-5 -0.00013528019816008493 -8.444692401533737e-5 0.00012772715955653368 -2.426097933928888e-5 0.00010404625310473465 0.0001940282028182112 -6.256652603477e-5 0.00015522499699291385 0.00028413521896726487 4.4307385101277684e-5 -8.2173027189837e-5 -6.735379327873452e-5 -5.1317931943038437e-5 3.820411904161262e-5 8.955953045662509e-5 0.00010760277029033558 0.0001414296940449465 -5.033560854352211e-5 8.696627002355744e-5 2.4310568837991013e-5 9.077691306743734e-8 0.00015281685874944816 -4.609842188510996e-5 2.1310487786850717e-5 6.609378592857694e-6 -4.076837547911049e-5 -6.153441689531123e-5 -0.00011026148320960428 0.00010095789285989723 2.9842248400353573e-5; 0.00018683139046099209 2.906637041217402e-5 -0.0001538359008505837 7.588361608707645e-5 9.042207806980894e-5 -9.493828270439775e-5 -0.0001254274191111038 3.824958752862888e-5 -5.035215668119174e-5 -0.00015841960862833653 -2.7872634522817196e-5 7.520505300401156e-5 -1.6405343335072012e-5 -9.863136233850599e-5 2.510404032857483e-5 1.8883716843824035e-5 8.795437156134475e-5 -4.658520061149747e-5 5.8159743498827815e-5 0.00011143446158296532 0.00011571778872660061 1.3550277113090806e-5 0.00015710245338179413 -6.739454125142326e-5 0.00010993836462641203 -3.365106545476846e-5 4.2965357575149773e-5 0.00013633784532922385 -0.00014290073318496725 2.9493840197961352e-5 4.2960493597484583e-5 0.00016489373796994258; 1.2060108698674939e-5 7.540951059711901e-5 -0.00010861604664891979 -0.00018601467877812924 -8.506029394408622e-5 -2.249743761564797e-5 0.00010219758564420907 2.1351675738028483e-5 7.422893554251394e-5 7.654942032462214e-5 -1.2235302395820932e-5 -4.600224432184082e-6 -8.899318186519923e-5 6.09505639171697e-5 -0.0001422372790817172 3.620754955267158e-5 -1.787648057285875e-5 2.3634185478345618e-5 -0.00011830038988916458 4.8258146986363976e-5 4.594231881713574e-5 3.757637545862003e-5 -6.15862211394095e-5 -1.5125815710753878e-5 9.760699481051794e-5 -7.640314857196318e-5 -2.447537213226569e-5 5.052289221968402e-6 -6.089227330049845e-6 -4.834186825389049e-5 -5.010747031844469e-5 3.7721137911326104e-5; 6.293391627277448e-5 4.851743690976666e-9 0.00020140613626005177 -4.0115798834987076e-5 -0.00024279509241441493 -8.395676857307279e-5 -1.9378992216493063e-5 -0.00011937003298649914 0.0002156172892895566 -8.783465753058517e-5 4.3695913267028544e-5 8.859334887710378e-6 0.00019218503868924852 4.8220511165166465e-5 0.0001499085671852334 0.00018279719072178687 4.754575340794649e-5 -0.00016498179618487695 5.75709534345234e-5 0.00011364898521006271 -6.0166733206624265e-6 -1.8373911440531933e-5 -0.00015181272035679508 5.037850926183558e-5 -4.271822697465213e-5 -4.954161274926343e-5 0.00011169951605862403 4.957723125139659e-6 0.0002046750930488911 1.00069369036998e-6 1.5181821912309733e-5 -7.406204829441944e-5; -0.0001360403331765935 -9.483395131082266e-5 -5.498215266394792e-5 1.452322142159293e-5 -2.863283241294004e-5 -0.000145898033382939 -7.025744866203877e-6 -7.509537697310472e-5 9.514864201088857e-6 8.911963801268044e-6 3.0507628094545674e-5 5.77130884501574e-5 0.00019924014470762517 -0.0001530183291599219 -9.278157101488435e-5 0.00010840244051525344 -6.535623849612632e-5 -5.269419505035495e-5 0.0001087707713175466 0.00013435066632683476 -0.00011166798519679007 -2.2405171124949443e-5 -4.2941050354953586e-5 -1.038020507093578e-5 0.0001460852434555045 -0.00017035785292518382 9.276223847865066e-5 -6.511968256216144e-5 0.00021469635960403872 -5.156183412890647e-5 -5.569044894781947e-5 -7.154774373172982e-5; -5.290851306437581e-5 9.276274675120082e-5 -8.058798196211578e-6 -1.888005801685169e-5 4.528191737097861e-5 -1.8444506461141263e-5 0.00014705580422503313 3.3955616051892675e-5 -3.0700274985623614e-5 0.00012442553877679656 6.988482953363651e-5 -4.062103955458814e-5 -5.045513655442279e-5 -6.80355499081695e-6 2.344936972566186e-5 -2.615157720922006e-6 -4.8814175281781464e-5 -2.738304403704937e-5 7.476111084305216e-5 0.0001476567255643977 -0.00013935584986267453 6.440739405423848e-5 0.0001873216521538605 7.308463562129531e-5 8.551308444782976e-5 1.671298439522273e-5 -0.0002209897805392882 -0.00010421754388755757 -6.640164913062342e-5 -5.713248658377438e-5 -2.1684705027486253e-5 1.7186678339723247e-5; 3.254064802729314e-5 2.8162269592354987e-5 -6.927507109660127e-6 0.00010102743625007433 -5.1015197749287904e-5 2.7534409019933175e-5 -0.00013655445138156786 1.3466889244848705e-6 -0.00021778925212733612 -1.935126157934831e-5 -1.1409151846795014e-5 9.613140071575897e-5 5.633345143119619e-5 -0.00016456049990541506 -8.639676445330822e-5 -0.00015236017417793573 -5.488121598195232e-5 5.711303754782301e-5 -0.00013721296920143252 8.569208228560359e-5 -6.263520952992289e-6 -0.000129026338180342 -1.6698352845766174e-5 -7.543223102279194e-5 -0.00016146405607162087 2.0019208824446443e-5 -5.791869909321144e-5 3.649354431576365e-6 -4.2900678744094775e-5 -4.322560845924876e-5 -7.728659613225775e-5 0.00015680693548475146], bias = [-1.4827153423919499e-9, 5.104752444572763e-11, 1.4499344188102883e-9, -2.337035374112523e-9, 7.981938031171593e-10, 1.828267229473407e-9, 3.445304823732664e-10, 1.3561859388805491e-9, -3.6155936420984115e-10, 3.5884301898235876e-9, -1.840770812965335e-9, 1.4021252169319276e-11, -3.2482376188098836e-9, 4.487572859033526e-11, 3.0278186677814937e-10, 1.9619569287105775e-9, -1.7310522480440134e-9, -2.241090492404501e-9, -5.121553163617939e-10, 2.449654591434606e-9, 1.341811292930306e-9, 1.4465476045559309e-9, -1.4592839455282452e-9, -4.635195392442057e-9, -2.7068000637927965e-9, 4.330209067858134e-9, 2.4795057750629126e-9, -1.315359960056866e-9, 2.550881080555194e-9, -1.5499373996973943e-9, 1.2066060537470682e-9, -4.197425955904712e-9]), layer_4 = (weight = [-0.0007019799849219553 -0.000584170042645268 -0.0007747921585225054 -0.0008898041141957359 -0.000472910532561907 -0.0008940319113102766 -0.0006878853309365273 -0.00071313650158657 -0.0006154787549422931 -0.0005146170357649462 -0.0007646252572597614 -0.0008538729039505059 -0.0007369624222431627 -0.0006940626121801275 -0.0005481420090180362 -0.0007504539242463521 -0.0008966704868428987 -0.0006046576869488658 -0.0006564745752171435 -0.0006098096209479518 -0.0007180951343338464 -0.0006049018172282638 -0.0006299830901193277 -0.0008038290473762518 -0.0005947487238040674 -0.0006211548944915922 -0.0007233484827357568 -0.0006771741503286077 -0.0006836831848675983 -0.0008678025130679524 -0.0006895619847881677 -0.0006067256945230524; 0.00025350323512130266 -6.356790743507069e-6 0.00010217693786583016 0.00018157895162626664 0.00022267078693369836 0.0003648253190357369 0.00015590381538466613 0.0003162410913883177 0.0002802591204761527 0.00021031032074939418 0.00028767482346346167 0.0002779284865740738 0.00012140016604425762 0.00020123463461038226 0.0003298771789935229 0.00021995033997372385 0.00033860616818679883 0.00031970759944119646 0.0002606301666675017 0.00026494009609434116 7.687754784615355e-5 0.0002087359189526294 0.00013687573278409112 0.00016995183474499416 0.00047688690211385783 0.00024161094384494885 0.0001935157251431521 0.0002676523310444104 0.000329323487004137 0.0002909836913326756 0.0002377798597593667 0.0001304348045255155], bias = [-0.0007056846830355916, 0.00023165359260009428]))
+u: ComponentVector{Float64}(layer_1 = Float64[], layer_2 = (weight = [5.180989683137348e-5; 4.805834396380848e-5; -3.97379517380624e-5; -6.446355200755228e-6; 0.00010011666017793448; 3.926907811535397e-5; 0.00010699868289507224; 0.00011431937309664584; 3.159810512441006e-5; -4.543753675532296e-5; -0.00014397881750481122; -6.085247605363988e-6; -9.292715549231953e-5; -6.243498501123526e-5; -4.947196794089287e-5; 1.7112830619196701e-6; -5.463556954050699e-5; 0.00022483835346023484; 0.00012906493793698516; 3.582036515578298e-5; -7.582824764534339e-5; 1.2926886483886702e-5; 0.00012672904995240106; -0.00013321709411665241; -8.603231981376937e-5; -0.000100473189377151; -2.1185278455945145e-5; 9.477617277300202e-5; 6.43374587525125e-5; -0.00014426378766056584; 5.150646757098182e-5; -0.00012930440425377876;;], bias = [3.074171429812446e-17, 1.3984185038157316e-16, 4.443934471412042e-19, 4.790058241853112e-18, 2.7278840886910403e-16, 1.2898220793986938e-16, 1.5651032629381108e-16, 1.8215569080063655e-16, 2.3719600984515048e-17, -2.4888652520793306e-17, -2.0732375475218416e-17, -6.4060476298762055e-18, -4.7164231952778845e-17, -1.3156071646633781e-16, -2.6779350111001824e-17, 3.3776859099600072e-18, -5.141100406813129e-17, 4.826863452498904e-16, 1.0155183055460264e-16, 3.60763286357505e-17, -6.806576799575259e-17, 2.712101479224466e-17, 3.4057718100083046e-16, -2.1992335942432806e-16, -2.281976907440453e-16, -8.586327892730481e-17, -1.6502141612999587e-17, -2.7217146360708762e-17, 5.760613769000707e-17, -2.1427002098864876e-16, 3.9525169300508264e-17, -3.365691594306565e-16]), layer_3 = (weight = [-0.00013673281613867398 -4.619716605068786e-5 0.00011158415032420635 -6.647674421677041e-5 9.984414533116267e-5 -9.98097759684515e-5 -5.546659416998392e-5 4.640660222955396e-5 7.313449891353241e-7 3.0713867778986265e-5 -9.946587055585918e-5 7.76398872012305e-5 -7.380564169855447e-5 8.010335182641032e-5 8.77314075814593e-5 1.1965374830624551e-5 1.6189004561028957e-5 2.6727482299710748e-6 -3.856989609906096e-5 0.00012874714480582954 -7.18655585324358e-5 2.542672951401072e-5 4.918392983833681e-5 -2.6854236460194162e-5 -7.790427593411539e-5 -0.00015126709444578392 0.00017358412765767752 2.413672041891018e-5 -2.1046476143083e-5 -1.5648881565566294e-5 4.859284559367555e-5 -4.7651764582978745e-5; 2.0406320247847533e-6 -2.7096901804486476e-5 0.00011111820948759679 9.153942245508095e-5 -8.302343904754858e-5 -8.734244748733356e-5 -9.733833268067485e-5 -0.0001313919170668027 -6.621143676123969e-5 1.0023394581935124e-6 -2.8175651651257603e-5 -0.00017881777294927723 -1.288358690611194e-5 -2.0447156758324294e-5 -0.00010230717144689812 9.671462920710924e-5 0.00015762000420114705 8.027037564652178e-5 0.00017836873611420126 6.830923247367708e-5 -4.006929940327139e-5 -0.00013503036153519036 -0.00021813061594978285 -5.608849879602166e-5 7.909103022872515e-5 -0.00017838654149339314 7.021017098783093e-5 -3.155305749471556e-6 4.349382596889335e-5 0.00011656990990493455 -2.0367248553827358e-5 -0.00014906156558092948; 0.00014368025608891953 6.734003568599314e-5 -2.689072948523982e-5 5.896424431884874e-5 -3.5969896769889616e-5 7.347059082347802e-7 -0.00010043138877189933 9.518090542006162e-5 -5.719532032198949e-5 4.077179278428968e-5 4.180747441897364e-5 7.590350310383577e-5 -0.00011948050064201806 3.1566363988168635e-5 1.6973014000177775e-5 9.685721353525078e-6 5.62163063623354e-6 -0.00019685385609443645 4.429521527673133e-5 -1.8268785196051118e-5 -1.4800395318523524e-5 9.685768623203258e-5 -0.00015118745773033248 -1.7472793614062777e-5 -5.2309503870126073e-5 -6.320155057291775e-5 -0.0001434745934133395 -8.595488156824697e-5 6.796911498131626e-5 -3.3445612415008126e-5 7.740150636127546e-5 -0.00010663801344743912; -0.00014974497751534137 6.596554159916814e-5 6.7703231441804395e-6 7.843026670187603e-6 1.2209959114280394e-5 7.127834398563882e-5 -1.5570649149415278e-6 1.9088794961879552e-5 -4.856252051392603e-5 6.816452516507251e-5 0.00011921500119643732 -0.00018221497155461428 0.00022622955295521202 2.583432799003783e-5 -7.986712442213802e-5 -2.3947710341573316e-5 4.8278092454735336e-5 -8.33251324176767e-5 -3.660719566309381e-6 0.0001117137071749563 -6.662018129570774e-5 -2.642644902077477e-5 1.4946304891797065e-5 9.046510969784764e-5 5.314583178990039e-5 -6.497642605534493e-5 2.4073115146919223e-5 -2.3330272578440012e-5 5.6335658901685195e-5 0.00012817166136375137 3.635764735083879e-5 0.0001408779862875378; -9.792329825773725e-5 -0.0001610936570291958 0.00013258485972568403 -1.282375348142712e-5 6.538187731573964e-6 -7.666059997478493e-5 -6.318570109629088e-5 -3.4558427673390697e-5 5.78104435912236e-5 8.729919767160022e-5 -6.791538641167906e-5 4.9688135673421055e-5 -4.5054262104307285e-5 4.959083793022892e-5 5.1627680418678525e-5 -7.073258626820655e-5 -9.99015001657964e-5 -0.00011793059553793799 0.00016713941562143613 -0.00010116806976344454 -0.0001864312626499271 -0.00026956957032285746 -9.043721098764397e-5 -6.618090725582466e-5 -0.00011525890028183736 0.00014024526438829348 -0.00013304369082521743 -1.2515424773076196e-5 1.0916411097643545e-5 9.217973541622888e-5 3.0353107772899013e-5 0.00020080249208645427; -4.7178440132109714e-5 5.1107276244157497e-5 -9.145040849542881e-5 4.1753050996716265e-7 -1.7619092891968428e-5 0.00015428841697431463 4.5499950369427075e-5 -5.954594553766874e-5 0.0001122819198775784 0.0001430937595563693 8.323920746481302e-5 3.1503263466593255e-5 0.0001303376379786774 -8.476153334921753e-5 -7.6252861168167e-5 0.00014729072108312733 -5.5878197150003275e-5 -0.0002491617592618823 2.6790714850375152e-5 1.6202775891006942e-5 -9.757907128513302e-5 -4.5923566636329086e-5 6.139088190540711e-5 -0.00013325718055564798 -3.479443649265348e-5 -2.308211610929645e-6 6.950652140804808e-5 -5.284545068715059e-5 3.199189131411207e-5 -0.0002205815940265704 -0.00020100036227230567 -1.5168480336416295e-5; 9.845828729148597e-5 0.00021005199935452686 1.8200671300200993e-5 0.00010013307449107878 6.889525659779906e-5 5.193157242310914e-5 -5.859105633235408e-6 8.916143244995342e-5 -0.00010009312270276449 4.257820158081761e-5 -3.9389964760739266e-5 -2.8641669152510528e-5 2.178395491491091e-5 -3.5846631610277164e-5 -0.00012370400533845985 0.00015663028873668874 -0.00010254126416121065 3.867659300144598e-5 8.41839134662991e-5 -4.1753930665526935e-5 -0.00016834619625306403 0.00012317006596995395 -0.00022476721667054778 -0.0001671666762123247 0.0002777145634608076 -5.679722769137588e-5 0.00011409457486288473 2.9775207875830653e-6 6.123420437497524e-5 -5.2112351360956184e-5 0.00025308713495896776 7.972471915116728e-5; -7.539370211513663e-5 -8.19815142100863e-5 1.6561125324483968e-5 1.5313507777430946e-5 5.430764634491098e-6 -0.00018630949865534996 -6.880816739490941e-5 -9.33563679942909e-5 -0.00010242898509811777 2.509740976468165e-5 -6.949038300867617e-5 3.054882823864639e-5 0.00013907560411401907 0.00010632018153349143 -8.637617078118008e-5 8.051012615699025e-5 -8.168311991237015e-5 -0.00014472040141900387 0.00016851198948947697 0.0001366753530085819 -3.594802559443305e-5 5.408560230829346e-6 -7.310778540764099e-5 -0.00011144492249209312 -6.476170177544742e-5 -0.00011522083162768672 -0.00019194886057146129 2.6001465478986294e-6 -0.00013870504711728306 -1.963859189040442e-5 9.993481274547981e-6 -3.224010300678209e-5; 3.277267469740286e-5 -5.650645752838082e-5 -4.108435959723076e-5 -8.161633647329272e-6 7.262248700782759e-5 -0.00012513729152204697 -8.481214453866547e-5 -2.6494809478100033e-5 -1.3397698327831642e-5 4.995358258667191e-5 0.00010082367671486514 -7.687213937687046e-5 -0.00011217594428388354 -0.00010538417254509543 -2.6985127166777e-5 -5.2382310147446687e-5 -0.00012912164956731893 -5.483996128247291e-5 -7.855052089951569e-5 -1.8199939148742865e-6 7.209841808722634e-6 2.5656575328970276e-5 -5.0837151408704335e-5 0.00019916692408798666 0.00018727736906213685 -4.635680588479048e-5 0.00012128032986139606 -7.46722172124305e-5 0.00010212710631377867 1.705924196641952e-5 -3.829376427973808e-5 -3.1990685872078015e-5; -1.041748007538596e-5 6.437937602185028e-5 -1.2541453975257555e-5 -0.00010121545299172376 -6.984436138282154e-5 -0.00012446766729682466 -9.122535218466447e-5 -4.549516550013962e-5 -3.262143898156323e-5 -7.617500475590764e-5 5.3770760609962765e-5 -7.119887548016359e-5 0.00014329217131034668 3.556019921687952e-5 0.0001859178014683385 -0.0002765068051985649 -0.00017394083213276756 -0.00012425758129660985 -5.8491979393686004e-5 -5.9524488710861664e-5 0.00011418261467496689 0.00018132732704997104 1.8246807053407974e-5 4.879589735083717e-5 -0.00015472805487207094 -0.00013543444172228302 -2.776256883421243e-6 0.00016434141482477317 -0.00016027808258059812 -0.00024614446690519447 7.928308380086338e-5 -0.00013478277785451784; 0.00022396304211511392 1.9786554728537783e-5 -4.7885318984727726e-6 -5.858606984791853e-6 -9.7031886073037e-5 0.00016073502865552005 -3.788093183483547e-6 -1.90237396985484e-5 -2.5240188735867892e-5 -9.42092438002389e-5 -2.891461281463463e-5 -8.540743056287132e-5 -1.99402775272951e-5 -1.0821965590680736e-5 4.596363669193451e-5 -5.0568672124744235e-5 -0.00015549556610707982 -0.00015467352841579463 -8.958690068751362e-5 0.0001434900632354153 4.9315888643519655e-5 -1.0591713364509114e-5 -0.000216091152653767 -9.046614923348361e-5 -5.61106753806818e-6 3.7937142221980814e-5 -9.696013057905291e-5 2.1652361281356982e-5 -1.7078883504241312e-5 6.319614567261703e-5 6.880275122753462e-5 -0.00014357949749167797; -9.928944774746605e-5 2.3003589091061745e-5 2.8062873467391504e-5 8.025818686856254e-5 -1.8282504528357706e-5 -6.671812144649854e-5 -7.677203240181981e-5 -0.00011954596840386945 0.00011434431661309969 5.4504480145809375e-5 0.00010532896857166911 -0.00010512614818598778 -0.00015387568993337176 9.126105004379813e-5 -4.251097772230102e-5 9.147668759960978e-5 -7.442193067432968e-6 0.00017912329502560375 -3.382424830651583e-5 9.792923964251127e-5 -4.548681164469285e-5 0.00015113012494676113 -4.476751411293373e-5 -7.433187266887842e-5 0.00024625983650021537 5.627574654336361e-5 -0.00015914316310390535 9.98244257625934e-6 -0.00015414503133233352 -0.0001503538645136332 7.127300494740076e-5 -2.8847218631014446e-5; -0.00015346076427746639 0.000201805590467788 6.980732839068448e-5 -0.00011410064938032773 1.9386170784170353e-6 -2.9581912468042605e-5 9.404494746333774e-5 0.00011728170763446619 0.00015107084734112142 0.00013695496570065616 -5.5045390336534897e-5 4.9329232997058375e-5 8.696776173521943e-5 9.690799078755266e-6 6.943266750525635e-5 -8.804237705101275e-6 5.041433657382505e-5 4.308077520315576e-5 -2.474825008037776e-5 0.00012991488008041023 -0.0001181821705635866 0.00022090150129728232 -8.56251633472156e-5 0.00011944027325581825 5.8442708240843746e-5 -2.3113741285446144e-6 3.2698874992581026e-5 -0.00012050373946337823 -0.00019509212027557437 0.0001772409098243871 5.34818984938592e-5 -4.98610522576962e-5; -9.141332087481127e-5 -0.00015207022191632307 -5.338142476418815e-5 -2.2460814976035237e-5 0.0001406956860269324 -7.19689717111347e-5 -0.00012578585413890796 8.962168682459049e-5 1.2340703292033921e-5 -0.00015355320759724613 0.00020458102404931529 -3.3556645898680107e-6 -6.773413882498779e-5 -2.3094352614382276e-5 -9.786492550790727e-7 0.00011701202198721505 5.801649491743479e-5 -2.4470827370740053e-5 -0.00010996970489528414 -7.74082302409396e-5 -5.272157180613305e-5 -0.00015402661050345698 -2.364477335091649e-5 0.00014465840537426704 0.00019405236413561484 -0.00027154144594120815 -0.00017122755637999552 -0.00010754145590496368 0.00011900678397480793 3.726778847025685e-5 1.580779168264274e-5 -7.463697805675121e-5; -0.00015441331562553352 -3.5331049855084416e-6 -0.00012139769024881427 1.4684808762720847e-5 -2.3977345348352428e-5 -0.00022713959698532604 0.0001593267479495687 -9.996848167585277e-5 0.00013505447349078094 0.00019081010758443875 -0.00012352351406089517 6.827598916632127e-5 5.0435370200179675e-5 2.6252957455909622e-5 -0.0001316218877161371 -8.654052727590312e-5 -1.859360237514865e-5 -6.214375390635255e-5 -0.00010538125571993938 4.960580541846291e-6 -5.49127253304663e-5 -4.876243111877688e-5 -0.00015361336774159088 6.107610896496347e-5 9.557126394273275e-5 1.5341855020129304e-5 0.00010247938551972651 -0.00017058724553291094 6.770556864128725e-5 1.956514641851168e-5 4.410247491821825e-5 3.871667546528065e-6; 4.4566724067163005e-5 -8.593686350311142e-5 1.3561835952468419e-5 -1.4978678951839547e-5 -0.00011835091998024454 -7.035617879980271e-5 0.00011129826755107844 3.675593627461775e-5 -5.723642305044512e-5 -2.5972097024596322e-5 -0.000138061132635139 -1.365251198537518e-5 7.768686493703485e-5 -6.19787648941102e-5 8.163660397597606e-5 -0.00013575405744292875 -0.00017671005905528506 -4.689506447561478e-5 3.665782726214989e-5 -2.875564375815023e-5 9.339291439003492e-5 -5.7543744948153424e-5 0.00011921202833376584 -9.50691798391395e-5 -7.759243878924025e-5 -2.7728627788988644e-5 0.00010042275546195834 0.00010646567109118556 2.7229223018121978e-5 1.983353580490179e-6 -1.8813105886028814e-5 1.8444394061024314e-6; 0.00011211035949888491 0.00011749856991006838 0.00012376124856307007 -2.5419623977385523e-5 0.000100433931823475 0.00011562004134536555 -5.1801857022680376e-5 -7.130168172518702e-5 0.00010409525917854916 -1.0971337484833049e-5 1.5819679777609744e-5 -2.2044350895911517e-5 6.929439098869408e-6 -0.00017632606262561992 4.2219656854026095e-6 -4.125658176079929e-6 -4.1890347471806726e-5 -4.814458601396822e-5 -4.236474354622804e-5 7.315567551192656e-5 -4.3529104129291184e-5 -9.974112266429889e-5 4.3128428507533585e-6 1.4899067412601848e-5 1.9950502751029278e-7 0.00011063980842952589 -3.722663326409832e-5 -5.343461465311282e-5 -9.09644987921895e-5 5.735062574165093e-5 -0.00029693937916529516 2.248687984608662e-5; -6.095269232303057e-5 -6.21646813246345e-5 -6.662305125633295e-6 0.00025717102293726737 -0.00010853457747855124 -4.863781391889049e-5 -2.6717074391328176e-5 -8.52022476041576e-5 7.728535460644191e-5 7.786085374989373e-5 -3.4817903682249585e-5 8.137201989172715e-5 -1.0654512110179702e-5 -0.000150261634147159 0.00014703703531865803 -0.0001761737202772802 1.4597610103533113e-5 8.776191138767268e-5 8.095924754032261e-5 -1.0435327525033759e-5 -9.701637277741964e-5 -3.09106926155673e-5 -0.00010791328345787403 -0.0001351279042441268 -0.00016070683882701202 -0.00010217186896026965 8.000592974583389e-5 9.627341391622152e-5 -4.275667920721797e-5 9.94447273538588e-5 8.86742582648139e-5 -8.471720278448387e-6; 1.1522275494240662e-6 0.00012900799523634865 9.43971452565504e-5 -6.729648990727625e-5 -6.679644244429733e-5 -2.6443959688151797e-5 -5.045079993722296e-5 7.922848348100184e-5 2.9072510040749055e-5 0.000202465626751688 -6.894838694424023e-5 8.850254274733701e-5 0.00012184489500071032 0.00013107420712770712 9.689232578096922e-5 0.00021595528127221728 -2.7030852981229005e-5 -4.813117008019174e-5 6.403743358388506e-5 7.370588613270018e-5 1.995570422735098e-5 -1.6855439403668004e-6 0.0001517791814316441 3.2823786421807504e-5 1.6082981199750643e-5 0.00012162825336274603 -0.00026396356512265 -0.00014477055916502072 7.665928463978478e-5 0.00011535379493435248 -0.00012275031000314295 0.00010943367564178958; -7.614286951372411e-5 -8.994206509903155e-5 -5.115848253132993e-5 0.0002257634456304224 -0.00021126214633346104 -0.0001547701707773492 0.00011861311722663923 -2.9614326560976304e-5 -5.9443037027971347e-5 0.00016796029885647688 -6.102934494495766e-5 5.8793598870965254e-5 8.12223493971413e-5 -0.00019041671694373496 -3.7363616140802015e-5 -2.171217820666776e-5 -7.767684476284332e-6 -2.272125348324362e-5 -5.860465025993266e-5 -2.098463849118376e-6 -0.00023525409269729066 -0.00012565708530253283 -0.00012125269350012148 -7.039958509498275e-5 -0.00012634408122045053 6.880739019602043e-5 -0.0001097951921133926 4.537369531812378e-5 -0.00010558102294686921 -0.00015733309774307894 -6.86817023984717e-5 -7.307299020116407e-5; -6.042243142609747e-5 6.255314116834383e-5 -3.238137827019526e-5 -0.0001870079849427327 3.506036416048303e-5 2.2346232134175068e-5 3.1497910960101824e-7 0.00010462175311523767 9.188543669416219e-5 -7.910262314134571e-5 -4.732330665454523e-5 2.6306152056810172e-5 4.5434868360199514e-5 -2.0040493774551098e-5 -0.00010883075258924899 0.0001526894648745895 0.00012217508817094133 -0.00021789301347913785 -6.798398492854554e-5 -0.0001748768826760106 7.611439838775331e-5 -3.2659716390747776e-5 -3.6292180021959685e-5 -8.364798662249407e-5 -0.00014294315581672845 6.762084984540777e-6 2.3176518942370022e-5 -6.821949620178711e-6 -9.740208889971953e-6 1.6368607310612976e-5 6.02749042341273e-5 3.499287965361497e-5; -6.537569278444559e-5 -0.00021144151686749855 0.00013407677180074588 -0.0001028047030471609 6.505737984261762e-5 -6.677718046413307e-5 -6.208111734886232e-5 0.00018979394518246512 2.8749934799260506e-5 -3.8685799509412505e-5 -4.399931493971142e-5 -7.937099725532989e-5 -0.00010822934417811065 -0.00018489898356202343 -4.647758387736506e-6 -7.056511675765453e-5 -9.979601453815957e-5 -3.2831578564910544e-5 -8.18259708379584e-5 -8.657303979281022e-6 8.439969097670988e-5 2.3824135141319797e-5 9.001320953914468e-8 -6.539944151008425e-5 -6.027773123642387e-5 3.0710010477922074e-5 -5.519223478051364e-6 -0.00010621147374913837 0.00011862467509635463 0.00012568785460608442 4.523156677313679e-5 -9.699739747738485e-5; -0.00019578948974646713 -2.055746569801233e-5 0.00024619827620647684 -3.0304229378609958e-5 -0.00012750072762406883 -3.0805160870451306e-5 -3.876146886398763e-6 6.681320831143074e-5 -6.644035290498497e-5 0.0001311320333365338 0.00017276205055845328 -0.0001798386406995384 -8.972885968666153e-5 4.623208535797905e-5 0.00011617509465161611 2.9698088317152043e-5 9.177241320451661e-5 -0.00010767160399384962 5.4707011647625386e-5 -0.00022939131720029008 4.117398514375242e-5 -0.0001658830338533995 -0.00012908154583106748 -0.00011329662499752695 -5.1196967183992105e-6 3.366409821631869e-5 7.835749732060104e-5 1.2016138887188171e-5 -9.816273243422337e-6 2.2283552814264705e-5 -9.09927226280802e-5 -0.00016613748864307016; 7.070276560225943e-5 5.141413648344009e-5 8.424298075224524e-5 3.580449346882307e-5 -0.00016346159746206683 -4.8229048028949045e-5 -0.00012557018554105526 -0.00011924548662534771 -1.1366563834960808e-5 7.622481725375493e-5 -0.00015518067003028079 -0.0001796030329427587 -8.735195943189385e-5 -0.00017426248005394216 -0.0001934859093165825 -6.909392605339168e-5 2.5326543396711423e-6 -3.4496740321914594e-5 -5.870859522871911e-5 2.7837048851872994e-5 -7.14993503646743e-5 1.2358564068200423e-5 -4.819028172675849e-5 -3.288110301979889e-5 -0.0001107854323930831 9.426276019041118e-5 2.8608236694346036e-5 -0.00012839215114980487 5.0343555718070745e-5 3.081347030787195e-5 -2.274294557027568e-5 4.130938841229077e-5; 0.00012267257490222578 -1.2321726431564771e-5 -7.241844058242365e-5 8.550854773986453e-5 0.0001481813547017898 1.4075181310745257e-5 0.0002022309077021576 0.00012331293193184768 5.495735105270795e-5 -0.0001735161908852936 -1.7517664205829587e-5 -0.00010497128595105073 0.0001762162160177632 -0.00013343376984792556 4.007895996821355e-5 -0.00015787762593916317 7.896255784928096e-5 -1.9795299054560652e-5 -9.137157529565595e-5 -6.615343362298526e-5 2.3971421355071264e-5 -0.00010641269681016619 -8.058231968405731e-5 0.00014156160115291253 -5.0469135645272806e-5 -0.0002671481756677007 1.4263732295348863e-5 -7.13962267452935e-5 0.00015642067820792287 0.00014928296378840508 0.00013841195551705782 -5.766119783018805e-5; 4.824639482086039e-5 1.3757949185499109e-5 -2.2726975563448562e-5 4.055005784158003e-5 5.827028153708947e-5 -2.970708825335095e-6 -7.763383827858738e-5 -1.6398016574555755e-5 -4.908422478928783e-5 -3.096671925613235e-5 5.6687997224631323e-5 -0.00010431920590798961 0.0001546653985349716 -9.08230103015664e-5 7.091320376621995e-5 5.341532676598956e-7 -0.00016613615652767485 -5.2808834785692916e-5 -0.00018199617251974455 -0.0001228073487220107 0.0001093982465170567 -0.00010592960815865201 -3.3881784380524836e-5 0.00018045600527676872 1.3983470220236878e-5 -8.683597470388936e-5 -0.00012895794852392392 -0.00026040784350351664 0.0001586050530966608 0.0002300536471955782 0.00015467434796283464 -7.854779314237569e-5; 2.4459006357814144e-5 9.94110140657207e-5 -0.0001186473619834372 -0.00017221176140605067 -9.730100014829846e-6 -7.207961799007295e-5 -5.986975348216893e-5 -6.189365568000156e-5 0.00014230196929407798 -0.00012771366355603903 8.159034577536834e-5 5.471041176339085e-5 1.9187984338959505e-5 8.433603301696153e-6 3.6547186430321037e-6 -8.17779092410446e-5 -1.0999526335341157e-5 0.00021997585817581415 -5.636908290918853e-5 -4.8624069773484415e-5 -0.00010252151160396637 -0.00022577827813232833 5.500777287513959e-5 -7.59486739350187e-5 -0.00013844503164885417 -5.915371194144316e-5 8.525898546782766e-5 -6.905609380349225e-5 -9.651566697878913e-5 3.65971444755651e-5 0.00012632594543380375 -9.906847308750193e-5; 0.00012788066043804507 1.0430176297909002e-5 0.00015476597865863735 -3.83381183207322e-5 -0.0002003498510754885 -8.449480708868215e-5 0.00015090647604603107 2.9924519475855795e-5 -0.00020624615615879192 -0.00011562088082491357 3.5117363149146235e-5 -8.266349948889654e-5 -4.484765566366202e-5 0.0001363807979208157 0.00016341864931683148 -4.589985008414912e-5 2.188164318732115e-5 -7.763817018772759e-5 -2.765065881311278e-5 3.833877253149509e-6 -0.00014374250793543322 0.0001842226639558275 2.7303506721468793e-5 -3.645902586930205e-5 -0.0001821219765412857 -2.94480477174961e-5 -0.00016098163803753492 5.833407805704128e-5 1.8062807720803888e-5 -5.9436150768925696e-5 -3.3727744158291124e-5 -0.0001093952149682849; 5.231521425189136e-5 -3.383356779934063e-6 0.00010017561942690793 -0.00013131232628479618 3.6203966719347726e-5 0.00016687326786227338 0.0001623802039644364 8.305083879662298e-7 1.285180804147727e-5 6.430602877985441e-5 4.0334792897964305e-6 -0.00010955473191684128 -7.293693272045867e-5 6.629427878537694e-5 4.701441719548489e-5 -7.47100035554917e-5 -0.00011986394894888975 -2.4045995469816426e-5 5.935168008320936e-5 -2.951102907941367e-5 -8.72016296813436e-7 -9.14679090969454e-5 0.00031598063140293617 -2.5120890878016726e-5 -0.00011006236820363356 0.00010972550297041203 -8.120672301129124e-6 -1.7255467768887272e-6 0.00015290667432013423 9.692138190032417e-5 0.00019944997109591652 6.663935562713035e-5; -0.00013883121117547903 -0.00025821212601446385 -1.985251673037531e-5 -6.0405312056596955e-5 -0.00032374079727165753 -4.385984992556156e-5 -2.058621520123715e-5 -3.096148701448175e-5 -4.945754970837296e-5 3.927196759317217e-5 -7.633464506992555e-6 -0.0001422199738823712 -4.0697143945782045e-5 -5.2428566946822544e-5 -0.00011419636119686832 -4.4858442366299803e-5 4.8678998622868314e-5 -5.0268872524936856e-6 4.6447033141106515e-5 7.717007703316502e-5 4.85193895786663e-5 9.953075369988612e-5 6.281590778084454e-5 -0.0001270278325916074 0.00011548355270346135 0.00022411666306137694 3.8576455166852686e-5 0.00015628745042189552 -4.4418701677990336e-5 0.00014745321551740416 -6.0394965644868156e-5 4.751953839726764e-5; 8.331288134032935e-6 1.1718200928700231e-5 0.00013947106361021858 -6.736991037749118e-5 -8.141546988761419e-5 -3.32245252341441e-5 -0.00010714081128960843 7.871390714874123e-5 0.00012236851778445404 0.0001264430249445663 -4.564975808741894e-5 5.526428883760803e-5 -5.816971299489395e-5 -0.00014966569853848207 4.076531856955102e-6 -0.00011053555483365795 2.165517633122492e-5 5.9753863913757686e-5 -4.990147847118224e-5 -6.040437058098047e-5 5.027392778876803e-5 -0.0001063681482467278 -4.50086079784147e-5 0.00023116278332756469 -3.997785081290075e-5 8.538674608436978e-5 -3.9804759419238114e-5 6.06388313624133e-5 5.472291084262378e-6 3.2435229311171284e-6 -3.285832992540106e-5 -3.45492551989797e-5; 7.583407390279552e-6 -2.771244989728546e-5 -0.0002208520717397052 0.00011409139106378905 -8.844941193840469e-5 -7.714651379706232e-6 0.00012741498640368688 -3.7102607981273966e-5 0.00012446278115364734 -1.080773099258765e-5 -0.00023240346935947444 -0.0001991772850453573 -4.1179345222394914e-5 -3.079405077753581e-5 -9.437485723194656e-5 5.5370076646590726e-5 0.00010376764394438834 6.670755383654433e-5 -6.738606761812244e-5 2.742861316053208e-5 3.6528354974277753e-6 5.693580087952328e-5 -0.00011758719928932386 0.00014019340151551167 7.43933806950506e-5 -2.5583339171339782e-5 6.63639030824696e-5 0.00023954047638087534 -8.321064242065877e-5 -4.752390022642929e-5 0.0001489744637217653 -1.2875781882235436e-5], bias = [-5.206223251408482e-11, -2.0487375323298787e-9, -1.3676512034011722e-9, 2.1464264396690755e-9, -2.791297958647631e-9, -1.4220000501908559e-9, 2.873755785495156e-9, -3.947331312268714e-9, -1.196073650494103e-9, -3.884883895306505e-9, -2.240087586293914e-9, 7.429316937864656e-11, 3.515442165067252e-9, -2.649572230525625e-9, -2.0263666752411662e-9, -1.5249281852743776e-9, -5.058034994416721e-10, -1.0458765482770978e-9, 4.131687491802356e-9, -5.721087814768154e-9, -1.5842774643680243e-9, -2.8579874308270176e-9, -2.3179132520004744e-9, -4.677626201781526e-9, 7.153305161824792e-10, -1.2331804040515737e-9, -2.8249867127155783e-9, -2.138113538591366e-9, 3.458244055400067e-9, -1.6907376140677657e-9, 7.43759431490081e-12, 4.647861247933301e-11]), layer_4 = (weight = [-0.0007044552097886301 -0.0006544493200061434 -0.0005752634376051195 -0.0007829361866304041 -0.0007600076744156103 -0.0008002427621429796 -0.0006666628025348305 -0.0006678068857398588 -0.0007713393260487653 -0.0009490283947326566 -0.0007176863774096127 -0.0007426513478384115 -0.0006696775283020405 -0.0006730593105042425 -0.0005758295702487963 -0.0006962311341828594 -0.0006573877125006471 -0.0006678780659250879 -0.0007135337793189911 -0.0007010811592148866 -0.0008163589735717631 -0.0006792927635342191 -0.0007410944746322876 -0.0006424160099366644 -0.0006811404246560184 -0.0006632358375522437 -0.0006205377250624452 -0.0006190605635052439 -0.0006958061737400846 -0.0005681512101825424 -0.0006444198884103359 -0.0006882198694467215; -3.542325429288692e-6 0.0003536306078366946 8.46278597105053e-5 0.0002117655751586508 0.0002929988784962754 0.00020080502210286392 0.00010221138092486895 0.00021088399263758273 0.00028193573085969045 0.000266567982541602 0.00021710617641354328 0.00026851834261235275 0.00017073060361363522 0.0003656148134190455 0.000382096855003527 0.00013784554795488963 0.00030120213857624025 0.0004677399935844392 0.0001270932476069551 0.00017853223051650605 0.00026781976858322845 0.00024775032345400726 0.0003484082124925174 0.0003558507839698087 0.00018445742112395533 0.0002326035620625615 0.00015546910162900018 0.00028779816300512635 0.0002677264084238303 0.00016843166941581884 0.0001636119086697292 0.00015350230024141454], bias = [-0.0006842943516664369, 0.00024355495772896367]))
 ```
 
 ## Visualizing the Results {#Visualizing-the-Results}
@@ -5852,9 +5852,9 @@ Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 4 × AMD EPYC 9V45 96-Core Processor
+  CPU: 4 × AMD EPYC 7763 64-Core Processor
   WORD_SIZE: 64
-  LLVM: libLLVM-20.1.8 (ORCJIT, znver5)
+  LLVM: libLLVM-20.1.8 (ORCJIT, znver3)
   GC: Built with stock GC
 Threads: 4 default, 1 interactive, 4 GC (on 4 virtual cores)
 Environment:
@@ -9197,7 +9197,7 @@ python_file_path = Reactant.Serialization.export_to_enzymejax(
 ```
 
 ```ansi
-"/tmp/jl_z3nuzq/run_lux_model.py"
+"/tmp/jl_jKKYlv/run_lux_model.py"
 ```
 
 This will generate a python file that can be used to run the model using EnzymeJAX.
@@ -12691,22 +12691,24 @@ Wraps a stateless and parameter less function. Might be used when a function is 
 source
 
 ```julia
-ReverseSequence(dim = nothing)
+ReverseSequence(dim = nothing; ordering = nothing)
 ```
 
-Reverse the specified dimension `dims` of the passed array
+Reverse the specified dimension of the passed array or sequence.
 
 **Arguments**
 
-* `dim`: Dimension that need to be reversed. If `nothing`, for AbstractVector{T} it reverses itself (dimension 1), for other arrays, reverse the dimension `ndims(x) - 1`.
+* `dim`: Dimension that need to be reversed. If `nothing`, for `AbstractVector` it reverses itself (dimension 1), for other arrays, reverse the dimension `ndims(x) - 1`. If an `AbstractTimeSeriesDataBatchOrdering` (e.g. `TimeLastIndex()`, `BatchLastIndex()`), reverse the sequence along the time dimension.
+
+* `ordering`: An `AbstractTimeSeriesDataBatchOrdering`. Can be specified instead of `dim`.
 
 **Inputs**
 
-* `x`: AbstractArray.
+* `x`: AbstractArray or Tuple.
 
 **Returns**
 
-* AbstractArray with the same dimensions as the input
+* Array or Tuple with the same dimensions / shape as the input
 
 * Empty `NamedTuple()`
 
