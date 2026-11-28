@@ -44,6 +44,27 @@ include("../shared_testsetup.jl")
             @test layer(xs, ps, st)[1] == aType(xs)
             @jet layer(x, ps, st)
             @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+
+            layer_tli = ReverseSequence(TimeLastIndex())
+            layer_bli = ReverseSequence(BatchLastIndex())
+            @test ReverseSequence(; ordering=TimeLastIndex()).dim == TimeLastIndex()
+            ps_tli, st_tli = dev(Lux.setup(rng, layer_tli))
+            ps_bli, st_bli = dev(Lux.setup(rng, layer_bli))
+
+            x3 = aType(randn(rng, 2, 3, 4))
+            @test layer_tli(x3, ps_tli, st_tli)[1] == reverse(x3; dims=3)
+            @test layer_bli(x3, ps_bli, st_bli)[1] == reverse(x3; dims=2)
+
+            @test layer_tli(x2, ps_tli, st_tli)[1] == reverse(x2; dims=2)
+            @test layer_bli(x2, ps_bli, st_bli)[1] == reverse(x2; dims=2)
+
+            @test layer_tli(x, ps_tli, st_tli)[1] == aType(xr)
+            @test layer_bli(x, ps_bli, st_bli)[1] == aType(xr)
+
+            xtup = (aType(randn(rng, 2)), aType(randn(rng, 2)))
+            @test layer_tli(xtup, ps_tli, st_tli)[1] == reverse(xtup)
+            @test layer_bli(xtup, ps_bli, st_bli)[1] == reverse(xtup)
+            @test layer(xtup, ps, st)[1] == reverse(xtup)
         end
 
         @testset "Flatten Layer" begin
