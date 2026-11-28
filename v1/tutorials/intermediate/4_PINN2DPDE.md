@@ -341,9 +341,9 @@ Build Info:
   Official https://julialang.org release
 Platform Info:
   OS: Linux (x86_64-linux-gnu)
-  CPU: 4 × INTEL(R) XEON(R) PLATINUM 8573C
+  CPU: 4 × Intel(R) Xeon(R) 6975P-C
   WORD_SIZE: 64
-  LLVM: libLLVM-20.1.8 (ORCJIT, emeraldrapids)
+  LLVM: libLLVM-20.1.8 (ORCJIT, graniterapids)
   GC: Built with stock GC
 Threads: 4 default, 1 interactive, 4 GC (on 4 virtual cores)
 Environment:
